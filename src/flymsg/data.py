@@ -1,6 +1,7 @@
 """Download and compact the MaleCNS v1.0 connectome (Janelia FlyEM, CC-BY 4.0)."""
 
 import shutil
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -49,7 +50,8 @@ def download(url: str, dest: Path, retries: int = 3, timeout: float = 60) -> Non
             return
         except OSError as err:  # URLError and timeouts are OSError subclasses
             tmp.unlink(missing_ok=True)
-            if attempt == retries:
+            client_error = isinstance(err, urllib.error.HTTPError) and err.code < 500
+            if client_error or attempt == retries:  # a 404 will not heal on retry
                 raise
             print(f"  retry {attempt}/{retries - 1}: {err}")
 

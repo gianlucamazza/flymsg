@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, graph, sim, validate
+from flymsg import data, graph, sim, validate, viz
 
 NG = "https://neuroglancer-demo.appspot.com/#!"
 
@@ -171,6 +171,38 @@ def cmd_calibrate(a, neurons, edges):
         table.to_csv(a.out, index=False)
 
 
+def cmd_viz(a, neurons, edges):
+    result = None
+    if a.types:
+        parts = [data.resolve(neurons, q) for q in a.types]
+        idx = np.concatenate(parts)
+        groups = [q for q, part in zip(a.types, parts, strict=True) for _ in part]
+    elif a.path:
+        src, dst = (data.resolve(neurons, q) for q in a.path)
+        idx = np.array(graph.strongest_path(edges, len(neurons), src, dst))
+        if not idx.size:
+            sys.exit("flymsg: no path")
+        groups = ["path"] * idx.size
+    else:
+        stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.sim]))
+        W = sim.weight_matrix(
+            edges, neurons["sign"].to_numpy(), len(neurons), sim.Params.w_syn
+        )
+        print(f"simulating {stim.size} stimulated neurons for {a.duration} ms ...")
+        result = sim.run(W, stim, a.rate, a.duration, a.stim_ms, seed=a.seed)
+        idx = viz.select_from_result(result, stim, a.max_neurons)
+        groups = np.where(np.isin(idx, stim), "stimulus", "response").tolist()
+    print(f"exporting {idx.size} neurons to {a.out}/ ...")
+    scene = viz.export(
+        a.out, neurons, idx, groups, a.data / "cache", result, not a.no_neuropils
+    )
+    print(
+        f"{len(scene['neurons'])} neurons, {scene['vertices']:,} vertices, {len(scene['neuropils'])} neuropils, "
+        f"{sum(f.stat().st_size for f in a.out.iterdir()) / 1e6:.0f} MB\n"
+        f"view: python -m http.server -d {a.out} 8000  ->  http://localhost:8000"
+    )
+
+
 def main() -> None:
     p = argparse.ArgumentParser(
         prog="flymsg",
@@ -241,6 +273,32 @@ def main() -> None:
     s.add_argument("--seeds", type=int, default=3)
     s.add_argument("--workers", type=int, default=4)
     s.add_argument("--out", type=Path)
+    s = sub.add_parser(
+        "viz", help="export a three.js 3D view (anatomy or simulation replay)"
+    )
+    what = s.add_mutually_exclusive_group(required=True)
+    what.add_argument(
+        "--types", nargs="+", help="types/instances/bodyIds, one colour group each"
+    )
+    what.add_argument(
+        "--path",
+        nargs=2,
+        metavar=("SRC", "DST"),
+        help="strongest path between two populations",
+    )
+    what.add_argument(
+        "--sim",
+        nargs="+",
+        metavar="STIM",
+        help="simulate and replay; shows the most active neurons",
+    )
+    s.add_argument("--rate", type=float, default=100.0)
+    s.add_argument("--duration", type=float, default=600.0, help="ms")
+    s.add_argument("--stim-ms", type=float, default=300.0)
+    s.add_argument("--seed", type=int, default=0)
+    s.add_argument("--max-neurons", type=int, default=500)
+    s.add_argument("--no-neuropils", action="store_true")
+    s.add_argument("--out", type=Path, default=Path("runs/viz"))
     a = p.parse_args()
 
     try:
@@ -255,6 +313,7 @@ def main() -> None:
             "sim": cmd_sim,
             "validate": cmd_validate,
             "calibrate": cmd_calibrate,
+            "viz": cmd_viz,
         }[a.cmd](a, neurons, edges)
     except KeyError as err:  # unknown neuron query
         sys.exit(f"flymsg: {err.args[0]}")

@@ -12,3 +12,6 @@ wheels/
 # Connectome data and outputs
 data/
 *.csv
+
+# Generated runs and 3D bundles
+runs/
