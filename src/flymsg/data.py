@@ -28,6 +28,7 @@ ANN_COLS = [
     "somaSide",
     "dimorphism",
     "fruDsx",
+    "synonyms",
 ]
 
 

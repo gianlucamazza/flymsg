@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, graph, sim
+from flymsg import data, graph, sim, validate
 
 NG = "https://neuroglancer-demo.appspot.com/#!"
 
@@ -147,6 +147,30 @@ def cmd_sim(a, neurons, edges):
         print(f"per-neuron stimulus-window rates (mean over seeds) -> {a.out}")
 
 
+def cmd_validate(a, neurons, edges):
+    params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
+    print(
+        f"w_syn={params.w_syn} th_jump={params.th_jump}, {a.seeds} seed(s) per run ..."
+    )
+    report = validate.run(neurons, edges, params, a.seeds)
+    print(report.round(1).to_string(index=False))
+    failed = int((~report["passed"]).sum())
+    print(f"\n{len(report) - failed}/{len(report)} checks passed")
+    if failed:
+        sys.exit(1)
+
+
+def cmd_calibrate(a, neurons, edges):
+    n = len(a.w_syn) * len(a.th_jump)
+    print(
+        f"{n} parameter sets x {len(validate.CASES) * 2} runs x {a.seeds} seeds, {a.workers} workers ..."
+    )
+    table = validate.calibrate(neurons, edges, a.w_syn, a.th_jump, a.seeds, a.workers)
+    print(table.to_string(index=False))
+    if a.out:
+        table.to_csv(a.out, index=False)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(
         prog="flymsg",
@@ -201,6 +225,22 @@ def main() -> None:
     s.add_argument("--seed", type=int, default=0, help="first seed")
     s.add_argument("--seeds", type=int, default=1, help="number of seeds to average")
     s.add_argument("--out", type=Path)
+    s = sub.add_parser(
+        "validate", help="run the validation battery (known circuits + controls)"
+    )
+    s.add_argument("--seeds", type=int, default=3)
+    s.add_argument("--w-syn", type=float, default=sim.Params.w_syn)
+    s.add_argument("--th-jump", type=float, default=sim.Params.th_jump)
+    s = sub.add_parser(
+        "calibrate", help="grid-search w_syn x th_jump against the validation battery"
+    )
+    s.add_argument("--w-syn", type=float, nargs="+", default=[0.2, 0.275, 0.35])
+    s.add_argument(
+        "--th-jump", type=float, nargs="+", default=[2.0, 4.0, 6.0, 8.0, 12.0]
+    )
+    s.add_argument("--seeds", type=int, default=3)
+    s.add_argument("--workers", type=int, default=4)
+    s.add_argument("--out", type=Path)
     a = p.parse_args()
 
     try:
@@ -209,7 +249,13 @@ def main() -> None:
         if a.cmd == "build":
             return data.build(a.data)
         neurons, edges = data.load(a.data)
-        {"info": cmd_info, "path": cmd_path, "sim": cmd_sim}[a.cmd](a, neurons, edges)
+        {
+            "info": cmd_info,
+            "path": cmd_path,
+            "sim": cmd_sim,
+            "validate": cmd_validate,
+            "calibrate": cmd_calibrate,
+        }[a.cmd](a, neurons, edges)
     except KeyError as err:  # unknown neuron query
         sys.exit(f"flymsg: {err.args[0]}")
     except OSError as err:  # missing data files, failed downloads
