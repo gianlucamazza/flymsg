@@ -1,6 +1,6 @@
 [project]
 name = "flymsg"
-version = "0.1.0"
+version = "0.2.0"
 description = "Explore and simulate the male Drosophila CNS connectome"
 readme = "README.md"
 authors = [

@@ -82,6 +82,11 @@ export class Perf {
     return this.gpu.length ? percentile(this.gpu.slice(-30), 50) : null;
   }
 
+  /** Median GPU time of the last `n` measured frames, or null. */
+  recentGpuMs(n) {
+    return this.gpu.length >= n ? percentile(this.gpu.slice(-n), 50) : null;
+  }
+
   get fps() {
     const i = percentile(this.intervals.slice(-60), 50);
     return i ? 1000 / i : 0;
@@ -98,14 +103,14 @@ export class Perf {
       this.marks[name] = +((performance.now() - this.t0) / 1000).toFixed(2);
   }
 
-  line(pixelRatio) {
+  line(pixelRatio, samples) {
     const gpu = this.gpuMs;
     const sel = percentile(this.selectMs.slice(-20), 50);
     return (
       `${this.fps.toFixed(0)} fps · cpu ${(percentile(this.cpu.slice(-30), 50) ?? 0).toFixed(1)} ms` +
       ` · gpu ${gpu === null ? "n/a" : gpu.toFixed(1) + " ms"} · ${this.frame.calls} draws` +
       ` · ${(this.frame.triangles / 1e6).toFixed(1)} M tris · ${(this.frame.lines / 1e6).toFixed(1)} M lines` +
-      ` · ×${pixelRatio.toFixed(2)} px · select ${sel === null ? "–" : sel.toFixed(1) + " ms"}`
+      ` · ×${pixelRatio.toFixed(2)} px · MSAA ${samples || "off"} · select ${sel === null ? "–" : sel.toFixed(1) + " ms"}`
     );
   }
 

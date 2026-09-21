@@ -64,13 +64,23 @@ const INST_TEX_W = 256; // MAX_INSTANCES = 256 x 256
 const TEX_W = 1024; // per-neuron textures for skeletons
 const IDLE_REDRAW_MS = 250; // scene changes from loading redraw at most this often when nothing moves
 const TARGET_FRAME_MS = 1000 / 60;
+const MSAA = 4; // samples at rest (see adaptive quality)
+// Skeleton LOD: tolerances SKEL_EPS_NM x 2^l, l < SKEL_LEVELS; a level is drawn only while its
+// tolerance projects to at most SKEL_ERROR_PX device pixels, so the image matches the full
+// skeleton to within half a pixel and zooming in returns every source vertex.
+const SKEL_EPS_NM = 32;
+const SKEL_LEVELS = 10;
+const SKEL_ERROR_PX = 0.5;
 
 const query = new URLSearchParams(location.search);
 const settings = {
   detailPx: Number(query.get("detail")) || 256, // refine a fragment when its chunk exceeds this on screen
   budgetM: Number(query.get("budget")) || 8, // million triangles held on the GPU
-  neuropils: query.get("neuropils") !== "0", // ?neuropils=0 starts with every shell hidden (and not downloaded)
-  adaptive: query.get("adaptive") !== "0", // lower the pixel ratio while moving if frames run long
+  // ?neuropils=0|1: start with every shell hidden (and not downloaded) or shown; by default
+  // shown in anatomy views and hidden in replays, where the silent skeletons already outline
+  // the whole CNS and the 11 M translucent shell triangles cost ~40 ms per frame on an Iris Xe
+  neuropils: query.has("neuropils") ? query.get("neuropils") !== "0" : null,
+  adaptive: query.get("adaptive") !== "0", // drop MSAA, then pixel ratio, while moving if frames run long
 };
 
 // ---------- a small priority queue for network work ----------
@@ -141,6 +151,14 @@ function finish(q, index, scale, offset) {
     ]);
   });
 }
+/** Skeleton levels of detail in a worker (see skeletonLevels); `edges` stays usable here. */
+function skeletonLod(vertices, edges) {
+  return new Promise((resolve) => {
+    const id = ++jobId;
+    jobs.set(id, resolve);
+    workers[id % workers.length].postMessage({ kind: "skeleton", id, vertices, edges, base: SKEL_EPS_NM, count: SKEL_LEVELS });
+  });
+}
 function geometryFrom({ positions, normals, index }) {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
@@ -170,7 +188,8 @@ document.getElementById("loading").remove();
 
 // ---------- renderer, camera, light ----------
 const nativeRatio = Math.min(devicePixelRatio, 2);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+// every frame goes through the composer, so multisampling belongs to its render targets
+const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.setPixelRatio(nativeRatio);
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -194,7 +213,12 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 const replay = Boolean(meta.activity);
-const composer = new EffectComposer(renderer);
+settings.neuropils ??= !replay;
+const composer = new EffectComposer(
+  renderer,
+  new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: MSAA }),
+);
+composer.setSize(innerWidth, innerHeight); // sizes the targets with the pixel ratio
 composer.addPass(new RenderPass(world, camera));
 // threshold 1: lit surfaces stay below it, only emissive activity blooms; nothing glows
 // without a replay, so the pass is off there
@@ -240,7 +264,8 @@ const neurons = meta.neurons.map((n, k) => ({
   shown: new Map(), // fragment key -> {gid, iid, geometry, tris}
   shownSig: "",
   loadingSig: "",
-  skeleton: null,
+  skelLod: null, // skeleton levels, once loaded
+  skelBase: 0, // first vertex in the shared skeleton buffer
   skeletonState: "idle",
 }));
 const N = neurons.length;
@@ -271,6 +296,14 @@ const meshMaterial = new THREE.MeshStandardMaterial({
   // (signed volume > 0 from the mesh centroid), so back faces can be culled
   side: THREE.FrontSide,
 });
+// 4x4 ordered dither for screen-door transparency: order independent, so every instance of the
+// one BatchedMesh draw, and every neuron in the one skeleton draw, can have its own opacity
+const BAYER4 = /* glsl */ `
+  float bayer4(vec2 p) {
+    ivec2 q = ivec2(mod(p, 4.0));
+    int m[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+    return (float(m[q.y * 4 + q.x]) + 0.5) / 16.0;
+  }`;
 const instanceTex = (fill = 0) => {
   const t = new THREE.DataTexture(
     new Float32Array(MAX_INSTANCES).fill(fill),
@@ -287,6 +320,9 @@ const instanceNeuron = instanceTex(); // neuron index + 1 per instance (0 = free
 const shared = {
   uActivity: { value: instanceActivity },
   uGain: { value: replay ? 4.0 : 0.0 },
+  // opacity of a silent surface in a replay (active ones are opaque), so large neurons do not
+  // hide the activity behind them
+  uInactiveAlpha: { value: replay ? 0.3 : 1.0 },
 };
 const instanceIdGlsl = /* glsl */ `int(getIndirectIndex(gl_DrawID))`;
 const texelOf = (id) => `ivec2(${id} % ${INST_TEX_W}, ${id} / ${INST_TEX_W})`;
@@ -309,7 +345,15 @@ meshMaterial.onBeforeCompile = (shader) => {
   shader.fragmentShader = shader.fragmentShader
     .replace(
       "#include <common>",
-      "#include <common>\nuniform float uGain;\nvarying float vActivity;",
+      `#include <common>
+      uniform float uGain, uInactiveAlpha;
+      varying float vActivity;
+      ${BAYER4}`,
+    )
+    .replace(
+      "#include <clipping_planes_fragment>",
+      `#include <clipping_planes_fragment>
+      if (bayer4(gl_FragCoord.xy) >= mix(uInactiveAlpha, 1.0, clamp(4.0 * vActivity, 0.0, 1.0))) discard;`,
     )
     .replace(
       "#include <emissivemap_fragment>",
@@ -544,7 +588,10 @@ function checkWinding(n) {
 }
 
 // ---------- skeletons: coarsest LOD, and the placeholder while meshes load ----------
-// One LineSegments per neuron: hidden ones cost nothing, off-screen ones are culled.
+// All skeletons share one vertex buffer and one LineSegments. The index lists, for every neuron
+// whose skeleton is on, the segments of its current level, so hidden skeletons cost nothing and
+// everything draws in one call (on an Iris Xe, 2,662 separate draws took 46 ms per frame and
+// the same lines in one draw 27 ms).
 const texH = Math.max(1, Math.ceil(N / TEX_W));
 const neuronTex = () => {
   const t = new THREE.DataTexture(
@@ -566,6 +613,7 @@ const skelMaterial = new THREE.ShaderMaterial({
     uAct: { value: skelActivity },
     uGain: { value: replay ? 4.0 : 0.0 },
     uBase: { value: replay ? 0.15 : 0.8 }, // in a replay only activity should stand out
+    uInactiveAlpha: shared.uInactiveAlpha, // silent lines are see-through like silent surfaces
   },
   vertexShader: /* glsl */ `
     attribute float aNeuron;
@@ -573,17 +621,70 @@ const skelMaterial = new THREE.ShaderMaterial({
     uniform sampler2D uAct;
     uniform float uBase, uGain;
     varying vec3 vColor;
+    varying float vOn; // 0 silent .. 1 active
     void main() {
       ivec2 p = ${neuronIndexGlsl};
-      vColor = texelFetch(uColor, p, 0).rgb * (uBase + uGain * texelFetch(uAct, p, 0).r);
+      float act = texelFetch(uAct, p, 0).r;
+      vOn = clamp(4.0 * act, 0.0, 1.0);
+      vec3 c = texelFetch(uColor, p, 0).rgb;
+      c = mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, mix(${replay ? "0.35" : "1.0"}, 1.0, vOn));
+      vColor = c * (uBase + uGain * act);
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }`,
   fragmentShader: /* glsl */ `
+    uniform float uInactiveAlpha;
     varying vec3 vColor;
-    void main() { gl_FragColor = vec4(vColor, 1.0); }`,
+    varying float vOn;
+    ${BAYER4}
+    void main() {
+      if (bayer4(gl_FragCoord.xy) >= mix(uInactiveAlpha, 1.0, vOn)) discard;
+      gl_FragColor = vec4(vColor, 1.0);
+    }`,
 });
-const skeletons = new THREE.Group();
+const pool = {
+  positions: new Float32Array(3 << 20),
+  neuron: new Float32Array(1 << 20), // aNeuron: neuron index per vertex
+  used: 0, // vertices
+  index: new Uint32Array(1 << 22),
+  state: new Int8Array(N).fill(-1), // level drawn per neuron, -1 = off
+};
+const skelGeometry = new THREE.BufferGeometry();
+function poolAttributes() {
+  skelGeometry.dispose(); // frees the GPU buffers of the arrays being replaced
+  skelGeometry.setAttribute("position", new THREE.BufferAttribute(pool.positions, 3));
+  skelGeometry.setAttribute("aNeuron", new THREE.BufferAttribute(pool.neuron, 1));
+  skelGeometry.setIndex(new THREE.BufferAttribute(pool.index, 1));
+}
+poolAttributes();
+skelGeometry.setDrawRange(0, 0);
+const skeletons = new THREE.LineSegments(skelGeometry, skelMaterial);
+skeletons.frustumCulled = false; // bounds change as skeletons stream in
 data.add(skeletons);
+
+function appendVertices(n, vertices) {
+  const nv = vertices.length / 3;
+  n.skelBase = pool.used;
+  if (pool.used + nv > pool.neuron.length) {
+    const cap = Math.max(2 * pool.neuron.length, pool.used + nv);
+    const positions = new Float32Array(3 * cap);
+    positions.set(pool.positions.subarray(0, 3 * pool.used));
+    const neuron = new Float32Array(cap);
+    neuron.set(pool.neuron.subarray(0, pool.used));
+    Object.assign(pool, { positions, neuron });
+    pool.positions.set(vertices, 3 * pool.used);
+    pool.neuron.fill(n.k, pool.used, pool.used + nv);
+    poolAttributes();
+  } else {
+    pool.positions.set(vertices, 3 * pool.used);
+    pool.neuron.fill(n.k, pool.used, pool.used + nv);
+    const pos = skelGeometry.getAttribute("position"),
+      id = skelGeometry.getAttribute("aNeuron");
+    pos.addUpdateRange(3 * pool.used, 3 * nv); // upload only the appended slice
+    id.addUpdateRange(pool.used, nv);
+    pos.needsUpdate = id.needsUpdate = true;
+  }
+  pool.used += nv;
+}
 
 async function loadSkeleton(n) {
   n.skeletonState = "loading";
@@ -594,32 +695,70 @@ async function loadSkeleton(n) {
   }
   perf.count("skeletons", buf.byteLength);
   const s = parseSkeleton(buf);
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.BufferAttribute(s.vertices, 3));
-  g.setAttribute(
-    "aNeuron",
-    new THREE.BufferAttribute(
-      new Float32Array(s.vertices.length / 3).fill(n.k),
-      1,
-    ),
-  );
-  g.setIndex(new THREE.BufferAttribute(s.edges, 1));
-  n.skeleton = new THREE.LineSegments(g, skelMaterial);
-  n.skeleton.userData.k = n.k;
-  n.skeleton.visible = skeletonOn(n);
-  skeletons.add(n.skeleton);
+  const lod = await skeletonLod(s.vertices, s.edges);
+  appendVertices(n, s.vertices);
+  n.skelLod = { eps: lod.eps, levels: [s.edges, ...lod.coarser], bounds: lod.bounds, level: 0 };
+  setSkeletonLevel(n, eyeView());
   n.skeletonState = "ready";
-  invalidate();
+  skeletonsDirty = true;
+}
+
+/** Coarsest skeleton level whose tolerance stays under SKEL_ERROR_PX at the nearest point. */
+function setSkeletonLevel(n, v) {
+  const { eps, bounds } = n.skelLod;
+  let d2 = 0;
+  for (let a = 0; a < 3; a++) {
+    const e = v.eye[a];
+    const gap = e < bounds.min[a] ? bounds.min[a] - e : e > bounds.max[a] ? e - bounds.max[a] : 0;
+    d2 += gap * gap;
+  }
+  const tolNm = (SKEL_ERROR_PX * Math.sqrt(d2)) / (v.pxPerUnit * nativeRatio);
+  let level = 0;
+  while (level + 1 < eps.length && eps[level + 1] <= tolNm) level++;
+  if (level !== n.skelLod.level) {
+    n.skelLod.level = level;
+    skeletonsDirty = true;
+  }
 }
 
 // A neuron shows its skeleton when the budget sends it there, or while it has no surface yet.
 let skeletonWanted = new Set();
-let skeletonsDirty = true;
+let skeletonsDirty = true,
+  lastSkeletonBuild = 0;
 const skeletonOn = (n) =>
   isShown(n) && (skeletonWanted.has(n.k) || n.shown.size === 0);
+/** Rebuild the shared index when some neuron's skeleton turned on or off or changed level. */
 function applySkeletonVisibility() {
-  for (const n of neurons) if (n.skeleton) n.skeleton.visible = skeletonOn(n);
   skeletonsDirty = false;
+  let changed = false,
+    total = 0;
+  for (const n of neurons) {
+    const st = n.skelLod && skeletonOn(n) ? n.skelLod.level : -1;
+    if (st !== pool.state[n.k]) {
+      pool.state[n.k] = st;
+      changed = true;
+    }
+    if (st >= 0) total += n.skelLod.levels[st].length;
+  }
+  if (!changed) return;
+  if (total > pool.index.length) {
+    pool.index = new Uint32Array(Math.max(total, 2 * pool.index.length));
+    poolAttributes();
+  }
+  let o = 0;
+  for (const n of neurons) {
+    const st = pool.state[n.k];
+    if (st < 0) continue;
+    const lv = n.skelLod.levels[st],
+      base = n.skelBase;
+    for (let i = 0; i < lv.length; i++) pool.index[o + i] = lv[i] + base;
+    o += lv.length;
+  }
+  const index = skelGeometry.getIndex();
+  index.clearUpdateRanges();
+  index.addUpdateRange(0, total);
+  index.needsUpdate = true;
+  skelGeometry.setDrawRange(0, total);
   invalidate();
 }
 
@@ -767,6 +906,7 @@ function updateSelection() {
   );
   perf.selectMs.push(performance.now() - selectStart);
   skeletonWanted = new Set(sel.skeletons);
+  for (const n of neurons) if (n.skelLod) setSkeletonLevel(n, v);
   for (const n of neurons) {
     const want = sel.meshes.get(n.k);
     if (!want) {
@@ -845,7 +985,7 @@ function updateStats() {
   statsEl.textContent =
     `${surfaces} surfaces · ${lines} skeletons · ${(tris / 1e6).toFixed(1)} / ${settings.budgetM} M triangles` +
     ` · ${loading} loading · neuropils ${rois.filter((s) => s.mesh).length}/${rois.length}`;
-  perfEl.textContent = perf.line(renderer.getPixelRatio());
+  perfEl.textContent = perf.line(renderer.getPixelRatio(), samples);
 }
 setInterval(updateStats, 500);
 
@@ -943,7 +1083,7 @@ function pickAt(x, y) {
   world.background = null;
   saved.shells.forEach((o) => (o.visible = false));
   batched.material = pickMeshMaterial;
-  skeletons.children.forEach((o) => (o.material = pickLineMaterial));
+  skeletons.material = pickLineMaterial;
   renderer.setRenderTarget(pickTarget);
   renderer.setClearColor(0x000000, 0);
   renderer.clear();
@@ -952,7 +1092,7 @@ function pickAt(x, y) {
   renderer.readRenderTargetPixels(pickTarget, 0, 0, PICK, PICK, px);
   renderer.setRenderTarget(null);
   batched.material = meshMaterial;
-  skeletons.children.forEach((o) => (o.material = skelMaterial));
+  skeletons.material = skelMaterial;
   saved.shells.forEach((o) => (o.visible = true));
   world.background = saved.background;
   camera.clearViewOffset();
@@ -972,7 +1112,7 @@ function pickAt(x, y) {
 
 // ?check exposes internals for headless diagnostics (scripts/shoot.mjs EVAL=...)
 if (query.has("check")) {
-  window.flymsg = { THREE, renderer, camera, world, data, skeletons, pickAt, pickTarget, pickMeshMaterial, meshMaterial, get batched() { return batched; } };
+  window.flymsg = { THREE, neurons, renderer, composer, bloom, camera, world, data, skeletons, pickAt, pickTarget, pickMeshMaterial, meshMaterial, get batched() { return batched; } };
 }
 const info = document.getElementById("info");
 let downAt = null;
@@ -1032,9 +1172,12 @@ gui
   });
 gui
   .add(settings, "adaptive")
-  .name("adaptive resolution")
-  .onChange((on) => on || setRatio(nativeRatio));
-if (replay) gui.add(bloom, "strength", 0, 3).name("bloom").onChange(invalidate);
+  .name("adaptive quality")
+  .onChange((on) => on || setQuality(nativeRatio, MSAA));
+if (replay) {
+  gui.add(bloom, "strength", 0, 3).name("bloom").onChange(invalidate);
+  gui.add(shared.uInactiveAlpha, "value", 0.05, 1, 0.05).name("silent surfaces").onChange(invalidate);
+}
 const gFolder = gui.addFolder("Groups");
 groups.forEach((g) =>
   gFolder.add(view.groupsOn, g).onChange(() => {
@@ -1085,31 +1228,63 @@ if (replay) {
     .listen();
 }
 
-// ---------- adaptive resolution ----------
-// While frames are live (moving camera, playing replay), step the pixel ratio down when frames
-// run long and back up when there is headroom; at rest the native ratio returns.
+// ---------- adaptive quality ----------
+// At rest every frame gets 4x multisampling at the native pixel ratio. While frames are live
+// (moving camera, playing replay) and run over the 60 fps budget, multisampling goes first
+// (it doubles the cost of the millions of skeleton lines), then the pixel ratio scales by
+// sqrt(target / measured), down to MIN_RATIO. Geometry is never touched: only how many
+// samples and pixels are rendered.
+const MIN_RATIO = 0.5;
 let ratio = nativeRatio,
-  tuneFrames = 0;
-function setRatio(r) {
-  if (r === ratio) return;
-  ratio = r;
+  samples = MSAA,
+  tuneFrames = 0,
+  floorRatio = MIN_RATIO, // raised when a lower ratio did not pay off, until the next rest
+  lastStep = null; // {ratio, frameMs} before the last ratio reduction
+function setQuality(r, n) {
+  if (r === ratio && n === samples) return;
+  if (n !== samples)
+    for (const t of [composer.renderTarget1, composer.renderTarget2]) {
+      t.samples = n;
+      t.dispose(); // recreated with the new sample count on next use
+    }
+  [ratio, samples] = [r, n];
   renderer.setPixelRatio(r);
   composer.setPixelRatio(r);
+  tuneFrames = 0; // wait for frames measured at the new quality
   invalidate();
 }
-function tuneRatio(live) {
+const scaled = (frameMs) => Math.round(ratio * Math.sqrt(TARGET_FRAME_MS / frameMs) * 20) / 20;
+function tuneQuality(live) {
   if (!settings.adaptive) return;
   if (!live) {
-    setRatio(nativeRatio);
+    floorRatio = MIN_RATIO;
+    lastStep = null;
+    setQuality(nativeRatio, MSAA);
     return;
   }
-  if (++tuneFrames < 20) return;
-  tuneFrames = 0;
-  const frameMs = perf.gpuMs ?? (perf.fps ? 1000 / perf.fps : 0);
-  if (frameMs > TARGET_FRAME_MS * 1.2 && ratio > 1)
-    setRatio(Math.max(1, ratio - 0.25));
-  else if (frameMs < TARGET_FRAME_MS * 0.7 && ratio < nativeRatio)
-    setRatio(Math.min(nativeRatio, ratio + 0.25));
+  if (++tuneFrames < 12) return;
+  const frameMs = perf.recentGpuMs(8) ?? (perf.fps ? 1000 / perf.fps : 0);
+  if (!frameMs) return;
+  // fewer pixels only help when rasterization dominates; otherwise keep the sharper image
+  if (lastStep && ratio < lastStep.ratio) {
+    const step = lastStep;
+    lastStep = null;
+    if (frameMs > 0.9 * step.frameMs) {
+      floorRatio = step.ratio;
+      setQuality(step.ratio, samples);
+      return;
+    }
+  }
+  if (frameMs > TARGET_FRAME_MS * 1.2) {
+    if (samples) setQuality(ratio, 0);
+    else if (ratio > floorRatio) {
+      lastStep = { ratio, frameMs };
+      setQuality(Math.max(floorRatio, scaled(frameMs)), 0);
+    }
+  } else if (frameMs < TARGET_FRAME_MS * 0.7) {
+    if (ratio < nativeRatio) setQuality(Math.min(nativeRatio, scaled(frameMs)), 0);
+    else if (!samples && 2 * frameMs < TARGET_FRAME_MS * 0.9) setQuality(ratio, MSAA); // fits even doubled
+  }
 }
 
 // ---------- camera, resize, loop ----------
@@ -1137,6 +1312,7 @@ if (query.has("bench")) {
         skeletons: neurons.filter(skeletonOn).length,
         queued: manifestQueue.size + fragmentQueue.size + skeletonQueue.size,
         pixel_ratio: renderer.getPixelRatio(),
+        msaa: samples,
         winding: windingChecks,
       capacity: {
         hits: stats.capacityHits,
@@ -1159,10 +1335,14 @@ renderer.setAnimationLoop(() => {
   const playing = replay && clock.playing;
   if (playing) clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
   if (replay && clock.t !== shownT) updateActivity(clock.t);
-  if (skeletonsDirty) applySkeletonVisibility();
   const live = interacting || moved || playing;
-  tuneRatio(live);
+  tuneQuality(live);
   const now = performance.now();
+  // the index rebuild walks every drawn segment: coalesce streaming updates
+  if (skeletonsDirty && now - lastSkeletonBuild >= IDLE_REDRAW_MS) {
+    applySkeletonVisibility();
+    lastSkeletonBuild = now;
+  }
   if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
   flushInstanceTextures();
   perf.begin();

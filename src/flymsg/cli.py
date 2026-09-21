@@ -50,15 +50,22 @@ def cmd_info(a, neurons, edges):
 
 def cmd_path(a, neurons, edges):
     src, dst = data.resolve(neurons, a.src), data.resolve(neurons, a.dst)
-    path = graph.strongest_path(edges, len(neurons), src, dst, a.min_weight)
-    if not path:
+    # a route is identified by its cell types; untyped neurons count one by one
+    groups = neurons["type"].fillna(neurons["bodyId"].astype(str)).to_numpy()
+    paths = graph.alternative_paths(
+        edges, len(neurons), src, dst, groups, a.alt, a.min_weight
+    )
+    if not paths:
         print("no path")
         return
-    weights = [0, *graph.edge_weights(edges, path)]
-    for k, (i, w) in enumerate(zip(path, weights)):
-        hop = f"  --{w} syn-->  " if k else "  "
-        print(f"{hop}{label(neurons, i)}")
-    print(f"\nneuroglancer: {ng_link(neurons['bodyId'].to_numpy()[path])}")
+    for r, path in enumerate(paths):
+        if len(paths) > 1:
+            print(f"route {r + 1}" + (" (avoiding the types above)" if r else ""))
+        weights = [0, *graph.edge_weights(edges, path)]
+        for k, (i, w) in enumerate(zip(path, weights)):
+            hop = f"  --{w} syn-->  " if k else "  "
+            print(f"{hop}{label(neurons, i)}")
+        print(f"neuroglancer: {ng_link(neurons['bodyId'].to_numpy()[path])}\n")
 
 
 def summarize(
@@ -224,6 +231,12 @@ def main() -> None:
     s.add_argument("src")
     s.add_argument("dst")
     s.add_argument("--min-weight", type=int, default=5)
+    s.add_argument(
+        "--alt",
+        type=int,
+        default=1,
+        help="routes to list, each avoiding the intermediate types of the previous ones",
+    )
     s = sub.add_parser("sim", help="LIF simulation with Poisson stimulation")
     s.add_argument(
         "stim",

@@ -84,6 +84,23 @@ def test_strongest_path_uses_full_input_totals():
     ) == [0, 2, 3]
 
 
+def test_alternative_paths_avoid_previous_types():
+    # 0 -> 1 -> 4 is strongest; 0 -> 2 -> 4 runs through a sibling of 1 (same type A) and
+    # must be skipped; 0 -> 3 -> 4 is the real alternative
+    edges = pd.DataFrame(
+        {
+            "pre": [0, 1, 0, 2, 0, 3],
+            "post": [1, 4, 2, 4, 3, 4],
+            "weight": [50, 60, 50, 30, 50, 10],
+        }
+    )
+    groups = np.array(["S", "A", "A", "B", "T"])
+    paths = graph.alternative_paths(
+        edges, 5, np.array([0]), np.array([4]), groups, k=3, min_weight=1
+    )
+    assert paths == [[0, 1, 4], [0, 3, 4]]
+
+
 def test_edge_weights():
     edges, _, _ = chain([7, 9])
     assert graph.edge_weights(edges, [0, 1, 2]) == [7, 9]

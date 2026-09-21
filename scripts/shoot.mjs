@@ -3,7 +3,10 @@
 // print the page's console output and exceptions. Uses the DevTools Protocol over node's
 // built-in WebSocket, so it needs no npm packages.
 //
-//   [CLICK=x,y] node scripts/shoot.mjs <url> <out.png> [wait seconds=30] [width=1400] [height=900]
+//   [GL=swiftshader|gl|vulkan] [CLICK=x,y] [EVAL=js] node scripts/shoot.mjs <url> <out.png> [wait s=30] [w=1400] [h=900]
+//
+// GL picks the ANGLE backend: swiftshader (default, software, reproducible anywhere) or the
+// hardware GPU through desktop GL or Vulkan, for frame-time measurements.
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -16,12 +19,18 @@ if (!url || !out) {
 }
 const port = 9300 + Math.floor(Math.random() * 500);
 const profile = mkdtempSync(join(tmpdir(), "shoot-"));
+const GL_FLAGS = {
+  swiftshader: ["--enable-unsafe-swiftshader", "--use-angle=swiftshader"],
+  gl: ["--ignore-gpu-blocklist", "--use-angle=gl"],
+  vulkan: ["--ignore-gpu-blocklist", "--use-angle=vulkan", "--enable-features=Vulkan"],
+};
+const gl = GL_FLAGS[process.env.GL ?? "swiftshader"];
+if (!gl) throw new Error(`GL must be one of ${Object.keys(GL_FLAGS).join(", ")}`);
 const chrome = spawn(
   "chromium",
   [
     "--headless=new",
-    "--enable-unsafe-swiftshader",
-    "--use-angle=swiftshader",
+    ...gl,
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${profile}`,
     `--window-size=${width},${height}`,

@@ -19,7 +19,7 @@ Neurons are addressed by cell type (`LC4`), instance (`LC4_R`) or bodyId (`10001
 
 ```bash
 uv run flymsg info DNp01                 # annotations, top partner types, Neuroglancer link
-uv run flymsg path LC4 TTMn              # strongest chain: LC4 -> DNp01 (Giant Fiber) -> TTMn
+uv run flymsg path LC4 TTMn --alt 3      # LC4 -> DNp01 (Giant Fiber) -> TTMn, then via DNp02, DNp11
 uv run flymsg sim LC4_R --duration 600 --stim-ms 300 --seeds 3 \
     --superclass descending_neuron vnc_motor   # simulate, report responding types per window
 uv run flymsg validate                   # battery of known circuits + controls (~3 min)
@@ -29,7 +29,8 @@ python -m http.server -d runs/viz 8000   # then open http://localhost:8000
 ```
 
 - **path** follows, hop by hop, the connection carrying the largest share of the next neuron's
-  input (cost `-log(input fraction)` over each neuron's full input).
+  input (cost `-log(input fraction)` over each neuron's full input); `--alt K` lists further
+  routes, each avoiding the intermediate cell types of the previous ones.
 - **sim** is a whole-CNS leaky integrate-and-fire model after Shiu et al. (_Nature_ 2024),
   with one named compensation, an adaptive threshold (`th_jump` 6 mV), for biology the
   connectome does not contain. `--rate` is the Poisson _input_ rate (stimulated neurons fire
@@ -41,12 +42,12 @@ python -m http.server -d runs/viz 8000   # then open http://localhost:8000
 - **viz** exports only metadata and activity; the page streams the real neuron surfaces
   (multi-resolution Draco meshes), skeletons and neuropils straight from the public volumes on
   GCS, refining detail near the camera within a triangle budget; neurons beyond the budget are
-  drawn as full-resolution skeletons. Replays include every neuron that fired. The page renders
-  on demand (every frame only while the camera moves or a replay plays), finishes fragments in
-  workers, picks neurons on the GPU and lowers the pixel ratio while moving if frames run long.
-  The HUD shows fps, CPU/GPU frame time, draw calls, triangles and lines. URL options:
-  `?t=<ms>&paused`, `?neuropils=0`, `?budget=<M triangles>`, `?detail=<px>`, `?adaptive=0`,
-  `?bench=<s>` (log a JSON performance summary after that many seconds).
+  drawn as skeletons, simplified only below half a pixel on screen. Replays include every
+  neuron that fired; silent neurons are see-through so the activity stays visible. Rendering
+  is on demand, with 4× MSAA at rest and adaptive quality while moving. The HUD shows fps,
+  CPU/GPU frame time, draw calls, triangles and lines. URL options: `?t=<ms>&paused`,
+  `?neuropils=0|1`, `?budget=<M triangles>`, `?detail=<px>`, `?adaptive=0`, `?bench=<s>` (log
+  a JSON performance summary after that many seconds). See [docs/viz.md](docs/viz.md).
 
 ## Documentation
 
@@ -55,6 +56,8 @@ python -m http.server -d runs/viz 8000   # then open http://localhost:8000
   the adaptive-threshold compensation
 - [docs/validation.md](docs/validation.md): protocol, cases, calibration, findings log
   (including the negative results)
+- [docs/viz.md](docs/viz.md): 3D view pipeline, levels of detail, rendering quality,
+  measurements on an Iris Xe
 
 ## Limits
 
@@ -74,7 +77,8 @@ uv run pytest -m slow    # plus the full validation battery and a live read from
 
 Browser dependencies (three.js 0.170.0, lil-gui 0.20.0) are vendored by
 `scripts/vendor-js.sh`; `node scripts/shoot.mjs <url> <png> [wait]` screenshots the 3D view
-headless with its console output (`CLICK=x,y` clicks first, `EVAL=<js>` evaluates in the page;
+headless with its console output (`GL=gl|vulkan` renders on the real GPU instead of
+SwiftShader, `CLICK=x,y` clicks first, `EVAL=<js>` evaluates in the page;
 `?check` logs pick results and surface winding and exposes `window.flymsg` for diagnostics).
 
 ## Citation
