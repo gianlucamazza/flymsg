@@ -190,15 +190,11 @@ def cmd_viz(a, neurons, edges):
         )
         print(f"simulating {stim.size} stimulated neurons for {a.duration} ms ...")
         result = sim.run(W, stim, a.rate, a.duration, a.stim_ms, seed=a.seed)
-        idx = viz.select_from_result(result, stim, a.max_neurons)
+        idx = viz.select_from_result(result, stim, a.min_rate)
         groups = np.where(np.isin(idx, stim), "stimulus", "response").tolist()
-    print(f"exporting {idx.size} neurons to {a.out}/ ...")
-    scene = viz.export(
-        a.out, neurons, idx, groups, a.data / "cache", result, not a.no_neuropils
-    )
+    scene = viz.export(a.out, neurons, idx, groups, result)
     print(
-        f"{len(scene['neurons'])} neurons, {scene['vertices']:,} vertices, {len(scene['neuropils'])} neuropils, "
-        f"{sum(f.stat().st_size for f in a.out.iterdir()) / 1e6:.0f} MB\n"
+        f"{len(scene['neurons'])} neurons exported to {a.out}/ (geometry streams from GCS)\n"
         f"view: python -m http.server -d {a.out} 8000  ->  http://localhost:8000"
     )
 
@@ -290,14 +286,18 @@ def main() -> None:
         "--sim",
         nargs="+",
         metavar="STIM",
-        help="simulate and replay; shows the most active neurons",
+        help="simulate and replay; shows every neuron that fires during the stimulus",
     )
     s.add_argument("--rate", type=float, default=100.0)
     s.add_argument("--duration", type=float, default=600.0, help="ms")
     s.add_argument("--stim-ms", type=float, default=300.0)
     s.add_argument("--seed", type=int, default=0)
-    s.add_argument("--max-neurons", type=int, default=500)
-    s.add_argument("--no-neuropils", action="store_true")
+    s.add_argument(
+        "--min-rate",
+        type=float,
+        default=0.0,
+        help="replay: only neurons above this rate (Hz)",
+    )
     s.add_argument("--out", type=Path, default=Path("runs/viz"))
     a = p.parse_args()
 
