@@ -41,8 +41,12 @@ python -m http.server -d runs/viz 8000   # then open http://localhost:8000
 - **viz** exports only metadata and activity; the page streams the real neuron surfaces
   (multi-resolution Draco meshes), skeletons and neuropils straight from the public volumes on
   GCS, refining detail near the camera within a triangle budget; neurons beyond the budget are
-  drawn as full-resolution skeletons. Replays include every neuron that fired. URL options:
-  `?t=<ms>&paused`, `?neuropils=0`, `?budget=<M triangles>`, `?detail=<px>`.
+  drawn as full-resolution skeletons. Replays include every neuron that fired. The page renders
+  on demand (every frame only while the camera moves or a replay plays), finishes fragments in
+  workers, picks neurons on the GPU and lowers the pixel ratio while moving if frames run long.
+  The HUD shows fps, CPU/GPU frame time, draw calls, triangles and lines. URL options:
+  `?t=<ms>&paused`, `?neuropils=0`, `?budget=<M triangles>`, `?detail=<px>`, `?adaptive=0`,
+  `?bench=<s>` (log a JSON performance summary after that many seconds).
 
 ## Documentation
 
@@ -69,8 +73,9 @@ uv run pytest -m slow    # plus the full validation battery and a live read from
 ```
 
 Browser dependencies (three.js 0.170.0, lil-gui 0.20.0) are vendored by
-`scripts/vendor-js.sh`; `node scripts/shoot.mjs <url> <png>` screenshots the 3D view headless
-with its console output.
+`scripts/vendor-js.sh`; `node scripts/shoot.mjs <url> <png> [wait]` screenshots the 3D view
+headless with its console output (`CLICK=x,y` clicks first, `EVAL=<js>` evaluates in the page;
+`?check` logs pick results and surface winding and exposes `window.flymsg` for diagnostics).
 
 ## Citation
 

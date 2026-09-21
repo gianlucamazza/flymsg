@@ -1,6 +1,7 @@
 // flymsg 3D viewer. Neuron surfaces (multi-resolution Draco meshes), skeletons and neuropil
 // meshes are streamed from the public MaleCNS volumes on GCS; scene.json (and activity.bin for
-// replays) come from `flymsg viz`. See precomputed.js (formats) and lod.js (level of detail).
+// replays) come from `flymsg viz`. See precomputed.js (formats), lod.js (level of detail),
+// geometry.js (fragment finishing, run in geometry-worker.js) and perf.js (measurements).
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -22,6 +23,8 @@ import {
   parseSkeleton,
 } from "./precomputed.js";
 import { projectedPx, select } from "./lod.js";
+import { centroid, signedVolume } from "./geometry.js";
+import { Perf } from "./perf.js";
 
 const SEG = "v1.0/segmentation";
 const MESHES = `${SEG}/multi-res-meshes`;
@@ -59,12 +62,15 @@ const HISTORY_BINS = 5;
 const MAX_INSTANCES = 65536; // loaded fragments at once
 const INST_TEX_W = 256; // MAX_INSTANCES = 256 x 256
 const TEX_W = 1024; // per-neuron textures for skeletons
+const IDLE_REDRAW_MS = 250; // scene changes from loading redraw at most this often when nothing moves
+const TARGET_FRAME_MS = 1000 / 60;
 
 const query = new URLSearchParams(location.search);
 const settings = {
   detailPx: Number(query.get("detail")) || 256, // refine a fragment when its chunk exceeds this on screen
   budgetM: Number(query.get("budget")) || 8, // million triangles held on the GPU
   neuropils: query.get("neuropils") !== "0", // ?neuropils=0 starts with every shell hidden (and not downloaded)
+  adaptive: query.get("adaptive") !== "0", // lower the pixel ratio while moving if frames run long
 };
 
 // ---------- a small priority queue for network work ----------
@@ -105,6 +111,44 @@ const manifestQueue = new Queue(32),
   skeletonQueue = new Queue(24),
   roiQueue = new Queue(6);
 
+// ---------- fragment finishing off the main thread ----------
+const workers = Array.from(
+  {
+    length: Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 4) - 1)),
+  },
+  () =>
+    new Worker(new URL("./geometry-worker.js", import.meta.url), {
+      type: "module",
+    }),
+);
+const jobs = new Map();
+let jobId = 0;
+for (const w of workers) {
+  w.onmessage = ({ data }) => {
+    jobs.get(data.id)(data);
+    jobs.delete(data.id);
+  };
+}
+/** Dequantize + normals in a worker; `q` and `index` are transferred (not usable afterwards). */
+function finish(q, index, scale, offset) {
+  if (q.buffer === index.buffer) index = index.slice(); // both are transferred
+  return new Promise((resolve) => {
+    const id = ++jobId;
+    jobs.set(id, resolve);
+    workers[id % workers.length].postMessage({ id, q, index, scale, offset }, [
+      q.buffer,
+      index.buffer,
+    ]);
+  });
+}
+function geometryFrom({ positions, normals, index }) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  g.setAttribute("normal", new THREE.BufferAttribute(normals, 3));
+  g.setIndex(new THREE.BufferAttribute(index, 1));
+  return g;
+}
+
 // ---------- scene description and source volumes ----------
 const meta = await (await fetch("scene.json")).json();
 const actBuf = meta.activity
@@ -125,10 +169,12 @@ draco.preload();
 document.getElementById("loading").remove();
 
 // ---------- renderer, camera, light ----------
+const nativeRatio = Math.min(devicePixelRatio, 2);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(nativeRatio);
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
+const perf = new Perf(renderer);
 
 const world = new THREE.Scene();
 world.background = new THREE.Color("#05070a");
@@ -150,13 +196,15 @@ controls.enableDamping = true;
 const replay = Boolean(meta.activity);
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(world, camera));
-// threshold 1: lit surfaces stay below it, only emissive activity blooms
+// threshold 1: lit surfaces stay below it, only emissive activity blooms; nothing glows
+// without a replay, so the pass is off there
 const bloom = new UnrealBloomPass(
   new THREE.Vector2(innerWidth, innerHeight),
-  replay ? 0.8 : 0.4,
+  0.8,
   0.5,
   1.0,
 );
+bloom.enabled = replay;
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
@@ -168,6 +216,17 @@ const data = new THREE.Group();
 data.scale.setScalar(1e-3); // nm -> um
 data.position.set(...centreNm.map((c) => -c * 1e-3));
 root.add(data);
+
+// ---------- redraw scheduling ----------
+// Render every frame while the camera moves or a replay plays; otherwise only after the scene
+// changed, and then at most every IDLE_REDRAW_MS, so streaming does not keep the GPU busy.
+let sceneDirty = true,
+  lastRender = 0,
+  interacting = false,
+  lastMove = 0;
+const invalidate = () => (sceneDirty = true);
+controls.addEventListener("start", () => (interacting = true));
+controls.addEventListener("end", () => (interacting = false));
 
 // ---------- neurons ----------
 const groups = [...new Set(meta.neurons.map((n) => n.group))];
@@ -181,6 +240,7 @@ const neurons = meta.neurons.map((n, k) => ({
   shown: new Map(), // fragment key -> {gid, iid, geometry, tris}
   shownSig: "",
   loadingSig: "",
+  skeleton: null,
   skeletonState: "idle",
 }));
 const N = neurons.length;
@@ -207,12 +267,29 @@ const meshMaterial = new THREE.MeshStandardMaterial({
   color: replay ? 0x404040 : 0xffffff, // dimmed in a replay so the activity glow reads
   roughness: 0.55,
   metalness: 0.0,
-  side: THREE.DoubleSide,
+  // FrontSide: ?check=winding found outward counter-clockwise winding on every neuron tested
+  // (signed volume > 0 from the mesh centroid), so back faces can be culled
+  side: THREE.FrontSide,
 });
+const instanceTex = (fill = 0) => {
+  const t = new THREE.DataTexture(
+    new Float32Array(MAX_INSTANCES).fill(fill),
+    INST_TEX_W,
+    INST_TEX_W,
+    THREE.RedFormat,
+    THREE.FloatType,
+  );
+  t.needsUpdate = true;
+  return t;
+};
+const instanceActivity = instanceTex(); // activity per instance
+const instanceNeuron = instanceTex(); // neuron index + 1 per instance (0 = free), for picking
 const shared = {
-  uActivity: { value: null },
+  uActivity: { value: instanceActivity },
   uGain: { value: replay ? 4.0 : 0.0 },
 };
+const instanceIdGlsl = /* glsl */ `int(getIndirectIndex(gl_DrawID))`;
+const texelOf = (id) => `ivec2(${id} % ${INST_TEX_W}, ${id} / ${INST_TEX_W})`;
 meshMaterial.onBeforeCompile = (shader) => {
   Object.assign(shader.uniforms, shared);
   shader.vertexShader = shader.vertexShader
@@ -224,8 +301,7 @@ meshMaterial.onBeforeCompile = (shader) => {
       "#include <batching_vertex>",
       `#include <batching_vertex>
       #ifdef USE_BATCHING
-        { int id = int(getIndirectIndex(gl_DrawID));
-          vActivity = texelFetch(uActivity, ivec2(id % ${INST_TEX_W}, id / ${INST_TEX_W}), 0).r; }
+        { int id = ${instanceIdGlsl}; vActivity = texelFetch(uActivity, ${texelOf("id")}, 0).r; }
       #else
         vActivity = 0.0;
       #endif`,
@@ -242,16 +318,13 @@ meshMaterial.onBeforeCompile = (shader) => {
 };
 
 let batched = null;
-const instanceOwner = new Int32Array(MAX_INSTANCES).fill(-1);
-const instanceActivity = new THREE.DataTexture(
-  new Float32Array(MAX_INSTANCES),
-  INST_TEX_W,
-  INST_TEX_W,
-  THREE.RedFormat,
-  THREE.FloatType,
-);
-shared.uActivity.value = instanceActivity;
-let capacityScale = 1; // shrinks if the estimate of triangles per byte undershoots
+const capacity = { vertices: 0, indices: 0 }; // of the BatchedMesh buffers (allocated lazily by three)
+function flushInstanceTextures() {
+  if (!instanceTexturesDirty) return;
+  instanceActivity.needsUpdate = instanceNeuron.needsUpdate = true;
+  instanceTexturesDirty = false;
+}
+let instanceTexturesDirty = false;
 
 function makeBatched() {
   if (batched) {
@@ -263,17 +336,15 @@ function makeBatched() {
     }
   }
   const tris = settings.budgetM * 1e6;
-  batched = new THREE.BatchedMesh(
-    MAX_INSTANCES,
-    Math.ceil(tris * 0.75),
-    Math.ceil(tris * 3.3),
-    meshMaterial,
-  );
+  capacity.vertices = Math.ceil(tris * 0.65); // measured 0.54 vertices per triangle, see vertsPerTri
+  capacity.indices = Math.ceil(tris * 3);
+  batched = new THREE.BatchedMesh(MAX_INSTANCES, capacity.vertices, capacity.indices, meshMaterial);
   batched.sortObjects = false;
   batched.frustumCulled = false; // its bounds are computed once, while still empty; fragments cull individually
   data.add(batched);
-  instanceOwner.fill(-1);
-  capacityScale = 1;
+  instanceNeuron.image.data.fill(0);
+  instanceTexturesDirty = true;
+  invalidate();
 }
 makeBatched();
 
@@ -299,8 +370,17 @@ function recall(key) {
   return g;
 }
 
-const stats = { bytes: 0, tris: 0, capacityHits: 0 };
+// Learned from decoded fragments: the selection budgets triangles from compressed sizes, and the
+// GPU buffer runs out of vertices or indices, whichever comes first.
+const stats = { bytes: 0, tris: 0, verts: 0, capacityHits: 0 };
 const trisPerByte = () => (stats.bytes > 1e5 ? stats.tris / stats.bytes : 0.6); // 0.6: GF coarsest LOD
+const vertsPerTri = () => (stats.tris > 1e5 ? stats.verts / stats.tris : 0.6);
+/** Triangles the BatchedMesh can actually hold, with 10% slack for fragmentation. */
+function effectiveBudget() {
+  const byVerts = capacity.vertices / vertsPerTri();
+  const byIndices = capacity.indices / 3;
+  return 0.9 * Math.min(settings.budgetM * 1e6, byVerts, byIndices);
+}
 
 function addFragment(n, key, geometry) {
   let gid;
@@ -311,55 +391,57 @@ function addFragment(n, key, geometry) {
     try {
       gid = batched.addGeometry(geometry);
     } catch {
-      stats.capacityHits++;
-      capacityScale *= 0.9;
+      stats.capacityHits++; // the estimate was off: select again with the updated ratios
+      selectionDirty = true;
       remember(`${key}@${n.k}`, geometry);
       return false;
     }
   }
   const iid = batched.addInstance(gid);
   batched.setColorAt(iid, new THREE.Color(colourOf(n)));
-  instanceOwner[iid] = n.k;
+  instanceNeuron.image.data[iid] = n.k + 1;
+  instanceActivity.image.data[iid] = activity[n.k];
+  instanceTexturesDirty = true;
   n.shown.set(key, { gid, iid, geometry, tris: geometry.index.count / 3 });
+  invalidate();
   return true;
 }
 
 function removeFragment(n, key) {
   const f = n.shown.get(key);
   batched.deleteGeometry(f.gid);
-  instanceOwner[f.iid] = -1;
+  instanceNeuron.image.data[f.iid] = 0;
+  instanceTexturesDirty = true;
   n.shown.delete(key);
   remember(`${key}@${n.k}`, f.geometry);
+  invalidate();
 }
 
-function decodeFragment(buf, n, lod, frag) {
-  return new Promise((resolve, reject) =>
-    draco.parse(
-      buf,
-      (g) => {
-        const q = g.getAttribute("position").array;
-        const t = fragmentTransform(
-          n.manifest,
-          lod,
-          frag.pos,
-          meshInfo.vertex_quantization_bits,
-          meshInfo.transform,
-        );
-        const p = new Float32Array(q.length);
-        for (let i = 0; i < q.length; i++)
-          p[i] = t.offset[i % 3] + t.scale[i % 3] * q[i];
-        const out = new THREE.BufferGeometry();
-        out.setAttribute("position", new THREE.BufferAttribute(p, 3));
-        out.setIndex(g.index);
-        out.computeVertexNormals();
-        g.dispose();
-        stats.bytes += buf.byteLength;
-        stats.tris += out.index.count / 3;
-        resolve(out);
-      },
-      reject,
+async function decodeFragment(buf, n, lod, frag) {
+  const bytes = buf.byteLength; // DRACOLoader transfers (detaches) the buffer
+  const g = await new Promise((resolve, reject) =>
+    draco.parse(buf, resolve, reject),
+  );
+  const t = fragmentTransform(
+    n.manifest,
+    lod,
+    frag.pos,
+    meshInfo.vertex_quantization_bits,
+    meshInfo.transform,
+  );
+  const out = geometryFrom(
+    await finish(
+      g.getAttribute("position").array,
+      g.index.array,
+      t.scale,
+      t.offset,
     ),
   );
+  stats.bytes += bytes;
+  stats.tris += out.index.count / 3;
+  stats.verts += out.getAttribute("position").count;
+  perf.count("fragments", bytes);
+  return out;
 }
 
 async function loadManifest(n) {
@@ -369,6 +451,7 @@ async function loadManifest(n) {
     n.manifestState = "missing"; // skeleton only
     return;
   }
+  perf.count("manifests", got.size);
   n.manifest = parseMultilodManifest(got.data, got.start);
   n.manifestPath = got.path;
   const top = n.manifest.lods.length - 1;
@@ -380,7 +463,7 @@ async function loadManifest(n) {
     max: [0, 1, 2].map((a) => Math.max(...boxes.map((b) => b.max[a]))),
   };
   n.manifestState = "ready";
-  dirty = true;
+  selectionDirty = true;
 }
 
 // Load every fragment of a selection, then swap it in at once (no holes, no overlaps).
@@ -400,13 +483,19 @@ async function showFragments(n, want, sig) {
   }
   for (const req of mergeRanges(ranges)) {
     const buf = await fetchBytes(n.manifestPath, req.start, req.end);
-    for (const part of req.parts) {
-      const slice = buf.slice(part.start - req.start, part.end - req.start);
-      staged.set(
-        `${part.lod}:${part.i}`,
-        await decodeFragment(slice, n, part.lod, part.f),
-      );
-    }
+    const parts = await Promise.all(
+      req.parts.map((part) =>
+        decodeFragment(
+          buf.slice(part.start - req.start, part.end - req.start),
+          n,
+          part.lod,
+          part.f,
+        ),
+      ),
+    );
+    req.parts.forEach((part, j) =>
+      staged.set(`${part.lod}:${part.i}`, parts[j]),
+    );
     if (n.loadingSig !== sig) break; // selection moved on while loading
   }
   if (n.loadingSig !== sig) {
@@ -419,7 +508,8 @@ async function showFragments(n, want, sig) {
   for (const [key, g] of staged) addFragment(n, key, g);
   n.shownSig = sig;
   n.loadingSig = "";
-  refreshSkeletonVisibility();
+  skeletonsDirty = true;
+  checkWinding(n);
 }
 
 function hideMeshes(n) {
@@ -427,14 +517,36 @@ function hideMeshes(n) {
   n.shownSig = n.loadingSig = "";
 }
 
+// ?check=winding: log the signed volume of the first complete coarsest-LOD surfaces. Positive
+// means triangles wind counter-clockwise seen from outside, so FrontSide culling is safe.
+const windingChecks = [];
+function checkWinding(n) {
+  if (!query.has("check") || windingChecks.length >= 5 || !n.manifest) return;
+  if (windingChecks.some((c) => c.bodyId === n.bodyId)) return;
+  const top = n.manifest.lods.length - 1;
+  const complete = n.manifest.lods[top].filter((f) => f.size > 0).length;
+  const keys = [...n.shown.keys()];
+  if (
+    keys.length !== complete ||
+    keys.some((k) => Number(k.split(":")[0]) !== top)
+  )
+    return;
+  const geoms = [...n.shown.values()].map((f) => f.geometry);
+  const origin = centroid(geoms.map((g) => g.getAttribute("position").array));
+  let volume = 0;
+  for (const g of geoms) volume += signedVolume(g.getAttribute("position").array, g.index.array, origin);
+  windingChecks.push({
+    bodyId: n.bodyId,
+    fragments: keys.length,
+    volume_um3: +(volume / 1e9).toFixed(1),
+  });
+  console.log(`WINDING ${JSON.stringify(windingChecks.at(-1))}`);
+}
+
 // ---------- skeletons: coarsest LOD, and the placeholder while meshes load ----------
-const skel = { cap: 1 << 20, nv: 0, ne: 0 };
-skel.pos = new Float32Array(3 * skel.cap);
-skel.owner = new Float32Array(skel.cap);
-skel.idx = new Uint32Array(2 * skel.cap);
-const skelGeo = new THREE.BufferGeometry();
+// One LineSegments per neuron: hidden ones cost nothing, off-screen ones are culled.
 const texH = Math.max(1, Math.ceil(N / TEX_W));
-const makeTex = () => {
+const neuronTex = () => {
   const t = new THREE.DataTexture(
     new Float32Array(TEX_W * texH * 4),
     TEX_W,
@@ -445,15 +557,9 @@ const makeTex = () => {
   t.needsUpdate = true;
   return t;
 };
-const skelColour = makeTex(); // rgb colour, a = visible
-const skelActivity = makeTex(); // r = activity
-function bindSkeletonBuffers() {
-  skelGeo.setAttribute("position", new THREE.BufferAttribute(skel.pos, 3));
-  skelGeo.setAttribute("aNeuron", new THREE.BufferAttribute(skel.owner, 1));
-  skelGeo.setIndex(new THREE.BufferAttribute(skel.idx, 1));
-}
-bindSkeletonBuffers();
-skelGeo.setDrawRange(0, 0);
+const skelColour = neuronTex(); // rgb colour
+const skelActivity = neuronTex(); // r = activity
+const neuronIndexGlsl = /* glsl */ `ivec2(int(mod(aNeuron, ${TEX_W}.0)), int(aNeuron / ${TEX_W}.0))`;
 const skelMaterial = new THREE.ShaderMaterial({
   uniforms: {
     uColor: { value: skelColour },
@@ -468,46 +574,16 @@ const skelMaterial = new THREE.ShaderMaterial({
     uniform float uBase, uGain;
     varying vec3 vColor;
     void main() {
-      ivec2 p = ivec2(int(mod(aNeuron, ${TEX_W}.0)), int(aNeuron / ${TEX_W}.0));
-      vec4 c = texelFetch(uColor, p, 0);
-      vColor = c.rgb * (uBase + uGain * texelFetch(uAct, p, 0).r);
-      gl_Position = c.a > 0.5 ? projectionMatrix * modelViewMatrix * vec4(position, 1.0) : vec4(2.0, 2.0, 2.0, 1.0);
+      ivec2 p = ${neuronIndexGlsl};
+      vColor = texelFetch(uColor, p, 0).rgb * (uBase + uGain * texelFetch(uAct, p, 0).r);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }`,
   fragmentShader: /* glsl */ `
     varying vec3 vColor;
     void main() { gl_FragColor = vec4(vColor, 1.0); }`,
 });
-const skeletonLines = new THREE.LineSegments(skelGeo, skelMaterial);
-skeletonLines.frustumCulled = false;
-data.add(skeletonLines);
-
-function appendSkeleton(n, s) {
-  const nv = s.vertices.length / 3,
-    ne = s.edges.length / 2;
-  if (skel.nv + nv > skel.cap || skel.ne + ne > skel.cap) {
-    const cap = Math.max(2 * skel.cap, skel.nv + nv, skel.ne + ne);
-    const grow = (a, k) => {
-      const b = new a.constructor(k * cap);
-      b.set(a);
-      return b;
-    };
-    skel.pos = grow(skel.pos, 3);
-    skel.owner = grow(skel.owner, 1);
-    skel.idx = grow(skel.idx, 2);
-    skel.cap = cap;
-    bindSkeletonBuffers();
-  }
-  skel.pos.set(s.vertices, 3 * skel.nv);
-  skel.owner.fill(n.k, skel.nv, skel.nv + nv);
-  for (let i = 0; i < s.edges.length; i++)
-    skel.idx[2 * skel.ne + i] = s.edges[i] + skel.nv;
-  skel.nv += nv;
-  skel.ne += ne;
-  for (const name of ["position", "aNeuron"])
-    skelGeo.getAttribute(name).needsUpdate = true;
-  skelGeo.index.needsUpdate = true;
-  skelGeo.setDrawRange(0, 2 * skel.ne);
-}
+const skeletons = new THREE.Group();
+data.add(skeletons);
 
 async function loadSkeleton(n) {
   n.skeletonState = "loading";
@@ -516,23 +592,35 @@ async function loadSkeleton(n) {
     n.skeletonState = "missing";
     return;
   }
-  appendSkeleton(n, parseSkeleton(buf));
+  perf.count("skeletons", buf.byteLength);
+  const s = parseSkeleton(buf);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(s.vertices, 3));
+  g.setAttribute(
+    "aNeuron",
+    new THREE.BufferAttribute(
+      new Float32Array(s.vertices.length / 3).fill(n.k),
+      1,
+    ),
+  );
+  g.setIndex(new THREE.BufferAttribute(s.edges, 1));
+  n.skeleton = new THREE.LineSegments(g, skelMaterial);
+  n.skeleton.userData.k = n.k;
+  n.skeleton.visible = skeletonOn(n);
+  skeletons.add(n.skeleton);
   n.skeletonState = "ready";
-  refreshSkeletonVisibility();
+  invalidate();
 }
 
 // A neuron shows its skeleton when the budget sends it there, or while it has no surface yet.
 let skeletonWanted = new Set();
+let skeletonsDirty = true;
 const skeletonOn = (n) =>
   isShown(n) && (skeletonWanted.has(n.k) || n.shown.size === 0);
-function refreshSkeletonVisibility() {
-  const c = new THREE.Color();
-  const d = skelColour.image.data;
-  for (const n of neurons) {
-    c.set(colourOf(n));
-    d.set([c.r, c.g, c.b, skeletonOn(n) ? 1 : 0], 4 * n.k);
-  }
-  skelColour.needsUpdate = true;
+function applySkeletonVisibility() {
+  for (const n of neurons) if (n.skeleton) n.skeleton.visible = skeletonOn(n);
+  skeletonsDirty = false;
+  invalidate();
 }
 
 // ---------- neuropils at full resolution ----------
@@ -561,7 +649,7 @@ const shellMaterial = new THREE.ShaderMaterial({
     }`,
   transparent: true,
   depthWrite: false,
-  side: THREE.DoubleSide,
+  side: THREE.DoubleSide, // a see-through shell shows both sides on purpose
 });
 const shells = {}; // name -> {region, dir, id, mesh | null, visible, state}
 // a shell is downloaded the first time it becomes visible
@@ -577,7 +665,10 @@ async function loadNeuropil(dir, id, name) {
   const parts = [];
   for (const frag of manifest.fragments) {
     const buf = await fetchBytes(`${dir}/mesh/${frag}`);
-    if (buf) parts.push(parseLegacyMesh(buf));
+    if (buf) {
+      parts.push(parseLegacyMesh(buf));
+      perf.count("neuropils", buf.byteLength);
+    }
   }
   if (!parts.length) return;
   const nv = parts.reduce((s, p) => s + p.vertices.length / 3, 0);
@@ -591,30 +682,44 @@ async function loadNeuropil(dir, id, name) {
     v0 += p.vertices.length / 3;
     i0 += p.indices.length;
   }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  g.setIndex(new THREE.BufferAttribute(idx, 1));
-  g.computeVertexNormals();
-  const mesh = new THREE.Mesh(g, shellMaterial);
+  const mesh = new THREE.Mesh(
+    geometryFrom(await finish(pos, idx, [1, 1, 1], [0, 0, 0])),
+    shellMaterial,
+  );
   mesh.renderOrder = 1;
   mesh.visible = shells[name].visible;
   shells[name].mesh = mesh;
   data.add(mesh);
+  invalidate();
 }
 const neuropilsListed = (async () => {
   for (const [region, dir] of Object.entries(ROIS)) {
     const props = (await fetchJson(`${dir}/segment_properties/info`)).inline;
     props.ids.forEach((id, i) => {
       const name = props.properties[0].values[i];
-      shells[name] = { region, dir, id, mesh: null, visible: settings.neuropils, state: "idle" };
+      shells[name] = {
+        region,
+        dir,
+        id,
+        mesh: null,
+        visible: settings.neuropils,
+        state: "idle",
+      };
       ensureNeuropil(name);
     });
   }
 })();
 
-// ---------- level-of-detail loop ----------
-let dirty = true;
-controls.addEventListener("change", () => (dirty = true));
+// ---------- level-of-detail selection ----------
+// Recomputed once the camera settles (or at most every 250 ms while it keeps moving) and when
+// new manifests arrive.
+let selectionDirty = true,
+  lastSelection = 0;
+controls.addEventListener("change", () => {
+  selectionDirty = true;
+  lastMove = performance.now();
+  invalidate();
+});
 
 function eyeView() {
   const eye = data.worldToLocal(camera.position.clone()).toArray();
@@ -630,16 +735,22 @@ function priorityOf(n, v) {
 }
 
 function updateSelection() {
-  if (!dirty) return;
-  dirty = false;
+  const now = performance.now();
+  if (!selectionDirty || (now - lastMove < 120 && now - lastSelection < 250))
+    return;
+  selectionDirty = false;
+  lastSelection = now;
   const v = eyeView();
   const candidates = neurons.filter(isShown);
   for (const n of candidates) {
     if (n.manifestState === "idle") {
       n.manifestState = "queued"; // mark now, or every pass would queue it again
-      manifestQueue.push(priorityOf(n, v), () => loadManifest(n)).catch(console.error);
+      manifestQueue
+        .push(priorityOf(n, v), () => loadManifest(n))
+        .catch(console.error);
     }
   }
+  const selectStart = performance.now();
   const sel = select(
     candidates.map((n) => ({
       key: n.k,
@@ -649,11 +760,12 @@ function updateSelection() {
     v,
     {
       detailPx: settings.detailPx,
-      budgetTris: settings.budgetM * 1e6 * capacityScale,
+      budgetTris: effectiveBudget(),
       trisPerByte: trisPerByte(),
       transform: meshInfo.transform,
     },
   );
+  perf.selectMs.push(performance.now() - selectStart);
   skeletonWanted = new Set(sel.skeletons);
   for (const n of neurons) {
     const want = sel.meshes.get(n.k);
@@ -664,27 +776,34 @@ function updateSelection() {
     const sig = want.map(({ lod, i }) => `${lod}:${i}`).join(",");
     if (sig !== n.shownSig && sig !== n.loadingSig) {
       n.loadingSig = sig; // the latest selection wins; older queued jobs see it and stop
-      fragmentQueue.push(priorityOf(n, v), () => showFragments(n, want, sig)).catch(console.error);
+      fragmentQueue
+        .push(priorityOf(n, v), () => showFragments(n, want, sig))
+        .catch(console.error);
     }
   }
   for (const n of candidates) {
     if (skeletonOn(n) && n.skeletonState === "idle") {
       n.skeletonState = "queued";
-      skeletonQueue.push(priorityOf(n, v), () => loadSkeleton(n)).catch(console.error);
+      skeletonQueue
+        .push(priorityOf(n, v), () => loadSkeleton(n))
+        .catch(console.error);
     }
   }
-  refreshSkeletonVisibility();
+  skeletonsDirty = true;
 }
-setInterval(updateSelection, 250);
+setInterval(updateSelection, 50);
 
 // ---------- colours, legend, stats ----------
 function refreshColours() {
   const c = new THREE.Color();
+  const d = skelColour.image.data;
   for (const n of neurons) {
     c.set(colourOf(n));
     for (const f of n.shown.values()) batched.setColorAt(f.iid, c);
+    d.set([c.r, c.g, c.b, 1], 4 * n.k);
   }
-  refreshSkeletonVisibility();
+  skelColour.needsUpdate = true;
+  skeletonsDirty = true;
   const entries =
     view.colorBy === "group"
       ? groups.map((g, i) => [g, PALETTE[i % PALETTE.length]])
@@ -701,9 +820,7 @@ function refreshColours() {
 refreshColours();
 
 const statsEl = document.getElementById("stats");
-let frames = 0,
-  fps = 0,
-  fpsSince = performance.now();
+const perfEl = document.getElementById("perf");
 function updateStats() {
   let surfaces = 0,
     tris = 0;
@@ -711,12 +828,24 @@ function updateStats() {
     if (n.shown.size) surfaces++;
     for (const f of n.shown.values()) tris += f.tris;
   }
-  const skeletons = neurons.filter(skeletonOn).length;
+  const lines = neurons.filter(skeletonOn).length;
   const loading = manifestQueue.size + fragmentQueue.size + skeletonQueue.size;
   const rois = Object.values(shells);
+  if (surfaces) perf.mark("first_surface");
+  if (
+    neurons.every(
+      (n) =>
+        !isShown(n) ||
+        n.shown.size ||
+        ["ready", "missing"].includes(n.skeletonState),
+    )
+  ) {
+    perf.mark("all_represented");
+  }
   statsEl.textContent =
-    `${surfaces} surfaces · ${skeletons} skeletons · ${(tris / 1e6).toFixed(1)} / ${settings.budgetM} M triangles` +
-    ` · ${loading} loading · neuropils ${rois.filter((s) => s.mesh).length}/${rois.length} · ${fps} fps`;
+    `${surfaces} surfaces · ${lines} skeletons · ${(tris / 1e6).toFixed(1)} / ${settings.budgetM} M triangles` +
+    ` · ${loading} loading · neuropils ${rois.filter((s) => s.mesh).length}/${rois.length}`;
+  perfEl.textContent = perf.line(renderer.getPixelRatio());
 }
 setInterval(updateStats, 500);
 
@@ -729,6 +858,7 @@ const clock = {
   speed: 40,
 };
 const clockEl = document.getElementById("clock");
+let shownT = null; // replay time whose activity is on the GPU
 function updateActivity(t) {
   const b = Math.min(Math.floor(t / A.bin_ms), A.bins - 1);
   for (let k = 0; k < N; k++) {
@@ -744,13 +874,106 @@ function updateActivity(t) {
   const inst = instanceActivity.image.data;
   for (const n of neurons)
     for (const f of n.shown.values()) inst[f.iid] = activity[n.k];
-  instanceActivity.needsUpdate = true;
+  instanceTexturesDirty = true;
   clockEl.textContent = `t = ${t.toFixed(0)} ms · stimulus ${t < A.stim_ms ? "on" : "off"}`;
+  shownT = t;
+  invalidate();
 }
 
-// ---------- picking ----------
-const raycaster = new THREE.Raycaster();
-raycaster.params.Line.threshold = 1500; // nm, in the data frame
+// ---------- picking: render neuron ids under the cursor ----------
+const PICK = 11; // px window around the cursor, so 1 px skeleton lines can be hit
+const pickTarget = new THREE.WebGLRenderTarget(PICK, PICK);
+const idToColour = /* glsl */ `vec3(mod(id, 256.0), mod(floor(id / 256.0), 256.0), floor(id / 65536.0)) / 255.0`;
+const pickMeshMaterial = new THREE.ShaderMaterial({
+  uniforms: { uNeuron: { value: instanceNeuron } },
+  vertexShader: /* glsl */ `
+    #include <common>
+    #include <batching_pars_vertex>
+    uniform sampler2D uNeuron;
+    flat varying vec3 vId;
+    void main() {
+      #include <batching_vertex>
+      vec4 p = vec4(position, 1.0);
+      float id = 0.0;
+      #ifdef USE_BATCHING
+        p = batchingMatrix * p;
+        int iid = ${instanceIdGlsl};
+        id = texelFetch(uNeuron, ${texelOf("iid")}, 0).r;
+      #endif
+      vId = ${idToColour};
+      gl_Position = projectionMatrix * modelViewMatrix * p;
+    }`,
+  fragmentShader: /* glsl */ `
+    flat varying vec3 vId;
+    void main() { gl_FragColor = vec4(vId, 1.0); }`,
+  side: THREE.FrontSide,
+});
+const pickLineMaterial = new THREE.ShaderMaterial({
+  vertexShader: /* glsl */ `
+    attribute float aNeuron;
+    flat varying vec3 vId;
+    void main() {
+      float id = aNeuron + 1.0;
+      vId = ${idToColour};
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: /* glsl */ `
+    flat varying vec3 vId;
+    void main() { gl_FragColor = vec4(vId, 1.0); }`,
+});
+
+function pickAt(x, y) {
+  const w = renderer.domElement.clientWidth,
+    h = renderer.domElement.clientHeight;
+  camera.setViewOffset(
+    w,
+    h,
+    x - (PICK - 1) / 2,
+    y - (PICK - 1) / 2,
+    PICK,
+    PICK,
+  );
+  flushInstanceTextures(); // the pick shader reads neuron ids from the GPU copy
+  const saved = {
+    background: world.background,
+    shells: data.children.filter(
+      (o) => o.material === shellMaterial && o.visible,
+    ),
+  };
+  world.background = null;
+  saved.shells.forEach((o) => (o.visible = false));
+  batched.material = pickMeshMaterial;
+  skeletons.children.forEach((o) => (o.material = pickLineMaterial));
+  renderer.setRenderTarget(pickTarget);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear();
+  renderer.render(world, camera);
+  const px = new Uint8Array(4 * PICK * PICK);
+  renderer.readRenderTargetPixels(pickTarget, 0, 0, PICK, PICK, px);
+  renderer.setRenderTarget(null);
+  batched.material = meshMaterial;
+  skeletons.children.forEach((o) => (o.material = skelMaterial));
+  saved.shells.forEach((o) => (o.visible = true));
+  world.background = saved.background;
+  camera.clearViewOffset();
+  // nearest non-empty pixel to the centre wins
+  let best = null,
+    bestD = Infinity;
+  for (let j = 0; j < PICK; j++)
+    for (let i = 0; i < PICK; i++) {
+      const o = 4 * (j * PICK + i);
+      const id = px[o] + 256 * px[o + 1] + 65536 * px[o + 2];
+      const d = (i - (PICK - 1) / 2) ** 2 + (j - (PICK - 1) / 2) ** 2;
+      if (id && d < bestD) [best, bestD] = [id - 1, d];
+    }
+  invalidate();
+  return best;
+}
+
+// ?check exposes internals for headless diagnostics (scripts/shoot.mjs EVAL=...)
+if (query.has("check")) {
+  window.flymsg = { THREE, renderer, camera, world, data, skeletons, pickAt, pickTarget, pickMeshMaterial, meshMaterial, get batched() { return batched; } };
+}
 const info = document.getElementById("info");
 let downAt = null;
 renderer.domElement.addEventListener(
@@ -760,24 +983,11 @@ renderer.domElement.addEventListener(
 renderer.domElement.addEventListener("pointerup", (e) => {
   if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4)
     return; // a drag
-  raycaster.setFromCamera(
-    new THREE.Vector2(
-      (e.clientX / innerWidth) * 2 - 1,
-      -(e.clientY / innerHeight) * 2 + 1,
-    ),
-    camera,
-  );
-  const owner = (h) =>
-    h.object === batched ? instanceOwner[h.batchId] : skel.owner[h.index];
-  const hit = raycaster.intersectObjects([batched, skeletonLines]).find((h) => {
-    const k = owner(h);
-    return (
-      k >= 0 &&
-      (h.object === batched ? isShown(neurons[k]) : skeletonOn(neurons[k]))
-    );
-  });
-  if (!hit) return;
-  const n = neurons[owner(hit)];
+  const rect = renderer.domElement.getBoundingClientRect();
+  const k = pickAt(e.clientX - rect.left, e.clientY - rect.top);
+  if (query.has("check")) console.log(`PICK ${e.clientX},${e.clientY} -> ${k === null ? "none" : neurons[k].bodyId}`);
+  if (k === null) return;
+  const n = neurons[k];
   const lods = [
     ...new Set([...n.shown.keys()].map((key) => key.split(":")[0])),
   ].sort();
@@ -806,42 +1016,52 @@ gui
   .name("type filter")
   .onChange((v) => {
     view.filter = v.toLowerCase();
-    dirty = true;
+    selectionDirty = true;
     refreshColours();
   });
 gui
   .add(settings, "detailPx", 32, 1024, 1)
   .name("detail (px)")
-  .onChange(() => (dirty = true));
+  .onChange(() => (selectionDirty = true));
 gui
   .add(settings, "budgetM", 1, 40, 1)
   .name("budget (M tris)")
   .onFinishChange(() => {
     makeBatched();
-    dirty = true;
+    selectionDirty = true;
   });
-gui.add(bloom, "strength", 0, 3).name("bloom");
+gui
+  .add(settings, "adaptive")
+  .name("adaptive resolution")
+  .onChange((on) => on || setRatio(nativeRatio));
+if (replay) gui.add(bloom, "strength", 0, 3).name("bloom").onChange(invalidate);
 const gFolder = gui.addFolder("Groups");
 groups.forEach((g) =>
   gFolder.add(view.groupsOn, g).onChange(() => {
-    dirty = true;
+    selectionDirty = true;
     refreshColours();
   }),
 );
 const pFolder = gui.addFolder("Neuropils");
-pFolder.add(shellMaterial.uniforms.uOpacity, "value", 0, 1).name("opacity");
+pFolder
+  .add(shellMaterial.uniforms.uOpacity, "value", 0, 1)
+  .name("opacity")
+  .onChange(invalidate);
 neuropilsListed.then(() => {
   for (const region of Object.keys(ROIS)) {
     const names = Object.keys(shells).filter(
       (s) => shells[s].region === region,
     );
     const f = pFolder.addFolder(region).close();
-    const toggles = Object.fromEntries(names.map((n) => [n, shells[n].visible]));
+    const toggles = Object.fromEntries(
+      names.map((n) => [n, shells[n].visible]),
+    );
     const boxes = {};
     const set = (name, v) => {
       shells[name].visible = v;
       if (shells[name].mesh) shells[name].mesh.visible = v;
       ensureNeuropil(name);
+      invalidate();
     };
     f.add({ all: settings.neuropils }, "all").onChange((v) =>
       names.forEach((n) => {
@@ -865,6 +1085,33 @@ if (replay) {
     .listen();
 }
 
+// ---------- adaptive resolution ----------
+// While frames are live (moving camera, playing replay), step the pixel ratio down when frames
+// run long and back up when there is headroom; at rest the native ratio returns.
+let ratio = nativeRatio,
+  tuneFrames = 0;
+function setRatio(r) {
+  if (r === ratio) return;
+  ratio = r;
+  renderer.setPixelRatio(r);
+  composer.setPixelRatio(r);
+  invalidate();
+}
+function tuneRatio(live) {
+  if (!settings.adaptive) return;
+  if (!live) {
+    setRatio(nativeRatio);
+    return;
+  }
+  if (++tuneFrames < 20) return;
+  tuneFrames = 0;
+  const frameMs = perf.gpuMs ?? (perf.fps ? 1000 / perf.fps : 0);
+  if (frameMs > TARGET_FRAME_MS * 1.2 && ratio > 1)
+    setRatio(Math.max(1, ratio - 0.25));
+  else if (frameMs < TARGET_FRAME_MS * 0.7 && ratio < nativeRatio)
+    setRatio(Math.min(nativeRatio, ratio + 0.25));
+}
+
 // ---------- camera, resize, loop ----------
 const extent = Math.max(...volumeUm);
 camera.position.set(extent * 0.7, extent * 0.25, extent * 0.55); // oblique: brain and VNC both visible
@@ -876,24 +1123,51 @@ addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
-  dirty = true;
+  selectionDirty = true;
+  invalidate();
 });
+
+// ?bench=<s>: log one JSON summary after that many seconds (read by scripts/shoot.mjs)
+if (query.has("bench")) {
+  setTimeout(
+    () => {
+      const summary = perf.summary({
+        neurons: N,
+        surfaces: neurons.filter((n) => n.shown.size).length,
+        skeletons: neurons.filter(skeletonOn).length,
+        queued: manifestQueue.size + fragmentQueue.size + skeletonQueue.size,
+        pixel_ratio: renderer.getPixelRatio(),
+        winding: windingChecks,
+      capacity: {
+        hits: stats.capacityHits,
+        effective_budget: Math.round(effectiveBudget()),
+        verts_per_tri: +vertsPerTri().toFixed(3),
+        tris_per_byte: +trisPerByte().toFixed(3),
+        ...capacity,
+      },
+      });
+      console.log(`BENCH ${JSON.stringify(summary)}`);
+    },
+    1000 * Number(query.get("bench")),
+  );
+}
 
 const timer = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   const dt = timer.getDelta();
-  if (replay) {
-    if (clock.playing)
-      clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
-    updateActivity(clock.t);
-  }
-  controls.update();
-  composer.render();
-  frames++;
+  const moved = controls.update(); // damping keeps moving after the pointer is released
+  const playing = replay && clock.playing;
+  if (playing) clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
+  if (replay && clock.t !== shownT) updateActivity(clock.t);
+  if (skeletonsDirty) applySkeletonVisibility();
+  const live = interacting || moved || playing;
+  tuneRatio(live);
   const now = performance.now();
-  if (now - fpsSince > 1000) {
-    fps = Math.round((frames * 1000) / (now - fpsSince));
-    frames = 0;
-    fpsSince = now;
-  }
+  if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
+  flushInstanceTextures();
+  perf.begin();
+  composer.render();
+  perf.end();
+  sceneDirty = false;
+  lastRender = now;
 });

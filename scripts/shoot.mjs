@@ -3,7 +3,7 @@
 // print the page's console output and exceptions. Uses the DevTools Protocol over node's
 // built-in WebSocket, so it needs no npm packages.
 //
-//   node scripts/shoot.mjs <url> <out.png> [wait seconds=30] [width=1400] [height=900]
+//   [CLICK=x,y] node scripts/shoot.mjs <url> <out.png> [wait seconds=30] [width=1400] [height=900]
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -81,6 +81,19 @@ await send("Emulation.setDeviceMetricsOverride", {
 });
 await send("Page.navigate", { url });
 await sleep(Number(wait) * 1000);
+// CLICK=x,y: click there before reading the HUD (checks picking)
+if (process.env.CLICK) {
+  const [x, y] = process.env.CLICK.split(",").map(Number);
+  for (const type of ["mousePressed", "mouseReleased"]) {
+    await send("Input.dispatchMouseEvent", { type, x, y, button: "left", clickCount: 1 });
+  }
+  await sleep(1500);
+}
+// EVAL=<expression>: evaluate in the page (awaiting promises) and print the result
+if (process.env.EVAL) {
+  const r = await send("Runtime.evaluate", { expression: process.env.EVAL, awaitPromise: true, returnByValue: true });
+  console.log(`[eval] ${JSON.stringify(r.result?.result?.value ?? r.result?.exceptionDetails?.exception?.description)}`);
+}
 const hud = await send("Runtime.evaluate", {
   expression: "[...document.querySelectorAll('#hud > div')].map(d => d.textContent).join(' | ')",
   returnByValue: true,

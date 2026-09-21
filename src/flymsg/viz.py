@@ -15,7 +15,15 @@ import pandas as pd
 from flymsg import sim
 
 STATIC = Path(__file__).parent / "viz_static"
-PAGE = ("index.html", "main.js", "precomputed.js", "lod.js")
+PAGE = (
+    "index.html",
+    "main.js",
+    "precomputed.js",
+    "lod.js",
+    "perf.js",
+    "geometry.js",
+    "geometry-worker.js",
+)
 
 
 def select_from_result(
