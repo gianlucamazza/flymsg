@@ -37,22 +37,22 @@ def test_strongest_path_respects_min_weight():
 def test_excitation_propagates():
     edges, sign, n = chain([200, 200])
     W = sim.weight_matrix(edges, sign, n, 0.275)
-    rates = sim.run(W, np.array([0]), 150, 500)
+    rates = sim.run(W, np.array([0]), 150, 500).rate()
     assert rates[0] > 50 and rates[1] > 0 and rates[2] > 0
 
 
 def test_inhibition_blocks():
     edges, sign, n = chain([200, 200], signs=[-1, 1, 1])
     W = sim.weight_matrix(edges, sign, n, 0.275)
-    rates = sim.run(W, np.array([0]), 150, 500)
+    rates = sim.run(W, np.array([0]), 150, 500).rate()
     assert rates[0] > 50 and rates[1] == 0 and rates[2] == 0
 
 
 def test_stimulus_window():
     edges, sign, n = chain([200])
     W = sim.weight_matrix(edges, sign, n, 0.275)
-    short = sim.run(W, np.array([0]), 150, 500, stim_ms=100)
-    full = sim.run(W, np.array([0]), 150, 500)
+    short = sim.run(W, np.array([0]), 150, 500, stim_ms=100).rate()
+    full = sim.run(W, np.array([0]), 150, 500).rate()
     assert 0 < short[0] < full[0]
 
 
@@ -92,8 +92,8 @@ def test_edge_weights():
 def test_stimulated_neurons_do_not_adapt():
     edges, sign, n = chain([200])
     W = sim.weight_matrix(edges, sign, n, 0.275)
-    plain = sim.run(W, np.array([0]), 100, 500, p=sim.Params(th_jump=0.0))
-    adapt = sim.run(W, np.array([0]), 100, 500, p=sim.Params(th_jump=4.0))
+    plain = sim.run(W, np.array([0]), 100, 500, p=sim.Params(th_jump=0.0)).rate()
+    adapt = sim.run(W, np.array([0]), 100, 500, p=sim.Params(th_jump=4.0)).rate()
     assert adapt[0] == plain[0]  # same seed, no adaptation on the stimulated neuron
     assert adapt[1] < plain[1]  # downstream neuron adapts
 
@@ -101,20 +101,62 @@ def test_stimulated_neurons_do_not_adapt():
 def test_poisson_weight_scales_with_w_syn():
     edges, sign, n = chain([1])
     W = sim.weight_matrix(edges, sign, n, 0.275)
-    weak = sim.run(W, np.array([0]), 100, 500, p=sim.Params(w_syn=0.01))
+    weak = sim.run(W, np.array([0]), 100, 500, p=sim.Params(w_syn=0.01)).rate()
     assert weak[0] == 0  # 2.5 mV kicks never reach the 7 mV threshold
 
 
-def test_summarize_counts_silent_neurons():
+def fake_result(rates_hz, stim_ms=100.0, duration_ms=100.0, bin_ms=10.0):
+    """Result with constant rates (Hz) during the stimulus, silence afterwards."""
+    bins = round(duration_ms / bin_ms)
+    counts = np.zeros((bins, len(rates_hz)), dtype=np.uint16)
+    counts[: round(stim_ms / bin_ms)] = np.asarray(rates_hz) * bin_ms / 1000
+    first = np.where(np.asarray(rates_hz) > 0, 5.0, np.nan)
+    return sim.Result(counts, first, bin_ms, stim_ms)
+
+
+def test_summarize_counts_silent_neurons_and_seeds():
     neurons = pd.DataFrame(
         {"type": ["S", "A", "A", "B"], "superclass": ["x", "y", "y", "z"]}
     )
-    out = cli.summarize(neurons, np.array([100.0, 40.0, 0.0, 0.0]), np.array([0]))
-    assert out.loc["A", "n"] == 2 and out.loc["A", "active"] == 1
-    assert out.loc["A", "mean_hz"] == 20.0
+    results = [fake_result([100, 200, 0, 0]), fake_result([100, 0, 0, 0])]
+    out = cli.summarize(neurons, results, np.array([0]))
+    assert out.loc["A", "n"] == 2
+    assert out.loc["A", "p_active"] == 0.5  # fired in one seed out of two
+    assert out.loc["A", "hz"] == 50.0  # (100 + 0) / 2 seeds; 100 = mean of 200 and 0
+    assert out.loc["A", "hz_sd"] == 50.0
     assert (
         "S" not in out.index and "B" not in out.index
     )  # stimulated / silent types dropped
+    assert "post_hz" not in out.columns  # no post-stimulus window
+
+
+def test_result_windows_and_persistence():
+    r = fake_result([100, 0], stim_ms=100, duration_ms=300)
+    assert r.rate(0, 100).tolist() == [100.0, 0.0]
+    assert r.rate(100).tolist() == [0.0, 0.0]
+    assert r.persistent().size == 0
+    with pytest.raises(ValueError):
+        fake_result([1], stim_ms=100, duration_ms=150).persistent()
+
+
+def test_latency_and_bins_follow_propagation():
+    edges, sign, n = chain([200, 200])
+    W = sim.weight_matrix(edges, sign, n, 0.275)
+    r = sim.run(W, np.array([0]), 150, 300, stim_ms=100)
+    assert r.counts.shape == (30, 3)
+    lat = r.first_spike_ms
+    assert lat[0] < lat[1] < lat[2]  # each hop adds delay
+    assert (
+        r.counts.sum() == r.counts[:12].sum() or r.rate(200).sum() == 0
+    )  # silence after pulse
+    assert r.persistent().size == 0
+
+
+def test_duration_must_fit_bins():
+    edges, sign, n = chain([1])
+    W = sim.weight_matrix(edges, sign, n, 0.275)
+    with pytest.raises(ValueError):
+        sim.run(W, np.array([0]), 100, 105)
 
 
 def test_label_handles_missing_names():

@@ -62,20 +62,62 @@ def cmd_path(a, neurons, edges):
 
 
 def summarize(
-    neurons: pd.DataFrame, rates: np.ndarray, stim: np.ndarray, superclass=None
+    neurons: pd.DataFrame, results: list[sim.Result], stim: np.ndarray, superclass=None
 ) -> pd.DataFrame:
-    """Per-type response: all neurons of the type count, not only those that fired."""
-    df = neurons.assign(rate=rates).drop(index=stim)
+    """Per-type response across seeds.
+
+    n: neurons of the type; p_active: share of seeds where any of them fired during the
+    stimulus; hz/hz_sd: mean and across-seed SD of the type's mean rate during the stimulus
+    (silent neurons included); latency_ms: median first spike of the type's earliest neuron;
+    post_hz: mean rate after stimulus end (only with --stim-ms).
+    """
+    keep = np.ones(len(neurons), dtype=bool)
+    keep[stim] = False
     if superclass:
-        df = df[df["superclass"].isin(superclass)]
-    out = df.groupby("type").agg(
-        n=("rate", "size"),
-        active=("rate", lambda r: int((r > 0).sum())),
-        mean_hz=("rate", "mean"),
-        max_hz=("rate", "max"),
-        superclass=("superclass", "first"),
+        keep &= neurons["superclass"].isin(superclass).to_numpy()
+    types = neurons["type"].fillna("untyped").to_numpy()[keep]
+    r0 = results[0]
+    post = r0.stim_ms + r0.bin_ms <= r0.duration_ms
+    per_seed = []
+    for r in results:
+        df = pd.DataFrame(
+            {
+                "type": types,
+                "hz": r.rate(0, r.stim_ms)[keep],
+                "fired": r.counts[: round(r.stim_ms / r.bin_ms)].sum(axis=0)[keep] > 0,
+                "latency": r.first_spike_ms[keep],
+            }
+        )
+        if post:
+            df["post_hz"] = r.rate(r.stim_ms)[keep]
+        per_seed.append(
+            df.groupby("type").agg(
+                n=("hz", "size"),
+                hz=("hz", "mean"),
+                fired=("fired", "any"),
+                latency=("latency", "min"),
+                **({"post_hz": ("post_hz", "mean")} if post else {}),
+            )
+        )
+    stack = pd.concat(per_seed, keys=range(len(per_seed)), names=["seed", "type"])
+    g = stack.groupby(level="type")
+    out = pd.DataFrame(
+        {
+            "n": g["n"].first(),
+            "p_active": g["fired"].mean(),
+            "hz": g["hz"].mean(),
+            "hz_sd": g["hz"].std(ddof=0),
+            "latency_ms": g["latency"].median(),
+        }
     )
-    return out[out["active"] > 0].sort_values("mean_hz", ascending=False).round(1)
+    if post:
+        out["post_hz"] = g["post_hz"].mean()
+    out["superclass"] = (
+        pd.Series(neurons["superclass"].to_numpy()[keep], index=types)
+        .groupby(level=0)
+        .first()
+    )
+    return out[out["p_active"] > 0].sort_values("hz", ascending=False).round(2)
 
 
 def cmd_sim(a, neurons, edges):
@@ -83,17 +125,26 @@ def cmd_sim(a, neurons, edges):
     stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.stim]))
     params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
     W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), n, params.w_syn)
+    stim_ms = a.stim_ms or a.duration
     print(
-        f"stimulating {stim.size} neurons at {a.rate} Hz for {a.stim_ms or a.duration} of {a.duration} ms ..."
+        f"stimulating {stim.size} neurons at {a.rate} Hz for {stim_ms} of {a.duration} ms, {a.seeds} seed(s) ..."
     )
-    rates = sim.run(W, stim, a.rate, a.duration, a.stim_ms, params, a.seed)
-    print(f"{(rates > 0).sum():,} neurons fired")
-    print(summarize(neurons, rates, stim, a.superclass).head(a.top).to_string())
+    results = [
+        sim.run(W, stim, a.rate, a.duration, a.stim_ms, params, seed)
+        for seed in range(a.seed, a.seed + a.seeds)
+    ]
+    fired = np.mean([(r.counts.sum(axis=0) > 0).sum() for r in results])
+    line = f"{fired:,.0f} neurons fired"
+    if a.duration - stim_ms >= 200:
+        line += f", {np.mean([r.persistent().size for r in results]):,.0f} still firing from {stim_ms + 100:g} ms (self-sustained)"
+    print(line)
+    print(summarize(neurons, results, stim, a.superclass).head(a.top).to_string())
     if a.out:
+        rates = np.mean([r.rate(0, r.stim_ms) for r in results], axis=0)
         neurons.assign(rate=rates)[
             ["bodyId", "type", "instance", "superclass", "rate"]
         ].to_csv(a.out, index=False)
-        print(f"per-neuron rates -> {a.out}")
+        print(f"per-neuron stimulus-window rates (mean over seeds) -> {a.out}")
 
 
 def main() -> None:
@@ -147,7 +198,8 @@ def main() -> None:
         help="only report these superclasses, e.g. descending_neuron vnc_motor",
     )
     s.add_argument("--top", type=int, default=25)
-    s.add_argument("--seed", type=int, default=0)
+    s.add_argument("--seed", type=int, default=0, help="first seed")
+    s.add_argument("--seeds", type=int, default=1, help="number of seeds to average")
     s.add_argument("--out", type=Path)
     a = p.parse_args()
 
