@@ -1,5 +1,7 @@
 import argparse
 import json
+import os
+import sys
 import urllib.parse
 from pathlib import Path
 
@@ -33,7 +35,8 @@ def ng_link(body_ids) -> str:
 
 def label(neurons: pd.DataFrame, i: int) -> str:
     r = neurons.iloc[i]
-    return f"{r['instance'] or r['type']} ({r['bodyId']}, {r['nt']}, {r['superclass']})"
+    name = next((x for x in (r["instance"], r["type"]) if pd.notna(x)), "untyped")
+    return f"{name} ({r['bodyId']}, {r['nt']}, {r['superclass']})"
 
 
 def cmd_info(a, neurons, edges):
@@ -51,11 +54,28 @@ def cmd_path(a, neurons, edges):
     if not path:
         print("no path")
         return
-    w = edges.set_index(["pre", "post"])["weight"]
-    for k, i in enumerate(path):
-        hop = f"  --{w[(path[k - 1], i)]} syn-->  " if k else "  "
+    weights = [0, *graph.edge_weights(edges, path)]
+    for k, (i, w) in enumerate(zip(path, weights)):
+        hop = f"  --{w} syn-->  " if k else "  "
         print(f"{hop}{label(neurons, i)}")
     print(f"\nneuroglancer: {ng_link(neurons['bodyId'].to_numpy()[path])}")
+
+
+def summarize(
+    neurons: pd.DataFrame, rates: np.ndarray, stim: np.ndarray, superclass=None
+) -> pd.DataFrame:
+    """Per-type response: all neurons of the type count, not only those that fired."""
+    df = neurons.assign(rate=rates).drop(index=stim)
+    if superclass:
+        df = df[df["superclass"].isin(superclass)]
+    out = df.groupby("type").agg(
+        n=("rate", "size"),
+        active=("rate", lambda r: int((r > 0).sum())),
+        mean_hz=("rate", "mean"),
+        max_hz=("rate", "max"),
+        superclass=("superclass", "first"),
+    )
+    return out[out["active"] > 0].sort_values("mean_hz", ascending=False).round(1)
 
 
 def cmd_sim(a, neurons, edges):
@@ -68,14 +88,7 @@ def cmd_sim(a, neurons, edges):
     )
     rates = sim.run(W, stim, a.rate, a.duration, a.stim_ms, params, a.seed)
     print(f"{(rates > 0).sum():,} neurons fired")
-    df = neurons.assign(rate=rates).drop(index=stim)
-    df = df[df["rate"] > 0]
-    if a.superclass:
-        df = df[df["superclass"].isin(a.superclass)]
-    by_type = df.groupby("type").agg(
-        n=("rate", "size"), mean_hz=("rate", "mean"), superclass=("superclass", "first")
-    )
-    print(by_type.nlargest(a.top, "mean_hz").round(1).to_string())
+    print(summarize(neurons, rates, stim, a.superclass).head(a.top).to_string())
     if a.out:
         neurons.assign(rate=rates)[
             ["bodyId", "type", "instance", "superclass", "rate"]
@@ -88,7 +101,12 @@ def main() -> None:
         prog="flymsg",
         description="Explore and simulate the male Drosophila CNS connectome",
     )
-    p.add_argument("--data", type=Path, default=Path("data"))
+    p.add_argument(
+        "--data",
+        type=Path,
+        default=Path(os.environ.get("FLYMSG_DATA", "data")),
+        help="data dir (env FLYMSG_DATA)",
+    )
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("fetch", help="download raw tables (~1.1 GB)")
     sub.add_parser("build", help="compact raw tables to data/*.parquet")
@@ -133,9 +151,14 @@ def main() -> None:
     s.add_argument("--out", type=Path)
     a = p.parse_args()
 
-    if a.cmd == "fetch":
-        return data.fetch(a.data)
-    if a.cmd == "build":
-        return data.build(a.data)
-    neurons, edges = data.load(a.data)
-    {"info": cmd_info, "path": cmd_path, "sim": cmd_sim}[a.cmd](a, neurons, edges)
+    try:
+        if a.cmd == "fetch":
+            return data.fetch(a.data)
+        if a.cmd == "build":
+            return data.build(a.data)
+        neurons, edges = data.load(a.data)
+        {"info": cmd_info, "path": cmd_path, "sim": cmd_sim}[a.cmd](a, neurons, edges)
+    except KeyError as err:  # unknown neuron query
+        sys.exit(f"flymsg: {err.args[0]}")
+    except OSError as err:  # missing data files, failed downloads
+        sys.exit(f"flymsg: {err}")

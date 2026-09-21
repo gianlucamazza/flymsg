@@ -31,6 +31,28 @@ ANN_COLS = [
 ]
 
 
+def download(url: str, dest: Path, retries: int = 3, timeout: float = 60) -> None:
+    """Download to a .part file, check the size against Content-Length, then rename."""
+    tmp = dest.with_name(dest.name + ".part")
+    for attempt in range(1, retries + 1):
+        try:
+            with (
+                urllib.request.urlopen(url, timeout=timeout) as r,
+                open(tmp, "wb") as f,
+            ):
+                expected = int(r.headers.get("Content-Length", -1))
+                shutil.copyfileobj(r, f, length=1 << 20)
+            if expected >= 0 and tmp.stat().st_size != expected:
+                raise OSError(f"size {tmp.stat().st_size} != {expected}")
+            tmp.rename(dest)
+            return
+        except OSError as err:  # URLError and timeouts are OSError subclasses
+            tmp.unlink(missing_ok=True)
+            if attempt == retries:
+                raise
+            print(f"  retry {attempt}/{retries - 1}: {err}")
+
+
 def fetch(data_dir: Path) -> None:
     raw = data_dir / "raw"
     raw.mkdir(parents=True, exist_ok=True)
@@ -40,10 +62,7 @@ def fetch(data_dir: Path) -> None:
             print(f"ok      {name}")
             continue
         print(f"fetch   {name}")
-        tmp = dest.with_suffix(".part")
-        with urllib.request.urlopen(f"{BASE}/{name}") as r, open(tmp, "wb") as f:
-            shutil.copyfileobj(r, f, length=1 << 20)
-        tmp.rename(dest)
+        download(f"{BASE}/{name}", dest)
 
 
 def build(data_dir: Path, min_weight: int = 1) -> None:
@@ -85,6 +104,10 @@ def build(data_dir: Path, min_weight: int = 1) -> None:
 
 
 def load(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    if not (data_dir / "edges.parquet").exists():
+        raise FileNotFoundError(
+            f"no compact data in {data_dir}/: run `flymsg fetch` and `flymsg build`"
+        )
     return pd.read_parquet(data_dir / "neurons.parquet"), pd.read_parquet(
         data_dir / "edges.parquet"
     )

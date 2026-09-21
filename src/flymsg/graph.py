@@ -1,5 +1,7 @@
 """Graph queries: strongest paths and aggregated partners."""
 
+from itertools import pairwise
+
 import numpy as np
 import pandas as pd
 from scipy import sparse
@@ -22,12 +24,15 @@ def strongest_path(
     """Path from any source to any target maximising the product of input fractions.
 
     Edge cost is -log(input fraction), so the shortest path is the chain along which
-    each hop drives the largest share of the next neuron's input.
+    each hop drives the largest share of the next neuron's input. Edges below
+    `min_weight` synapses are not traversed but still count in the input totals.
     """
-    e = edges[edges["weight"] >= min_weight]
+    # Fractions use each neuron's full input; filtering first would inflate them.
+    keep = edges["weight"].to_numpy() >= min_weight
     cost = (
-        -np.log(input_fraction(e, n)) + 1e-9
-    )  # keep zero-cost edges non-zero for sparse storage
+        -np.log(input_fraction(edges, n)[keep]) + 1e-9
+    )  # zero cost would drop the edge
+    e = edges[keep]
     g = sparse.csr_matrix((cost, (e["pre"], e["post"])), shape=(n, n))
     dist, pred, src = dijkstra(
         g, indices=sources, min_only=True, return_predecessors=True
@@ -60,3 +65,9 @@ def partners(
     return out.rename(columns={"sum": "synapses", "size": "connections"}).nlargest(
         top, "synapses"
     )
+
+
+def edge_weights(edges: pd.DataFrame, path: list[int]) -> list[int]:
+    """Synapse count of each hop along `path`."""
+    pre, post, w = (edges[c].to_numpy() for c in ("pre", "post", "weight"))
+    return [int(w[(pre == a) & (post == b)][0]) for a, b in pairwise(path)]
