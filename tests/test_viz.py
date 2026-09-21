@@ -84,8 +84,12 @@ def run_node_tests(network: bool) -> subprocess.CompletedProcess:
     env = {k: v for k, v in os.environ.items() if k != "FLYMSG_NETWORK"}
     if network:
         env["FLYMSG_NETWORK"] = "1"
+    # explicit files: Node < 23 does not accept a directory argument to --test
+    files = sorted(
+        str(f.relative_to(ROOT)) for f in (ROOT / "tests" / "js").glob("*.test.mjs")
+    )
     return subprocess.run(
-        ["node", "--test", "tests/js/"],
+        ["node", "--test", *files],
         cwd=ROOT,
         capture_output=True,
         text=True,
