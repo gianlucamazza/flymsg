@@ -59,11 +59,27 @@ or potentially male-specific.
 
 ## Calibration
 
-Grid: `w_syn` ∈ {0.2, 0.275, 0.35} × `th_jump` ∈ {2, 4, 6, 8, 12}, 3 seeds, ranked by checks
-passed; ties go to the set closest to the published model (`w_syn` nearest 0.275, then the
-smallest `th_jump`). Output: `runs/calibrate-v1.csv`.
+Grid: `w_syn` ∈ {0.2, 0.275, 0.35} × `th_jump` ∈ {2, 4, 6, 8, 12}, 3 seeds, criterion v2, ranked
+by checks passed; ties go to the set closest to the published model (`w_syn` nearest 0.275,
+then the smallest `th_jump`). Rule fixed before the run (commit `fc5c332`). Reproduce:
+`flymsg calibrate --out runs/calibrate-v2.csv` (~45 min with 5 workers).
 
-_Results pending._
+**Result (calibrate-v2): `w_syn` 0.275, `th_jump` 6 mV** — the default since `b6dc609`.
+
+| w_syn \ th_jump | 2 | 4 | 6 | 8 | 12 |
+|---|---|---|---|---|---|
+| 0.2 | 16 | 16 | 16 | 15 ¹ | 15 ¹ |
+| 0.275 | 13 ² | 15 ³ | **16** | 16 | 16 |
+| 0.35 | 12 ² | 12 ² | 13 ² | 14 ² | 14 ² |
+
+Checks passed out of 16. ¹ GF → TTMn below 3 spikes (7 and 6 Hz): strong adaptation plus weak
+coupling. ² Self-sustained activity after LC4_R, P1 and/or pIP10. ³ P1 leaves 1,977 neurons
+self-sustained.
+
+Six sets pass everything, so the chosen point sits on a broad plateau rather than a knife
+edge. The published `w_syn` survives unchanged; stronger coupling (0.35) runs away whatever the
+adaptation, and the adaptive threshold is needed at 0.275 (`th_jump` 2 fails three stability
+checks).
 
 ## Findings log
 
@@ -122,15 +138,15 @@ giant synapse. This is a model limitation, not a calibration issue.
 
 ## References
 
-Entries marked (checked) were verified against the publication record; the others are
+Entries marked as checked had title, venue and year verified online (not authors); the others are
 compiled from memory: verify titles and venues before citing.
 
-- Allen, M. J. & Murphey, R. K. The chemical component of the mixed GF-TTMn synapse in
+- Allen, M. J. et al. The chemical component of the mixed GF-TTMn synapse in
   *Drosophila melanogaster* uses acetylcholine as its neurotransmitter. *European Journal of
-  Neuroscience* (2007). <https://pubmed.ncbi.nlm.nih.gov/17650116/> (checked)
+  Neuroscience* (2007). <https://pubmed.ncbi.nlm.nih.gov/17650116/> (title, venue and year checked)
 - Blagburn, J. M. et al. Null mutation in *shaking-B* eliminates electrical, but not chemical,
   synapses in the *Drosophila* giant fiber system: a structural study. *Journal of Comparative
-  Neurology* (1999). (checked)
+  Neurology* (1999). (title, venue and year checked)
 - Ache, J. M. et al. Neural basis for looming size and velocity encoding in the _Drosophila_
   giant fiber escape pathway. _Current Biology_ (2019).
 - Cachero, S. et al. Sexual dimorphism in the fly brain. _Current Biology_ (2010).
