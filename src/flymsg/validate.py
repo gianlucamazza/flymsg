@@ -6,6 +6,11 @@ specific   its rate beats the control by SPECIFICITY x + MARGIN_HZ; the control 
            the same number of random neurons from the same superclasses, excluding direct
            inputs of the targets, so the response must need the specific wiring
 stability  at most MAX_PERSISTENT neurons still fire from 100 ms after the stimulus ends
+order      (criterion v3) along a chain of targets, first spikes come in chain order in at
+           least MIN_SEED_SHARE of the seeds where both neurons fire
+dose       (criterion v3) the target's rate does not fall as the input rate rises through
+           DOSE_RATES_HZ, within one spike per window, and is higher at the top than at
+           the bottom
 
 Positive checks count spikes rather than requiring a rate: the adaptive threshold caps
 steady rates (about (drive - 7 mV) / (th_jump * tau_th)), so an absolute rate threshold
@@ -18,7 +23,7 @@ import multiprocessing as mp
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from itertools import product
+from itertools import pairwise, product
 
 import numpy as np
 import pandas as pd
@@ -30,6 +35,8 @@ MIN_SEED_SHARE = 2 / 3
 SPECIFICITY, MARGIN_HZ = 3.0, 2.0
 MAX_PERSISTENT = 100
 RATE_HZ, STIM_MS, DURATION_MS = 100.0, 300.0, 600.0
+DOSE_RATES_HZ = (25.0, 50.0, 100.0, 200.0)
+DOSE_TOL_HZ = 1000.0 / STIM_MS  # one spike in the stimulus window
 
 
 def p1(neurons: pd.DataFrame) -> np.ndarray:
@@ -38,12 +45,20 @@ def p1(neurons: pd.DataFrame) -> np.ndarray:
     return np.flatnonzero(is_pc1 & neurons["synonyms"].fillna("").str.contains("pMP4"))
 
 
+def sugar_grns(neurons: pd.DataFrame) -> np.ndarray:
+    """Right labellar sugar GRNs: LB3b and LB3c, the subtypes on which two independent lines
+    agree (docs/validation.md): morphology matched to Gr64f-GAL4 in the gustatory connectome,
+    and connectivity closest to the Shiu et al. sugar set in FAFB (compare.fingerprint)."""
+    return np.flatnonzero(neurons["instance"].isin(["LB3b_R", "LB3c_R"]).to_numpy())
+
+
 @dataclass
 class Case:
     name: str
     stim: str | Callable[[pd.DataFrame], np.ndarray]
     targets: list[str]
     reference: str
+    chain: bool = False  # targets are successive stages: check their latency order
 
     def stim_idx(self, neurons: pd.DataFrame) -> np.ndarray:
         return (
@@ -54,12 +69,15 @@ class Case:
 
 
 CASES = [
-    Case("looming escape", "LC4_R", ["DNp01", "TTMn"], "von Reyn 2014, Ache 2019"),
+    Case(
+        "looming escape", "LC4_R", ["DNp01", "TTMn"], "von Reyn 2014, Ache 2019", True
+    ),
     # GF -> PSI -> DLMn is not tested: it runs mostly through gap junctions, which the
     # connectome does not contain (the chemical GF -> PSI link has only ~23 synapses).
     Case("giant fiber output", "DNp01", ["TTMn"], "King & Wyman 1980"),
-    Case("P1 courtship drive", p1, ["pIP10", "dPR1"], "von Philipsborn 2011"),
+    Case("P1 courtship drive", p1, ["pIP10", "dPR1"], "von Philipsborn 2011", True),
     Case("pIP10 song pathway", "pIP10", ["dPR1"], "von Philipsborn 2011"),
+    Case("sugar feeding", sugar_grns, ["MN9"], "Shiu 2024; Gordon & Scott 2009"),
 ]
 
 
@@ -82,11 +100,14 @@ def control_idx(
     return np.concatenate(picks)
 
 
-def respond(W, neurons, stim, targets, p, seeds) -> tuple[dict[str, dict], float]:
-    """Per target type, its best neuron (highest mean rate over seeds): rate, reliable seeds
-    and median first-spike latency. Also the mean number of self-sustained neurons."""
+def respond(
+    W, neurons, stim, targets, p, seeds, rate_hz=RATE_HZ
+) -> tuple[dict[str, dict], float]:
+    """Per target type, its best neuron (highest mean rate over seeds): rate, reliable seeds,
+    first-spike latency per seed and its median. Also the mean number of self-sustained
+    neurons."""
     results = [
-        sim.run(W, stim, RATE_HZ, DURATION_MS, STIM_MS, p, seed)
+        sim.run(W, stim, rate_hz, DURATION_MS, STIM_MS, p, seed)
         for seed in range(seeds)
     ]
     stim_bins = round(STIM_MS / results[0].bin_ms)
@@ -102,11 +123,28 @@ def respond(W, neurons, stim, targets, p, seeds) -> tuple[dict[str, dict], float
         out[t] = {
             "rate": float(rates[best]),
             "reliable": int((spikes[:, best] >= MIN_SPIKES).sum()),
+            "latencies": lat,
             "latency": float(np.median(lat[np.isfinite(lat)]))
             if np.isfinite(lat).any()
             else np.nan,
         }
     return out, float(np.mean([r.persistent().size for r in results]))
+
+
+def in_order(
+    earlier: np.ndarray, later: np.ndarray, need_share: float
+) -> tuple[bool, str]:
+    """Per seed, does `earlier` fire first? Only seeds where both fired count."""
+    both = np.isfinite(earlier) & np.isfinite(later)
+    ok = int((earlier[both] < later[both]).sum())
+    n = int(both.sum())
+    return n > 0 and ok >= np.ceil(need_share * n), f"{ok}/{n} seeds in order"
+
+
+def dose_ok(rates: list[float]) -> bool:
+    """Non-decreasing within DOSE_TOL_HZ per step, and higher at the top than the bottom."""
+    steps_ok = all(b >= a - DOSE_TOL_HZ for a, b in pairwise(rates))
+    return steps_ok and rates[-1] > rates[0]
 
 
 def run(
@@ -151,6 +189,42 @@ def run(
                     f"control; needs <= {(r['rate'] - MARGIN_HZ) / SPECIFICITY:.1f} Hz",
                     np.nan,
                     r["rate"] >= SPECIFICITY * c["rate"] + MARGIN_HZ,
+                )
+            )
+        if case.chain:
+            for a, b in pairwise(case.targets):
+                ok, note = in_order(
+                    pos[a]["latencies"], pos[b]["latencies"], MIN_SEED_SHARE
+                )
+                rows.append(
+                    (case.name, "order", f"{a} before {b}", np.nan, note, np.nan, ok)
+                )
+        sweep = {
+            r: pos
+            if r == RATE_HZ
+            else respond(W, neurons, stim, case.targets, p, seeds, r)[0]
+            for r in DOSE_RATES_HZ
+        }
+        for t in case.targets:
+            curve = [sweep[r][t]["rate"] for r in DOSE_RATES_HZ]
+            # share of the peak reached at the standard rate (Shiu et al. tuned w_syn so
+            # that 100 Hz sugar input gives ~80 % of maximal MN9 firing): descriptive only
+            at_std = curve[DOSE_RATES_HZ.index(RATE_HZ)]
+            top = (
+                f", {100 * at_std / max(curve):.0f}% of peak at {RATE_HZ:.0f} Hz"
+                if max(curve)
+                else ""
+            )
+            rows.append(
+                (
+                    case.name,
+                    "dose",
+                    t,
+                    curve[-1],
+                    " / ".join(f"{c:.0f}" for c in curve)
+                    + f" Hz at {'/'.join(f'{r:.0f}' for r in DOSE_RATES_HZ)} Hz{top}",
+                    np.nan,
+                    dose_ok(curve),
                 )
             )
         rows.append(

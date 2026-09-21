@@ -22,8 +22,10 @@ uv run flymsg info DNp01                 # annotations, top partner types, Neuro
 uv run flymsg path LC4 TTMn --alt 3      # LC4 -> DNp01 (Giant Fiber) -> TTMn, then via DNp02, DNp11
 uv run flymsg sim LC4_R --duration 600 --stim-ms 300 --seeds 3 \
     --superclass descending_neuron vnc_motor   # simulate, report responding types per window
-uv run flymsg validate                   # battery of known circuits + controls (~3 min)
-uv run flymsg calibrate                  # grid search of the model parameters (~45 min)
+uv run flymsg validate                   # battery of known circuits + controls (~15 min)
+uv run flymsg calibrate --workers 6      # grid search of the model parameters (~45 min)
+uv run flymsg dimorphism                 # dimorphic neurons among each case's responders
+uv run flymsg --dataset fafb fetch       # female brain (FlyWire v783) for comparisons
 uv run flymsg viz --sim LC4_R            # 3D replay; also --path SRC DST, --types ...
 python -m http.server -d runs/viz 8000   # then open http://localhost:8000
 ```
@@ -32,13 +34,22 @@ python -m http.server -d runs/viz 8000   # then open http://localhost:8000
   input (cost `-log(input fraction)` over each neuron's full input); `--alt K` lists further
   routes, each avoiding the intermediate cell types of the previous ones.
 - **sim** is a whole-CNS leaky integrate-and-fire model after Shiu et al. (_Nature_ 2024),
-  with one named compensation, an adaptive threshold (`th_jump` 6 mV), for biology the
-  connectome does not contain. `--rate` is the Poisson _input_ rate (stimulated neurons fire
-  ≈ 2×). The summary gives per type: share of seeds active, mean ± SD rate with silent neurons
-  counted, latency, post-stimulus rate, and how many neurons stay self-sustained.
-- **validate** passes 16/16 with the defaults: looming escape, Giant Fiber output, P1
-  courtship drive and pIP10 song pathway, each with a size-matched random control and a
-  stability check. **calibrate** re-derives the defaults with a pre-registered rule.
+  with one named compensation, an adaptive threshold (`th_jump` 2 mV), for biology the
+  connectome does not contain. The engine reproduces the published brian2 model (checked on
+  the same FlyWire brain: MN9 within noise, r ≥ 0.998 over all active neurons). `--rate` is the
+  Poisson input rate, and stimulated neurons fire at it. The summary gives per type: share of
+  seeds active, mean ± SD rate with silent neurons counted, latency, post-stimulus rate, and
+  how many neurons stay self-sustained.
+- **validate** (criterion v3) passes 27/28 with the defaults: looming escape, Giant Fiber
+  output, P1 courtship drive, pIP10 song pathway and sugar → MN9, each with a size-matched
+  random control, latency order along chains, a dose-response sweep and a stability check.
+  The one failure, sugar → MN9 specificity, is a documented finding. **calibrate**
+  re-derives the defaults with a pre-registered rule.
+- **dimorphism**: courtship responses run 3–16× more through fru/dsx+, male-specific and
+  dimorphic neurons than superclass-matched chance; escape and feeding responses do not.
+- **--dataset fafb** loads the female brain in the same schema: the engine reproduces the
+  published model there, and male vs female runs correct for the 1.8× difference in synapse
+  detection density (docs/comparison.md).
 - **viz** exports only metadata and activity; the page streams the real neuron surfaces
   (multi-resolution Draco meshes), skeletons and neuropils straight from the public volumes on
   GCS, refining detail near the camera within a triangle budget; neurons beyond the budget are
@@ -56,6 +67,9 @@ python -m http.server -d runs/viz 8000   # then open http://localhost:8000
   the adaptive-threshold compensation
 - [docs/validation.md](docs/validation.md): protocol, cases, calibration, findings log
   (including the negative results)
+- [docs/dimorphism.md](docs/dimorphism.md): dimorphic neurons among simulated responders
+- [docs/comparison.md](docs/comparison.md): engine check against the published model, male
+  vs female
 - [docs/viz.md](docs/viz.md): 3D view pipeline, levels of detail, rendering quality,
   measurements on an Iris Xe
 
@@ -63,8 +77,9 @@ python -m http.server -d runs/viz 8000   # then open http://localhost:8000
 
 - One animal; wiring only (no gap junctions, neuromodulation, plasticity); transmitters are
   predictions.
-- One weight per synapse: giant synapses are underweighted (GF → TTMn needs several summed
-  spikes, first spike at ~19 ms instead of a few ms).
+- No gap junctions: the model's Giant Fiber behaves like a *shak-B²* fly (chemical synapse
+  only: TTMn follows 17–18 % of GF spikes at 100–250 Hz, as in the mutant at 100 Hz, not 1:1); latencies below the 1.8 ms synaptic delay
+  cannot be reproduced.
 - Rates are qualitative: use the model to rank which circuits a stimulus recruits and in what
   order, not to predict exact firing.
 

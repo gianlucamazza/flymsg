@@ -60,7 +60,11 @@ Neurons are sorted by `bodyId`.
 | `bodyId`              | FlyEM body ID (use it in neuPrint and Neuroglancer)                                                 |
 | `type`, `instance`    | cell type (`LC4`) and side-specific instance (`LC4_R`); may be missing                              |
 | `superclass`, `class` | coarse grouping (`descending_neuron`, `vnc_motor`, `Kenyon_Cell`…)                                  |
-| `somaSide`            | `L`, `R` or missing                                                                                 |
+| `subclass`            | finer grouping (`labellar bristle`, `pharyngeal sensillum`…)                                        |
+| `somaSide`            | `L`, `R` or missing (sensory neurons have no soma in the CNS: use `instance`)                       |
+| `entryNerve`          | nerve through which a sensory neuron enters (`MxLbN`, `PhN`…)                                       |
+| `receptorType`        | putative receptor (752 leg/wing gustatory neurons only; no Gr labels)                               |
+| `flywireType`         | matching FlyWire FAFB cell type, the key for male ↔ female comparisons                              |
 | `dimorphism`          | `male-specific`, `sexually dimorphic`, `potentially …`, or missing                                  |
 | `fruDsx`              | fruitless/doublesex expression class                                                                |
 | `synonyms`            | names used in earlier literature (used to select P1 neurons, see validation)                        |
@@ -77,6 +81,29 @@ Neurons are sorted by `bodyId`.
 - **Predicted transmitters**: `consensus_nt` is a machine prediction. 502 traced neurons have
   none and 3,100 are `unclear`.
 - **Missing names**: 2,605 traced neurons have no type and 7,040 no instance.
+
+## Female brain: FlyWire FAFB v783 (`--dataset fafb`)
+
+`flymsg --dataset fafb fetch` and `build` write the female brain to `data/fafb/` in the same
+schema, for the comparisons in [comparison.md](comparison.md). Sources, pinned to commits:
+
+| File | Size | Source |
+|---|---:|---|
+| `Connectivity_783.parquet` | 101 MB | Shiu et al. model repository, commit `91bdd1e` (MIT): 15.1 M connections, synapse counts and the model's signs |
+| `Completeness_783.csv` | 3.3 MB | same: the 138,639 neurons of the model |
+| `Supplemental_file1_neuron_annotations.tsv` | 32 MB | flyconnectome/flywire_annotations, commit `8587524`: cell types, classes, side, nerve, `dimorphism`, `fru_dsx`, top transmitter. No licence file; the repository asks to cite Berg et al. 2025, Schlegel et al. 2024, Matsliah et al. 2024 and Dorkenwald et al. 2024 |
+
+Mapping: `type` = `cell_type` (also `flywireType`), `instance` = type + side, `superclass`
+= `super_class`, `class` = `cell_class`, `subclass` = `cell_sub_class`, `entryNerve` = `nerve`,
+`fruDsx` = `fru_dsx`, `nt` = `top_nt`. `sign` follows the same transmitter map as MaleCNS;
+`shiu_sign` keeps the published model's own signs (it treats dopamine, serotonin and
+octopamine as ±1 and used other transmitter predictions: the two differ for 14,515 neurons),
+so that the model can be reproduced exactly.
+
+FAFB is **brain only** (no VNC) and **one female**. Shiu et al. used FlyWire v630; of their 21
+sugar GRN IDs, 20 still exist in v783. The published model's side labels are mirrored with
+respect to the FlyWire `side` column: its "sugarR" GRNs are annotated `left` and its "MN9
+left" is `CB0701_R`.
 
 ## Citation
 

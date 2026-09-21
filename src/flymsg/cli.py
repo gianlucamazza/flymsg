@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, graph, sim, validate, viz
+from flymsg import data, dimorphism, graph, sim, validate, viz
 
 NG = "https://neuroglancer-demo.appspot.com/#!"
 
@@ -167,10 +167,18 @@ def cmd_validate(a, neurons, edges):
         sys.exit(1)
 
 
+def cmd_dimorphism(a, neurons, edges):
+    params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
+    print("responders of each validation case vs superclass-matched random sets ...")
+    table = dimorphism.run(neurons, edges, params, a.seeds)
+    print(table.round(3).to_string(index=False))
+
+
 def cmd_calibrate(a, neurons, edges):
     n = len(a.w_syn) * len(a.th_jump)
     print(
-        f"{n} parameter sets x {len(validate.CASES) * 2} runs x {a.seeds} seeds, {a.workers} workers ..."
+        f"{n} parameter sets x {len(validate.CASES) * (1 + len(validate.DOSE_RATES_HZ))} runs"
+        f" x {a.seeds} seeds, {a.workers} workers ..."
     )
     table = validate.calibrate(neurons, edges, a.w_syn, a.th_jump, a.seeds, a.workers)
     print(table.to_string(index=False))
@@ -217,8 +225,14 @@ def main() -> None:
         default=Path(os.environ.get("FLYMSG_DATA", "data")),
         help="data dir (env FLYMSG_DATA)",
     )
+    p.add_argument(
+        "--dataset",
+        choices=["malecns", "fafb"],
+        default="malecns",
+        help="malecns (male CNS, default) or fafb (female brain, FlyWire v783, in DATA/fafb)",
+    )
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("fetch", help="download raw tables (~1.1 GB)")
+    sub.add_parser("fetch", help="download raw tables (malecns ~1.1 GB, fafb ~135 MB)")
     sub.add_parser("build", help="compact raw tables to data/*.parquet")
     s = sub.add_parser(
         "info", help="annotations and top partners of a type/instance/bodyId"
@@ -273,6 +287,13 @@ def main() -> None:
     s.add_argument("--w-syn", type=float, default=sim.Params.w_syn)
     s.add_argument("--th-jump", type=float, default=sim.Params.th_jump)
     s = sub.add_parser(
+        "dimorphism",
+        help="share of fru/dsx+, male-specific and dimorphic neurons among responders",
+    )
+    s.add_argument("--seeds", type=int, default=3)
+    s.add_argument("--w-syn", type=float, default=sim.Params.w_syn)
+    s.add_argument("--th-jump", type=float, default=sim.Params.th_jump)
+    s = sub.add_parser(
         "calibrate", help="grid-search w_syn x th_jump against the validation battery"
     )
     s.add_argument("--w-syn", type=float, nargs="+", default=[0.2, 0.275, 0.35])
@@ -316,16 +337,25 @@ def main() -> None:
 
     try:
         if a.cmd == "fetch":
-            return data.fetch(a.data)
+            return data.fetch(a.data, a.dataset)
         if a.cmd == "build":
-            return data.build(a.data)
-        neurons, edges = data.load(a.data)
+            return data.build(a.data, a.dataset)
+        if a.dataset == "fafb" and a.cmd in (
+            "validate",
+            "calibrate",
+            "dimorphism",
+            "viz",
+        ):
+            # the battery needs the VNC, and the 3D view streams MaleCNS geometry
+            sys.exit(f"flymsg: {a.cmd} needs --dataset malecns")
+        neurons, edges = data.load(a.data, a.dataset)
         {
             "info": cmd_info,
             "path": cmd_path,
             "sim": cmd_sim,
             "validate": cmd_validate,
             "calibrate": cmd_calibrate,
+            "dimorphism": cmd_dimorphism,
             "viz": cmd_viz,
         }[a.cmd](a, neurons, edges)
     except KeyError as err:  # unknown neuron query

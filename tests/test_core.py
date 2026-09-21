@@ -115,11 +115,19 @@ def test_stimulated_neurons_do_not_adapt():
     assert adapt[1] < plain[1]  # downstream neuron adapts
 
 
-def test_poisson_weight_scales_with_w_syn():
+def test_poisson_input_kicks_v_like_the_brian2_model():
     edges, sign, n = chain([1])
     W = sim.weight_matrix(edges, sign, n, 0.275)
-    weak = sim.run(W, np.array([0]), 100, 500, p=sim.Params(w_syn=0.01)).rate()
-    assert weak[0] == 0  # 2.5 mV kicks never reach the 7 mV threshold
+    # 68.75 mV kicks: with no refractory period every input event is a spike, so the
+    # stimulated neuron fires at the input rate (not ~2x, as when kicks went into g)
+    # At 1,000 Hz (0.1 events per 0.1 ms step) ~10 % of events fall in the step where the
+    # spike from the previous event is reset and are lost, as in brian2's schedule (input
+    # before reset); at 100 Hz the loss is ~1 %.
+    rate = sim.run(W, np.array([0]), 1000, 1000).rate()[0]
+    assert 800 < rate < 950
+    # 2.5 mV kicks, 5 Hz: the membrane decays long before a second kick arrives
+    weak = sim.run(W, np.array([0]), 5, 1000, p=sim.Params(w_syn=0.01)).rate()
+    assert weak[0] == 0
 
 
 def fake_result(rates_hz, stim_ms=100.0, duration_ms=100.0, bin_ms=10.0):
@@ -218,3 +226,17 @@ def test_build_compacts_tables(tmp_path):
 def test_load_without_data(tmp_path):
     with pytest.raises(FileNotFoundError, match="flymsg build"):
         data.load(tmp_path)
+
+
+def test_matches_the_brian2_reference_on_a_two_neuron_network():
+    # Reference: the published brian2 model (model.py at commit 91bdd1e, brian2 2.10.1),
+    # neuron 0 stimulated at 200 Hz, 60 synapses onto neuron 1, 20 seeds x 2 s:
+    # post 44.4 Hz with t_ref 2.2 ms. It is sensitive to the refractory rules (input lost
+    # while refractory, 2.2 ms = 22 steps): keeping that input gave 49.9 Hz.
+    edges = pd.DataFrame({"pre": [0], "post": [1], "weight": [60]})
+    p = sim.Params(th_jump=0.0)
+    W = sim.weight_matrix(edges, np.ones(2, dtype=np.int8), 2, p.w_syn)
+    post = np.mean(
+        [sim.run(W, np.array([0]), 200, 2000, p=p, seed=s).rate()[1] for s in range(10)]
+    )
+    assert 41.5 < post < 47.5  # ~2 SD of a 10-seed mean around 44.4

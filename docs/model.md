@@ -14,22 +14,40 @@ junctions, and the parameters are shared by all neurons.
 For neuron _i_ with membrane potential _v_, synaptic drive _g_ and threshold offset _θ_:
 
 ```
-dv/dt = (g − (v − v_rest)) / τ_m          (frozen at v_rest during the refractory period)
+dv/dt = (g − (v − v_rest)) / τ_m          (v and g frozen during the refractory period)
 dg/dt = −g / τ_syn
 dθ/dt = −θ / τ_th
 
-if v ≥ v_th + θ:  spike;  v ← v_rest;  refractory for t_ref;  θ ← θ + th_jump
+if v > v_th + θ:  spike;  v ← v_rest;  g ← 0;  refractory for t_ref;  θ ← θ + th_jump
 ```
 
 A spike of presynaptic neuron _j_ reaches _i_ after a fixed `delay` and adds
 `sign_j · n_ij · w_syn` to _g_i_, where `n_ij` is the synapse count of the connection.
 Stimulated neurons get independent Poisson input spikes at `--rate` Hz, each adding
-`poisson_scale · w_syn` to _g_.
+`poisson_scale · w_syn` (68.75 mV) directly to _v_, and have no refractory period, so they
+fire once per input spike.
 
-Integration uses a fixed step `dt` = 0.1 ms: forward Euler for _v_, exact exponential decay for
-_g_ and _θ_. Spikes in flight sit in a ring buffer of `delay / dt` steps. Each step, in order:
-deliver delayed spikes → add Poisson input → update _v_ of non-refractory neurons → decay _g_
-and _θ_ → detect spikes.
+The update reproduces the published brian2 model (Shiu et al. repository, `model.py`,
+`method='linear'`, default schedule) with a fixed step `dt` = 0.1 ms. Each step, in order:
+
+1. state update of non-refractory neurons, integrated exactly (the pair _v_, _g_ is linear);
+   _θ_ decays;
+2. threshold: non-refractory neurons with _v_ > `v_th` + _θ_ spike;
+3. synaptic delivery: spikes emitted `delay` ago add to _g_ of non-refractory neurons (input
+   reaching a refractory neuron is lost, as brian2 does for these equations: checked directly,
+   a 5 mV input arriving 0.2 ms after a spike leaves _g_ at 0); Poisson input adds to _v_;
+4. reset of the spiking neurons (_v_ and _g_).
+
+Input that arrives in the step of a neuron's own spike is wiped by the reset, as in brian2;
+for a stimulated neuron this loses about `rate · dt` of its input (1 % at 100 Hz). Spikes in
+flight sit in a ring buffer of `delay / dt` steps. A neuron that spikes at step _s_ integrates
+again from step _s_ + `t_ref / dt` (21 frozen steps for 2.2 ms), as in brian2.
+
+Until 2026-09-21 the engine differed in six points (input into _g_, no reset of
+_g_, _g_ decaying while refractory, stimulated neurons refractory, synaptic input kept while
+refractory, one extra refractory step), which made stimulated neurons fire about twice the
+input rate; see the [findings log](validation.md#findings-log) and
+[comparison](comparison.md#engine-check).
 
 ## Parameters
 
@@ -43,12 +61,13 @@ and _θ_ → detect spikes.
 | `delay`                   |                                              1.8 ms |             | Shiu et al. 2024                         |
 | `w_syn`                   |                                0.275 mV per synapse | `--w-syn`   | Shiu et al. 2024; checked by calibration |
 | `poisson_scale`           | 250 (one input spike = 68.75 mV at default `w_syn`) |             | Shiu et al. 2024                         |
-| `th_jump`                 |                                    6.0 mV per spike | `--th-jump` | **flymsg**, calibrated (calibrate-v2)    |
+| `th_jump`                 |                                    2.0 mV per spike | `--th-jump` | **flymsg**, calibrated (calibrate-v3)    |
 | `tau_th`                  |                                              100 ms |             | **flymsg**                               |
 | `dt`                      |                                              0.1 ms |             | Shiu et al. 2024                         |
 
-Scale check: one synapse moves _v_ by about `w_syn · τ_syn / τ_m` ≈ 0.07 mV, so a silent neuron
-needs roughly 100 coincident synapses to cross the 7 mV gap to threshold.
+Scale check: one synapse moves a resting _v_ by at most 0.043 mV (peak 9.2 ms after the spike,
+`w_syn · τ_syn/(τ_m − τ_syn) · (e^(−t/τ_m) − e^(−t/τ_syn))`), so a silent neuron needs about 160
+coincident synapses to cross the 7 mV gap to threshold.
 
 ## Synapse sign
 
@@ -72,9 +91,8 @@ glutamatergic, which only matters where they synapse onto central neurons.
 
 ## Stimulus and rates
 
-- `--rate` is the rate of the Poisson **input**, not the firing rate of stimulated neurons.
-  Each 68.75 mV kick triggers about two spikes on average, so at `--rate 100` stimulated
-  neurons fire at about 200 Hz (measured on LC4_R).
+- `--rate` is the rate of the Poisson input; stimulated neurons fire at that rate (minus the
+  ~`rate · dt` share lost to the reset, see above).
 - `--stim-ms` stops the input early, which lets you measure decay and self-sustained activity.
 - Results are binned (default 10 ms). `sim` reports per type the stimulus-window rate with all
   neurons of the type counted (silent ones included), the share of seeds where the type fired
@@ -88,8 +106,11 @@ glutamatergic, which only matters where they synapse onto central neurons.
 With plain Shiu parameters (`--th-jump 0`), the whole CNS falls into self-sustained activity
 after a strong stimulus: thousands of neurons keep firing once the input stops, most of them
 Kenyon cells of the mushroom body together with antennal-lobe and central-complex neurons.
-Shiu et al. tuned the model on the brain alone. The likely cause is the added recurrence
-of the ventral nerve cord, but this has not been tested in isolation.
+Shiu et al. tuned the model on the brain alone. The added recurrence of the ventral nerve cord
+was the first suspect; an exploratory test points instead at the synapse scale: MaleCNS counts
+1.81× the synapses per neuron of FAFB, and with `w_syn` scaled accordingly (0.152) the plain
+model stays stable without any adaptation, though sugar then fails to drive MN9 (see the
+[findings log](validation.md#findings-log)).
 
 Each spike therefore raises that neuron's threshold by `th_jump`, and the offset relaxes with
 τ = 100 ms. This is a standard spike-frequency adaptation mechanism, not a measured property of
@@ -97,13 +118,15 @@ fly neurons. **Stimulated neurons are exempt**, so the input rate stays as reque
 
 **This is a compensation, named as such.** It stands in for what the connectome cannot
 provide: gap junctions, neuromodulation, per-cell intrinsic properties and the real balance of
-recurrent inhibition. Its value, 6 mV, is chosen by grid search against the validation battery
-(calibrate-v2, see [validation](validation.md)), not measured in flies. `--th-jump 0` restores
+recurrent inhibition. Its value, 2 mV, is chosen by grid search against the validation battery
+(calibrate-v3, see [validation](validation.md)), not measured in flies; with the engine before
+the fidelity fix it had to be 6 mV. `--th-jump 0` restores
 the published model.
 
 ## Performance
 
-Pure NumPy/SciPy on one core: about 20 s per simulated second for the whole CNS. Time grows
+Pure NumPy/SciPy on one core: about 10 s per simulated second for the whole CNS (refractory
+neurons are handled as a small set restored after vectorised updates). Time grows
 with the number of spikes, because each step sums the weight columns of the neurons that
 spiked. `calibrate` runs parameter sets in parallel processes.
 
