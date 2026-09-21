@@ -26,7 +26,7 @@ class Params:
     # Adaptive threshold: not in Shiu et al. Without it the whole CNS (brain + VNC)
     # falls into self-sustained activity (e.g. all Kenyon cells). 0 = plain Shiu model.
     # Stimulated neurons are exempt, so they follow the requested input rate.
-    th_jump: float = 12.0  # mV added to the threshold per spike (calibrate-v1)
+    th_jump: float = 6.0  # mV added to the threshold per spike (calibrate-v2)
     tau_th: float = 100.0  # ms, threshold relaxation back to v_th
     dt: float = 0.1  # ms
 
