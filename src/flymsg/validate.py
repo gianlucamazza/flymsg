@@ -1,10 +1,15 @@
 """Validation battery: stimulate known circuits and check the expected outcome.
 
-positive   the known downstream types reach MIN_HZ (best neuron of the type, mean over seeds)
-control    the same number of random neurons from the same superclasses, excluding direct
-           inputs of the targets, must leave the targets below MIN_HZ: responses need the
-           specific wiring, not just any drive of that size
+positive   reliable: the best neuron of each target type fires >= MIN_SPIKES during the
+           stimulus in at least MIN_SEED_SHARE of the seeds
+specific   its rate beats the control by SPECIFICITY x + MARGIN_HZ; the control stimulates
+           the same number of random neurons from the same superclasses, excluding direct
+           inputs of the targets, so the response must need the specific wiring
 stability  at most MAX_PERSISTENT neurons still fire from 100 ms after the stimulus ends
+
+Positive checks count spikes rather than requiring a rate: the adaptive threshold caps
+steady rates (about (drive - 7 mV) / (th_jump * tau_th)), so an absolute rate threshold
+would penalise adaptation itself instead of testing the wiring.
 
 `calibrate` grid-searches w_syn x th_jump and ranks parameter sets by checks passed.
 """
@@ -20,7 +25,9 @@ import pandas as pd
 
 from flymsg import data, sim
 
-MIN_HZ = 20.0
+MIN_SPIKES = 3  # in the 300 ms stimulus window
+MIN_SEED_SHARE = 2 / 3
+SPECIFICITY, MARGIN_HZ = 3.0, 2.0
 MAX_PERSISTENT = 100
 RATE_HZ, STIM_MS, DURATION_MS = 100.0, 300.0, 600.0
 
@@ -75,43 +82,92 @@ def control_idx(
     return np.concatenate(picks)
 
 
-def respond(W, neurons, stim, targets, p, seeds) -> tuple[dict[str, float], float]:
-    """Best-neuron stimulus-window rate per target type (mean over seeds), mean persistence."""
+def respond(W, neurons, stim, targets, p, seeds) -> tuple[dict[str, dict], float]:
+    """Per target type, its best neuron (highest mean rate over seeds): rate, reliable seeds
+    and median first-spike latency. Also the mean number of self-sustained neurons."""
     results = [
         sim.run(W, stim, RATE_HZ, DURATION_MS, STIM_MS, p, seed)
         for seed in range(seeds)
     ]
-    rates = np.mean([r.rate(0, STIM_MS) for r in results], axis=0)
+    stim_bins = round(STIM_MS / results[0].bin_ms)
+    spikes = np.stack([r.counts[:stim_bins].sum(axis=0) for r in results])  # seeds x n
+    rates = spikes.mean(axis=0) / (STIM_MS / 1000.0)
+    latency = np.stack([r.first_spike_ms for r in results])
     types = neurons["type"].to_numpy()
-    best = {t: float(rates[types == t].max()) for t in targets}
-    return best, float(np.mean([r.persistent().size for r in results]))
+    out = {}
+    for t in targets:
+        idx = np.flatnonzero(types == t)
+        best = idx[np.argmax(rates[idx])]
+        lat = latency[:, best]
+        out[t] = {
+            "rate": float(rates[best]),
+            "reliable": int((spikes[:, best] >= MIN_SPIKES).sum()),
+            "latency": float(np.median(lat[np.isfinite(lat)]))
+            if np.isfinite(lat).any()
+            else np.nan,
+        }
+    return out, float(np.mean([r.persistent().size for r in results]))
 
 
 def run(
     neurons: pd.DataFrame, edges: pd.DataFrame, p: sim.Params, seeds: int = 3
 ) -> pd.DataFrame:
-    """One row per check: case, kind, subject, value, passed."""
+    """One row per check: case, kind, subject, value, note, latency_ms, passed."""
     W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
     rng = np.random.default_rng(0)
+    need = int(np.ceil(MIN_SEED_SHARE * seeds))
     rows = []
     for case in CASES:
         stim = case.stim_idx(neurons)
         target_idx = np.concatenate([data.resolve(neurons, t) for t in case.targets])
-        best, persistent = respond(W, neurons, stim, case.targets, p, seeds)
-        rows += [(case.name, "positive", t, hz, hz >= MIN_HZ) for t, hz in best.items()]
+        pos, persistent = respond(W, neurons, stim, case.targets, p, seeds)
+        ctrl, _ = respond(
+            W,
+            neurons,
+            control_idx(neurons, edges, stim, target_idx, rng),
+            case.targets,
+            p,
+            seeds,
+        )
+        for t in case.targets:
+            r, c = pos[t], ctrl[t]
+            rows.append(
+                (
+                    case.name,
+                    "positive",
+                    t,
+                    r["rate"],
+                    f"{r['reliable']}/{seeds} seeds >= {MIN_SPIKES} spikes",
+                    r["latency"],
+                    r["reliable"] >= need,
+                )
+            )
+            rows.append(
+                (
+                    case.name,
+                    "specific",
+                    t,
+                    c["rate"],
+                    f"control; needs <= {(r['rate'] - MARGIN_HZ) / SPECIFICITY:.1f} Hz",
+                    np.nan,
+                    r["rate"] >= SPECIFICITY * c["rate"] + MARGIN_HZ,
+                )
+            )
         rows.append(
             (
                 case.name,
                 "stability",
                 "self-sustained neurons",
                 persistent,
+                f"<= {MAX_PERSISTENT}",
+                np.nan,
                 persistent <= MAX_PERSISTENT,
             )
         )
-        ctrl = control_idx(neurons, edges, stim, target_idx, rng)
-        best, _ = respond(W, neurons, ctrl, case.targets, p, seeds)
-        rows += [(case.name, "control", t, hz, hz < MIN_HZ) for t, hz in best.items()]
-    return pd.DataFrame(rows, columns=["case", "kind", "subject", "value", "passed"])
+    return pd.DataFrame(
+        rows,
+        columns=["case", "kind", "subject", "value", "note", "latency_ms", "passed"],
+    )
 
 
 _shared: tuple[pd.DataFrame, pd.DataFrame, int] | None = (

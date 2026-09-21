@@ -30,3 +30,17 @@ def test_battery_passes_with_default_params():
     neurons, edges = data.load(DATA)
     report = validate.run(neurons, edges, sim.Params(), seeds=3)
     assert report["passed"].all(), report[~report["passed"]].to_string()
+
+
+def test_respond_reports_best_neuron_reliability_and_latency():
+    # 0 drives 1 strongly and 2 weakly; 1 and 2 share type "T"
+    neurons = pd.DataFrame({"type": ["S", "T", "T"]})
+    edges = pd.DataFrame({"pre": [0, 0], "post": [1, 2], "weight": [200, 1]})
+    W = sim.weight_matrix(edges, np.ones(3, dtype=np.int8), 3, 0.275)
+    out, persistent = validate.respond(
+        W, neurons, np.array([0]), ["T"], sim.Params(), seeds=3
+    )
+    t = out["T"]
+    assert t["reliable"] == 3 and t["rate"] > 0
+    assert 0 < t["latency"] < validate.STIM_MS
+    assert persistent == 0
