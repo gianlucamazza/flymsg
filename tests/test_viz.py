@@ -43,6 +43,8 @@ NEURONS = pd.DataFrame(
         "instance": ["A_R", None],
         "nt": ["gaba", None],
         "superclass": ["x", "y"],
+        "dimorphism": ["male-specific", None],
+        "fruDsx": ["fru_high", None],
     }
 )
 
@@ -59,6 +61,8 @@ def test_export_replay_bundle(tmp_path):
         and scene["neurons"][0]["nt"] == "unknown"
     )
     assert scene["neurons"][1]["rate"] == 100.0  # 1 spike in the 10 ms stimulus window
+    assert scene["neurons"][1]["dimorphism"] == "male-specific"
+    assert scene["neurons"][0]["fruDsx"] == ""
     assert scene["activity"] == {"bins": 2, "bin_ms": 10.0, "stim_ms": 10.0}
     act = np.fromfile(tmp_path / "activity.bin", np.uint8).reshape(2, 2)
     assert act.tolist() == [

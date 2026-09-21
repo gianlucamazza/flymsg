@@ -38,7 +38,10 @@ geometry at source resolution from the public MaleCNS volumes on GCS
    their colour (bloom above threshold 1); silent surfaces and skeletons are desaturated and
    see-through (screen-door dither, `silent surfaces` in the GUI, default 0.3), so large or
    dense silent neurons do not hide activity behind them.
-5. **Picking**: an 11 × 11 px render of neuron ids under the cursor (surfaces and skeletons).
+5. **Colours**: by group, transmitter, cell type, or the sex annotations (`dimorphism`:
+   male-specific / dimorphic, "potentially" calls included; `fru/dsx`: fru / dsx / both),
+   from `colors.js`; `?color=` picks the initial mode.
+6. **Picking**: an 11 × 11 px render of neuron ids under the cursor (surfaces and skeletons).
 
 ## Rendering quality
 

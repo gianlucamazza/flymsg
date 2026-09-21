@@ -38,6 +38,27 @@ For each target the report also gives the share of its peak reached at 100 Hz, n
 Shiu et al.'s calibration (100 Hz sugar input gives ~80 % of maximal MN9 firing); this is
 descriptive, not a check.
 
+**Criterion v4** (fixed 2026-09-21 before running it) changes v3 in two ways:
+
+- **Class-matched control for sensory stimuli.** When the stimulus is sensory (superclass
+  ending in `sensory`), the control matches `class` (e.g. gustatory) instead of superclass,
+  so a taste stimulus is compared with other taste neurons, not with any labial sense.
+- **A negative case.** Bitter GRNs (right LB1a–d, 19 neurons) → MN9 passes when MN9's rate
+  under bitter input is below 1/3 of its rate under sugar input in the same battery: bitter
+  suppresses proboscis extension (Shiu et al. 2024, Fig. 3). Chosen by the same two-evidence
+  rule as sugar (see below).
+
+The battery is also run with **10 seeds** instead of 3 for model selection: positive then
+needs ≥ 7/10 seeds, order ≥ 2/3 of the seeds where both fire; specificity, dose and
+stability use 10-seed means, reported with bootstrap 95 % intervals.
+
+**Model selection** (fixed before running): candidates A = `w_syn` 0.275, `th_jump` 2 (the
+calibrate-v3 default) and B = `w_syn` 0.275 / 1.81 = 0.152, `th_jump` 0 (the published model
+at MaleCNS synapse density, no compensation); B with the density ratio at its interquartile
+bounds (1.43, 2.43: `w_syn` 0.192, 0.113) is reported as sensitivity, not eligible. The model
+passing more v4 checks at 10 seeds becomes the default; on a tie B wins (fewer compensations).
+Everything downstream is then re-run with the winner.
+
 **Why spikes and a ratio, not a rate threshold** (criterion v2, fixed 2026-09-21 before
 `calibrate-v2`): the adaptive threshold caps steady rates at about
 `(drive − 7 mV) / (th_jump · τ_th)`, so the first criterion (target ≥ 20 Hz, control < 20 Hz)
@@ -53,6 +74,7 @@ See the findings log.
 | P1 courtship drive | P1 (86)            | pIP10, dPR1               | P1 activation elicits courtship song through pIP10 (von Philipsborn et al. 2011)                           |
 | pIP10 song pathway | pIP10 (2)          | dPR1                      | pIP10 and dPR1 are courtship song neurons (von Philipsborn et al. 2011); 337 synapses pIP10 → dPR1 here    |
 | sugar feeding      | sugar GRNs, right (LB3b_R + LB3c_R, 17) | MN9       | sugar GRNs drive proboscis extension; MN9 moves the proboscis (Gordon & Scott 2009); the headline case of Shiu et al. 2024 |
+| bitter feeding (negative, v4) | bitter GRNs, right (LB1a–d_R, 19) | MN9 | bitter input suppresses proboscis extension (Shiu et al. 2024, Fig. 3): MN9 must stay below 1/3 of its sugar rate |
 
 **P1** is not a cell type in MaleCNS. It is selected as the `pC1*` types whose literature
 synonyms include pMP4/pMP-e (Yu et al. 2010; Cachero et al. 2010): 86 neurons, all male-specific
@@ -90,7 +112,13 @@ labels. A subtype is used as sugar-sensing only when two independent lines agree
 | LB3d | **0.90** | 0.72 | 0.02 | high salt |
 | LB1a / LB1c / LB1e | ≤ 0.05 | ≤ 0.06 | **0.64 / 0.82 / 0.57** | bitter |
 
-The lines agree on LB3a, LB3b and LB3c, so the sugar set is LB3b + LB3c. LB3d disagrees and
+The lines agree on LB3a, LB3b and LB3c, so the sugar set is LB3b + LB3c.
+
+The **bitter** set follows the same rule. The gustatory connectome (Tastekin et al.) matches
+LB1a–d to Gr33a-GAL4, expressed in all bitter GRNs, and links LB1e to Ir94e (mild aversion
+to some amino acids). Fingerprints against Shiu's FAFB sets: LB1a/b/c/d nearest bitter
+(0.64 / 0.87 / 0.82 / 0.84), LB1e nearest their Ir94e set (0.93 vs 0.57 bitter). Both lines
+agree: bitter = LB1a–d; LB1e is left out. LB3d disagrees and
 is left out: FAFB types all these neurons as one LB3, so Shiu's sugar set, chosen by
 connectivity clustering, may include LB3d-like (salt) neurons. MN9 (MN9_L, MN9_R; FAFB
 CB0701) is scored as a type, so the best of the pair counts.
@@ -255,6 +283,42 @@ except sugar → MN9, where MN9 stays almost silent (1.1 Hz) while the control d
 31.1 Hz. The runaway that motivated the compensation therefore comes from the synapse scale
 of this dataset rather than from the VNC. This was not pre-registered, so it does not replace
 the calibrate-v3 defaults; a pre-registered comparison of the two models is the next step.
+
+**2026-09-21: MN9 depends on LB3d in the density-scaled model** (descriptive,
+`runs/stimulus-equivalence.txt`, 3 seeds, right side):
+
+| Stimulus | MN9, A (`w_syn` 0.275, `th_jump` 2) | MN9, B (`w_syn` 0.152, `th_jump` 0) |
+|---|---|---|
+| LB3b + LB3c (the sugar set, 17) | 38.9 Hz | 0.0 Hz |
+| LB3b + LB3c + LB3d (like FAFB's single LB3 type, 32) | 48.9 Hz | 42.2 Hz |
+| LB3d alone (15) | 45.6 Hz | 14.4 Hz |
+
+At the data's own synapse scale, the proboscis motor neuron responds to the combined LB3
+population but not to the subtypes matched to Gr64f. LB3d was matched to high-salt,
+avoidance-related receptor lines by one study, while its connectivity resembles Shiu's FAFB
+"sugar" set, which FAFB types as a single LB3. Part of the published sugar → MN9 response may
+therefore come from LB3d-like neurons. Which of these is right needs the receptor identity of
+LB3d confirmed; the model cannot decide it.
+
+**2026-09-21: model selection (criterion v4, 10 seeds, `flymsg select-model`): A wins.**
+Reports: `runs/validate-v4-10seeds-{A,B,B-,B+}.csv`, summary `runs/select-model.txt`.
+
+| Model | `w_syn` | `th_jump` | Checks passed | Failures |
+|---|---|---|---|---|
+| **A** (default) | 0.275 | 2 | **28/29** | looming stability: 196 self-sustained neurons on average (55 with 3 seeds) |
+| B | 0.152 (ρ 1.81) | 0 | 26/29 | GF → TTMn reliable in 6/10 seeds; sugar → MN9 positive and specificity |
+| B− (not eligible) | 0.192 (ρ 1.43) | 0 | **29/29** | none |
+| B+ (not eligible) | 0.113 (ρ 2.43) | 0 | 24/29 | GF → TTMn, all sugar checks, bitter negative (no sugar reference) |
+
+- The class-matched control resolves the sugar specificity failure: random gustatory
+  neurons leave MN9 at 0 Hz in every model, while sugar drives it to 30–37 Hz (bootstrap
+  interval) in A. Bitter GRNs leave MN9 at 0 Hz (negative check passed).
+- By the pre-registered rule A stays the default. With 10 seeds its looming stability check
+  fails, a reminder that the self-sustained regime depends on the seed.
+- **B−, the published model with no compensation and `w_syn` at the lower bound of the
+  measured density ratio, passes every check.** It was declared not eligible before the run,
+  so it is not adopted; a confirmatory, pre-registered replication on fresh seeds is the way
+  to decide whether it should replace A.
 
 ## Limits of this validation
 

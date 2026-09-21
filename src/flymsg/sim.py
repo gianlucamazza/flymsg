@@ -87,8 +87,11 @@ def run(
     p: Params | None = None,
     seed: int = 0,
     bin_ms: float = 10.0,
+    silence: np.ndarray | None = None,
 ) -> Result:
-    """Simulate; stimulation lasts `stim_ms` (default: the whole run)."""
+    """Simulate; stimulation lasts `stim_ms` (default: the whole run). Neurons in `silence`
+    never fire, so they transmit nothing: for the rest of the network this equals zeroing
+    their outgoing synapses, as Shiu et al. silence neurons."""
     p = p or Params()
     stim = np.unique(stim)  # duplicates would be dropped by fancy-index +=
     rng = np.random.default_rng(seed)
@@ -110,6 +113,9 @@ def run(
     ref_steps = round(p.t_ref / p.dt)
     is_stim = np.zeros(n, dtype=bool)
     is_stim[stim] = True
+    silent = np.zeros(n, dtype=bool)
+    if silence is not None:
+        silent[silence] = True
     recent: list[np.ndarray] = [np.empty(0, dtype=np.int64)] * max(ref_steps - 1, 0)
     in_flight: list[np.ndarray] = [
         np.empty(0, dtype=np.int64)
@@ -140,6 +146,8 @@ def run(
         th *= decay_th
         # threshold (a refractory neuron sits at v_rest, below any threshold)
         spiking = np.flatnonzero(v > p.v_th + th)
+        if silence is not None:
+            spiking = spiking[~silent[spiking]]
         # synaptic delivery: spikes from `delay` ago into g, Poisson input into v;
         # like brian2, input reaching a refractory neuron is lost
         arriving = in_flight[t % d]

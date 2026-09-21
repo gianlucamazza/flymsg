@@ -24,7 +24,8 @@ uv run flymsg sim LC4_R --duration 600 --stim-ms 300 --seeds 3 \
     --superclass descending_neuron vnc_motor   # simulate, report responding types per window
 uv run flymsg validate                   # battery of known circuits + controls (~15 min)
 uv run flymsg calibrate --workers 6      # grid search of the model parameters (~45 min)
-uv run flymsg dimorphism                 # dimorphic neurons among each case's responders
+uv run flymsg select-model               # pre-registered model comparison (~30 min)
+uv run flymsg dimorphism [--silencing]   # dimorphic neurons among responders / silencing
 uv run flymsg --dataset fafb fetch       # female brain (FlyWire v783) for comparisons
 uv run flymsg viz --sim LC4_R            # 3D replay; also --path SRC DST, --types ...
 python -m http.server -d runs/viz 8000   # then open http://localhost:8000
@@ -40,13 +41,15 @@ python -m http.server -d runs/viz 8000   # then open http://localhost:8000
   Poisson input rate, and stimulated neurons fire at it. The summary gives per type: share of
   seeds active, mean ± SD rate with silent neurons counted, latency, post-stimulus rate, and
   how many neurons stay self-sustained.
-- **validate** (criterion v3) passes 27/28 with the defaults: looming escape, Giant Fiber
+- **validate** (criterion v4) passes 29/29 with the defaults: looming escape, Giant Fiber
   output, P1 courtship drive, pIP10 song pathway and sugar → MN9, each with a size-matched
-  random control, latency order along chains, a dose-response sweep and a stability check.
-  The one failure, sugar → MN9 specificity, is a documented finding. **calibrate**
-  re-derives the defaults with a pre-registered rule.
+  random control (class-matched for sensory stimuli), latency order along chains, a
+  dose-response sweep and a stability check, plus bitter → MN9 as a negative case. With 10
+  seeds the looming stability check fails (documented). **calibrate** re-derives the
+  defaults and **select-model** compares candidate models, both with pre-registered rules.
 - **dimorphism**: courtship responses run 3–16× more through fru/dsx+, male-specific and
   dimorphic neurons than superclass-matched chance; escape and feeding responses do not.
+  `--silencing` measures how much each response drops when a category is silenced.
 - **--dataset fafb** loads the female brain in the same schema: the engine reproduces the
   published model there, and male vs female runs correct for the 1.8× difference in synapse
   detection density (docs/comparison.md).
@@ -57,7 +60,7 @@ python -m http.server -d runs/viz 8000   # then open http://localhost:8000
   neuron that fired; silent neurons are see-through so the activity stays visible. Rendering
   is on demand, with 4× MSAA at rest and adaptive quality while moving. The HUD shows fps,
   CPU/GPU frame time, draw calls, triangles and lines. URL options: `?t=<ms>&paused`,
-  `?neuropils=0|1`, `?budget=<M triangles>`, `?detail=<px>`, `?adaptive=0`, `?bench=<s>` (log
+  `?neuropils=0|1`, `?color=group|transmitter|type|dimorphism|fru/dsx`, `?budget=<M triangles>`, `?detail=<px>`, `?adaptive=0`, `?bench=<s>` (log
   a JSON performance summary after that many seconds). See [docs/viz.md](docs/viz.md).
 
 ## Documentation

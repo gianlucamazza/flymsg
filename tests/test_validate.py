@@ -26,11 +26,11 @@ def test_control_matches_superclasses_and_skips_target_inputs():
 @pytest.mark.skipif(
     not (DATA / "edges.parquet").exists(), reason="needs `flymsg build`"
 )
-def test_battery_with_default_params_fails_only_the_known_check():
-    # Sugar -> MN9 specificity fails under every calibrated parameter set: the superclass-
-    # matched control (labial mechanosensory neurons) also drives MN9 (docs/validation.md,
-    # findings log). If it starts passing, or anything else fails, the docs need updating.
-    known = {("sugar feeding", "specific", "MN9")}
+def test_battery_with_default_params_fails_only_the_known_checks():
+    # Criterion v4 at the standard 3 seeds passes everything (29/29). With 10 seeds the
+    # looming stability check fails (docs/validation.md, model selection): if a change
+    # makes it fail here too, or fixes anything listed, the docs need updating.
+    known: set[tuple[str, str, str]] = set()
     neurons, edges = data.load(DATA)
     report = validate.run(neurons, edges, sim.Params(), seeds=3)
     failed = report[~report["passed"]]
@@ -74,3 +74,49 @@ def test_sugar_grns_are_right_lb3b_and_lb3c():
         {"instance": ["LB3a_R", "LB3b_R", "LB3c_R", "LB3c_L", "LB3d_R", None]}
     )
     assert validate.sugar_grns(neurons).tolist() == [1, 2]
+
+
+def test_control_matches_class_for_sensory_stimuli():
+    neurons = pd.DataFrame(
+        {
+            "superclass": ["cb_sensory"] * 6 + ["central"],
+            "class": [
+                "gustatory",
+                "gustatory",
+                "gustatory",
+                "mechano",
+                "mechano",
+                "mechano",
+                "c",
+            ],
+        }
+    )
+    edges = pd.DataFrame({"pre": [], "post": [], "weight": []}, dtype=int)
+    rng = np.random.default_rng(0)
+    for _ in range(20):
+        ctrl = validate.control_idx(neurons, edges, np.array([0]), np.array([6]), rng)
+        assert neurons["class"].iloc[ctrl].tolist() == ["gustatory"]
+        assert ctrl[0] in (1, 2)
+
+
+def test_bitter_grns_are_right_lb1a_to_d():
+    neurons = pd.DataFrame(
+        {"instance": ["LB1a_R", "LB1d_R", "LB1e_R", "LB1a_L", "LB3b_R", None]}
+    )
+    assert validate.bitter_grns(neurons).tolist() == [0, 1]
+
+
+def test_bootstrap_ci_brackets_the_mean_and_is_reproducible():
+    v = [10.0, 12.0, 11.0, 30.0, 9.0]
+    lo, hi = validate.bootstrap_ci(v)
+    assert lo < np.mean(v) < hi
+    assert validate.bootstrap_ci(v) == (lo, hi)
+    assert validate.bootstrap_ci([5.0, 5.0]) == (5.0, 5.0)
+
+
+def test_model_selection_rule():
+    rule = validate.select_model
+    assert rule({"A": 28, "B": 27}, ["A", "B"], tie_break="B") == "A"
+    assert rule({"A": 27, "B": 27}, ["A", "B"], tie_break="B") == "B"
+    # a sensitivity variant cannot win even with more checks
+    assert rule({"A": 26, "B": 25, "B+": 29}, ["A", "B"], tie_break="B") == "A"

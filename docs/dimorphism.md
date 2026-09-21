@@ -40,10 +40,39 @@ Bold: p = 0.001. Counts of responders in the category in brackets.
   dimorphic): the escape pathway reaches the wing motor system, which in males also produces
   song. With 29 responders this rests on few neurons.
 
+## Silencing (`flymsg dimorphism --silencing`, `runs/silencing.txt`)
+
+Every neuron of a category is silenced (it never fires, so it transmits nothing: for the rest
+of the network this equals zeroing its outgoing synapses, as Shiu et al. silence neurons),
+except the stimulus and the targets. The drop of each target's rate is compared with 20
+silencings of as many neurons outside the category, with the same superclass mix (defaults,
+3 seeds). With 20 null draws the smallest possible p is 0.048, and with 15 tests nothing
+survives a Bonferroni correction: these are indications, not confirmations.
+
+| Case → target | fru/dsx+ (~4,900 silenced) | male-specific (~1,330) | dimorphic (948) |
+|---|---|---|---|
+| P1 → pIP10 | −11 % (p 0.048) | 0 % | −6 % (p 0.048) |
+| P1 → dPR1 | **+23 %** | **−20 %** (p 0.048) | +12 % |
+| pIP10 → dPR1 | **+49 %** | **−17 %** (p 0.048) | +26 % |
+| LC4_R → DNp01, TTMn | within the null | within the null | within the null |
+
+Drop = 1 − silenced / baseline rate; negative drops are increases. Null drops stay within
+−9 % … +17 %.
+
+- **Enrichment is not necessity.** Courtship responses survive the loss of thousands of
+  dimorphic neurons, because they run mostly through the direct P1 → pIP10 → dPR1 links,
+  which stay intact (stimulus and targets are never silenced).
+- Silencing the male-specific neurons lowers dPR1 by about a fifth, beyond every null draw:
+  part of dPR1's drive comes through other male-specific neurons.
+- Silencing all fru/dsx+ (or all dimorphic) neurons **raises** dPR1: that population also
+  contains neurons that inhibit it, so the dimorphic network both drives and restrains the
+  song pathway in the model.
+- Looming escape does not depend on any of the three categories.
+
 ## Limits
 
 - Annotations, not measurements: `fruDsx` and `dimorphism` are the release's best calls; the
   "potentially" levels are included.
-- Enrichment says where the simulated activity goes, not that dimorphic neurons are needed:
-  that would take silencing experiments in the model.
+- Enrichment says where the simulated activity goes; silencing (above) tests necessity, with
+  only 20 null draws per test.
 - The null matches superclass only, not transmitter or proximity to the stimulus.

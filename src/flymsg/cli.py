@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, dimorphism, graph, sim, validate, viz
+from flymsg import compare, data, dimorphism, graph, sim, validate, viz
 
 NG = "https://neuroglancer-demo.appspot.com/#!"
 
@@ -167,10 +167,47 @@ def cmd_validate(a, neurons, edges):
         sys.exit(1)
 
 
+def cmd_select_model(a, neurons, edges):
+    """Pre-registered selection between the calibrated model (A) and the published model at
+    MaleCNS synapse density without compensation (B); B-/B+ are sensitivity variants."""
+    fafb = data.load(a.data, "fafb")
+    rho, n_types = compare.synapse_density_ratio((neurons, edges), fafb)
+    lo, hi = a.rho_range
+    w0 = sim.Params.w_syn
+    models = {
+        "A": sim.Params(w_syn=w0, th_jump=a.th_jump_a),
+        "B": sim.Params(w_syn=w0 / rho, th_jump=0.0),
+        "B-": sim.Params(w_syn=w0 / lo, th_jump=0.0),
+        "B+": sim.Params(w_syn=w0 / hi, th_jump=0.0),
+    }
+    print(
+        f"synapse density ratio {rho:.2f} ({n_types} matched types);"
+        f" {len(models)} models x {a.seeds} seeds ..."
+    )
+    reports = validate.compare_models(neurons, edges, models, a.seeds, a.workers)
+    passed = {k: int(r["passed"].sum()) for k, r in reports.items()}
+    for name, report in reports.items():
+        print(f"\n=== {name}: {models[name]}")
+        print(report.round(1).to_string(index=False))
+        if a.out:
+            report.to_csv(a.out / f"validate-v4-{a.seeds}seeds-{name}.csv", index=False)
+    total = len(next(iter(reports.values())))
+    print("\n" + ", ".join(f"{k} {v}/{total}" for k, v in passed.items()))
+    print(
+        f"winner (pre-registered rule): {validate.select_model(passed, ['A', 'B'], 'B')}"
+    )
+
+
 def cmd_dimorphism(a, neurons, edges):
     params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
-    print("responders of each validation case vs superclass-matched random sets ...")
-    table = dimorphism.run(neurons, edges, params, a.seeds)
+    if a.silencing:
+        print("silencing each category vs random silencings of the same size ...")
+        table = dimorphism.silencing(neurons, edges, params, a.seeds, a.null, a.workers)
+    else:
+        print(
+            "responders of each validation case vs superclass-matched random sets ..."
+        )
+        table = dimorphism.run(neurons, edges, params, a.seeds)
     print(table.round(3).to_string(index=False))
 
 
@@ -287,10 +324,28 @@ def main() -> None:
     s.add_argument("--w-syn", type=float, default=sim.Params.w_syn)
     s.add_argument("--th-jump", type=float, default=sim.Params.th_jump)
     s = sub.add_parser(
+        "select-model",
+        help="pre-registered choice: calibrated model vs density-scaled model",
+    )
+    s.add_argument("--seeds", type=int, default=10)
+    s.add_argument("--workers", type=int, default=4)
+    s.add_argument("--th-jump-a", type=float, default=sim.Params.th_jump)
+    s.add_argument(
+        "--rho-range", type=float, nargs=2, default=[1.43, 2.43], metavar=("LO", "HI")
+    )
+    s.add_argument("--out", type=Path, help="directory for one CSV report per model")
+    s = sub.add_parser(
         "dimorphism",
         help="share of fru/dsx+, male-specific and dimorphic neurons among responders",
     )
     s.add_argument("--seeds", type=int, default=3)
+    s.add_argument(
+        "--silencing",
+        action="store_true",
+        help="instead: response drop when each category is silenced",
+    )
+    s.add_argument("--null", type=int, default=20, help="random silencings per test")
+    s.add_argument("--workers", type=int, default=4)
     s.add_argument("--w-syn", type=float, default=sim.Params.w_syn)
     s.add_argument("--th-jump", type=float, default=sim.Params.th_jump)
     s = sub.add_parser(
@@ -356,6 +411,7 @@ def main() -> None:
             "validate": cmd_validate,
             "calibrate": cmd_calibrate,
             "dimorphism": cmd_dimorphism,
+            "select-model": cmd_select_model,
             "viz": cmd_viz,
         }[a.cmd](a, neurons, edges)
     except KeyError as err:  # unknown neuron query

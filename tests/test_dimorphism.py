@@ -29,3 +29,27 @@ def test_enrichment_detects_an_overrepresented_category_within_superclass():
     fru = table.loc["fru/dsx+"]
     assert fru["share"] == 1.0 and fru["ratio"] > 5 and fru["p"] < 0.01
     assert table.loc["dimorphic", "share"] == 0.0
+
+
+def test_silencing_a_fru_relay_abolishes_the_response(monkeypatch):
+    from flymsg import validate
+
+    # S -> R (fru+ relay) -> T; two other fru- central neurons for the null
+    neurons = pd.DataFrame(
+        {
+            "type": ["S", "R", "T", "X", "Y"],
+            "instance": ["S", "R", "T", "X", "Y"],
+            "superclass": ["s", "central", "t", "central", "central"],
+            "fruDsx": [None, "fru_high", None, None, None],
+            "dimorphism": [None] * 5,
+            "sign": np.ones(5, dtype=np.int8),
+        }
+    )
+    edges = pd.DataFrame({"pre": [0, 1], "post": [1, 2], "weight": [200, 200]})
+    monkeypatch.setattr(validate, "CASES", [validate.Case("c", "S", ["T"], "")])
+    table = dimorphism.silencing(
+        neurons, edges, sim.Params(), seeds=1, n_null=4, workers=1, cases=("c",)
+    )
+    fru = table[table["silenced"] == "fru/dsx+"].iloc[0]
+    assert fru["n_silenced"] == 1 and fru["drop"] == 1.0 and fru["null_drop_max"] == 0.0
+    assert fru["p"] == 1 / 5

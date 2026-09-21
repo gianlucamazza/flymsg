@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.0 — 2026-09-21
+
+### Validation
+- Criterion v4: class-matched control for sensory stimuli (resolves the sugar → MN9
+  specificity failure: random gustatory neurons leave MN9 silent) and a negative case,
+  bitter GRNs (LB1a–d, two agreeing lines of evidence) → MN9. 29/29 with the defaults.
+- `flymsg select-model`: pre-registered comparison at 10 seeds of the calibrated model (A,
+  28/29) and the published model at MaleCNS synapse density without compensation (B, 26/29);
+  A stays the default. The sensitivity variant B− (`w_syn` 0.192, no compensation) passes
+  29/29 and is the candidate for a confirmatory replication.
+- Bootstrap 95 % intervals on target and control rates.
+- Finding: in the density-scaled model MN9 responds to LB3b+c+d but not to LB3b+c.
+
+### Model and analyses
+- `sim.run(silence=...)`; `flymsg dimorphism --silencing`: response drop when fru/dsx+,
+  male-specific or dimorphic neurons are silenced, against as many other neurons. Courtship
+  responses survive (they run through direct links); silencing male-specific neurons lowers
+  dPR1 by ~20 %, silencing all fru/dsx+ neurons raises it; looming is unaffected.
+
+### 3D view
+- Colour by dimorphism or fru/dsx (`?color=`).
+
 ## 0.3.0 — 2026-09-21
 
 ### Model

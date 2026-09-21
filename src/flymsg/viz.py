@@ -19,6 +19,7 @@ PAGE = (
     "index.html",
     "main.js",
     "precomputed.js",
+    "colors.js",
     "lod.js",
     "perf.js",
     "geometry.js",
@@ -62,6 +63,8 @@ def export(
                 "instance": _text(r.instance, ""),
                 "nt": _text(r.nt, "unknown"),
                 "superclass": _text(r.superclass, ""),
+                "dimorphism": _text(r.dimorphism, ""),
+                "fruDsx": _text(r.fruDsx, ""),
                 "group": group,
                 "rate": None if rates is None else round(float(rates[i]), 1),
             }

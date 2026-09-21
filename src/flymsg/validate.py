@@ -3,14 +3,17 @@
 positive   reliable: the best neuron of each target type fires >= MIN_SPIKES during the
            stimulus in at least MIN_SEED_SHARE of the seeds
 specific   its rate beats the control by SPECIFICITY x + MARGIN_HZ; the control stimulates
-           the same number of random neurons from the same superclasses, excluding direct
-           inputs of the targets, so the response must need the specific wiring
+           the same number of random neurons from the same superclasses (the same classes
+           for a sensory stimulus, criterion v4), excluding direct inputs of the targets, so
+           the response must need the specific wiring
 stability  at most MAX_PERSISTENT neurons still fire from 100 ms after the stimulus ends
 order      (criterion v3) along a chain of targets, first spikes come in chain order in at
            least MIN_SEED_SHARE of the seeds where both neurons fire
 dose       (criterion v3) the target's rate does not fall as the input rate rises through
            DOSE_RATES_HZ, within one spike per window, and is higher at the top than at
            the bottom
+negative   (criterion v4) a stimulus known to suppress a response drives the target to less
+           than 1/SPECIFICITY of the rate its positive counterpart reaches
 
 Positive checks count spikes rather than requiring a rate: the adaptive threshold caps
 steady rates (about (drive - 7 mV) / (th_jump * tau_th)), so an absolute rate threshold
@@ -52,6 +55,14 @@ def sugar_grns(neurons: pd.DataFrame) -> np.ndarray:
     return np.flatnonzero(neurons["instance"].isin(["LB3b_R", "LB3c_R"]).to_numpy())
 
 
+def bitter_grns(neurons: pd.DataFrame) -> np.ndarray:
+    """Right labellar bitter GRNs: LB1a-d, matched to Gr33a-GAL4 in the gustatory connectome
+    and nearest the Shiu et al. bitter set in FAFB (docs/validation.md). LB1e (Ir94e) is not
+    included."""
+    types = [f"LB1{s}_R" for s in "abcd"]
+    return np.flatnonzero(neurons["instance"].isin(types).to_numpy())
+
+
 @dataclass
 class Case:
     name: str
@@ -80,6 +91,9 @@ CASES = [
     Case("sugar feeding", sugar_grns, ["MN9"], "Shiu 2024; Gordon & Scott 2009"),
 ]
 
+# (name, stimulus, target, positive case whose response must not be matched)
+NEGATIVES = [("bitter feeding", bitter_grns, "MN9", "sugar feeding")]
+
 
 def control_idx(
     neurons: pd.DataFrame,
@@ -88,11 +102,15 @@ def control_idx(
     targets: np.ndarray,
     rng,
 ) -> np.ndarray:
-    """Random neurons matching the stimulus' superclass mix, minus targets and their inputs."""
+    """Random neurons matching the stimulus' superclass mix, minus targets and their inputs.
+    For a sensory stimulus the match is by class (gustatory, olfactory, …) instead: a taste
+    stimulus is compared with other taste neurons, not with any sense entering nearby."""
     strong = edges[(edges["weight"] >= 5) & np.isin(edges["post"], targets)]
     excluded = np.zeros(len(neurons), dtype=bool)
     excluded[np.concatenate([stim, targets, strong["pre"].to_numpy()])] = True
     sc = neurons["superclass"].fillna("none").to_numpy()
+    if all(str(c).endswith("sensory") for c in sc[stim]):
+        sc = neurons["class"].fillna("none").to_numpy()
     picks = []
     for cls, k in zip(*np.unique(sc[stim], return_counts=True), strict=True):
         pool = np.flatnonzero((sc == cls) & ~excluded)
@@ -101,13 +119,13 @@ def control_idx(
 
 
 def respond(
-    W, neurons, stim, targets, p, seeds, rate_hz=RATE_HZ
+    W, neurons, stim, targets, p, seeds, rate_hz=RATE_HZ, silence=None
 ) -> tuple[dict[str, dict], float]:
     """Per target type, its best neuron (highest mean rate over seeds): rate, reliable seeds,
     first-spike latency per seed and its median. Also the mean number of self-sustained
     neurons."""
     results = [
-        sim.run(W, stim, rate_hz, DURATION_MS, STIM_MS, p, seed)
+        sim.run(W, stim, rate_hz, DURATION_MS, STIM_MS, p, seed, silence=silence)
         for seed in range(seeds)
     ]
     stim_bins = round(STIM_MS / results[0].bin_ms)
@@ -124,11 +142,25 @@ def respond(
             "rate": float(rates[best]),
             "reliable": int((spikes[:, best] >= MIN_SPIKES).sum()),
             "latencies": lat,
+            "seed_rates": spikes[:, best] / (STIM_MS / 1000.0),
             "latency": float(np.median(lat[np.isfinite(lat)]))
             if np.isfinite(lat).any()
             else np.nan,
         }
     return out, float(np.mean([r.persistent().size for r in results]))
+
+
+def bootstrap_ci(values, n: int = 2000, level: float = 0.95) -> tuple[float, float]:
+    """Percentile bootstrap interval of the mean (fixed generator, reproducible)."""
+    v = np.asarray(values, dtype=float)
+    means = np.random.default_rng(0).choice(v, size=(n, v.size)).mean(axis=1)
+    lo, hi = np.percentile(means, [50 * (1 - level), 50 * (1 + level)])
+    return float(lo), float(hi)
+
+
+def _ci(values) -> str:
+    lo, hi = bootstrap_ci(values)
+    return f"[{lo:.1f}, {hi:.1f}]"
 
 
 def in_order(
@@ -155,6 +187,7 @@ def run(
     rng = np.random.default_rng(0)
     need = int(np.ceil(MIN_SEED_SHARE * seeds))
     rows = []
+    positive_rate = {}  # (case, target) -> rate, for the negative checks
     for case in CASES:
         stim = case.stim_idx(neurons)
         target_idx = np.concatenate([data.resolve(neurons, t) for t in case.targets])
@@ -169,6 +202,7 @@ def run(
         )
         for t in case.targets:
             r, c = pos[t], ctrl[t]
+            positive_rate[case.name, t] = r["rate"]
             rows.append(
                 (
                     case.name,
@@ -186,7 +220,10 @@ def run(
                     "specific",
                     t,
                     c["rate"],
-                    f"control; needs <= {(r['rate'] - MARGIN_HZ) / SPECIFICITY:.1f} Hz",
+                    (
+                        f"control {_ci(c['seed_rates'])}, target {_ci(r['seed_rates'])};"
+                        f" needs <= {(r['rate'] - MARGIN_HZ) / SPECIFICITY:.1f} Hz"
+                    ),
                     np.nan,
                     r["rate"] >= SPECIFICITY * c["rate"] + MARGIN_HZ,
                 )
@@ -238,10 +275,58 @@ def run(
                 persistent <= MAX_PERSISTENT,
             )
         )
+    for name, stim_fn, target, against in NEGATIVES:
+        neg, _ = respond(W, neurons, stim_fn(neurons), [target], p, seeds)
+        ref = positive_rate[against, target]
+        rows.append(
+            (
+                name,
+                "negative",
+                target,
+                neg[target]["rate"],
+                (
+                    f"{_ci(neg[target]['seed_rates'])}; must stay < {ref / SPECIFICITY:.1f}"
+                    f" Hz (1/{SPECIFICITY:.0f} of {against})"
+                ),
+                np.nan,
+                neg[target]["rate"] < ref / SPECIFICITY,
+            )
+        )
     return pd.DataFrame(
         rows,
         columns=["case", "kind", "subject", "value", "note", "latency_ms", "passed"],
     )
+
+
+def select_model(passed: dict[str, int], eligible: list[str], tie_break: str) -> str:
+    """Pre-registered rule: most checks passed among the eligible models; ties go to
+    `tie_break` (the model with fewer compensations) if it is among the best."""
+    best = max(passed[m] for m in eligible)
+    top = [m for m in eligible if passed[m] == best]
+    return tie_break if tie_break in top else top[0]
+
+
+def _run_model(item: tuple[str, sim.Params]) -> tuple[str, pd.DataFrame]:
+    neurons, edges, seeds = _shared
+    name, p = item
+    t = time.monotonic()
+    report = run(neurons, edges, p, seeds)
+    print(
+        f"  {name} (w_syn={p.w_syn:.3f} th_jump={p.th_jump}):"
+        f" {int(report['passed'].sum())}/{len(report)} ({time.monotonic() - t:.0f} s)",
+        flush=True,
+    )
+    return name, report
+
+
+def compare_models(
+    neurons, edges, models: dict[str, sim.Params], seeds: int = 10, workers: int = 4
+) -> dict[str, pd.DataFrame]:
+    """The full battery for each model, in parallel processes. Returns name -> report."""
+    global _shared
+    _shared = (neurons, edges, seeds)
+    with mp.get_context("fork").Pool(min(workers, len(models))) as pool:
+        return dict(pool.map(_run_model, list(models.items()), chunksize=1))
 
 
 _shared: tuple[pd.DataFrame, pd.DataFrame, int] | None = (

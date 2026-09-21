@@ -23,6 +23,7 @@ import {
   parseSkeleton,
 } from "./precomputed.js";
 import { projectedPx, select } from "./lod.js";
+import { DIMORPHISM_COLORS, FRU_DSX_COLORS, dimorphismClass, fruDsxClass } from "./colors.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
 
@@ -271,8 +272,9 @@ const neurons = meta.neurons.map((n, k) => ({
 const N = neurons.length;
 const hash = (s) =>
   [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+const COLOR_MODES = ["group", "transmitter", "type", "dimorphism", "fru/dsx"];
 const view = {
-  colorBy: "group",
+  colorBy: COLOR_MODES.includes(query.get("color")) ? query.get("color") : "group", // ?color=
   filter: "",
   groupsOn: Object.fromEntries(groups.map((g) => [g, true])),
 };
@@ -281,7 +283,11 @@ const colourOf = (n) =>
     ? PALETTE[groups.indexOf(n.group) % PALETTE.length]
     : view.colorBy === "transmitter"
       ? (NT_COLORS[n.nt] ?? NT_COLORS.unknown)
-      : PALETTE[hash(n.type) % PALETTE.length];
+      : view.colorBy === "dimorphism"
+        ? DIMORPHISM_COLORS[dimorphismClass(n.dimorphism)]
+        : view.colorBy === "fru/dsx"
+          ? FRU_DSX_COLORS[fruDsxClass(n.fruDsx)]
+          : PALETTE[hash(n.type) % PALETTE.length];
 const isShown = (n) =>
   view.groupsOn[n.group] &&
   (!view.filter || n.type.toLowerCase().includes(view.filter));
@@ -952,7 +958,11 @@ function refreshColours() {
             t,
             NT_COLORS[t] ?? NT_COLORS.unknown,
           ])
-        : [["coloured by cell type", "#d8dee9"]];
+        : view.colorBy === "dimorphism"
+          ? Object.entries(DIMORPHISM_COLORS)
+          : view.colorBy === "fru/dsx"
+            ? Object.entries(FRU_DSX_COLORS)
+            : [["coloured by cell type", "#d8dee9"]];
   document.getElementById("legend").innerHTML = entries
     .map(([l, col]) => `<span><i style="background:${col}"></i>${l}</span>`)
     .join("");
@@ -1148,7 +1158,7 @@ renderer.domElement.addEventListener("pointerup", (e) => {
 // ---------- GUI ----------
 const gui = new GUI({ title: "flymsg" });
 gui
-  .add(view, "colorBy", ["group", "transmitter", "type"])
+  .add(view, "colorBy", COLOR_MODES)
   .name("colour by")
   .onChange(refreshColours);
 gui

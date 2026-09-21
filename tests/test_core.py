@@ -240,3 +240,10 @@ def test_matches_the_brian2_reference_on_a_two_neuron_network():
         [sim.run(W, np.array([0]), 200, 2000, p=p, seed=s).rate()[1] for s in range(10)]
     )
     assert 41.5 < post < 47.5  # ~2 SD of a 10-seed mean around 44.4
+
+
+def test_silenced_neurons_neither_fire_nor_transmit():
+    edges, sign, n = chain([200, 200])
+    W = sim.weight_matrix(edges, sign, n, 0.275)
+    rates = sim.run(W, np.array([0]), 150, 500, silence=np.array([1])).rate()
+    assert rates[0] > 50 and rates[1] == 0 and rates[2] == 0
