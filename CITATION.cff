@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: >-
+  If you use flymsg, please cite it and, above all, the connectome datasets and the model
+  it builds on (see README, "Citation").
+title: "flymsg: simulate and view the complete male Drosophila CNS connectome"
+type: software
+authors:
+  - family-names: Mazza
+    given-names: Gianluca
+license: MIT
+version: 0.5.0
+date-released: 2026-09-22
+repository-code: "https://github.com/gianlucamazza/flymsg"
+references:
+  - type: article
+    title: "Sexual dimorphism in the complete connectome of the Drosophila male central nervous system"
+    journal: Cell
+    year: 2026
+    doi: 10.1101/2025.10.09.680999
+    notes: "MaleCNS v1.0 dataset (Janelia FlyEM + Google), CC-BY 4.0; DOI is the bioRxiv preprint"
+  - type: article
+    title: "A Drosophila computational brain model reveals sensorimotor processing"
+    journal: Nature
+    year: 2024
+    authors:
+      - family-names: Shiu
+        given-names: Philip K.

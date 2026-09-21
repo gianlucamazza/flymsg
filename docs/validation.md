@@ -5,6 +5,21 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
 `src/flymsg/validate.py`; the full battery also runs as a slow test
 (`uv run pytest -m slow`).
 
+## Current status (v0.5)
+
+- **Criterion v4, 29/29 with the defaults** (`w_syn` 0.192, no adaptive threshold) at seeds
+  0–2, at seeds 0–9 (model selection) and at fresh seeds 10–19 with fresh control draws
+  (replication).
+- **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
+  sugar → MN9, and bitter → MN9 as a negative case.
+- **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency
+  order, dose-response, stability, negative.
+- **How the defaults were reached:** calibrate-v2 and calibrate-v3 tuned an adaptive threshold
+  while `w_syn` stayed at Shiu's FAFB value. Once MaleCNS's higher synapse density was found,
+  a pre-registered model selection and a replication chose the density-scaled weight with no
+  compensation. The sections below keep the whole history, and the findings log keeps every
+  negative result.
+
 ## Protocol
 
 Every case stimulates a population with Poisson input at 100 Hz for 300 ms, runs 600 ms in
@@ -58,6 +73,13 @@ at MaleCNS synapse density, no compensation); B with the density ratio at its in
 bounds (1.43, 2.43: `w_syn` 0.192, 0.113) is reported as sensitivity, not eligible. The model
 passing more v4 checks at 10 seeds becomes the default; on a tie B wins (fewer compensations).
 Everything downstream is then re-run with the winner.
+
+**Replication of B−** (fixed 2026-09-22, before running it; `flymsg select-model
+--replication --seed0 10 --control-seed 1`): A (`w_syn` 0.275, `th_jump` 2) and B− (`w_syn`
+0.275 / 1.43 = 0.192, `th_jump` 0) run criterion v4 on fresh simulation seeds 10–19 and fresh
+control draws (generator seed 1 instead of 0). B− becomes the default unless A passes more
+checks (a tie goes to B−, which has no compensation). What this guards against is luck in the
+seeds and control draws; it does not undo that B− was noticed among four variants.
 
 **Why spikes and a ratio, not a rate threshold** (criterion v2, fixed 2026-09-21 before
 `calibrate-v2`): the adaptive threshold caps steady rates at about
@@ -157,7 +179,7 @@ smallest `th_jump`. The winner becomes the default whatever it is; failing check
 reported, not engineered away. Reproduce: `flymsg calibrate --workers 6 --out
 runs/calibrate-v3.csv` (~45 min).
 
-**Result (calibrate-v3): `w_syn` 0.275, `th_jump` 2 mV**, 27/28 — the default since then.
+**Result (calibrate-v3): `w_syn` 0.275, `th_jump` 2 mV**, 27/28 — the default in v0.3–v0.4.
 
 | w_syn \ th_jump | 2 | 4 | 6 | 8 | 12 |
 |---|---|---|---|---|---|
@@ -305,7 +327,7 @@ Reports: `runs/validate-v4-10seeds-{A,B,B-,B+}.csv`, summary `runs/select-model.
 
 | Model | `w_syn` | `th_jump` | Checks passed | Failures |
 |---|---|---|---|---|
-| **A** (default) | 0.275 | 2 | **28/29** | looming stability: 196 self-sustained neurons on average (55 with 3 seeds) |
+| **A** (default at the time) | 0.275 | 2 | **28/29** | looming stability: 196 self-sustained neurons on average (55 with 3 seeds) |
 | B | 0.152 (ρ 1.81) | 0 | 26/29 | GF → TTMn reliable in 6/10 seeds; sugar → MN9 positive and specificity |
 | B− (not eligible) | 0.192 (ρ 1.43) | 0 | **29/29** | none |
 | B+ (not eligible) | 0.113 (ρ 2.43) | 0 | 24/29 | GF → TTMn, all sugar checks, bitter negative (no sugar reference) |
@@ -319,6 +341,16 @@ Reports: `runs/validate-v4-10seeds-{A,B,B-,B+}.csv`, summary `runs/select-model.
   measured density ratio, passes every check.** It was declared not eligible before the run,
   so it is not adopted; a confirmatory, pre-registered replication on fresh seeds is the way
   to decide whether it should replace A.
+
+**2026-09-22: replication of B− — B− becomes the default.** On fresh simulation seeds
+10–19 and fresh control draws (`runs/replication-Bminus.txt`,
+`runs/validate-v4-replication-10seeds-{A,B-}.csv`) both A and B− pass 29/29; by the
+pre-registered rule the tie goes to B−. The default is now `w_syn` = 0.275 / 1.43 = 0.192 and
+**no adaptive threshold**: the published model at a density-scaled synapse weight, with no
+compensation. A's looming stability failure at seeds 0–9 did not recur at seeds 10–19,
+another sign that it was seed-dependent. The caveat stays: B− was one of four variants
+tried, and 1.43 is the lower quartile of the density ratio, not its median (1.81, model B,
+which fails sugar → MN9).
 
 ## Limits of this validation
 

@@ -53,3 +53,28 @@ def test_silencing_a_fru_relay_abolishes_the_response(monkeypatch):
     fru = table[table["silenced"] == "fru/dsx+"].iloc[0]
     assert fru["n_silenced"] == 1 and fru["drop"] == 1.0 and fru["null_drop_max"] == 0.0
     assert fru["p"] == 1 / 5
+
+
+def test_type_silencing_finds_the_relay_type(monkeypatch):
+    from flymsg import validate
+
+    # S -> A (fru+, relays to T) and S -> B (fru+, dead end)
+    neurons = pd.DataFrame(
+        {
+            "type": ["S", "A", "B", "T"],
+            "instance": ["S", "A", "B", "T"],
+            "bodyId": [1, 2, 3, 4],
+            "superclass": ["s", "c", "c", "t"],
+            "fruDsx": [None, "fru_high", "fru_high", None],
+            "dimorphism": [None] * 4,
+            "sign": np.ones(4, dtype=np.int8),
+        }
+    )
+    edges = pd.DataFrame(
+        {"pre": [0, 0, 1], "post": [1, 2, 3], "weight": [200, 200, 200]}
+    )
+    monkeypatch.setattr(validate, "CASES", [validate.Case("c", "S", ["T"], "")])
+    table = dimorphism.type_silencing(
+        neurons, edges, sim.Params(), "c", "fru/dsx+", seeds=1, workers=1
+    ).set_index("type")
+    assert table.loc["A", "T_drop"] == 1.0 and table.loc["B", "T_drop"] == 0.0

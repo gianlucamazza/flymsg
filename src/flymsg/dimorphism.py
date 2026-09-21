@@ -95,7 +95,7 @@ def run(
 
 
 SILENCING_CASES = ("P1 courtship drive", "pIP10 song pathway", "looming escape")
-_shared = None  # (neurons, W, p, seeds, n_null), inherited by forked workers
+_shared = None  # job context, inherited by forked workers
 
 
 def _silencing_job(job: tuple[str, str]) -> list[dict]:
@@ -187,3 +187,59 @@ def silencing(
         with mp.get_context("fork").Pool(min(workers, len(jobs))) as pool:
             rows = pool.map(_silencing_job, jobs, chunksize=1)
     return pd.DataFrame([r for chunk in rows for r in chunk])
+
+
+def _type_job(job: tuple[str, str]) -> dict:
+    neurons, W, p, seeds, case_name, base, silenced_by_type = _shared
+    t = job[1]
+    case = next(c for c in validate.CASES if c.name == case_name)
+    out, _ = validate.respond(
+        W,
+        neurons,
+        case.stim_idx(neurons),
+        case.targets,
+        p,
+        seeds,
+        silence=silenced_by_type[t],
+    )
+    row = {"case": case_name, "type": t, "n": silenced_by_type[t].size}
+    for j, tgt in enumerate(case.targets):
+        row[f"{tgt}_drop"] = 1 - out[tgt]["rate"] / base[j] if base[j] else np.nan
+    return row
+
+
+def type_silencing(
+    neurons: pd.DataFrame,
+    edges: pd.DataFrame,
+    p: sim.Params,
+    case_name: str,
+    category: str,
+    seeds: int = 3,
+    workers: int = 4,
+) -> pd.DataFrame:
+    """Silence, one cell type at a time, the responders of `case_name` that belong to
+    `category`, and report each target's drop (negative: the response rises). Only types
+    that fire in the case are tried, since silencing a silent type changes nothing."""
+    global _shared
+    case = next(c for c in validate.CASES if c.name == case_name)
+    stim = case.stim_idx(neurons)
+    targets = np.concatenate([data.resolve(neurons, t) for t in case.targets])
+    W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
+    results = [
+        sim.run(W, stim, validate.RATE_HZ, validate.DURATION_MS, validate.STIM_MS, p, s)
+        for s in range(seeds)
+    ]
+    resp = np.setdiff1d(responders(results, stim), targets)
+    resp = resp[CATEGORIES[category](neurons).to_numpy()[resp]]
+    types = neurons["type"].fillna(neurons["bodyId"].astype(str)).to_numpy()
+    by_type = {t: resp[types[resp] == t] for t in np.unique(types[resp])}
+    base_out, _ = validate.respond(W, neurons, stim, case.targets, p, seeds)
+    base = np.array([base_out[t]["rate"] for t in case.targets])
+    _shared = (neurons, W, p, seeds, case_name, base, by_type)
+    jobs = [(case_name, t) for t in by_type]
+    if workers <= 1:
+        rows = [_type_job(j) for j in jobs]
+    else:
+        with mp.get_context("fork").Pool(min(workers, len(jobs))) as pool:
+            rows = pool.map(_type_job, jobs, chunksize=4)
+    return pd.DataFrame(rows)

@@ -119,14 +119,14 @@ def control_idx(
 
 
 def respond(
-    W, neurons, stim, targets, p, seeds, rate_hz=RATE_HZ, silence=None
+    W, neurons, stim, targets, p, seeds, rate_hz=RATE_HZ, silence=None, seed0=0
 ) -> tuple[dict[str, dict], float]:
     """Per target type, its best neuron (highest mean rate over seeds): rate, reliable seeds,
     first-spike latency per seed and its median. Also the mean number of self-sustained
     neurons."""
     results = [
         sim.run(W, stim, rate_hz, DURATION_MS, STIM_MS, p, seed, silence=silence)
-        for seed in range(seeds)
+        for seed in range(seed0, seed0 + seeds)
     ]
     stim_bins = round(STIM_MS / results[0].bin_ms)
     spikes = np.stack([r.counts[:stim_bins].sum(axis=0) for r in results])  # seeds x n
@@ -180,18 +180,24 @@ def dose_ok(rates: list[float]) -> bool:
 
 
 def run(
-    neurons: pd.DataFrame, edges: pd.DataFrame, p: sim.Params, seeds: int = 3
+    neurons: pd.DataFrame,
+    edges: pd.DataFrame,
+    p: sim.Params,
+    seeds: int = 3,
+    seed0: int = 0,
+    control_seed: int = 0,
 ) -> pd.DataFrame:
-    """One row per check: case, kind, subject, value, note, latency_ms, passed."""
+    """One row per check: case, kind, subject, value, note, latency_ms, passed.
+    Simulations use seeds seed0 .. seed0+seeds-1; control draws use `control_seed`."""
     W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(control_seed)
     need = int(np.ceil(MIN_SEED_SHARE * seeds))
     rows = []
     positive_rate = {}  # (case, target) -> rate, for the negative checks
     for case in CASES:
         stim = case.stim_idx(neurons)
         target_idx = np.concatenate([data.resolve(neurons, t) for t in case.targets])
-        pos, persistent = respond(W, neurons, stim, case.targets, p, seeds)
+        pos, persistent = respond(W, neurons, stim, case.targets, p, seeds, seed0=seed0)
         ctrl, _ = respond(
             W,
             neurons,
@@ -199,6 +205,7 @@ def run(
             case.targets,
             p,
             seeds,
+            seed0=seed0,
         )
         for t in case.targets:
             r, c = pos[t], ctrl[t]
@@ -239,7 +246,7 @@ def run(
         sweep = {
             r: pos
             if r == RATE_HZ
-            else respond(W, neurons, stim, case.targets, p, seeds, r)[0]
+            else respond(W, neurons, stim, case.targets, p, seeds, r, seed0=seed0)[0]
             for r in DOSE_RATES_HZ
         }
         for t in case.targets:
@@ -276,7 +283,7 @@ def run(
             )
         )
     for name, stim_fn, target, against in NEGATIVES:
-        neg, _ = respond(W, neurons, stim_fn(neurons), [target], p, seeds)
+        neg, _ = respond(W, neurons, stim_fn(neurons), [target], p, seeds, seed0=seed0)
         ref = positive_rate[against, target]
         rows.append(
             (
@@ -307,10 +314,10 @@ def select_model(passed: dict[str, int], eligible: list[str], tie_break: str) ->
 
 
 def _run_model(item: tuple[str, sim.Params]) -> tuple[str, pd.DataFrame]:
-    neurons, edges, seeds = _shared
+    neurons, edges, seeds, seed0, control_seed = _shared
     name, p = item
     t = time.monotonic()
-    report = run(neurons, edges, p, seeds)
+    report = run(neurons, edges, p, seeds, seed0, control_seed)
     print(
         f"  {name} (w_syn={p.w_syn:.3f} th_jump={p.th_jump}):"
         f" {int(report['passed'].sum())}/{len(report)} ({time.monotonic() - t:.0f} s)",
@@ -320,11 +327,17 @@ def _run_model(item: tuple[str, sim.Params]) -> tuple[str, pd.DataFrame]:
 
 
 def compare_models(
-    neurons, edges, models: dict[str, sim.Params], seeds: int = 10, workers: int = 4
+    neurons,
+    edges,
+    models: dict[str, sim.Params],
+    seeds: int = 10,
+    workers: int = 4,
+    seed0: int = 0,
+    control_seed: int = 0,
 ) -> dict[str, pd.DataFrame]:
     """The full battery for each model, in parallel processes. Returns name -> report."""
     global _shared
-    _shared = (neurons, edges, seeds)
+    _shared = (neurons, edges, seeds, seed0, control_seed)
     with mp.get_context("fork").Pool(min(workers, len(models))) as pool:
         return dict(pool.map(_run_model, list(models.items()), chunksize=1))
 
@@ -372,7 +385,7 @@ def calibrate(
     ) as pool:  # fork shares the tables
         rows = pool.map(_run_point, grid, chunksize=1)
     out = pd.DataFrame(rows)
-    out["shiu_dist"] = (out["w_syn"] - sim.Params.w_syn).abs()
+    out["shiu_dist"] = (out["w_syn"] - sim.SHIU_W_SYN).abs()
     return out.sort_values(
         ["passed", "shiu_dist", "th_jump"], ascending=[False, True, True]
     ).drop(columns="shiu_dist")

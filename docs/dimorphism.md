@@ -7,7 +7,8 @@ Output: `runs/dimorphism.txt`.
 ## Method
 
 - **Responders**: neurons other than the stimulated ones that fire during the 300 ms stimulus
-  in ≥ 2 of 3 seeds (validation protocol, defaults `w_syn` 0.275, `th_jump` 2).
+  in ≥ 2 of 3 seeds (validation protocol, defaults: `w_syn` 0.192, no adaptive threshold;
+  with the v0.3 defaults the pattern was the same, P1 3.4–8.1×, pIP10 5.8–16.3×).
 - **Categories** (MaleCNS annotations; "potentially …" included): `fru/dsx+` (any `fruDsx`
   value), male-specific, dimorphic (sexually or potentially dimorphic).
 - **Null**: 1,000 random neuron sets of the same size and superclass mix as the responders,
@@ -19,13 +20,13 @@ Output: `runs/dimorphism.txt`.
 
 ## Results
 
-| Case               | Responders | fru/dsx+       | male-specific  | dimorphic         |
-| ------------------ | ---------: | -------------- | -------------- | ----------------- |
-| P1 courtship drive |      3,275 | **3.4×** (717) | **8.1×** (485) | **4.8×** (209)    |
-| pIP10 song pathway |        285 | **11.3×** (88) | **16.3×** (35) | **5.8×** (10)     |
-| giant fiber output |         29 | **7.5×** (5)   | 0 (0)          | 9.8× (2), p 0.017 |
-| looming escape     |      2,206 | 0.44× (57)     | 0.48× (18)     | 1.2× (35), p 0.11 |
-| sugar feeding      |        912 | 0.50× (25)     | 0.39× (5)      | 0.49× (7)         |
+| Case | Responders | fru/dsx+ | male-specific | dimorphic |
+|---|---:|---|---|---|
+| P1 courtship drive | 1,824 | **4.3×** (512) | **10.9×** (361) | **6.1×** (148) |
+| pIP10 song pathway | 242 | **13.3×** (84) | **18.6×** (32) | **4.9×** (7) |
+| looming escape | 1,087 | 0.40× (22) | 0.46× (7) | 1.3× (16), p 0.19 |
+| sugar feeding | 360 | 0.44× (11) | 0 (0) | 0.51× (4) |
+| giant fiber output | 2 | 0 | 0 | 0 |
 
 Bold: p = 0.001. Counts of responders in the category in brackets.
 
@@ -35,44 +36,62 @@ Bold: p = 0.001. Counts of responders in the category in brackets.
   builds courtship song.
 - **Escape and feeding avoid it.** Looming and sugar responses contain about half the
   expected share of fru/dsx+ and male-specific neurons.
-- **The giant fiber recruits fru+ wing motor neurons.** Its 5 fru/dsx+ responders are wing
-  motor neurons (hg1 left and right, hg3, ps1 left and right, all `fru_high`; hg1 also
-  dimorphic): the escape pathway reaches the wing motor system, which in males also produces
-  song. With 29 responders this rests on few neurons.
+- **The giant fiber's reach depends on the model.** With the v0.3 defaults its 29
+  responders included 5 fru+ wing motor neurons (hg1, hg3, ps1); with the density-scaled
+  weight only 2 neurons respond besides TTMn, so the escape output stays narrow.
 
 ## Silencing (`flymsg dimorphism --silencing`, `runs/silencing.txt`)
 
 Every neuron of a category is silenced (it never fires, so it transmits nothing: for the rest
 of the network this equals zeroing its outgoing synapses, as Shiu et al. silence neurons),
-except the stimulus and the targets. The drop of each target's rate is compared with 20
+except the stimulus and the targets. The drop of each target's rate is compared with 100
 silencings of as many neurons outside the category, with the same superclass mix (defaults,
-3 seeds). With 20 null draws the smallest possible p is 0.048, and with 15 tests nothing
-survives a Bonferroni correction: these are indications, not confirmations.
+3 seeds). The smallest possible p is 0.0099; with 15 tests nothing survives a Bonferroni
+correction, so these are indications.
 
-| Case → target | fru/dsx+ (~4,900 silenced) | male-specific (~1,330) | dimorphic (948) |
-|---|---|---|---|
-| P1 → pIP10 | −11 % (p 0.048) | 0 % | −6 % (p 0.048) |
-| P1 → dPR1 | **+23 %** | **−20 %** (p 0.048) | +12 % |
-| pIP10 → dPR1 | **+49 %** | **−17 %** (p 0.048) | +26 % |
-| LC4_R → DNp01, TTMn | within the null | within the null | within the null |
+| Case → target | fru/dsx+ (~4,900 silenced) | male-specific (~1,330) | dimorphic (948) | null, mean |
+|---|---|---|---|---|
+| P1 → pIP10 | −12 % (p 0.010) | +9 % | −3 % (p 0.04) | +5 … +12 % |
+| P1 → dPR1 | **+79 %** | +2 % | **+64 %** | +11 … +22 % |
+| pIP10 → dPR1 | **+100 %** | −13 % (p 0.03) | **+61 %** | −1 … −6 % |
+| LC4_R → DNp01, TTMn | within the null | within the null | within the null | |
 
-Drop = 1 − silenced / baseline rate; negative drops are increases. Null drops stay within
-−9 % … +17 %.
+Changes are relative to the unsilenced response; + is a rise. The p values test drops only.
 
 - **Enrichment is not necessity.** Courtship responses survive the loss of thousands of
   dimorphic neurons, because they run mostly through the direct P1 → pIP10 → dPR1 links,
   which stay intact (stimulus and targets are never silenced).
-- Silencing the male-specific neurons lowers dPR1 by about a fifth, beyond every null draw:
-  part of dPR1's drive comes through other male-specific neurons.
-- Silencing all fru/dsx+ (or all dimorphic) neurons **raises** dPR1: that population also
-  contains neurons that inhibit it, so the dimorphic network both drives and restrains the
-  song pathway in the model.
+- **The dimorphic network restrains the song pathway.** Silencing all fru/dsx+ or all
+  dimorphic neurons doubles dPR1, far beyond the changes random silencings cause.
+- With the v0.3 defaults (20 null draws) silencing the male-specific neurons lowered dPR1 by
+  ~20 %; with the density-scaled model that effect is gone (P1: +2 %), so it is not robust.
 - Looming escape does not depend on any of the three categories.
+
+### Which cell types (`--by-type`, `runs/silencing-by-type-*.txt`)
+
+Silencing the fru/dsx+ responders one cell type at a time (3 seeds, no null) points to one
+loop:
+
+| Type silenced (neurons) | dPR1 after pIP10 | dPR1 after P1 | pIP10 after P1 |
+|---|---|---|---|
+| dMS9 (2) | **+67 %** | **+74 %** | +14 % |
+| vPR9_a (4) / vPR9_c (3) | −9 % / — | +29 % / +38 % | +14 % / +21 % |
+| vMS12_a (6) | +14 % | +39 % | +6 % |
+| TN1a subtypes (1–4 each) | −1 … −15 % | +18 … +20 % | +3 … +4 % |
+| AVLP717m (2) | — | −28 % | **−43 %** |
+
+dMS9 (fru_high, sexually dimorphic, cholinergic; "Lillvis 2024: dMS9") receives 822 synapses
+from dPR1 and gives it only 5. It drives two inhibitory neurons that project back onto dPR1:
+vPR9_a (670 synapses from dMS9, 128 onto dPR1) and IN00A038 (161, 132). The model therefore
+predicts a disynaptic negative feedback loop, **dPR1 → dMS9 → vPR9_a / IN00A038 → dPR1**,
+that holds the song pathway back. AVLP717m (fru+) relays part of P1's drive to pIP10.
+These are model predictions from wiring and predicted transmitters, open to experimental
+test.
 
 ## Limits
 
 - Annotations, not measurements: `fruDsx` and `dimorphism` are the release's best calls; the
   "potentially" levels are included.
-- Enrichment says where the simulated activity goes; silencing (above) tests necessity, with
-  only 20 null draws per test.
+- Enrichment says where the simulated activity goes; silencing tests necessity, with 100 null
+  draws per category test and none for the per-type scan.
 - The null matches superclass only, not transmitter or proximity to the stimulus.

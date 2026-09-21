@@ -14,9 +14,12 @@ Stimulated neurons have no refractory period. The adaptive threshold is the only
 
 from dataclasses import dataclass
 
+import numba
 import numpy as np
 import pandas as pd
 from scipy import sparse
+
+SHIU_W_SYN = 0.275  # mV per synapse, Shiu et al. 2024, tuned on FlyWire FAFB
 
 
 @dataclass
@@ -27,14 +30,18 @@ class Params:
     tau_syn: float = 5.0  # ms
     t_ref: float = 2.2  # ms
     delay: float = 1.8  # ms
-    w_syn: float = 0.275  # mV per synapse
+    # MaleCNS counts more synapses per neuron than FAFB (median 1.81x over matched types,
+    # compare.synapse_density_ratio); the default is Shiu's weight divided by 1.43, the lower
+    # quartile of that ratio, chosen by the pre-registered model selection and replication
+    # (docs/validation.md)
+    w_syn: float = SHIU_W_SYN / 1.43  # mV per synapse
     poisson_scale: float = (
         250.0  # a Poisson input spike adds poisson_scale * w_syn to v
     )
-    # Adaptive threshold: not in Shiu et al. Without it the whole CNS (brain + VNC)
-    # falls into self-sustained activity (e.g. all Kenyon cells). 0 = plain Shiu model.
-    # Stimulated neurons are exempt, so they follow the requested input rate.
-    th_jump: float = 2.0  # mV added to the threshold per spike (calibrate-v3)
+    # Adaptive threshold: not in Shiu et al. It was needed while w_syn stayed at Shiu's FAFB
+    # value (the whole CNS then ran away); at the density-scaled weight it is not, so it is
+    # off by default and kept as an option. Stimulated neurons are exempt.
+    th_jump: float = 0.0  # mV per spike; 0 = off (default since the B- replication)
     tau_th: float = 100.0  # ms, threshold relaxation back to v_th
     dt: float = 0.1  # ms
 
@@ -101,73 +108,123 @@ def run(
     per_bin = max(1, round(bin_ms / p.dt))
     if steps % per_bin:
         raise ValueError(f"duration_ms must be a multiple of bin_ms ({bin_ms})")
-    d = max(1, round(p.delay / p.dt))
-    v = np.full(n, p.v_rest, dtype=np.float32)
-    g = np.zeros(n, dtype=np.float32)
-    th = np.zeros(n, dtype=np.float32)  # adaptive threshold offset
     jump = np.full(n, p.th_jump, dtype=np.float32)
     jump[stim] = 0.0
-    # A neuron spiking at step s is refractory at steps s+1 .. s+ref_steps-1 (brian2 integrates
-    # it again at s + t_ref); stimulated neurons, Poisson targets, never are. The refractory
-    # set is the non-stimulated spikers of the last ref_steps-1 steps, kept in a ring.
-    ref_steps = round(p.t_ref / p.dt)
-    is_stim = np.zeros(n, dtype=bool)
+    is_stim = np.zeros(n, dtype=np.bool_)
     is_stim[stim] = True
-    silent = np.zeros(n, dtype=bool)
+    silent = np.zeros(n, dtype=np.bool_)
     if silence is not None:
         silent[silence] = True
-    recent: list[np.ndarray] = [np.empty(0, dtype=np.int64)] * max(ref_steps - 1, 0)
-    in_flight: list[np.ndarray] = [
-        np.empty(0, dtype=np.int64)
-    ] * d  # ring buffer of delayed spikes
-    counts = np.zeros((-(-steps // per_bin), n), dtype=np.uint16)
-    first = np.full(n, -1, dtype=np.int64)
-    # exact solution of dv/dt = (v_rest - v + g) / tau_m, dg/dt = -g / tau_syn over dt
+    # all Poisson input up front: the same draws, in the same order, as one call per step
+    kicks = rng.poisson(rate_hz * p.dt / 1000.0, (stim_steps, stim.size))
     em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
-    em, es, gv = (
+    gv = p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)  # from the float64 decays
+    counts, first = _kernel(
+        W.indptr.astype(np.int64),
+        W.indices.astype(np.int64),
+        W.data.astype(np.float32),
+        n,
+        steps,
+        per_bin,
+        max(1, round(p.delay / p.dt)),
+        round(p.t_ref / p.dt),
+        stim.astype(np.int64),
+        kicks,
+        is_stim,
+        silent,
+        jump,
         np.float32(em),
         np.float32(es),
-        np.float32(p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)),
+        np.float32(gv),
+        np.float32(np.exp(-p.dt / p.tau_th)),
+        np.float32(p.v_rest),
+        np.float32(p.v_th),
+        np.float32(p.poisson_scale * p.w_syn),
     )
-    decay_th = np.float32(np.exp(-p.dt / p.tau_th))
-    lam, kick = rate_hz * p.dt / 1000.0, np.float32(p.poisson_scale * p.w_syn)
-
-    for t in range(steps):
-        ref = np.concatenate(recent) if recent else np.empty(0, dtype=np.int64)
-        # state update, skipped while refractory (v stays at v_rest, g is frozen)
-        g_ref = g[ref]
-        v -= p.v_rest
-        v *= em
-        v += g * gv
-        v += p.v_rest
-        g *= es
-        v[ref] = p.v_rest
-        g[ref] = g_ref
-        th *= decay_th
-        # threshold (a refractory neuron sits at v_rest, below any threshold)
-        spiking = np.flatnonzero(v > p.v_th + th)
-        if silence is not None:
-            spiking = spiking[~silent[spiking]]
-        # synaptic delivery: spikes from `delay` ago into g, Poisson input into v;
-        # like brian2, input reaching a refractory neuron is lost
-        arriving = in_flight[t % d]
-        if arriving.size:
-            g += np.asarray(W[:, arriving].sum(axis=1)).ravel()
-            g[ref] = g_ref
-        if t < stim_steps:
-            v[stim] += kick * rng.poisson(lam, stim.size)
-        # reset
-        v[spiking] = p.v_rest
-        g[spiking] = 0.0
-        th[spiking] += jump[spiking]
-        if recent:
-            recent[t % len(recent)] = spiking[~is_stim[spiking]]
-        counts[t // per_bin, spiking] += 1
-        first[spiking[first[spiking] < 0]] = t
-        in_flight[t % d] = spiking
     return Result(
         counts=counts,
         first_spike_ms=np.where(first >= 0, first * p.dt, np.nan),
         bin_ms=per_bin * p.dt,
         stim_ms=stim_steps * p.dt,
     )
+
+
+@numba.njit(cache=True)
+def _kernel(
+    indptr, indices, data, n, steps, per_bin, d, ref_steps, stim, kicks, is_stim, silent,
+    jump, em, es, gv, decay_th, v_rest, v_th, kick,
+):  # fmt: skip
+    """One simulation. Same operations, order and float32/float64 rounding as the NumPy
+    reference (tests/reference_sim.py), so the spikes are identical:
+    1. state update of non-refractory neurons (a neuron spiking at step s is refractory at
+       s+1 .. s+ref_steps-1; stimulated neurons never are); threshold offset decays;
+    2. threshold; silenced neurons never fire;
+    3. delivery of the spikes emitted d steps ago, summed per target in float32 column by
+       column (as scipy's CSC product), lost on refractory targets; Poisson input into v;
+    4. reset of v and g, threshold jump."""
+    v = np.full(n, v_rest, dtype=np.float32)
+    g = np.zeros(n, dtype=np.float32)
+    th = np.zeros(n, dtype=np.float32)
+    ref_until = np.zeros(n, dtype=np.int32)
+    ring = np.empty((d, n), dtype=np.int32)  # spikes in flight, one row per step slot
+    ring_len = np.zeros(d, dtype=np.int64)
+    counts = np.zeros(((steps + per_bin - 1) // per_bin, n), dtype=np.uint16)
+    first = np.full(n, -1, dtype=np.int64)
+    c = np.zeros(n, dtype=np.float32)  # delivered input per target, reset after use
+    touched = np.empty(n, dtype=np.int32)  # targets with delivered input this step
+    hit = np.zeros(n, dtype=np.bool_)
+    spiking = np.empty(n, dtype=np.int32)
+    stim_steps = kicks.shape[0]
+    for t in range(steps):
+        # 1. state update (refractory: v stays at v_rest, g frozen), branch-free so that
+        # it vectorises; the refractory lanes compute and discard
+        for i in range(n):
+            frozen = ref_until[i] > t
+            vi = (v[i] - v_rest) * em + g[i] * gv + v_rest
+            gi = g[i] * es
+            v[i] = v_rest if frozen else vi
+            g[i] = g[i] if frozen else gi
+            th[i] = th[i] * decay_th
+        # 2. threshold
+        ns = 0
+        for i in range(n):
+            if v[i] > v_th + th[i] and not silent[i]:
+                spiking[ns] = i
+                ns += 1
+        # 3. delivery: per-target sums in column order, then applied to the touched targets
+        slot = t % d
+        nt = 0
+        for k in range(ring_len[slot]):
+            j = ring[slot, k]
+            for q in range(indptr[j], indptr[j + 1]):
+                r = indices[q]
+                c[r] += data[q]
+                if not hit[r]:
+                    hit[r] = True
+                    touched[nt] = r
+                    nt += 1
+        for k in range(nt):
+            r = touched[k]
+            if ref_until[r] <= t:
+                g[r] = g[r] + c[r]
+            c[r] = 0.0
+            hit[r] = False
+        if t < stim_steps:
+            for s in range(stim.size):
+                i = stim[s]
+                v[i] = np.float32(np.float64(v[i]) + np.float64(kick) * kicks[t, s])
+        # 4. reset
+        b = t // per_bin
+        for k in range(ns):
+            i = spiking[k]
+            v[i] = v_rest
+            g[i] = 0.0
+            th[i] = th[i] + jump[i]
+            if not is_stim[i]:
+                ref_until[i] = t + ref_steps
+            counts[b, i] += 1
+            if first[i] < 0:
+                first[i] = t
+            ring[slot, k] = i
+        ring_len[slot] = ns
+    return counts, first

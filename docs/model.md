@@ -3,7 +3,9 @@
 `flymsg sim` runs a leaky integrate-and-fire (LIF) network with one unit per traced neuron
 (165,122) and one synaptic weight per connection (25.6M). It follows the whole-brain model of
 Shiu et al. (_Nature_ 2024, built on the female FlyWire brain), extended to the whole male CNS,
-plus one deliberate addition: an adaptive threshold. Code: `src/flymsg/sim.py`.
+with one change of scale: the synapse weight is divided by the ratio of synapse detection
+density between the datasets (an optional adaptive threshold, used until v0.4, is off by
+default). Code: `src/flymsg/sim.py`.
 
 The model predicts **which circuits a stimulus recruits and in what order**. It does not
 predict exact firing rates: there is no dendritic geometry, neuromodulation, plasticity or gap
@@ -59,9 +61,9 @@ input rate; see the [findings log](validation.md#findings-log) and
 | `tau_syn`                 |                                                5 ms |             | Shiu et al. 2024                         |
 | `t_ref`                   |                                              2.2 ms |             | Shiu et al. 2024                         |
 | `delay`                   |                                              1.8 ms |             | Shiu et al. 2024                         |
-| `w_syn`                   |                                0.275 mV per synapse | `--w-syn`   | Shiu et al. 2024; checked by calibration |
-| `poisson_scale`           | 250 (one input spike = 68.75 mV at default `w_syn`) |             | Shiu et al. 2024                         |
-| `th_jump`                 |                                    2.0 mV per spike | `--th-jump` | **flymsg**, calibrated (calibrate-v3)    |
+| `w_syn`                   |           0.192 mV per synapse (0.275 / 1.43) | `--w-syn`   | Shiu et al. 2024 (0.275 on FAFB), scaled for MaleCNS synapse density; model selection + replication |
+| `poisson_scale`           |  250 (one input spike = 48 mV at default `w_syn`) |             | Shiu et al. 2024                         |
+| `th_jump`                 |                         0 (off; 2.0 in v0.3–v0.4) | `--th-jump` | **flymsg**, optional compensation        |
 | `tau_th`                  |                                              100 ms |             | **flymsg**                               |
 | `dt`                      |                                              0.1 ms |             | Shiu et al. 2024                         |
 
@@ -101,32 +103,42 @@ glutamatergic, which only matters where they synapse onto central neurons.
 - **Self-sustained** neurons are those still firing from `stim end + 100 ms` to the end of the
   run.
 
-## Adaptive threshold (deviation from Shiu)
+## Synapse weight: scaled for synapse density
 
-With plain Shiu parameters (`--th-jump 0`), the whole CNS falls into self-sustained activity
-after a strong stimulus: thousands of neurons keep firing once the input stops, most of them
-Kenyon cells of the mushroom body together with antennal-lobe and central-complex neurons.
-Shiu et al. tuned the model on the brain alone. The added recurrence of the ventral nerve cord
-was the first suspect; an exploratory test points instead at the synapse scale: MaleCNS counts
-1.81× the synapses per neuron of FAFB, and with `w_syn` scaled accordingly (0.152) the plain
-model stays stable without any adaptation, though sugar then fails to drive MN9 (see the
-[findings log](validation.md#findings-log)).
+MaleCNS neurons carry a median 1.81× the synapses of their FAFB counterparts (7,327 matched
+types; interquartile range of the per-type ratio about 1.4–2.4), a methodological difference
+between the reconstructions (docs/comparison.md). Shiu's `w_syn` 0.275 was tuned on FAFB, so
+in MaleCNS it acts like a ~1.8× stronger synapse. The default divides it by 1.43, the lower
+quartile of the ratio: of the density-scaled variants this one passed every validation check
+(29/29) at the model selection and again on fresh seeds and controls (docs/validation.md).
+The median ratio (1.81, `w_syn` 0.152) fails sugar → MN9. Even a stimulated neuron's kick
+(`poisson_scale · w_syn` = 48 mV) stays far above the 7 mV gap, so stimulated neurons still
+fire once per input spike.
 
-Each spike therefore raises that neuron's threshold by `th_jump`, and the offset relaxes with
-τ = 100 ms. This is a standard spike-frequency adaptation mechanism, not a measured property of
-fly neurons. **Stimulated neurons are exempt**, so the input rate stays as requested.
+## Adaptive threshold (optional; off by default since v0.5)
 
-**This is a compensation, named as such.** It stands in for what the connectome cannot
-provide: gap junctions, neuromodulation, per-cell intrinsic properties and the real balance of
-recurrent inhibition. Its value, 2 mV, is chosen by grid search against the validation battery
-(calibrate-v3, see [validation](validation.md)), not measured in flies; with the engine before
-the fidelity fix it had to be 6 mV. `--th-jump 0` restores
-the published model.
+With Shiu's FAFB weight (0.275) and no adaptation, the whole male CNS falls into
+self-sustained activity after a strong stimulus: thousands of neurons keep firing once the
+input stops, most of them Kenyon cells with antennal-lobe and central-complex neurons. Until
+v0.4 flymsg compensated with an adaptive threshold: each spike raises that neuron's threshold
+by `th_jump` (2 mV from calibrate-v3; 6 mV with the engine before the fidelity fix), relaxing
+with τ = 100 ms, stimulated neurons exempt. It is a standard spike-frequency adaptation
+mechanism, not a measured property of fly neurons, and it stood in for what the connectome
+cannot provide (gap junctions, neuromodulation, intrinsic properties, the real balance of
+recurrent inhibition).
+
+The runaway turned out to come from the synapse scale, not the ventral nerve cord: with the
+density-scaled weight the plain model stays stable (zero self-sustained neurons in every
+validation case). The adaptive threshold is therefore off by default and kept as an option;
+`--th-jump 2 --w-syn 0.275` restores the v0.3–v0.4 model.
 
 ## Performance
 
-Pure NumPy/SciPy on one core: about 10 s per simulated second for the whole CNS (refractory
-neurons are handled as a small set restored after vectorised updates). Time grows
+One compiled kernel (numba) on one core: about 5 s per simulated second for the whole CNS,
+2× the previous vectorised NumPy loop, whose spikes it reproduces exactly (same operations,
+order and float32/float64 rounding; `tests/reference_sim.py` keeps that loop as the oracle).
+Parallel commands (`calibrate`, `select-model`, `dimorphism --silencing`) run one process per
+worker. Time grows
 with the number of spikes, because each step sums the weight columns of the neurons that
 spiked. `calibrate` runs parameter sets in parallel processes.
 

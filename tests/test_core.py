@@ -234,7 +234,7 @@ def test_matches_the_brian2_reference_on_a_two_neuron_network():
     # post 44.4 Hz with t_ref 2.2 ms. It is sensitive to the refractory rules (input lost
     # while refractory, 2.2 ms = 22 steps): keeping that input gave 49.9 Hz.
     edges = pd.DataFrame({"pre": [0], "post": [1], "weight": [60]})
-    p = sim.Params(th_jump=0.0)
+    p = sim.Params(w_syn=sim.SHIU_W_SYN, th_jump=0.0)
     W = sim.weight_matrix(edges, np.ones(2, dtype=np.int8), 2, p.w_syn)
     post = np.mean(
         [sim.run(W, np.array([0]), 200, 2000, p=p, seed=s).rate()[1] for s in range(10)]
@@ -247,3 +247,29 @@ def test_silenced_neurons_neither_fire_nor_transmit():
     W = sim.weight_matrix(edges, sign, n, 0.275)
     rates = sim.run(W, np.array([0]), 150, 500, silence=np.array([1])).rate()
     assert rates[0] > 50 and rates[1] == 0 and rates[2] == 0
+
+
+def test_kernel_reproduces_the_numpy_reference_exactly():
+    # the compiled kernel must give the same spikes as the NumPy loop it replaced
+    # (tests/reference_sim.py): same operations, order and float rounding
+    from reference_sim import run_reference
+
+    rng = np.random.default_rng(1)
+    n = 1500
+    edges = pd.DataFrame(
+        {
+            "pre": rng.integers(0, n, 45000),
+            "post": rng.integers(0, n, 45000),
+            "weight": rng.integers(1, 40, 45000),
+        }
+    )
+    sign = np.where(rng.random(n) < 0.7, 1, -1).astype(np.int8)
+    for th_jump, silence in [(0.0, None), (6.0, None), (2.0, np.arange(40, 80))]:
+        p = sim.Params(th_jump=th_jump)
+        W = sim.weight_matrix(edges, sign, n, p.w_syn)
+        a = sim.run(W, np.arange(30), 150, 400, 250, p, 3, silence=silence)
+        b = run_reference(W, np.arange(30), 150, 400, 250, p, 3, silence=silence)
+        assert a.counts.sum() > 0
+        assert np.array_equal(a.counts, b.counts)
+        assert np.array_equal(np.isnan(a.first_spike_ms), np.isnan(b.first_spike_ms))
+        assert np.allclose(a.first_spike_ms, b.first_spike_ms, equal_nan=True, rtol=0)

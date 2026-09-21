@@ -173,34 +173,56 @@ def cmd_select_model(a, neurons, edges):
     fafb = data.load(a.data, "fafb")
     rho, n_types = compare.synapse_density_ratio((neurons, edges), fafb)
     lo, hi = a.rho_range
-    w0 = sim.Params.w_syn
+    w0 = sim.SHIU_W_SYN
     models = {
         "A": sim.Params(w_syn=w0, th_jump=a.th_jump_a),
         "B": sim.Params(w_syn=w0 / rho, th_jump=0.0),
         "B-": sim.Params(w_syn=w0 / lo, th_jump=0.0),
         "B+": sim.Params(w_syn=w0 / hi, th_jump=0.0),
     }
+    # replication (pre-registered in docs/validation.md): A vs B- on fresh simulation seeds
+    # and fresh control draws; B- replaces A unless A passes more checks
+    eligible, tie_break = (["A", "B-"], "B-") if a.replication else (["A", "B"], "B")
+    if a.replication:
+        models = {k: models[k] for k in eligible}
     print(
         f"synapse density ratio {rho:.2f} ({n_types} matched types);"
-        f" {len(models)} models x {a.seeds} seeds ..."
+        f" {len(models)} models x {a.seeds} seeds from seed {a.seed0},"
+        f" control draws seed {a.control_seed} ..."
     )
-    reports = validate.compare_models(neurons, edges, models, a.seeds, a.workers)
+    reports = validate.compare_models(
+        neurons, edges, models, a.seeds, a.workers, a.seed0, a.control_seed
+    )
     passed = {k: int(r["passed"].sum()) for k, r in reports.items()}
     for name, report in reports.items():
         print(f"\n=== {name}: {models[name]}")
         print(report.round(1).to_string(index=False))
         if a.out:
-            report.to_csv(a.out / f"validate-v4-{a.seeds}seeds-{name}.csv", index=False)
+            tag = "replication-" if a.replication else ""
+            report.to_csv(
+                a.out / f"validate-v4-{tag}{a.seeds}seeds-{name}.csv", index=False
+            )
     total = len(next(iter(reports.values())))
     print("\n" + ", ".join(f"{k} {v}/{total}" for k, v in passed.items()))
-    print(
-        f"winner (pre-registered rule): {validate.select_model(passed, ['A', 'B'], 'B')}"
-    )
+    winner = validate.select_model(passed, eligible, tie_break)
+    print(f"winner (pre-registered rule): {winner}")
 
 
 def cmd_dimorphism(a, neurons, edges):
     params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
-    if a.silencing:
+    if a.by_type:
+        case, category = a.by_type
+        print(
+            f"silencing the {category} responders of {case!r} one cell type at a time ..."
+        )
+        table = dimorphism.type_silencing(
+            neurons, edges, params, case, category, a.seeds, a.workers
+        )
+        drops = [c for c in table.columns if c.endswith("_drop")]
+        table = table.reindex(
+            table[drops].abs().max(axis=1).sort_values(ascending=False).index
+        )
+    elif a.silencing:
         print("silencing each category vs random silencings of the same size ...")
         table = dimorphism.silencing(neurons, edges, params, a.seeds, a.null, a.workers)
     else:
@@ -334,6 +356,15 @@ def main() -> None:
         "--rho-range", type=float, nargs=2, default=[1.43, 2.43], metavar=("LO", "HI")
     )
     s.add_argument("--out", type=Path, help="directory for one CSV report per model")
+    s.add_argument("--seed0", type=int, default=0, help="first simulation seed")
+    s.add_argument(
+        "--control-seed", type=int, default=0, help="seed of the control draws"
+    )
+    s.add_argument(
+        "--replication",
+        action="store_true",
+        help="A vs B- only (the pre-registered replication; use fresh seeds)",
+    )
     s = sub.add_parser(
         "dimorphism",
         help="share of fru/dsx+, male-specific and dimorphic neurons among responders",
@@ -345,6 +376,12 @@ def main() -> None:
         help="instead: response drop when each category is silenced",
     )
     s.add_argument("--null", type=int, default=20, help="random silencings per test")
+    s.add_argument(
+        "--by-type",
+        nargs=2,
+        metavar=("CASE", "CATEGORY"),
+        help='instead: silence one type at a time, e.g. "P1 courtship drive" male-specific',
+    )
     s.add_argument("--workers", type=int, default=4)
     s.add_argument("--w-syn", type=float, default=sim.Params.w_syn)
     s.add_argument("--th-jump", type=float, default=sim.Params.th_jump)

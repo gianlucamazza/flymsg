@@ -92,7 +92,7 @@ def shiu_rates(
     their `run_exp` (their default is 30 runs of 1 s)."""
     from flymsg import sim  # scipy-heavy; keep `compare` importable on its own
 
-    p = sim.Params(th_jump=0.0)
+    p = sim.Params(w_syn=sim.SHIU_W_SYN, th_jump=0.0)
     W = sim.weight_matrix(edges, neurons["shiu_sign"].to_numpy(), len(neurons), p.w_syn)
     return np.mean(
         [
@@ -181,3 +181,27 @@ def synapse_density_ratio(
     j = pd.concat({"m": m, "f": f}, axis=1, join="inner")
     j = j[(j["f"] > 0) & (j["m"] > 0)]
     return float(np.median(j["m"] / j["f"])), len(j)
+
+
+def nearest_male_type(
+    male: tuple[pd.DataFrame, pd.DataFrame],
+    female: tuple[pd.DataFrame, pd.DataFrame],
+    female_idx: np.ndarray,
+    male_types: list[str],
+) -> pd.DataFrame:
+    """For each female neuron, the male type whose output profile (over partner types in the
+    shared FAFB vocabulary) is most similar by cosine: the per-neuron counterpart of
+    `fingerprint`, used to split a FAFB type that MaleCNS divides into subtypes."""
+    mn, me = male
+    fn, fe = female
+    types = mn["type"].to_numpy()
+    refs = {t: output_profile(mn, me, np.flatnonzero(types == t)) for t in male_types}
+    rows = []
+    for i in female_idx:
+        prof = output_profile(fn, fe, np.array([i]))
+        sims = {t: cosine(prof, r) for t, r in refs.items()}
+        best = max(sims, key=sims.get)
+        rows.append(
+            {"idx": int(i), "bodyId": int(fn["bodyId"].iat[i]), **sims, "nearest": best}
+        )
+    return pd.DataFrame(rows)

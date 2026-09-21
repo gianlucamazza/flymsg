@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.5.0 — 2026-09-22
+
+### Model
+- **No compensation by default.** The pre-registered replication (fresh seeds 10–19 and
+  control draws) tied A and B− at 29/29, so B− became the default: Shiu's weight scaled for
+  MaleCNS synapse density (`w_syn` 0.275 / 1.43 = 0.192) and no adaptive threshold (kept as an
+  option). Zero self-sustained neurons in every validation case.
+- Compiled kernel (numba): 2× faster, spikes identical to the previous NumPy loop (kept as the
+  test oracle in `tests/reference_sim.py`).
+- `sim.SHIU_W_SYN` names the published weight used on FAFB.
+
+### Analyses
+- LB3 split in FAFB (`compare.nearest_male_type`): Shiu's sugar set is 14 LB3b/c-like and 6
+  LB3d-like neurons; in the published model the former carry 72 % of the MN9 response.
+- Silencing with 100 null draws: silencing fru/dsx+ or dimorphic neurons doubles dPR1;
+  `dimorphism --by-type` locates a predicted feedback loop dPR1 → dMS9 → vPR9_a/IN00A038 → dPR1.
+- Male MN9 is lateralised: only MN9_L responds, only to right sugar GRNs.
+
+### Public release
+- MIT licence, `CITATION.cff`, GitHub Actions CI (lint + unit and browser-module tests),
+  README rewritten for a public audience, `docs/validation.md` opens with the current status.
+- Fixed: `.gitignore` excluded the vendored `three.module.min.js` (any `build/` directory).
+- Removed the unused `networkx` dependency.
+
 ## 0.4.0 — 2026-09-21
 
 ### Validation

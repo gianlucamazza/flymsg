@@ -27,9 +27,9 @@ def test_control_matches_superclasses_and_skips_target_inputs():
     not (DATA / "edges.parquet").exists(), reason="needs `flymsg build`"
 )
 def test_battery_with_default_params_fails_only_the_known_checks():
-    # Criterion v4 at the standard 3 seeds passes everything (29/29). With 10 seeds the
-    # looming stability check fails (docs/validation.md, model selection): if a change
-    # makes it fail here too, or fixes anything listed, the docs need updating.
+    # Criterion v4 passes everything with the defaults (29/29 at seeds 0-2, and at 10 seeds
+    # in the model selection and the replication, docs/validation.md). If anything starts
+    # failing, the docs need updating.
     known: set[tuple[str, str, str]] = set()
     neurons, edges = data.load(DATA)
     report = validate.run(neurons, edges, sim.Params(), seeds=3)
