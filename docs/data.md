@@ -117,7 +117,7 @@ schema, for the comparisons in [comparison.md](comparison.md). Sources, pinned t
 |---|---:|---|
 | `Connectivity_783.parquet` | 101 MB | Shiu et al. model repository, commit `91bdd1e` (MIT): 15.1 M connections, synapse counts and the model's signs |
 | `Completeness_783.csv` | 3.3 MB | same: the 138,639 neurons of the model |
-| `Supplemental_file1_neuron_annotations.tsv` | 32 MB | flyconnectome/flywire_annotations, commit `8587524`: cell types, classes, side, nerve, `dimorphism`, `fru_dsx`, top transmitter. No licence file; the repository asks to cite Berg et al. 2025, Schlegel et al. 2024, Matsliah et al. 2024 and Dorkenwald et al. 2024 |
+| `Supplemental_file1_neuron_annotations.tsv` | 32 MB | flyconnectome/flywire_annotations, commit `8587524`: cell types, classes, side, nerve, `dimorphism`, `fru_dsx`, top transmitter. No licence file; the repository asks to cite Berg et al. 2025 (the MaleCNS paper, cited from its preprint), Schlegel et al. 2024, Matsliah et al. 2024 and Dorkenwald et al. 2024 |
 
 Mapping: `type` = `cell_type` (also `flywireType`), `instance` = type + side, `superclass`
 = `super_class`, `class` = `cell_class`, `subclass` = `cell_sub_class`, `entryNerve` = `nerve`,
@@ -133,8 +133,21 @@ left" is `CB0701_R`.
 
 ## Citation
 
-> Sexual dimorphism in the complete connectome of the _Drosophila_ male central nervous
-> system. _Cell_ (2026). <https://www.cell.com/cell/fulltext/S0092-8674(26)00942-6>.
-> Preprint: bioRxiv, doi:10.1101/2025.10.09.680999.
+> Berg, S. et al. Sexual dimorphism in the complete _Drosophila_ male central nervous system
+> connectome. _Cell_ 189, 5504–5526 (2026). doi:10.1016/j.cell.2026.08.015.
+> Preprint (different title: "Sexual dimorphism in the complete connectome of the _Drosophila_
+> male central nervous system"): bioRxiv, doi:10.1101/2025.10.09.680999.
 
-Take the author list from the _Cell_ article.
+Take the full author list from the _Cell_ article.
+
+For `--dataset fafb` (FlyWire), as the sources ask, also cite:
+
+- Dorkenwald, S. et al. Neuronal wiring diagram of an adult brain. _Nature_ 634, 124–138
+  (2024). doi:10.1038/s41586-024-07558-y
+- Schlegel, P. et al. Whole-brain annotation and multi-connectome cell typing of
+  _Drosophila_. _Nature_ 634, 139–152 (2024). doi:10.1038/s41586-024-07686-5
+- Matsliah, A. et al. Neuronal parts list and wiring diagram for a visual system. _Nature_
+  634, 166–180 (2024). doi:10.1038/s41586-024-07981-1
+- Shiu, P. K. et al. (2024), for the model's connectivity and signs (see
+  [validation](validation.md#references)).
+- Berg et al., the MaleCNS paper above, for the `dimorphism` and `fru_dsx` annotations.

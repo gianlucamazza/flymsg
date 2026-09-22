@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.2 — 2026-09-22
+
+Documentation only.
+
+- **References verified.** Every entry was checked against PubMed or bioRxiv and given
+  volume, pages and DOI. Corrections: Allen & Murphey 2007 has two authors (was "Allen et
+  al."), the full title of King & Wyman 1980, and the MaleCNS paper's published _Cell_ title
+  and DOI (10.1016/j.cell.2026.08.015), which differ from the preprint's. Gordon & Scott 2009,
+  Shiu et al. 2024 and Tastekin et al. 2025 were added to the list, and the FlyWire papers
+  to `docs/data.md`.
+- Fixed a stale limit (the control has matched class for sensory stimuli since criterion
+  v4), a duplicated paragraph in `docs/model.md` and the table layout in the README.
+
 ## 0.5.1 — 2026-09-22
 
 - `flymsg audit` (`quality.py`): left/right asymmetry of every bilateral cell type (robust

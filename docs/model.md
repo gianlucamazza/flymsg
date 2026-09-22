@@ -137,10 +137,9 @@ validation case). The adaptive threshold is therefore off by default and kept as
 One compiled kernel (numba) on one core: about 5 s per simulated second for the whole CNS,
 2× the previous vectorised NumPy loop, whose spikes it reproduces exactly (same operations,
 order and float32/float64 rounding; `tests/reference_sim.py` keeps that loop as the oracle).
-Parallel commands (`calibrate`, `select-model`, `dimorphism --silencing`) run one process per
-worker. Time grows
-with the number of spikes, because each step sums the weight columns of the neurons that
-spiked. `calibrate` runs parameter sets in parallel processes.
+Time grows with the number of spikes, because each step sums the weight columns of the
+neurons that spiked. Parallel commands (`calibrate`, `select-model`, `dimorphism
+--silencing`) run one process per worker.
 
 ## Reference
 

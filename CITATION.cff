@@ -8,20 +8,30 @@ authors:
   - family-names: Mazza
     given-names: Gianluca
 license: MIT
-version: 0.5.1
+version: 0.5.2
 date-released: 2026-09-22
 repository-code: "https://github.com/gianlucamazza/flymsg"
 references:
   - type: article
-    title: "Sexual dimorphism in the complete connectome of the Drosophila male central nervous system"
+    title: "Sexual dimorphism in the complete Drosophila male central nervous system connectome"
+    authors:
+      - family-names: Berg
+        given-names: Stuart
     journal: Cell
+    volume: 189
+    start: 5504
+    end: 5526
     year: 2026
-    doi: 10.1101/2025.10.09.680999
-    notes: "MaleCNS v1.0 dataset (Janelia FlyEM + Google), CC-BY 4.0; DOI is the bioRxiv preprint"
+    doi: 10.1016/j.cell.2026.08.015
+    notes: "MaleCNS v1.0 dataset (Janelia FlyEM + Google), CC-BY 4.0; preprint doi:10.1101/2025.10.09.680999"
   - type: article
     title: "A Drosophila computational brain model reveals sensorimotor processing"
     journal: Nature
+    volume: 634
+    start: 210
+    end: 219
     year: 2024
+    doi: 10.1038/s41586-024-07763-9
     authors:
       - family-names: Shiu
         given-names: Philip K.

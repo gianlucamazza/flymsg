@@ -92,7 +92,7 @@ See the findings log.
 | Case               | Stimulus           | Targets                   | Evidence                                                                                                   |
 | ------------------ | ------------------ | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | looming escape     | LC4_R (55 neurons) | DNp01 (Giant Fiber), TTMn | LC4/LPLC2 drive the GF, which drives the jump muscle motor neuron (von Reyn et al. 2014; Ache et al. 2019) |
-| giant fiber output | DNp01 (2)          | TTMn                      | GF → TTMn (King & Wyman 1980); the cholinergic component alone still drives TTM, with long latency, in *shak-B²* flies lacking the gap junctions (Allen et al. 2007) |
+| giant fiber output | DNp01 (2)          | TTMn                      | GF → TTMn (King & Wyman 1980); the cholinergic component alone still drives TTM, with long latency, in *shak-B²* flies lacking the gap junctions (Blagburn et al. 1999; Allen & Murphey 2007) |
 | P1 courtship drive | P1 (86)            | pIP10, dPR1               | P1 activation elicits courtship song through pIP10 (von Philipsborn et al. 2011)                           |
 | pIP10 song pathway | pIP10 (2)          | dPR1                      | pIP10 and dPR1 are courtship song neurons (von Philipsborn et al. 2011); 337 synapses pIP10 → dPR1 here    |
 | sugar feeding      | sugar GRNs, right (LB3b_R + LB3c_R, 17) | MN9       | sugar GRNs drive proboscis extension; MN9 moves the proboscis (Gordon & Scott 2009); the headline case of Shiu et al. 2024 |
@@ -136,7 +136,7 @@ labels. A subtype is used as sugar-sensing only when two independent lines agree
 
 The lines agree on LB3a, LB3b and LB3c, so the sugar set is LB3b + LB3c.
 
-The **bitter** set follows the same rule. The gustatory connectome (Tastekin et al.) matches
+The **bitter** set follows the same rule. The gustatory connectome (Tastekin et al. 2025) matches
 LB1a–d to Gr33a-GAL4, expressed in all bitter GRNs, and links LB1e to Ir94e (mild aversion
 to some amino acids). Fingerprints against Shiu's FAFB sets: LB1a/b/c/d nearest bitter
 (0.64 / 0.87 / 0.82 / 0.84), LB1e nearest their Ir94e set (0.93 vs 0.57 bitter). Both lines
@@ -304,7 +304,8 @@ passes 26/28: zero self-sustained neurons in every case, all positives, orders a
 except sugar → MN9, where MN9 stays almost silent (1.1 Hz) while the control drives it to
 31.1 Hz. The runaway that motivated the compensation therefore comes from the synapse scale
 of this dataset rather than from the VNC. This was not pre-registered, so it does not replace
-the calibrate-v3 defaults; a pre-registered comparison of the two models is the next step.
+the calibrate-v3 defaults; a pre-registered comparison of the two models is the next step
+(done: model selection and replication below).
 
 **2026-09-21: MN9 depends on LB3d in the density-scaled model** (descriptive,
 `runs/stimulus-equivalence.txt`, 3 seeds, right side):
@@ -369,27 +370,39 @@ cannot attribute; DNp01, pIP10, dPR1, dMS9, the P1 (pC1) neurons and LC4 are sym
   of dose tolerance) are judgement calls, not derived from data.
 - Order and dose are quantitative but coarse: no absolute latencies (the model's delay and
   time constants set a floor above some real latencies) and no fitted rate curves.
-- The control matches superclass only; for sensory stimuli that mixes modalities.
+- The control matches superclass, or class for sensory stimuli (v4); it does not match
+  transmitter, size of the population's output or distance from the target.
 - One stimulus duration (300 ms).
 
 ## References
 
-Entries marked as checked had title, venue and year verified online (not authors); the others are
-compiled from memory: verify titles and venues before citing.
+Every entry was checked against PubMed or bioRxiv (title, authors, venue, volume, pages, year)
+on 2026-09-22.
 
-- Allen, M. J. et al. The chemical component of the mixed GF-TTMn synapse in
-  *Drosophila melanogaster* uses acetylcholine as its neurotransmitter. *European Journal of
-  Neuroscience* (2007). <https://pubmed.ncbi.nlm.nih.gov/17650116/> (title, venue and year checked)
-- Blagburn, J. M. et al. Null mutation in *shaking-B* eliminates electrical, but not chemical,
-  synapses in the *Drosophila* giant fiber system: a structural study. *Journal of Comparative
-  Neurology* (1999). (title, venue and year checked)
 - Ache, J. M. et al. Neural basis for looming size and velocity encoding in the _Drosophila_
-  giant fiber escape pathway. _Current Biology_ (2019).
-- Cachero, S. et al. Sexual dimorphism in the fly brain. _Current Biology_ (2010).
-- King, D. G. & Wyman, R. J. Anatomy of the giant fibre pathway in _Drosophila_. _Journal of
-  Neurocytology_ (1980).
-- von Philipsborn, A. C. et al. Neuronal control of _Drosophila_ courtship song. _Neuron_ (2011).
+  giant fiber escape pathway. _Current Biology_ 29, 1073–1081 (2019).
+  doi:10.1016/j.cub.2019.01.079
+- Allen, M. J. & Murphey, R. K. The chemical component of the mixed GF-TTMn synapse in
+  _Drosophila melanogaster_ uses acetylcholine as its neurotransmitter. _European Journal of
+  Neuroscience_ 26, 439–445 (2007). doi:10.1111/j.1460-9568.2007.05686.x
+- Blagburn, J. M. et al. Null mutation in _shaking-B_ eliminates electrical, but not chemical,
+  synapses in the _Drosophila_ giant fiber system: a structural study. _Journal of Comparative
+  Neurology_ 404, 449–458 (1999). PMID 9987990
+- Cachero, S. et al. Sexual dimorphism in the fly brain. _Current Biology_ 20, 1589–1601
+  (2010). doi:10.1016/j.cub.2010.07.045
+- Gordon, M. D. & Scott, K. Motor control in a _Drosophila_ taste circuit. _Neuron_ 61,
+  373–384 (2009). doi:10.1016/j.neuron.2008.12.033
+- King, D. G. & Wyman, R. J. Anatomy of the giant fibre pathway in _Drosophila_. I. Three
+  thoracic components of the pathway. _Journal of Neurocytology_ 9, 753–770 (1980).
+  doi:10.1007/BF01205017
+- Shiu, P. K. et al. A _Drosophila_ computational brain model reveals sensorimotor processing.
+  _Nature_ 634, 210–219 (2024). doi:10.1038/s41586-024-07763-9
+- Tastekin, I. et al. From sensory detection to motor action: the comprehensive _Drosophila_
+  taste-feeding connectome. _bioRxiv_ (2025, v2). doi:10.1101/2025.08.25.671814 (v1 title:
+  "Connectomics reveals a feed-forward swallowing circuit driving protein appetite")
+- von Philipsborn, A. C. et al. Neuronal control of _Drosophila_ courtship song. _Neuron_ 69,
+  509–522 (2011). doi:10.1016/j.neuron.2011.01.011
 - von Reyn, C. R. et al. A spike-timing mechanism for action selection. _Nature Neuroscience_
-  (2014).
+  17, 962–970 (2014). doi:10.1038/nn.3741
 - Yu, J. Y. et al. Cellular organization of the neural circuit that drives _Drosophila_
-  courtship behavior. _Current Biology_ (2010).
+  courtship behavior. _Current Biology_ 20, 1602–1614 (2010). doi:10.1016/j.cub.2010.08.025

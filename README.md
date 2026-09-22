@@ -88,7 +88,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `sim STIM…`                                           | simulate a Poisson stimulus; per-type rates, reliability across seeds, latency, self-sustained activity |
 | `validate`                                            | the validation battery (a few minutes)                                                                  |
 | `calibrate`, `select-model`                           | parameter grid search and pre-registered model comparison                                               |
-| `audit` | reconstruction completeness: flags bilateral neurons with one side far below the other |
+| `audit`                                               | reconstruction completeness: flags bilateral neurons with one side far below the other                  |
 | `dimorphism [--silencing \| --by-type CASE CATEGORY]` | dimorphic neurons among responders; silencing by category or cell type                                  |
 | `viz --sim STIM \| --path SRC DST \| --types …`       | export a 3D scene; the page streams geometry from the public volumes                                    |
 
@@ -164,12 +164,13 @@ uv run ruff check && uv run ruff format --check src tests scripts
 If you use flymsg, cite the data and the model it builds on (see also
 [CITATION.cff](CITATION.cff)):
 
-- MaleCNS: _Sexual dimorphism in the complete connectome of the Drosophila male central
-  nervous system_, _Cell_ (2026); preprint doi:10.1101/2025.10.09.680999. CC-BY 4.0.
+- MaleCNS: Berg, S. et al. Sexual dimorphism in the complete _Drosophila_ male central
+  nervous system connectome. _Cell_ 189, 5504–5526 (2026). doi:10.1016/j.cell.2026.08.015.
+  CC-BY 4.0.
 - Model: Shiu, P. K. et al. A _Drosophila_ computational brain model reveals sensorimotor
-  processing. _Nature_ (2024).
+  processing. _Nature_ 634, 210–219 (2024). doi:10.1038/s41586-024-07763-9
 - For `--dataset fafb`: FlyWire (Dorkenwald et al. 2024; Schlegel et al. 2024; Matsliah et
-  al. 2024; Berg et al. 2025), as listed in [data](docs/data.md).
+  al. 2024; Berg et al., the MaleCNS paper above), as listed in [data](docs/data.md).
 
 ## License
 
