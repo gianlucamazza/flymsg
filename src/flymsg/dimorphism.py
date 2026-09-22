@@ -101,7 +101,7 @@ SILENCING_CASES = ("P1 courtship drive", "pIP10 song pathway", "looming escape")
 
 
 def _silencing_job(job: tuple[str, str]) -> list[dict]:
-    neurons, W, p, seeds, n_null = parallel.context()
+    (neurons, W, p, seeds, n_null), checkpoint, meta = parallel.context()
     case_name, category = job
     case = next(c for c in validate.CASES if c.name == case_name)
     stim = case.stim_idx(neurons)
@@ -136,27 +136,77 @@ def _silencing_job(job: tuple[str, str]) -> list[dict]:
     null = _null_rates(
         f"{case_name} / {category}",
         n_null,
-        lambda: target_rates(_matched_draw(rng, sc, ~keep_on & ~flag, silenced)),
+        lambda: _matched_draw(rng, sc, ~keep_on & ~flag, silenced),
+        target_rates,
+        _partial(checkpoint, job),
+        meta,
     )
     return _rows(case_name, category, silenced.size, case.targets, base, obs, null)
 
 
-def _null_rates(label: str, n_null: int, draw) -> np.ndarray:
-    """`draw()` n_null times, reporting progress and a measured ETA on stderr about every
-    10 % (null runs take hours on the full CNS)."""
-    t0, out = time.monotonic(), []
+def _null_rates(
+    label: str, n_null: int, pick, rates, partial: Path | None = None, meta=None
+) -> np.ndarray:
+    """`rates(pick())` n_null times, reporting progress and a measured ETA on stderr about
+    every 10 % (null runs take hours on the full CNS). With `partial`, every draw is
+    appended to that file as it finishes; a rerun replays the saved draws (`pick()` only,
+    to advance the generator, checked against the saved hash of each pick) and continues."""
+    saved = []
+    if partial and partial.exists():
+        lines = partial.read_text().splitlines()
+        try:
+            json.loads(lines[-1])
+        except (json.JSONDecodeError, IndexError):  # cut short while writing
+            lines = lines[:-1]
+            partial.write_text("".join(line + "\n" for line in lines))
+        if lines and json.loads(lines[0]) != meta:
+            raise CheckpointMismatch(f"{partial} was written with other parameters")
+        saved = [json.loads(line) for line in lines[1:]]
+    out = []
+    for i, rec in enumerate(saved[:n_null]):
+        if _pick_hash(pick()) != rec["pick"]:
+            raise CheckpointMismatch(f"{partial}: draw {i} is not the one saved")
+        out.append(rec["rates"])
+    f = None
+    if partial:
+        f = partial.open("a")
+        if not partial.stat().st_size:
+            f.write(json.dumps(meta) + "\n")
+    t0, start = time.monotonic(), len(out)
     step = max(1, n_null // 10)
-    for i in range(1, n_null + 1):
-        out.append(draw())
-        if i % step == 0 or i == n_null:
-            el = time.monotonic() - t0
-            print(
-                f"  [{label}] null {i}/{n_null}, {el / 60:.0f} min,"
-                f" ETA {el / i * (n_null - i) / 60:.0f} min",
-                file=sys.stderr,
-                flush=True,
-            )
+    try:
+        for i in range(start + 1, n_null + 1):
+            idx = pick()
+            r = [float(x) for x in rates(idx)]
+            out.append(r)
+            if f:
+                f.write(json.dumps({"pick": _pick_hash(idx), "rates": r}) + "\n")
+                f.flush()
+            if i % step == 0 or i == n_null:
+                el = time.monotonic() - t0
+                eta = el / (i - start) * (n_null - i) / 60
+                print(
+                    f"  [{label}] null {i}/{n_null}, {el / 60:.0f} min, ETA {eta:.0f} min",
+                    file=sys.stderr,
+                    flush=True,
+                )
+    finally:
+        if f:
+            f.close()
     return np.array(out)
+
+
+def _pick_hash(idx) -> int:
+    return zlib.crc32(np.sort(np.asarray(idx, dtype=np.int64)).tobytes())
+
+
+def _partial(checkpoint: Path | None, job) -> Path | None:
+    """Where a job's null draws are saved while it runs."""
+    if checkpoint is None:
+        return None
+    return checkpoint.with_name(
+        f"{checkpoint.name}.{zlib.crc32(repr(tuple(job)).encode()):08x}.partial"
+    )
 
 
 class CheckpointMismatch(ValueError):
@@ -167,7 +217,8 @@ def _map_jobs(fn, jobs: list, workers: int, ctx, checkpoint: Path | None, meta: 
     """Run `fn` over `jobs` (each returns a list of rows) with job context `ctx`, in worker
     processes if workers > 1, collecting results as they finish. With `checkpoint`, every finished job
     is appended to that JSON-lines file and jobs already there are skipped, so an
-    interrupted run resumes; a checkpoint written with other parameters is refused."""
+    interrupted run resumes (a running job's null draws are saved too, see `_null_rates`);
+    a checkpoint written with other parameters is refused."""
     done: dict[tuple, list] = {}
     if checkpoint and checkpoint.exists():
         for line in checkpoint.read_text().splitlines():
@@ -191,8 +242,9 @@ def _map_jobs(fn, jobs: list, workers: int, ctx, checkpoint: Path | None, meta: 
             rec = {"meta": meta, "job": list(job), "rows": rows}
             with checkpoint.open("a") as f:
                 f.write(json.dumps(rec, default=float) + "\n")
+            _partial(checkpoint, job).unlink(missing_ok=True)
 
-    for j, rows in parallel.imap(fn, todo, workers, ctx):
+    for j, rows in parallel.imap(fn, todo, workers, (ctx, checkpoint, meta)):
         record(j, rows)
     return [r for j in jobs for r in done[tuple(j)]]
 
@@ -273,7 +325,7 @@ LOOP_CASES = ("pIP10 song pathway", "P1 courtship drive")
 
 
 def _loop_job(job: tuple[str, str]) -> list[dict]:
-    neurons, W, p, seeds, n_null, sets = parallel.context()
+    (neurons, W, p, seeds, n_null, sets), checkpoint, meta = parallel.context()
     case_name, set_name = job
     case = next(c for c in validate.CASES if c.name == case_name)
     stim = case.stim_idx(neurons)
@@ -306,7 +358,10 @@ def _loop_job(job: tuple[str, str]) -> list[dict]:
     null = _null_rates(
         f"{case_name} / {set_name}",
         n_null,
-        lambda: target_rates(_matched_draw(rng, key, pool, tested)),
+        lambda: _matched_draw(rng, key, pool, tested),
+        target_rates,
+        _partial(checkpoint, job),
+        meta,
     )
     return _rows(case_name, set_name, tested.size, case.targets, base, obs, null)
 
@@ -340,7 +395,7 @@ def loop_silencing(
 
 
 def _type_job(job: tuple[str, str]) -> list[dict]:
-    neurons, W, p, seeds, case_name, base, silenced_by_type = parallel.context()
+    (neurons, W, p, seeds, case_name, base, silenced_by_type), _, _ = parallel.context()
     t = job[1]
     case = next(c for c in validate.CASES if c.name == case_name)
     out, _ = validate.respond(

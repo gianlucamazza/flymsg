@@ -141,3 +141,35 @@ def test_map_jobs_in_workers_matches_serial():
 
 def _square(j):
     return [{"y": j[0] ** 2}]
+
+
+def test_null_draws_resume_after_an_interruption_with_the_same_result(tmp_path):
+    def run(partial, fail_at=None):
+        rng = np.random.default_rng(7)
+        calls = []
+
+        def rates(idx):
+            calls.append(idx)
+            if fail_at is not None and len(calls) == fail_at:
+                raise KeyboardInterrupt
+            return [float(idx.sum()), 1.0]
+
+        out = dimorphism._null_rates(
+            "t", 6, lambda: rng.choice(50, 3, replace=False), rates, partial, {"m": 1}
+        )
+        return out, len(calls)
+
+    full, _ = run(None)
+    part = tmp_path / "job.partial"
+    with pytest.raises(KeyboardInterrupt):
+        run(part, fail_at=4)  # three draws saved
+    with part.open("a") as f:
+        f.write('{"pick": 1')  # a line cut short by the kill
+    resumed, simulated = run(part)
+    assert simulated == 3 and np.array_equal(resumed, full)
+    # a saved draw that the generator no longer reproduces is refused
+    lines = part.read_text().splitlines()
+    lines[1] = lines[1].replace('"pick": ', '"pick": 1')
+    part.write_text("\n".join(lines) + "\n")
+    with pytest.raises(dimorphism.CheckpointMismatch, match="draw 0"):
+        run(part)
