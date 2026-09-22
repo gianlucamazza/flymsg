@@ -62,7 +62,7 @@ records what failed and why.
 
 ## Quick start
 
-Requires [uv](https://docs.astral.sh/uv/) (Python 3.13) and, for the browser tests, Node.
+Requires [uv](https://docs.astral.sh/uv/) (Python 3.13) and, for the browser tests, Node ≥ 22 (CI: Node 24).
 
 ```bash
 git clone https://github.com/gianlucamazza/flymsg && cd flymsg
