@@ -538,3 +538,10 @@ def main() -> None:
         sys.exit(f"flymsg: {err}")
     except dimorphism.CheckpointMismatch as err:
         sys.exit(f"flymsg: {err}")
+    except KeyboardInterrupt:
+        resume = (
+            " (rerun with the same --checkpoint to resume)"
+            if getattr(a, "checkpoint", None)
+            else ""
+        )
+        sys.exit(f"flymsg: interrupted{resume}")
