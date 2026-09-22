@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.1 — 2026-09-22
+
+- `flymsg audit` (`quality.py`): left/right asymmetry of every bilateral cell type (robust
+  z over 11,095 types, 355 flagged), traced-input share, and the same pair in FAFB.
+- **Correction:** v0.5.0 reported a lateralised male MN9. MN9_R has 556 input synapses
+  against MN9_L's 6,012 (symmetric in FAFB), so it is most likely incompletely
+  reconstructed. The sex comparison now reads the contralateral pathway through MN9_L, as
+  Shiu et al. do: male vs female MN9 30 vs 76 Hz at 100 Hz, 80 vs 88 Hz at 200 Hz.
+- LB3c (right sugar GRNs 2.5× the input of the left) is flagged too; the neurons of the
+  validation circuits and of the predicted dMS9 loop are symmetric.
+
 ## 0.5.0 — 2026-09-22
 
 ### Model
@@ -16,7 +27,8 @@
   LB3d-like neurons; in the published model the former carry 72 % of the MN9 response.
 - Silencing with 100 null draws: silencing fru/dsx+ or dimorphic neurons doubles dPR1;
   `dimorphism --by-type` locates a predicted feedback loop dPR1 → dMS9 → vPR9_a/IN00A038 → dPR1.
-- Male MN9 is lateralised: only MN9_L responds, only to right sugar GRNs.
+- Male MN9 is lateralised: only MN9_L responds, only to right sugar GRNs (corrected in
+  0.5.1: MN9_R is most likely incompletely reconstructed).
 
 ### Public release
 - MIT licence, `CITATION.cff`, GitHub Actions CI (lint + unit and browser-module tests),

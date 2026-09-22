@@ -53,22 +53,27 @@ VNC, which FAFB lacks.
 
 | Case (target) | Input | Male target | Female target | Shared types responding, male / female | Jaccard |
 |---|---|---|---|---|---|
-| sugar GRNs → MN9 (CB0701) | 50 Hz | 0.0 Hz | 46.7 Hz | 102 / 219 | 0.30 |
-| | 100 Hz | 1.1 Hz | 75.6 Hz | 61 / 254 | 0.23 |
-| | 200 Hz | 26.7 Hz | 87.8 Hz | 202 / 262 | 0.46 |
+| sugar GRNs → MN9 (CB0701) | 50 Hz | 5.6 Hz | 46.7 Hz | 45 / 219 | 0.19 |
+| | 100 Hz | 30.0 Hz | 75.6 Hz | 229 / 254 | 0.39 |
+| | 200 Hz | 80.0 Hz | 87.8 Hz | 269 / 262 | 0.43 |
 | LC4_R → DNp01 | 50 Hz | 161.1 Hz | 48.9 Hz | 256 / 185 | 0.34 |
 | | 100 Hz | 210.0 Hz | 82.2 Hz | 360 / 270 | 0.34 |
 | | 200 Hz | 250.0 Hz | 133.3 Hz | 463 / 344 | 0.38 |
 
-Stimuli: male LB3b_L + LB3c_L (17) vs the Shiu et al. sugar set (20, FlyWire `left`, all FAFB
-type LB3); male LC4_R (55) vs female LC4_R (50). Without the density correction the female
+Stimuli: male LB3b_R + LB3c_R (17) vs the Shiu et al. sugar set (20, FlyWire `left`, all
+FAFB type LB3); male LC4_R (55) vs female LC4_R (50). Both sugar runs measure the
+contralateral pathway to MN9, the one Shiu et al. read: in the male right GRNs → MN9_L,
+because MN9_R is flagged as incompletely reconstructed (data, "Reconstruction completeness");
+in the female FlyWire-left GRNs → CB0701_R. Without the density correction the female
 responded with far fewer shared types (`runs/sex-comparison.csv`, v0.3 defaults).
 
 - A quarter to a half of the responding cell types are shared.
-- **MN9 in the male is strongly lateralised.** Only MN9_L responds, and only to right sugar
-  GRNs (30 Hz at 100 Hz, the validation case); left sugar GRNs, used here to match the side
-  of Shiu's set, barely reach it (1.1 Hz), and MN9_R stays silent either way. Whether this is
-  wiring or reconstruction cannot be told from one animal.
+- **The MN9 gap narrows once the readable pathway is compared**: 30 vs 76 Hz at 100 Hz, 80
+  vs 88 Hz at 200 Hz. Part of the remaining gap fits the stimuli: the female set includes 6
+  LB3d-like neurons, which add about a quarter of the response (below). v0.5.0 compared the
+  left male GRNs, whose contralateral target is the flagged MN9_R, and reported a
+  "lateralised" MN9 (1.1 Hz); the audit makes a reconstruction artefact the most likely
+  explanation.
 - DNp01 responds 1.6–3.3× more in the male. The male GF has 3.9× the input synapses of the
   female GF, well beyond the 1.8× density factor.
 - **These are not yet dimorphism results.** Each dataset is one animal; individual variability,

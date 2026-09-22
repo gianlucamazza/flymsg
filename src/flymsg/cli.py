@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import compare, data, dimorphism, graph, sim, validate, viz
+from flymsg import compare, data, dimorphism, graph, quality, sim, validate, viz
 
 NG = "https://neuroglancer-demo.appspot.com/#!"
 
@@ -165,6 +165,61 @@ def cmd_validate(a, neurons, edges):
     print(f"\n{len(report) - failed}/{len(report)} checks passed")
     if failed:
         sys.exit(1)
+
+
+def audit_focus_types(neurons: pd.DataFrame) -> list[str]:
+    """Cell types behind published results: validation stimuli and targets, the negative
+    case, sex-comparison targets and the neurons of the predicted dPR1 feedback loop."""
+    types = set()
+    for case in validate.CASES:
+        types |= set(neurons["type"].iloc[case.stim_idx(neurons)].dropna())
+        types |= set(case.targets)
+    for _, stim_fn, target, _ in validate.NEGATIVES:
+        types |= set(neurons["type"].iloc[stim_fn(neurons)].dropna()) | {target}
+    return sorted(types | {"dMS9", "vPR9_a", "IN00A038"})
+
+
+def cmd_audit(a, neurons, edges):
+    totals = quality.synapse_totals(neurons, edges)
+    asym = quality.pair_asymmetry(neurons, totals)
+    q = asym["log2_RL"].quantile([0.05, 0.5, 0.95])
+    print(
+        f"{len(asym):,} bilateral types; log2(R/L) of median input synapses:"
+        f" 5% {q[0.05]:.2f}, median {q[0.5]:.2f}, 95% {q[0.95]:.2f};"
+        f" {int(asym['flag'].sum())} flagged (|robust z| > {quality.Z_FLAG:g})"
+    )
+    focus = a.types or audit_focus_types(neurons)
+    rows = asym.reindex([t for t in focus if t in asym.index]).copy()
+    # traced-input share per side, if the raw weights table is present
+    raw = a.data / "raw" / data.RAW["weights"]
+    if raw.exists():
+        idx = np.flatnonzero(neurons["type"].isin(rows.index).to_numpy())
+        share = quality.traced_input_share(a.data, neurons, idx)
+        sides = [quality.side_of(i) for i in neurons["instance"].iloc[idx]]
+        sh = pd.DataFrame(
+            {"type": neurons["type"].iloc[idx].to_numpy(), "side": sides, "s": share}
+        ).dropna(subset=["side"])
+        med = sh.groupby(["type", "side"])["s"].median().unstack()
+        rows["traced_in_L"] = med["L"].reindex(rows.index)
+        rows["traced_in_R"] = med["R"].reindex(rows.index)
+    # the same pair in the female brain, where the type is matched
+    fafb_dir = a.data / "fafb" / "edges.parquet"
+    if fafb_dir.exists():
+        fn, fe = data.load(a.data, "fafb")
+        f_asym = quality.pair_asymmetry(fn, quality.synapse_totals(fn, fe))
+        fw = (
+            neurons.dropna(subset=["flywireType"])
+            .groupby("type")["flywireType"]
+            .first()
+        )
+        rows["fafb_log2_RL"] = [
+            f_asym["log2_RL"].get(fw.get(t), np.nan) for t in rows.index
+        ]
+    pd.set_option("display.width", 200)
+    print(rows.round(2).to_string())
+    flagged = asym[asym["flag"]].sort_values("z", key=abs, ascending=False)
+    print(f"\nmost asymmetric bilateral types (of {len(flagged)} flagged):")
+    print(flagged.head(a.top).round(2).to_string())
 
 
 def cmd_select_model(a, neurons, edges):
@@ -346,6 +401,14 @@ def main() -> None:
     s.add_argument("--w-syn", type=float, default=sim.Params.w_syn)
     s.add_argument("--th-jump", type=float, default=sim.Params.th_jump)
     s = sub.add_parser(
+        "audit",
+        help="reconstruction completeness: left/right asymmetry of bilateral types",
+    )
+    s.add_argument(
+        "--types", nargs="+", help="types to report (default: those behind results)"
+    )
+    s.add_argument("--top", type=int, default=20, help="most asymmetric types to list")
+    s = sub.add_parser(
         "select-model",
         help="pre-registered choice: calibrated model vs density-scaled model",
     )
@@ -449,6 +512,7 @@ def main() -> None:
             "calibrate": cmd_calibrate,
             "dimorphism": cmd_dimorphism,
             "select-model": cmd_select_model,
+            "audit": cmd_audit,
             "viz": cmd_viz,
         }[a.cmd](a, neurons, edges)
     except KeyError as err:  # unknown neuron query

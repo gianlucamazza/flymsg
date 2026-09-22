@@ -88,6 +88,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `sim STIM…`                                           | simulate a Poisson stimulus; per-type rates, reliability across seeds, latency, self-sustained activity |
 | `validate`                                            | the validation battery (a few minutes)                                                                  |
 | `calibrate`, `select-model`                           | parameter grid search and pre-registered model comparison                                               |
+| `audit` | reconstruction completeness: flags bilateral neurons with one side far below the other |
 | `dimorphism [--silencing \| --by-type CASE CATEGORY]` | dimorphic neurons among responders; silencing by category or cell type                                  |
 | `viz --sim STIM \| --path SRC DST \| --types …`       | export a 3D scene; the page streams geometry from the public volumes                                    |
 
@@ -122,7 +123,8 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`,
 ## Limits
 
 - **One animal per dataset.** There is no measure of individual variability, and sex
-  differences cannot be separated from reconstruction differences.
+  differences cannot be separated from reconstruction differences. `flymsg audit` flags
+  incompletely reconstructed bilateral neurons (3.2 % of types, including MN9_R).
 - **Wiring only.** No gap junctions, neuromodulation, plasticity or cell-specific properties;
   transmitters are machine predictions. The Giant Fiber, for example, behaves like a
   _shak-B²_ mutant lacking its electrical synapse.

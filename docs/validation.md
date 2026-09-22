@@ -352,6 +352,15 @@ another sign that it was seed-dependent. The caveat stays: B− was one of four 
 tried, and 1.43 is the lower quartile of the density ratio, not its median (1.81, model B,
 which fails sugar → MN9).
 
+**2026-09-22: reconstruction audit (`flymsg audit`, docs/data.md).** Of the neurons behind
+the validation, MN9 is flagged (MN9_L 6,012 input synapses, MN9_R 556; symmetric in FAFB):
+the sugar case reads MN9_L through the contralateral right GRNs, so its checks are not
+affected, but v0.5.0's "lateralised MN9" in the sex comparison was most likely an artefact
+and is corrected there. LB3c is also flagged (right GRNs 2.5× the input of the left), which
+may make the right-side sugar stimulus stronger than a left one. GF → TTMn's left/right
+difference (20 vs 70 synapses) is a single-connection asymmetry the totals-based audit
+cannot attribute; DNp01, pIP10, dPR1, dMS9, the P1 (pC1) neurons and LC4 are symmetric.
+
 ## Limits of this validation
 
 - Five cases, all short feedforward chains (1–2 hops) close to the stimulus. They say little

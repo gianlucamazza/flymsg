@@ -8,7 +8,7 @@ authors:
   - family-names: Mazza
     given-names: Gianluca
 license: MIT
-version: 0.5.0
+version: 0.5.1
 date-released: 2026-09-22
 repository-code: "https://github.com/gianlucamazza/flymsg"
 references:

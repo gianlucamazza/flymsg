@@ -81,6 +81,32 @@ Neurons are sorted by `bodyId`.
 - **Predicted transmitters**: `consensus_nt` is a machine prediction. 502 traced neurons have
   none and 3,100 are `unclear`.
 - **Missing names**: 2,605 traced neurons have no type and 7,040 no instance.
+- **Incomplete neurons**: 3.2 % of bilateral types have one side far below the other (see
+  [Reconstruction completeness](#reconstruction-completeness-flymsg-audit-runsaudittxt)).
+
+## Reconstruction completeness (`flymsg audit`, `runs/audit.txt`)
+
+Proofreading can leave a neuron incomplete, and a bilateral pair makes it visible: the two
+sides should carry similar synapse counts. `flymsg audit` compares, for each of the 11,095
+cell types with neurons on both sides (side from the instance suffix), the median input
+synapses of the right and left neurons, and scores log2(R/L) against all types with a robust
+z-score (median/MAD). Across types the 5–95 % range of log2(R/L) is −0.47 … 0.53; 355 types
+(3.2 %) are flagged at |z| > 3. For the neurons behind flymsg's results it also reports the
+share of each neuron's input that comes from traced partners, and the same pair's asymmetry
+in FAFB where the type is matched.
+
+| Neurons behind results | log2(R/L) | z | Verdict |
+|---|---|---|---|
+| **MN9** (6,012 vs 556 input synapses) | −3.43 | −12.8 | **flagged**: 13th most asymmetric type in the CNS; symmetric in FAFB (CB0701, −0.08). MN9_R is most likely incompletely reconstructed |
+| **LB3c** (99.5 vs 254) | 1.34 | 4.9 | **flagged**: right sugar GRNs carry 2.5× the input and 1.4× the output of the left ones; in FAFB the LB3 imbalance goes the other way (−0.97) |
+| LB1d (1 vs 4 neurons) | −0.80 | −3.1 | flagged, on a single left neuron |
+| LB3b, TTMn | 0.62, 0.57 | 2.2, 2.0 | not flagged |
+| DNp01, pIP10, dPR1, dMS9, all pC1 (P1), LC4, LB1a–c | −0.4 … 0.45 | < 1.6 | symmetric. Input from traced partners: pIP10, dPR1, dMS9, pC1, LC4 ≥ 95 %; DNp01 83–86 %; gustatory neurons 60–81 % (much of their input lies on untraced fragments) |
+
+The audit sees totals, not single connections: GF → TTMn has 70 synapses on the right and 20
+on the left while both GF and TTMn totals are symmetric, an asymmetry it cannot attribute.
+**Rule:** a result that hinges on a flagged neuron must say so; where a bilateral pair is
+flagged, flymsg reads the side that is not.
 
 ## Female brain: FlyWire FAFB v783 (`--dataset fafb`)
 
