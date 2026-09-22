@@ -22,7 +22,6 @@ would penalise adaptation itself instead of testing the wiring.
 `calibrate` grid-searches w_syn x th_jump and ranks parameter sets by checks passed.
 """
 
-import multiprocessing as mp
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -31,7 +30,7 @@ from itertools import pairwise, product
 import numpy as np
 import pandas as pd
 
-from flymsg import data, sim
+from flymsg import data, parallel, sim
 
 MIN_SPIKES = 3  # in the 300 ms stimulus window
 MIN_SEED_SHARE = 2 / 3
@@ -314,7 +313,7 @@ def select_model(passed: dict[str, int], eligible: list[str], tie_break: str) ->
 
 
 def _run_model(item: tuple[str, sim.Params]) -> tuple[str, pd.DataFrame]:
-    neurons, edges, seeds, seed0, control_seed = _shared
+    neurons, edges, seeds, seed0, control_seed = parallel.context()
     name, p = item
     t = time.monotonic()
     report = run(neurons, edges, p, seeds, seed0, control_seed)
@@ -336,19 +335,14 @@ def compare_models(
     control_seed: int = 0,
 ) -> dict[str, pd.DataFrame]:
     """The full battery for each model, in parallel processes. Returns name -> report."""
-    global _shared
-    _shared = (neurons, edges, seeds, seed0, control_seed)
-    with mp.get_context("fork").Pool(min(workers, len(models))) as pool:
-        return dict(pool.map(_run_model, list(models.items()), chunksize=1))
-
-
-_shared: tuple[pd.DataFrame, pd.DataFrame, int] | None = (
-    None  # inherited by forked workers
-)
+    ctx = (neurons, edges, seeds, seed0, control_seed)
+    items = list(models.items())
+    done = dict(r for _, r in parallel.imap(_run_model, items, workers, ctx))
+    return {name: done[name] for name in models}
 
 
 def _run_point(point: tuple[float, float]) -> dict:
-    neurons, edges, seeds = _shared
+    neurons, edges, seeds = parallel.context()
     w_syn, th_jump = point
     t = time.monotonic()
     report = run(neurons, edges, sim.Params(w_syn=w_syn, th_jump=th_jump), seeds)
@@ -377,14 +371,9 @@ def calibrate(
     Ties on checks passed go to the set closest to the published Shiu model
     (w_syn nearest 0.275, then the smallest th_jump).
     """
-    global _shared
-    _shared = (neurons, edges, seeds)
     grid = list(product(w_syns, th_jumps))
-    with mp.get_context("fork").Pool(
-        min(workers, len(grid))
-    ) as pool:  # fork shares the tables
-        rows = pool.map(_run_point, grid, chunksize=1)
-    out = pd.DataFrame(rows)
+    done = dict(parallel.imap(_run_point, grid, workers, (neurons, edges, seeds)))
+    out = pd.DataFrame([done[g] for g in grid])
     out["shiu_dist"] = (out["w_syn"] - sim.SHIU_W_SYN).abs()
     return out.sort_values(
         ["passed", "shiu_dist", "th_jump"], ascending=[False, True, True]

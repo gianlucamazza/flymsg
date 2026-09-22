@@ -139,7 +139,10 @@ One compiled kernel (numba) on one core: about 5 s per simulated second for the 
 order and float32/float64 rounding; `tests/reference_sim.py` keeps that loop as the oracle).
 Time grows with the number of spikes, because each step sums the weight columns of the
 neurons that spiked. Parallel commands (`calibrate`, `select-model`, `dimorphism
---silencing`) run one process per worker.
+--silencing | --loop | --by-type`) run one process per worker, started from a forkserver
+(the caller holds pyarrow's threads, and forking it could deadlock) and fed the tables once.
+The 1,000-draw silencing tests take many CPU hours: they report progress with a measured ETA
+and, with `--checkpoint FILE`, save each finished job and resume from it.
 
 ## Reference
 

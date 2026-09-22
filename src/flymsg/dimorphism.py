@@ -7,13 +7,16 @@ matches superclass because responders of a visual stimulus are mostly visual neu
 dimorphic neurons are not spread evenly across superclasses.
 """
 
-import multiprocessing as mp
+import json
+import sys
+import time
 import zlib
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from flymsg import data, sim, validate
+from flymsg import data, parallel, sim, validate
 
 # MaleCNS annotations; "potentially ..." counts, the field is a best current call
 CATEGORIES = {
@@ -95,11 +98,10 @@ def run(
 
 
 SILENCING_CASES = ("P1 courtship drive", "pIP10 song pathway", "looming escape")
-_shared = None  # job context, inherited by forked workers
 
 
 def _silencing_job(job: tuple[str, str]) -> list[dict]:
-    neurons, W, p, seeds, n_null = _shared
+    neurons, W, p, seeds, n_null = parallel.context()
     case_name, category = job
     case = next(c for c in validate.CASES if c.name == case_name)
     stim = case.stim_idx(neurons)
@@ -131,13 +133,68 @@ def _silencing_job(job: tuple[str, str]) -> list[dict]:
     rng = np.random.default_rng(
         zlib.crc32(f"{case_name}/{category}".encode())
     )  # stable
-    null = np.array(
-        [
-            target_rates(_matched_draw(rng, sc, ~keep_on & ~flag, silenced))
-            for _ in range(n_null)
-        ]
+    null = _null_rates(
+        f"{case_name} / {category}",
+        n_null,
+        lambda: target_rates(_matched_draw(rng, sc, ~keep_on & ~flag, silenced)),
     )
     return _rows(case_name, category, silenced.size, case.targets, base, obs, null)
+
+
+def _null_rates(label: str, n_null: int, draw) -> np.ndarray:
+    """`draw()` n_null times, reporting progress and a measured ETA on stderr about every
+    10 % (null runs take hours on the full CNS)."""
+    t0, out = time.monotonic(), []
+    step = max(1, n_null // 10)
+    for i in range(1, n_null + 1):
+        out.append(draw())
+        if i % step == 0 or i == n_null:
+            el = time.monotonic() - t0
+            print(
+                f"  [{label}] null {i}/{n_null}, {el / 60:.0f} min,"
+                f" ETA {el / i * (n_null - i) / 60:.0f} min",
+                file=sys.stderr,
+                flush=True,
+            )
+    return np.array(out)
+
+
+class CheckpointMismatch(ValueError):
+    """A checkpoint file written with other parameters than the current run."""
+
+
+def _map_jobs(fn, jobs: list, workers: int, ctx, checkpoint: Path | None, meta: dict):
+    """Run `fn` over `jobs` (each returns a list of rows) with job context `ctx`, in worker
+    processes if workers > 1, collecting results as they finish. With `checkpoint`, every finished job
+    is appended to that JSON-lines file and jobs already there are skipped, so an
+    interrupted run resumes; a checkpoint written with other parameters is refused."""
+    done: dict[tuple, list] = {}
+    if checkpoint and checkpoint.exists():
+        for line in checkpoint.read_text().splitlines():
+            rec = json.loads(line)
+            if rec["meta"] != meta:
+                raise CheckpointMismatch(
+                    f"{checkpoint} was written with {rec['meta']}, not {meta}"
+                )
+            done[tuple(rec["job"])] = rec["rows"]
+    todo = [j for j in jobs if tuple(j) not in done]
+    if done:
+        print(
+            f"resuming: {len(done)} of {len(jobs)} jobs in {checkpoint}",
+            file=sys.stderr,
+        )
+
+    def record(job, rows):
+        done[tuple(job)] = rows
+        print(f"job {len(done)}/{len(jobs)} done: {job}", file=sys.stderr, flush=True)
+        if checkpoint:
+            rec = {"meta": meta, "job": list(job), "rows": rows}
+            with checkpoint.open("a") as f:
+                f.write(json.dumps(rec, default=float) + "\n")
+
+    for j, rows in parallel.imap(fn, todo, workers, ctx):
+        record(j, rows)
+    return [r for j in jobs for r in done[tuple(j)]]
 
 
 def _matched_draw(
@@ -189,21 +246,21 @@ def silencing(
     n_null: int = 20,
     workers: int = 4,
     cases=SILENCING_CASES,
+    checkpoint: Path | None = None,
 ) -> pd.DataFrame:
     """Silence every neuron of a category (except the stimulus and the targets) and measure
     how much each target's response drops, against silencing as many neurons outside the
     category with the same superclass mix. Empirical one-sided p for a drop and for a rise,
     with +1 smoothing (smallest 1 / (n_null + 1))."""
-    global _shared
     W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
-    _shared = (neurons, W, p, seeds, n_null)
+    ctx = (neurons, W, p, seeds, n_null)
     jobs = [(c, k) for c in cases for k in CATEGORIES]
-    if workers <= 1:
-        rows = [_silencing_job(j) for j in jobs]
-    else:
-        with mp.get_context("fork").Pool(min(workers, len(jobs))) as pool:
-            rows = pool.map(_silencing_job, jobs, chunksize=1)
-    return pd.DataFrame([r for chunk in rows for r in chunk])
+    meta = {"kind": "silencing", "seeds": seeds, "n_null": n_null, **_param_meta(p)}
+    return pd.DataFrame(_map_jobs(_silencing_job, jobs, workers, ctx, checkpoint, meta))
+
+
+def _param_meta(p: sim.Params) -> dict:
+    return {"w_syn": p.w_syn, "th_jump": p.th_jump}
 
 
 # the predicted feedback loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1 (docs/dimorphism.md)
@@ -216,7 +273,7 @@ LOOP_CASES = ("pIP10 song pathway", "P1 courtship drive")
 
 
 def _loop_job(job: tuple[str, str]) -> list[dict]:
-    neurons, W, p, seeds, n_null, sets = _shared
+    neurons, W, p, seeds, n_null, sets = parallel.context()
     case_name, set_name = job
     case = next(c for c in validate.CASES if c.name == case_name)
     stim = case.stim_idx(neurons)
@@ -246,8 +303,10 @@ def _loop_job(job: tuple[str, str]) -> list[dict]:
 
     base, obs = target_rates(None), target_rates(tested)
     rng = np.random.default_rng(zlib.crc32(f"loop/{case_name}/{set_name}".encode()))
-    null = np.array(
-        [target_rates(_matched_draw(rng, key, pool, tested)) for _ in range(n_null)]
+    null = _null_rates(
+        f"{case_name} / {set_name}",
+        n_null,
+        lambda: target_rates(_matched_draw(rng, key, pool, tested)),
     )
     return _rows(case_name, set_name, tested.size, case.targets, base, obs, null)
 
@@ -261,25 +320,27 @@ def loop_silencing(
     workers: int = 4,
     cases=LOOP_CASES,
     sets=LOOP_SETS,
+    checkpoint: Path | None = None,
 ) -> pd.DataFrame:
     """Silence each set of cell types and compare each target's change with silencing as
     many of the case's own responders, matched on superclass and transmitter sign (never the
     stimulus, the targets or any tested neuron): do these neurons matter more than other
     active neurons of the same kind?"""
-    global _shared
     W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
-    _shared = (neurons, W, p, seeds, n_null, sets)
+    ctx = (neurons, W, p, seeds, n_null, sets)
     jobs = [(c, k) for c in cases for k in sets]
-    if workers <= 1:
-        rows = [_loop_job(j) for j in jobs]
-    else:
-        with mp.get_context("fork").Pool(min(workers, len(jobs))) as pool:
-            rows = pool.map(_loop_job, jobs, chunksize=1)
-    return pd.DataFrame([r for chunk in rows for r in chunk])
+    meta = {
+        "kind": "loop",
+        "seeds": seeds,
+        "n_null": n_null,
+        "sets": {k: list(v) for k, v in sets.items()},
+        **_param_meta(p),
+    }
+    return pd.DataFrame(_map_jobs(_loop_job, jobs, workers, ctx, checkpoint, meta))
 
 
-def _type_job(job: tuple[str, str]) -> dict:
-    neurons, W, p, seeds, case_name, base, silenced_by_type = _shared
+def _type_job(job: tuple[str, str]) -> list[dict]:
+    neurons, W, p, seeds, case_name, base, silenced_by_type = parallel.context()
     t = job[1]
     case = next(c for c in validate.CASES if c.name == case_name)
     out, _ = validate.respond(
@@ -294,7 +355,7 @@ def _type_job(job: tuple[str, str]) -> dict:
     row = {"case": case_name, "type": t, "n": silenced_by_type[t].size}
     for j, tgt in enumerate(case.targets):
         row[f"{tgt}_drop"] = 1 - out[tgt]["rate"] / base[j] if base[j] else np.nan
-    return row
+    return [row]
 
 
 def type_silencing(
@@ -309,7 +370,6 @@ def type_silencing(
     """Silence, one cell type at a time, the responders of `case_name` that belong to
     `category`, and report each target's drop (negative: the response rises). Only types
     that fire in the case are tried, since silencing a silent type changes nothing."""
-    global _shared
     case = next(c for c in validate.CASES if c.name == case_name)
     stim = case.stim_idx(neurons)
     targets = np.concatenate([data.resolve(neurons, t) for t in case.targets])
@@ -324,11 +384,6 @@ def type_silencing(
     by_type = {t: resp[types[resp] == t] for t in np.unique(types[resp])}
     base_out, _ = validate.respond(W, neurons, stim, case.targets, p, seeds)
     base = np.array([base_out[t]["rate"] for t in case.targets])
-    _shared = (neurons, W, p, seeds, case_name, base, by_type)
+    ctx = (neurons, W, p, seeds, case_name, base, by_type)
     jobs = [(case_name, t) for t in by_type]
-    if workers <= 1:
-        rows = [_type_job(j) for j in jobs]
-    else:
-        with mp.get_context("fork").Pool(min(workers, len(jobs))) as pool:
-            rows = pool.map(_type_job, jobs, chunksize=4)
-    return pd.DataFrame(rows)
+    return pd.DataFrame(_map_jobs(_type_job, jobs, workers, ctx, None, {}))

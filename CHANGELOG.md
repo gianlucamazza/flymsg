@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- `dimorphism --silencing` reports one-sided p for a drop and for a rise (`p_drop`,
+  `p_rise`); `dimorphism --loop` tests the predicted dMS9 loop against silencing matched
+  active neurons (pre-registered tests T1 and T2, docs/dimorphism.md).
+- Worker processes start from a forkserver (`parallel.py`) instead of forking a
+  multi-threaded caller; long silencing runs report progress with a measured ETA and resume
+  from `--checkpoint FILE`.
+
 ## 0.5.2 — 2026-09-22
 
 Documentation only.

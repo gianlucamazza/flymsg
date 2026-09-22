@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from flymsg import dimorphism, sim
 
@@ -110,3 +111,33 @@ def test_loop_silencing_detects_a_feedback_inhibitor_against_matched_responders(
     # silencing E lifts the inhibition of T; silencing X (the only matched responder) does not
     assert table["drop"] < 0 and table["null_drop_min"] == 0.0
     assert table["p_rise"] == 1 / 4 and table["p_drop"] == 1.0
+
+
+def test_map_jobs_checkpoints_resumes_and_refuses_other_parameters(tmp_path):
+    ck = tmp_path / "ck.jsonl"
+    calls = []
+
+    def job(j):
+        calls.append(j)
+        return [{"job": j[0], "x": float("nan") if j[0] == "b" else 1.0}]
+
+    meta = {"n_null": 5}
+    rows = dimorphism._map_jobs(job, [("a",), ("b",)], 1, None, ck, meta)
+    assert [r["job"] for r in rows] == ["a", "b"] and len(
+        ck.read_text().splitlines()
+    ) == 2
+    # a rerun with one more job computes only the new one, and keeps the job order
+    rows = dimorphism._map_jobs(job, [("c",), ("a",), ("b",)], 1, None, ck, meta)
+    assert calls == [("a",), ("b",), ("c",)]
+    assert [r["job"] for r in rows] == ["c", "a", "b"] and np.isnan(rows[2]["x"])
+    with pytest.raises(dimorphism.CheckpointMismatch, match="written with"):
+        dimorphism._map_jobs(job, [("a",)], 1, None, ck, {"n_null": 1000})
+
+
+def test_map_jobs_in_workers_matches_serial():
+    rows = dimorphism._map_jobs(_square, [(i,) for i in range(5)], 3, None, None, {})
+    assert [r["y"] for r in rows] == [0, 1, 4, 9, 16]
+
+
+def _square(j):
+    return [{"y": j[0] ** 2}]

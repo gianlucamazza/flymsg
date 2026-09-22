@@ -280,11 +280,13 @@ def cmd_dimorphism(a, neurons, edges):
     elif a.loop:
         print("silencing the predicted dMS9 loop vs matched active neurons ...")
         table = dimorphism.loop_silencing(
-            neurons, edges, params, a.seeds, a.null, a.workers
+            neurons, edges, params, a.seeds, a.null, a.workers, checkpoint=a.checkpoint
         )
     elif a.silencing:
         print("silencing each category vs random silencings of the same size ...")
-        table = dimorphism.silencing(neurons, edges, params, a.seeds, a.null, a.workers)
+        table = dimorphism.silencing(
+            neurons, edges, params, a.seeds, a.null, a.workers, checkpoint=a.checkpoint
+        )
     else:
         print(
             "responders of each validation case vs superclass-matched random sets ..."
@@ -450,6 +452,11 @@ def main() -> None:
     )
     s.add_argument("--null", type=int, default=20, help="random silencings per test")
     s.add_argument(
+        "--checkpoint",
+        type=Path,
+        help="--silencing/--loop: save each finished job here and resume from it",
+    )
+    s.add_argument(
         "--by-type",
         nargs=2,
         metavar=("CASE", "CATEGORY"),
@@ -528,4 +535,6 @@ def main() -> None:
     except KeyError as err:  # unknown neuron query
         sys.exit(f"flymsg: {err.args[0]}")
     except OSError as err:  # missing data files, failed downloads
+        sys.exit(f"flymsg: {err}")
+    except dimorphism.CheckpointMismatch as err:
         sys.exit(f"flymsg: {err}")
