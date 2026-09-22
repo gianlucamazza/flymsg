@@ -20,13 +20,13 @@ Output: `runs/dimorphism.txt`.
 
 ## Results
 
-| Case | Responders | fru/dsx+ | male-specific | dimorphic |
-|---|---:|---|---|---|
-| P1 courtship drive | 1,824 | **4.3×** (512) | **10.9×** (361) | **6.1×** (148) |
-| pIP10 song pathway | 242 | **13.3×** (84) | **18.6×** (32) | **4.9×** (7) |
-| looming escape | 1,087 | 0.40× (22) | 0.46× (7) | 1.3× (16), p 0.19 |
-| sugar feeding | 360 | 0.44× (11) | 0 (0) | 0.51× (4) |
-| giant fiber output | 2 | 0 | 0 | 0 |
+| Case               | Responders | fru/dsx+       | male-specific   | dimorphic         |
+| ------------------ | ---------: | -------------- | --------------- | ----------------- |
+| P1 courtship drive |      1,824 | **4.3×** (512) | **10.9×** (361) | **6.1×** (148)    |
+| pIP10 song pathway |        242 | **13.3×** (84) | **18.6×** (32)  | **4.9×** (7)      |
+| looming escape     |      1,087 | 0.40× (22)     | 0.46× (7)       | 1.3× (16), p 0.19 |
+| sugar feeding      |        360 | 0.44× (11)     | 0 (0)           | 0.51× (4)         |
+| giant fiber output |          2 | 0              | 0               | 0                 |
 
 Bold: p = 0.001. Counts of responders in the category in brackets.
 
@@ -49,12 +49,12 @@ silencings of as many neurons outside the category, with the same superclass mix
 3 seeds). The smallest possible p is 0.0099; with 15 tests nothing survives a Bonferroni
 correction, so these are indications.
 
-| Case → target | fru/dsx+ (~4,900 silenced) | male-specific (~1,330) | dimorphic (948) | null, mean |
-|---|---|---|---|---|
-| P1 → pIP10 | −12 % (p 0.010) | +9 % | −3 % (p 0.04) | +5 … +12 % |
-| P1 → dPR1 | **+79 %** | +2 % | **+64 %** | +11 … +22 % |
-| pIP10 → dPR1 | **+100 %** | −13 % (p 0.03) | **+61 %** | −1 … −6 % |
-| LC4_R → DNp01, TTMn | within the null | within the null | within the null | |
+| Case → target       | fru/dsx+ (~4,900 silenced) | male-specific (~1,330) | dimorphic (948) | null, mean  |
+| ------------------- | -------------------------- | ---------------------- | --------------- | ----------- |
+| P1 → pIP10          | −12 % (p 0.010)            | +9 %                   | −3 % (p 0.04)   | +5 … +12 %  |
+| P1 → dPR1           | **+79 %**                  | +2 %                   | **+64 %**       | +11 … +22 % |
+| pIP10 → dPR1        | **+100 %**                 | −13 % (p 0.03)         | **+61 %**       | −1 … −6 %   |
+| LC4_R → DNp01, TTMn | within the null            | within the null        | within the null |             |
 
 Changes are relative to the unsilenced response; + is a rise. The p values test drops only.
 
@@ -72,13 +72,13 @@ Changes are relative to the unsilenced response; + is a rise. The p values test 
 Silencing the fru/dsx+ responders one cell type at a time (3 seeds, no null) points to one
 loop:
 
-| Type silenced (neurons) | dPR1 after pIP10 | dPR1 after P1 | pIP10 after P1 |
-|---|---|---|---|
-| dMS9 (2) | **+67 %** | **+74 %** | +14 % |
-| vPR9_a (4) / vPR9_c (3) | −9 % / — | +29 % / +38 % | +14 % / +21 % |
-| vMS12_a (6) | +14 % | +39 % | +6 % |
-| TN1a subtypes (1–4 each) | −1 … −15 % | +18 … +20 % | +3 … +4 % |
-| AVLP717m (2) | — | −28 % | **−43 %** |
+| Type silenced (neurons)  | dPR1 after pIP10 | dPR1 after P1 | pIP10 after P1 |
+| ------------------------ | ---------------- | ------------- | -------------- |
+| dMS9 (2)                 | **+67 %**        | **+74 %**     | +14 %          |
+| vPR9_a (4) / vPR9_c (3)  | −9 % / —         | +29 % / +38 % | +14 % / +21 %  |
+| vMS12_a (6)              | +14 %            | +39 %         | +6 %           |
+| TN1a subtypes (1–4 each) | −1 … −15 %       | +18 … +20 %   | +3 … +4 %      |
+| AVLP717m (2)             | —                | −28 %         | **−43 %**      |
 
 dMS9 (fru_high, sexually dimorphic, cholinergic; "Lillvis 2024: dMS9") receives 822 synapses
 from dPR1 and gives it only 5. It drives two inhibitory neurons that project back onto dPR1:
@@ -87,6 +87,41 @@ predicts a disynaptic negative feedback loop, **dPR1 → dMS9 → vPR9_a / IN00A
 that holds the song pathway back. AVLP717m (fru+) relays part of P1's drive to pIP10.
 These are model predictions from wiring and predicted transmitters, open to experimental
 test.
+
+## Pre-registered tests (v0.6, fixed 2026-09-22 before running)
+
+The silencing results above are indications: 100 null draws cannot reach a Bonferroni
+threshold, the p values tested drops while the claims are rises, and the loop comes from a
+scan without a null. Two confirmatory tests, with the defaults and the validation protocol
+(3 seeds, 100 Hz, 300 ms; target rate = best neuron's mean rate), follow. The rules below
+are fixed before any of these runs; a failure is reported as a finding.
+
+**T1. The dimorphic network restrains dPR1** (`flymsg dimorphism --silencing --null 1000`).
+Same design as above (silence every neuron of the category except stimulus and targets; null
+= as many neurons outside the category with the same superclass mix), with 1,000 null
+draws and a one-sided test for a **rise**: p = (1 + number of null draws whose rise is ≥ the
+observed rise) / 1,001. Four confirmatory tests: fru/dsx+ and dimorphic, each after P1 and
+after pIP10, on dPR1. Male-specific, the other targets and looming escape are reported as
+descriptive.
+
+**T2. The predicted loop dPR1 → dMS9 → vPR9_a / IN00A038 → dPR1** (`flymsg dimorphism
+--loop --null 1000`). Two silenced sets: **dMS9** (both neurons, cholinergic, ascending)
+and **the inhibitory feedback** (all 4 vPR9_a and all 4 IN00A038, GABAergic, VNC
+intrinsic). The null silences as many neurons drawn from **the case's own responders**
+(firing in ≥ 2 of 3 seeds), matched on superclass and transmitter sign, never the stimulus,
+the targets or the tested neurons. This is stricter than a random draw: it asks whether
+these neurons matter more than other active neurons of the same kind, not whether silencing
+active neurons does anything. Four confirmatory tests: each set after pIP10 and after P1,
+one-sided for a rise of dPR1, as in T1. Silencing both sets together is reported as
+descriptive.
+
+**Decision rules.** The 8 confirmatory tests (T1 and T2) share one Bonferroni threshold,
+p ≤ 0.05 / 8 = 0.00625. T1 is confirmed for a category if both cases pass. The loop (T2)
+is **supported** if both sets pass after pIP10, the most direct test; **partly supported**
+if only dMS9 passes (dMS9 restrains dPR1 through some route, not necessarily the named
+inhibitors); **not supported** otherwise. The P1 results qualify the verdict but do not
+change it. Known beforehand: in the v0.5 per-type scan, silencing vPR9_a alone after pIP10
+_lowered_ dPR1 by 9 %, and IN00A038 was never tested (it is not fru+).
 
 ## Limits
 
