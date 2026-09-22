@@ -173,3 +173,16 @@ def test_null_draws_resume_after_an_interruption_with_the_same_result(tmp_path):
     part.write_text("\n".join(lines) + "\n")
     with pytest.raises(dimorphism.CheckpointMismatch, match="draw 0"):
         run(part)
+
+
+def test_map_jobs_runs_the_first_jobs_first_and_keeps_the_job_order():
+    calls = []
+
+    def job(j):
+        calls.append(j)
+        return [{"job": j[0]}]
+
+    jobs = [("a",), ("b",), ("c",), ("d",)]
+    rows = dimorphism._map_jobs(job, jobs, 1, None, None, {}, first=[("c",), ("a",)])
+    assert calls[:2] == [("a",), ("c",)] and set(calls[2:]) == {("b",), ("d",)}
+    assert [r["job"] for r in rows] == ["a", "b", "c", "d"]

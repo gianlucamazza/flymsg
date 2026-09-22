@@ -118,13 +118,25 @@ def control_idx(
 
 
 def respond(
-    W, neurons, stim, targets, p, seeds, rate_hz=RATE_HZ, silence=None, seed0=0
+    W,
+    neurons,
+    stim,
+    targets,
+    p,
+    seeds,
+    rate_hz=RATE_HZ,
+    silence=None,
+    seed0=0,
+    duration_ms=DURATION_MS,
 ) -> tuple[dict[str, dict], float]:
     """Per target type, its best neuron (highest mean rate over seeds): rate, reliable seeds,
     first-spike latency per seed and its median. Also the mean number of self-sustained
-    neurons."""
+    neurons. With `duration_ms` = STIM_MS the run stops at the end of the stimulus: rates
+    are identical (the input is drawn for the stimulus only and the dynamics are causal),
+    at about half the cost, but latencies miss spikes after the stimulus and the
+    self-sustained count is NaN."""
     results = [
-        sim.run(W, stim, rate_hz, DURATION_MS, STIM_MS, p, seed, silence=silence)
+        sim.run(W, stim, rate_hz, duration_ms, STIM_MS, p, seed, silence=silence)
         for seed in range(seed0, seed0 + seeds)
     ]
     stim_bins = round(STIM_MS / results[0].bin_ms)
@@ -146,6 +158,8 @@ def respond(
             if np.isfinite(lat).any()
             else np.nan,
         }
+    if duration_ms <= STIM_MS + 100.0:  # too short to see self-sustained activity
+        return out, float("nan")
     return out, float(np.mean([r.persistent().size for r in results]))
 
 

@@ -98,6 +98,12 @@ def run(
 
 
 SILENCING_CASES = ("P1 courtship drive", "pIP10 song pathway", "looming escape")
+# pre-registered confirmatory tests (docs/dimorphism.md, T1); the rest is descriptive
+T1_CONFIRMATORY = [
+    (c, k)
+    for c in ("P1 courtship drive", "pIP10 song pathway")
+    for k in ("fru/dsx+", "dimorphic")
+]
 
 
 def _silencing_job(job: tuple[str, str]) -> list[dict]:
@@ -113,7 +119,14 @@ def _silencing_job(job: tuple[str, str]) -> list[dict]:
 
     def target_rates(silence):
         out, _ = validate.respond(
-            W, neurons, stim, case.targets, p, seeds, silence=silence
+            W,
+            neurons,
+            stim,
+            case.targets,
+            p,
+            seeds,
+            silence=silence,
+            duration_ms=validate.STIM_MS,  # rates only: stop at the stimulus end
         )
         return np.array([out[t]["rate"] for t in case.targets])
 
@@ -213,12 +226,22 @@ class CheckpointMismatch(ValueError):
     """A checkpoint file written with other parameters than the current run."""
 
 
-def _map_jobs(fn, jobs: list, workers: int, ctx, checkpoint: Path | None, meta: dict):
+def _map_jobs(
+    fn,
+    jobs: list,
+    workers: int,
+    ctx,
+    checkpoint: Path | None,
+    meta: dict,
+    first=(),
+):
     """Run `fn` over `jobs` (each returns a list of rows) with job context `ctx`, in worker
-    processes if workers > 1, collecting results as they finish. With `checkpoint`, every finished job
-    is appended to that JSON-lines file and jobs already there are skipped, so an
-    interrupted run resumes (a running job's null draws are saved too, see `_null_rates`);
-    a checkpoint written with other parameters is refused."""
+    processes if workers > 1, collecting results as they finish. With `checkpoint`, every
+    finished job is appended to that JSON-lines file and jobs already there are skipped, so
+    an interrupted run resumes (a running job's null draws are saved too, see `_null_rates`);
+    a checkpoint written with other parameters is refused. Jobs in `first` are submitted
+    before the others (the confirmatory tests, so that an interrupted run has them);
+    rows come back in the order of `jobs`."""
     done: dict[tuple, list] = {}
     if checkpoint and checkpoint.exists():
         for line in checkpoint.read_text().splitlines():
@@ -228,7 +251,10 @@ def _map_jobs(fn, jobs: list, workers: int, ctx, checkpoint: Path | None, meta: 
                     f"{checkpoint} was written with {rec['meta']}, not {meta}"
                 )
             done[tuple(rec["job"])] = rec["rows"]
-    todo = [j for j in jobs if tuple(j) not in done]
+    first = {tuple(j) for j in first}
+    todo = sorted(
+        (j for j in jobs if tuple(j) not in done), key=lambda j: tuple(j) not in first
+    )
     if done:
         print(
             f"resuming: {len(done)} of {len(jobs)} jobs in {checkpoint}",
@@ -308,7 +334,10 @@ def silencing(
     ctx = (neurons, W, p, seeds, n_null)
     jobs = [(c, k) for c in cases for k in CATEGORIES]
     meta = {"kind": "silencing", "seeds": seeds, "n_null": n_null, **_param_meta(p)}
-    return pd.DataFrame(_map_jobs(_silencing_job, jobs, workers, ctx, checkpoint, meta))
+    rows = _map_jobs(
+        _silencing_job, jobs, workers, ctx, checkpoint, meta, T1_CONFIRMATORY
+    )
+    return pd.DataFrame(rows)
 
 
 def _param_meta(p: sim.Params) -> dict:
@@ -322,6 +351,8 @@ LOOP_SETS = {
     "both": ("dMS9", "vPR9_a", "IN00A038"),
 }
 LOOP_CASES = ("pIP10 song pathway", "P1 courtship drive")
+# pre-registered confirmatory tests (T2); "both" is descriptive
+T2_CONFIRMATORY = [(c, k) for c in LOOP_CASES for k in ("dMS9", "inhibitory feedback")]
 
 
 def _loop_job(job: tuple[str, str]) -> list[dict]:
@@ -334,8 +365,8 @@ def _loop_job(job: tuple[str, str]) -> list[dict]:
     all_tested = np.concatenate(
         [data.resolve(neurons, t) for ts in sets.values() for t in ts]
     )
-    results = [
-        sim.run(W, stim, validate.RATE_HZ, validate.DURATION_MS, validate.STIM_MS, p, s)
+    results = [  # responders read the stimulus window only
+        sim.run(W, stim, validate.RATE_HZ, validate.STIM_MS, validate.STIM_MS, p, s)
         for s in range(seeds)
     ]
     pool = np.zeros(len(neurons), dtype=bool)
@@ -349,7 +380,14 @@ def _loop_job(job: tuple[str, str]) -> list[dict]:
 
     def target_rates(silence):
         out, _ = validate.respond(
-            W, neurons, stim, case.targets, p, seeds, silence=silence
+            W,
+            neurons,
+            stim,
+            case.targets,
+            p,
+            seeds,
+            silence=silence,
+            duration_ms=validate.STIM_MS,  # rates only: stop at the stimulus end
         )
         return np.array([out[t]["rate"] for t in case.targets])
 
@@ -391,7 +429,8 @@ def loop_silencing(
         "sets": {k: list(v) for k, v in sets.items()},
         **_param_meta(p),
     }
-    return pd.DataFrame(_map_jobs(_loop_job, jobs, workers, ctx, checkpoint, meta))
+    rows = _map_jobs(_loop_job, jobs, workers, ctx, checkpoint, meta, T2_CONFIRMATORY)
+    return pd.DataFrame(rows)
 
 
 def _type_job(job: tuple[str, str]) -> list[dict]:
@@ -406,6 +445,7 @@ def _type_job(job: tuple[str, str]) -> list[dict]:
         p,
         seeds,
         silence=silenced_by_type[t],
+        duration_ms=validate.STIM_MS,
     )
     row = {"case": case_name, "type": t, "n": silenced_by_type[t].size}
     for j, tgt in enumerate(case.targets):
@@ -430,14 +470,16 @@ def type_silencing(
     targets = np.concatenate([data.resolve(neurons, t) for t in case.targets])
     W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
     results = [
-        sim.run(W, stim, validate.RATE_HZ, validate.DURATION_MS, validate.STIM_MS, p, s)
+        sim.run(W, stim, validate.RATE_HZ, validate.STIM_MS, validate.STIM_MS, p, s)
         for s in range(seeds)
     ]
     resp = np.setdiff1d(responders(results, stim), targets)
     resp = resp[CATEGORIES[category](neurons).to_numpy()[resp]]
     types = neurons["type"].fillna(neurons["bodyId"].astype(str)).to_numpy()
     by_type = {t: resp[types[resp] == t] for t in np.unique(types[resp])}
-    base_out, _ = validate.respond(W, neurons, stim, case.targets, p, seeds)
+    base_out, _ = validate.respond(
+        W, neurons, stim, case.targets, p, seeds, duration_ms=validate.STIM_MS
+    )
     base = np.array([base_out[t]["rate"] for t in case.targets])
     ctx = (neurons, W, p, seeds, case_name, base, by_type)
     jobs = [(case_name, t) for t in by_type]

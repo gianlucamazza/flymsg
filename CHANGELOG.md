@@ -6,8 +6,10 @@
   `p_rise`); `dimorphism --loop` tests the predicted dMS9 loop against silencing matched
   active neurons (pre-registered tests T1 and T2, docs/dimorphism.md).
 - Worker processes start from a forkserver (`parallel.py`) instead of forking a
-  multi-threaded caller; long silencing runs report progress with a measured ETA and resume
-  from `--checkpoint FILE`.
+  multi-threaded caller; long silencing runs report progress with a measured ETA, save
+  every null draw and resume from `--checkpoint FILE`, running the confirmatory tests first.
+- `validate.respond(duration_ms=STIM_MS)` stops a run at the end of the stimulus: identical
+  rates at 2–2.7× less cost, used by all silencing analyses.
 
 ## 0.5.2 — 2026-09-22
 
@@ -36,6 +38,7 @@ Documentation only.
 ## 0.5.0 — 2026-09-22
 
 ### Model
+
 - **No compensation by default.** The pre-registered replication (fresh seeds 10–19 and
   control draws) tied A and B− at 29/29, so B− became the default: Shiu's weight scaled for
   MaleCNS synapse density (`w_syn` 0.275 / 1.43 = 0.192) and no adaptive threshold (kept as an
@@ -45,6 +48,7 @@ Documentation only.
 - `sim.SHIU_W_SYN` names the published weight used on FAFB.
 
 ### Analyses
+
 - LB3 split in FAFB (`compare.nearest_male_type`): Shiu's sugar set is 14 LB3b/c-like and 6
   LB3d-like neurons; in the published model the former carry 72 % of the MN9 response.
 - Silencing with 100 null draws: silencing fru/dsx+ or dimorphic neurons doubles dPR1;
@@ -53,6 +57,7 @@ Documentation only.
   0.5.1: MN9_R is most likely incompletely reconstructed).
 
 ### Public release
+
 - MIT licence, `CITATION.cff`, GitHub Actions CI (lint + unit and browser-module tests),
   README rewritten for a public audience, `docs/validation.md` opens with the current status.
 - Fixed: `.gitignore` excluded the vendored `three.module.min.js` (any `build/` directory).
@@ -61,6 +66,7 @@ Documentation only.
 ## 0.4.0 — 2026-09-21
 
 ### Validation
+
 - Criterion v4: class-matched control for sensory stimuli (resolves the sugar → MN9
   specificity failure: random gustatory neurons leave MN9 silent) and a negative case,
   bitter GRNs (LB1a–d, two agreeing lines of evidence) → MN9. 29/29 with the defaults.
@@ -72,17 +78,20 @@ Documentation only.
 - Finding: in the density-scaled model MN9 responds to LB3b+c+d but not to LB3b+c.
 
 ### Model and analyses
+
 - `sim.run(silence=...)`; `flymsg dimorphism --silencing`: response drop when fru/dsx+,
   male-specific or dimorphic neurons are silenced, against as many other neurons. Courtship
   responses survive (they run through direct links); silencing male-specific neurons lowers
   dPR1 by ~20 %, silencing all fru/dsx+ neurons raises it; looming is unaffected.
 
 ### 3D view
+
 - Colour by dimorphism or fru/dsx (`?color=`).
 
 ## 0.3.0 — 2026-09-21
 
 ### Model
+
 - The engine now reproduces the published brian2 model step by step (Poisson input into v,
   reset of v and g, v and g frozen while refractory, synaptic input lost while refractory,
   stimulated neurons without refractory period). Checked against the Shiu et al. code on the
@@ -94,11 +103,13 @@ Documentation only.
   0.152 the model is stable without the adaptive threshold (26/28).
 
 ### Validation
+
 - Criterion v3: latency order along chains and dose-response checks, pre-registered.
 - New case: sugar GRNs → MN9. Sugar GRNs (LB3b, LB3c) chosen where two independent lines agree.
-- GF → TTMn evaluated against *shak-B²* physiology; kept as a documented limit.
+- GF → TTMn evaluated against _shak-B²_ physiology; kept as a documented limit.
 
 ### Data and comparisons
+
 - `--dataset fafb`: the female FlyWire v783 brain in the same schema; `build` keeps
   `flywireType`, `subclass`, `entryNerve`, `receptorType`.
 - `flymsg dimorphism`: dimorphic/fru-dsx neurons among responders vs a superclass-matched null.
@@ -108,6 +119,7 @@ Documentation only.
 ## 0.2.0 — 2026-09-21
 
 ### Model and validation
+
 - Validation criterion v2: a case passes when the best target neuron fires ≥ 3 spikes in the
   window in ≥ 2/3 of seeds and beats a size-matched random control (≥ 3× its rate + 2 Hz),
   with ≤ 100 self-sustained neurons; latencies reported. GF → DLMn excluded (gap junctions).
@@ -117,6 +129,7 @@ Documentation only.
   ones (LC4 → TTMn: via DNp01, then DNp02, then DNp11).
 
 ### 3D view (`flymsg viz`)
+
 - Streams real neuron surfaces (multi-resolution Draco), skeletons and neuropils from the
   public GCS volumes; the export holds only metadata and activity.
 - Octree LOD within a triangle budget derived from the GPU buffers' real capacity; neurons
@@ -128,6 +141,7 @@ Documentation only.
   the real GPU. Numbers in [docs/viz.md](docs/viz.md).
 
 ### Docs
+
 - `docs/data.md`, `docs/model.md`, `docs/validation.md` (with the negative results),
   `docs/viz.md`.
 

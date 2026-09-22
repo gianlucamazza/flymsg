@@ -53,19 +53,19 @@ input rate; see the [findings log](validation.md#findings-log) and
 
 ## Parameters
 
-| Parameter                 |                                               Value | CLI flag    | Source                                   |
-| ------------------------- | --------------------------------------------------: | ----------- | ---------------------------------------- |
-| `v_rest` (also the reset) |                                              −52 mV |             | Shiu et al. 2024                         |
-| `v_th`                    |                                              −45 mV |             | Shiu et al. 2024                         |
-| `tau_m`                   |                                               20 ms |             | Shiu et al. 2024                         |
-| `tau_syn`                 |                                                5 ms |             | Shiu et al. 2024                         |
-| `t_ref`                   |                                              2.2 ms |             | Shiu et al. 2024                         |
-| `delay`                   |                                              1.8 ms |             | Shiu et al. 2024                         |
-| `w_syn`                   |           0.192 mV per synapse (0.275 / 1.43) | `--w-syn`   | Shiu et al. 2024 (0.275 on FAFB), scaled for MaleCNS synapse density; model selection + replication |
-| `poisson_scale`           |  250 (one input spike = 48 mV at default `w_syn`) |             | Shiu et al. 2024                         |
-| `th_jump`                 |                         0 (off; 2.0 in v0.3–v0.4) | `--th-jump` | **flymsg**, optional compensation        |
-| `tau_th`                  |                                              100 ms |             | **flymsg**                               |
-| `dt`                      |                                              0.1 ms |             | Shiu et al. 2024                         |
+| Parameter                 |                                            Value | CLI flag    | Source                                                                                              |
+| ------------------------- | -----------------------------------------------: | ----------- | --------------------------------------------------------------------------------------------------- |
+| `v_rest` (also the reset) |                                           −52 mV |             | Shiu et al. 2024                                                                                    |
+| `v_th`                    |                                           −45 mV |             | Shiu et al. 2024                                                                                    |
+| `tau_m`                   |                                            20 ms |             | Shiu et al. 2024                                                                                    |
+| `tau_syn`                 |                                             5 ms |             | Shiu et al. 2024                                                                                    |
+| `t_ref`                   |                                           2.2 ms |             | Shiu et al. 2024                                                                                    |
+| `delay`                   |                                           1.8 ms |             | Shiu et al. 2024                                                                                    |
+| `w_syn`                   |              0.192 mV per synapse (0.275 / 1.43) | `--w-syn`   | Shiu et al. 2024 (0.275 on FAFB), scaled for MaleCNS synapse density; model selection + replication |
+| `poisson_scale`           | 250 (one input spike = 48 mV at default `w_syn`) |             | Shiu et al. 2024                                                                                    |
+| `th_jump`                 |                        0 (off; 2.0 in v0.3–v0.4) | `--th-jump` | **flymsg**, optional compensation                                                                   |
+| `tau_th`                  |                                           100 ms |             | **flymsg**                                                                                          |
+| `dt`                      |                                           0.1 ms |             | Shiu et al. 2024                                                                                    |
 
 Scale check: one synapse moves a resting _v_ by at most 0.043 mV (peak 9.2 ms after the spike,
 `w_syn · τ_syn/(τ_m − τ_syn) · (e^(−t/τ_m) − e^(−t/τ_syn))`), so a silent neuron needs about 160
@@ -141,8 +141,10 @@ Time grows with the number of spikes, because each step sums the weight columns 
 neurons that spiked. Parallel commands (`calibrate`, `select-model`, `dimorphism
 --silencing | --loop | --by-type`) run one process per worker, started from a forkserver
 (the caller holds pyarrow's threads, and forking it could deadlock) and fed the tables once.
-The 1,000-draw silencing tests take many CPU hours: they report progress with a measured ETA
-and, with `--checkpoint FILE`, save each finished job and resume from it.
+The 1,000-draw silencing tests take many CPU hours. They stop each run at the end of the
+stimulus, since they use only its rates, which are identical to those of the full run.
+They report progress with a measured ETA and, with `--checkpoint FILE`, save every null
+draw and resume from it.
 
 ## Reference
 

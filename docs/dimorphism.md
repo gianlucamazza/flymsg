@@ -121,7 +121,25 @@ is **supported** if both sets pass after pIP10, the most direct test; **partly s
 if only dMS9 passes (dMS9 restrains dPR1 through some route, not necessarily the named
 inhibitors); **not supported** otherwise. The P1 results qualify the verdict but do not
 change it. Known beforehand: in the v0.5 per-type scan, silencing vPR9_a alone after pIP10
-_lowered_ dPR1 by 9 %, and IN00A038 was never tested (it is not fru+).
+lowered dPR1 by 9 %, and IN00A038 was never tested (it is not fru+).
+
+### Execution notes (added 2026-09-22, before any confirmatory result)
+
+- **Runs stop at the end of the stimulus.** The tests use only the target rate in the
+  0–300 ms window. The Poisson input is drawn for the stimulus only and the dynamics are
+  causal, so stopping each run at 300 ms instead of 600 ms gives bit-identical rates. This
+  was checked on the real data for pIP10, P1 and looming, through `sim.run` and
+  `validate.respond`, and it is locked by a unit test. It costs 2–2.7× less.
+- **Confirmatory jobs run first**, so that an interrupted run has the 8 decisions before the
+  descriptive tests.
+- **Interruptions.** A first run, which stored nothing until the end, was stopped after
+  5 hours because the CPU was thermally capped at 900 MHz and would have needed about 20
+  hours; its output was lost. The runs now save every null draw (`--checkpoint`). A resumed
+  run replays the saved picks, each checked against its hash, and simulates only the
+  missing draws.
+- **Disclosed peeks.** End-to-end checks of the code on the real data used 2 and 4 null
+  draws. They showed silencing dMS9 after pIP10 raising dPR1 by about 67 %, and silencing
+  the inhibitory feedback lowering it by about 6 %. No rule was changed after them.
 
 ## Limits
 

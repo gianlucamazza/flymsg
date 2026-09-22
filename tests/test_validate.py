@@ -120,3 +120,21 @@ def test_model_selection_rule():
     assert rule({"A": 27, "B": 27}, ["A", "B"], tie_break="B") == "B"
     # a sensitivity variant cannot win even with more checks
     assert rule({"A": 26, "B": 25, "B+": 29}, ["A", "B"], tie_break="B") == "A"
+
+
+def test_respond_stopping_at_the_stimulus_end_gives_the_same_rates():
+    # S -> A -> B, with B -> A feedback so activity outlasts the stimulus
+    neurons = pd.DataFrame({"type": ["S", "A", "B"]})
+    edges = pd.DataFrame(
+        {"pre": [0, 1, 2], "post": [1, 2, 1], "weight": [200, 200, 200]}
+    )
+    p = sim.Params()
+    W = sim.weight_matrix(edges, np.ones(3, dtype=np.int8), 3, p.w_syn)
+    stim = np.array([0])
+    full, _ = validate.respond(W, neurons, stim, ["A", "B"], p, 3)
+    short, _ = validate.respond(
+        W, neurons, stim, ["A", "B"], p, 3, duration_ms=validate.STIM_MS
+    )
+    for t in ("A", "B"):
+        assert full[t]["rate"] > 0
+        assert np.array_equal(full[t]["seed_rates"], short[t]["seed_rates"])
