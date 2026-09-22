@@ -120,7 +120,8 @@ def _silencing_job(job: tuple[str, str]) -> list[dict]:
         return [
             {"case": case_name, "silenced": category, "n_silenced": 0, "target": t,
              "base_hz": base[j], "silenced_hz": base[j], "drop": np.nan,
-             "null_drop_mean": np.nan, "null_drop_max": np.nan, "p": np.nan}
+             "null_drop_mean": np.nan, "null_drop_min": np.nan, "null_drop_max": np.nan,
+             "p_drop": np.nan, "p_rise": np.nan}
             for j, t in enumerate(case.targets)
         ]  # fmt: skip
     obs = target_rates(silenced)
@@ -130,36 +131,51 @@ def _silencing_job(job: tuple[str, str]) -> list[dict]:
     rng = np.random.default_rng(
         zlib.crc32(f"{case_name}/{category}".encode())
     )  # stable
-    null = []
-    for _ in range(n_null):
-        pick = np.concatenate(
-            [
-                rng.choice(
-                    np.flatnonzero((sc == c) & ~keep_on & ~flag), size=k, replace=False
-                )
-                for c, k in zip(
-                    *np.unique(sc[silenced], return_counts=True), strict=True
-                )
-            ]
-        )
-        null.append(target_rates(pick))
-    null = np.array(null)
+    null = np.array(
+        [
+            target_rates(_matched_draw(rng, sc, ~keep_on & ~flag, silenced))
+            for _ in range(n_null)
+        ]
+    )
+    return _rows(case_name, category, silenced.size, case.targets, base, obs, null)
+
+
+def _matched_draw(
+    rng, key: np.ndarray, pool: np.ndarray, like: np.ndarray
+) -> np.ndarray:
+    """As many neurons from `pool` as `like` has, with the same count per `key` value."""
+    groups, counts = np.unique(key[like], return_counts=True)
+    pick = []
+    for g, k in zip(groups, counts, strict=True):
+        cand = np.flatnonzero(pool & (key == g))
+        if cand.size < k:
+            raise ValueError(f"null pool has {cand.size} neurons of {g!r}, need {k}")
+        pick.append(rng.choice(cand, size=k, replace=False))
+    return np.concatenate(pick)
+
+
+def _rows(case_name, silenced, n_silenced, targets, base, obs, null) -> list[dict]:
+    """One row per target: drop (negative: the response rises) against the null draws, with
+    empirical one-sided p for a drop and for a rise (+1 smoothing)."""
+    n_null = len(null)
     rows = []
-    for j, t in enumerate(case.targets):
+    for j, t in enumerate(targets):
         drop = 1 - obs[j] / base[j] if base[j] else np.nan
         null_drop = 1 - null[:, j] / base[j] if base[j] else np.full(n_null, np.nan)
         rows.append(
             {
                 "case": case_name,
-                "silenced": category,
-                "n_silenced": silenced.size,
+                "silenced": silenced,
+                "n_silenced": n_silenced,
                 "target": t,
                 "base_hz": base[j],
                 "silenced_hz": obs[j],
                 "drop": drop,
                 "null_drop_mean": float(np.nanmean(null_drop)),
+                "null_drop_min": float(np.nanmin(null_drop)),
                 "null_drop_max": float(np.nanmax(null_drop)),
-                "p": (1 + int((null_drop >= drop).sum())) / (1 + n_null),
+                "p_drop": (1 + int((null_drop >= drop).sum())) / (1 + n_null),
+                "p_rise": (1 + int((null_drop <= drop).sum())) / (1 + n_null),
             }
         )
     return rows
@@ -176,7 +192,8 @@ def silencing(
 ) -> pd.DataFrame:
     """Silence every neuron of a category (except the stimulus and the targets) and measure
     how much each target's response drops, against silencing as many neurons outside the
-    category with the same superclass mix. Empirical one-sided p with +1 smoothing (smallest 1 / (n_null + 1))."""
+    category with the same superclass mix. Empirical one-sided p for a drop and for a rise,
+    with +1 smoothing (smallest 1 / (n_null + 1))."""
     global _shared
     W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
     _shared = (neurons, W, p, seeds, n_null)
@@ -186,6 +203,78 @@ def silencing(
     else:
         with mp.get_context("fork").Pool(min(workers, len(jobs))) as pool:
             rows = pool.map(_silencing_job, jobs, chunksize=1)
+    return pd.DataFrame([r for chunk in rows for r in chunk])
+
+
+# the predicted feedback loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1 (docs/dimorphism.md)
+LOOP_SETS = {
+    "dMS9": ("dMS9",),
+    "inhibitory feedback": ("vPR9_a", "IN00A038"),
+    "both": ("dMS9", "vPR9_a", "IN00A038"),
+}
+LOOP_CASES = ("pIP10 song pathway", "P1 courtship drive")
+
+
+def _loop_job(job: tuple[str, str]) -> list[dict]:
+    neurons, W, p, seeds, n_null, sets = _shared
+    case_name, set_name = job
+    case = next(c for c in validate.CASES if c.name == case_name)
+    stim = case.stim_idx(neurons)
+    targets = np.concatenate([data.resolve(neurons, t) for t in case.targets])
+    tested = np.concatenate([data.resolve(neurons, t) for t in sets[set_name]])
+    all_tested = np.concatenate(
+        [data.resolve(neurons, t) for ts in sets.values() for t in ts]
+    )
+    results = [
+        sim.run(W, stim, validate.RATE_HZ, validate.DURATION_MS, validate.STIM_MS, p, s)
+        for s in range(seeds)
+    ]
+    pool = np.zeros(len(neurons), dtype=bool)
+    pool[responders(results, stim)] = True
+    pool[np.concatenate([stim, targets, all_tested])] = False
+    key = (
+        neurons["superclass"].fillna("none").astype(str)
+        + "/"
+        + neurons["sign"].astype(str)
+    ).to_numpy()
+
+    def target_rates(silence):
+        out, _ = validate.respond(
+            W, neurons, stim, case.targets, p, seeds, silence=silence
+        )
+        return np.array([out[t]["rate"] for t in case.targets])
+
+    base, obs = target_rates(None), target_rates(tested)
+    rng = np.random.default_rng(zlib.crc32(f"loop/{case_name}/{set_name}".encode()))
+    null = np.array(
+        [target_rates(_matched_draw(rng, key, pool, tested)) for _ in range(n_null)]
+    )
+    return _rows(case_name, set_name, tested.size, case.targets, base, obs, null)
+
+
+def loop_silencing(
+    neurons: pd.DataFrame,
+    edges: pd.DataFrame,
+    p: sim.Params,
+    seeds: int = 3,
+    n_null: int = 1000,
+    workers: int = 4,
+    cases=LOOP_CASES,
+    sets=LOOP_SETS,
+) -> pd.DataFrame:
+    """Silence each set of cell types and compare each target's change with silencing as
+    many of the case's own responders, matched on superclass and transmitter sign (never the
+    stimulus, the targets or any tested neuron): do these neurons matter more than other
+    active neurons of the same kind?"""
+    global _shared
+    W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
+    _shared = (neurons, W, p, seeds, n_null, sets)
+    jobs = [(c, k) for c in cases for k in sets]
+    if workers <= 1:
+        rows = [_loop_job(j) for j in jobs]
+    else:
+        with mp.get_context("fork").Pool(min(workers, len(jobs))) as pool:
+            rows = pool.map(_loop_job, jobs, chunksize=1)
     return pd.DataFrame([r for chunk in rows for r in chunk])
 
 

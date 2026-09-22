@@ -52,7 +52,7 @@ def test_silencing_a_fru_relay_abolishes_the_response(monkeypatch):
     )
     fru = table[table["silenced"] == "fru/dsx+"].iloc[0]
     assert fru["n_silenced"] == 1 and fru["drop"] == 1.0 and fru["null_drop_max"] == 0.0
-    assert fru["p"] == 1 / 5
+    assert fru["p_drop"] == 1 / 5 and fru["p_rise"] == 1.0
 
 
 def test_type_silencing_finds_the_relay_type(monkeypatch):
@@ -78,3 +78,35 @@ def test_type_silencing_finds_the_relay_type(monkeypatch):
         neurons, edges, sim.Params(), "c", "fru/dsx+", seeds=1, workers=1
     ).set_index("type")
     assert table.loc["A", "T_drop"] == 1.0 and table.loc["B", "T_drop"] == 0.0
+
+
+def test_loop_silencing_detects_a_feedback_inhibitor_against_matched_responders(
+    monkeypatch,
+):
+    from flymsg import validate
+
+    # S -> T -> E -> I -| T (feedback inhibition); S -> X, an active dead end of E's kind
+    neurons = pd.DataFrame(
+        {
+            "type": ["S", "T", "E", "I", "X"],
+            "instance": ["S", "T", "E", "I", "X"],
+            "bodyId": [1, 2, 3, 4, 5],
+            "superclass": ["s", "t", "c", "c", "c"],
+            "sign": np.array([1, 1, 1, -1, 1], dtype=np.int8),
+        }
+    )
+    edges = pd.DataFrame(
+        {
+            "pre": [0, 1, 2, 3, 0],
+            "post": [1, 2, 3, 1, 4],
+            "weight": [200, 200, 200, 1000, 200],
+        }
+    )
+    monkeypatch.setattr(validate, "CASES", [validate.Case("c", "S", ["T"], "")])
+    table = dimorphism.loop_silencing(
+        neurons, edges, sim.Params(), seeds=1, n_null=3, workers=1,
+        cases=("c",), sets={"E": ("E",)},
+    ).iloc[0]  # fmt: skip
+    # silencing E lifts the inhibition of T; silencing X (the only matched responder) does not
+    assert table["drop"] < 0 and table["null_drop_min"] == 0.0
+    assert table["p_rise"] == 1 / 4 and table["p_drop"] == 1.0

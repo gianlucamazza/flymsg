@@ -277,6 +277,11 @@ def cmd_dimorphism(a, neurons, edges):
         table = table.reindex(
             table[drops].abs().max(axis=1).sort_values(ascending=False).index
         )
+    elif a.loop:
+        print("silencing the predicted dMS9 loop vs matched active neurons ...")
+        table = dimorphism.loop_silencing(
+            neurons, edges, params, a.seeds, a.null, a.workers
+        )
     elif a.silencing:
         print("silencing each category vs random silencings of the same size ...")
         table = dimorphism.silencing(neurons, edges, params, a.seeds, a.null, a.workers)
@@ -437,6 +442,11 @@ def main() -> None:
         "--silencing",
         action="store_true",
         help="instead: response drop when each category is silenced",
+    )
+    s.add_argument(
+        "--loop",
+        action="store_true",
+        help="instead: silence the predicted dMS9 feedback loop vs matched responders",
     )
     s.add_argument("--null", type=int, default=20, help="random silencings per test")
     s.add_argument(
