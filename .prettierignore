@@ -1,0 +1,3 @@
+src/flymsg/viz_static/vendor/
+.pytest_cache/
+runs/

@@ -307,7 +307,7 @@ def cmd_dimorphism(a, neurons, edges):
             f"silencing the {category} responders of {case!r} one cell type at a time ..."
         )
         table = dimorphism.type_silencing(
-            neurons, edges, params, case, category, a.seeds, a.workers
+            neurons, edges, params, case, category, a.seeds, a.workers, a.checkpoint
         )
         drops = [c for c in table.columns if c.endswith("_drop")]
         table = table.reindex(
@@ -517,7 +517,7 @@ def main() -> None:
     s.add_argument(
         "--checkpoint",
         type=Path,
-        help="--silencing/--loop: save each finished job here and resume from it",
+        help="save each finished job here and resume from it",
     )
     s.add_argument(
         "--by-type",
@@ -571,8 +571,6 @@ def main() -> None:
     a = p.parse_args()
     if getattr(a, "progress", False) and a.checkpoint is None:
         p.error("--progress needs --checkpoint FILE")
-    if getattr(a, "by_type", None) and getattr(a, "checkpoint", None):
-        p.error("--checkpoint is not supported with --by-type")
 
     try:
         if a.cmd == "fetch":

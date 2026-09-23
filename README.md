@@ -132,7 +132,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
   incompletely reconstructed bilateral neurons (3.2 % of types, including MN9_R).
 - **Wiring only.** No gap junctions, neuromodulation, plasticity or cell-specific properties;
   transmitters are machine predictions. The Giant Fiber, for example, behaves like a
-  _shak-B²_ mutant lacking its electrical synapse.
+  `shak-B²` mutant lacking its electrical synapse.
 - **Qualitative rates.** Use the model to rank which circuits a stimulus recruits and in what
   order, not to predict exact firing.
 - **Few, short cases.** The validation cases are mostly 1–2-hop feed-forward chains.

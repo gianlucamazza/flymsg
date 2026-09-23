@@ -209,3 +209,35 @@ def test_progress_reads_finished_and_started_jobs_without_the_data(tmp_path):
     assert table.loc[("pIP10 song pathway", "both"), "state"] == "waiting"
     assert not table.loc[("pIP10 song pathway", "both"), "confirmatory"]
     assert table["confirmatory"].tolist()[0]  # confirmatory jobs first
+
+
+def test_type_silencing_resumes_from_a_checkpoint(monkeypatch, tmp_path):
+    from flymsg import validate
+
+    neurons = pd.DataFrame(
+        {
+            "type": ["S", "A", "B", "T"],
+            "instance": ["S", "A", "B", "T"],
+            "bodyId": [1, 2, 3, 4],
+            "superclass": ["s", "c", "c", "t"],
+            "fruDsx": [None, "fru_high", "fru_high", None],
+            "dimorphism": [None] * 4,
+            "sign": np.ones(4, dtype=np.int8),
+        }
+    )
+    edges = pd.DataFrame(
+        {"pre": [0, 0, 1], "post": [1, 2, 3], "weight": [200, 200, 200]}
+    )
+    monkeypatch.setattr(validate, "CASES", [validate.Case("c", "S", ["T"], "")])
+    ck = tmp_path / "by-type.jsonl"
+    args = (neurons, edges, sim.Params(), "c", "fru/dsx+")
+    first = dimorphism.type_silencing(*args, seeds=1, workers=1, checkpoint=ck)
+    assert len(ck.read_text().splitlines()) == len(first)
+    prog = dimorphism.progress(ck)
+    assert set(prog["state"]) == {"done"} and len(prog) == len(first)
+    # a rerun recomputes nothing and returns the same table
+    monkeypatch.setattr(
+        dimorphism, "_type_job", lambda job: pytest.fail(f"recomputed {job}")
+    )
+    again = dimorphism.type_silencing(*args, seeds=1, workers=1, checkpoint=ck)
+    assert again.equals(first)

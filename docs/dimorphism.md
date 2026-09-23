@@ -116,7 +116,7 @@ also raises pIP10 itself after P1 (+14 %, p 0.001).
   therefore means "not distinguishable from silencing that many neurons", not "no effect".
 - **T2's inhibitory test is stringent by construction.** Its null silences 8 active VNC
   inhibitory responders, which on their own can raise dPR1 by up to 110 %. What sinks the
-  prediction is not only the p value: after pIP10 silencing vPR9_a + IN00A038 _lowers_ dPR1,
+  prediction is not only the p value: after pIP10 silencing vPR9*a + IN00A038 \_lowers* dPR1,
   the opposite of what a feedback inhibitor should do.
 - dPR1 is far from saturation (a 2.2 ms refractory period allows ~450 Hz), so the rises are
   not a ceiling artefact.

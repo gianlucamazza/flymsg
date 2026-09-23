@@ -288,13 +288,15 @@ def progress(checkpoint: Path) -> pd.DataFrame:
         meta = json.loads(parts[0].read_text().splitlines()[0])
     if meta is None:
         raise OSError(f"no checkpoint or partial file for {checkpoint}")
-    if meta["kind"] == "loop":
+    if meta["kind"] == "by-type":
+        jobs, first = [tuple(j) for j in meta["jobs"]], []
+    elif meta["kind"] == "loop":
         jobs = [(c, k) for c in LOOP_CASES for k in meta["sets"]]
         first = confirmatory_jobs(meta["sets"])
     else:
         jobs = [(c, k) for c in SILENCING_CASES for k in CATEGORIES]
         first = T1_CONFIRMATORY
-    n_null = meta["n_null"]
+    n_null = meta.get("n_null", 0)  # a by-type scan has no null draws
     done = set()
     if checkpoint.exists():
         done = {
@@ -401,11 +403,29 @@ def _rows(
     n_null = len(null)
     rows = []
     for j, t in enumerate(targets):
+        # with a silent target there is nothing to drop, and a scan without null draws has
+        # nothing to compare against: those rows carry NaN rather than a computed number
         drop = 1 - obs[j] / base[j] if base[j] else np.nan
-        null_drop = (
-            (1 - null[:, j] / base[j] if base[j] else np.full(n_null, np.nan))
-            if n_null
-            else np.array([np.nan])
+        null_drop = 1 - null[:, j] / base[j] if (n_null and base[j]) else None
+        stats = (
+            {
+                "null_drop_mean": float(null_drop.mean()),
+                "null_drop_min": float(null_drop.min()),
+                "null_drop_max": float(null_drop.max()),
+                "p_drop": (1 + int((null_drop >= drop).sum())) / (1 + n_null),
+                "p_rise": (1 + int((null_drop <= drop).sum())) / (1 + n_null),
+            }
+            if null_drop is not None
+            else dict.fromkeys(
+                (
+                    "null_drop_mean",
+                    "null_drop_min",
+                    "null_drop_max",
+                    "p_drop",
+                    "p_rise",
+                ),
+                np.nan,
+            )
         )
         rows.append(
             {
@@ -416,15 +436,7 @@ def _rows(
                 "base_hz": base[j],
                 "silenced_hz": obs[j],
                 "drop": drop,
-                "null_drop_mean": float(np.nanmean(null_drop)),
-                "null_drop_min": float(np.nanmin(null_drop)),
-                "null_drop_max": float(np.nanmax(null_drop)),
-                "p_drop": (1 + int((null_drop >= drop).sum())) / (1 + n_null)
-                if n_null
-                else np.nan,
-                "p_rise": (1 + int((null_drop <= drop).sum())) / (1 + n_null)
-                if n_null
-                else np.nan,
+                **stats,
                 "base_seed_hz": [float(x) for x in base_seeds[j]],
                 "silenced_seed_hz": [float(x) for x in obs_seeds[j]],
             }
@@ -545,6 +557,7 @@ def type_silencing(
     category: str,
     seeds: int = 3,
     workers: int = 4,
+    checkpoint: Path | None = None,
 ) -> pd.DataFrame:
     """Silence, one cell type at a time, the responders of `case_name` that belong to
     `category`, and report each target's drop (negative: the response rises). Only types
@@ -567,4 +580,14 @@ def type_silencing(
     base = np.array([base_out[t]["rate"] for t in case.targets])
     ctx = (neurons, W, p, seeds, case_name, base, by_type)
     jobs = [(case_name, t) for t in by_type]
-    return pd.DataFrame(_map_jobs(_type_job, jobs, workers, ctx, None, {}))
+    # `jobs` goes into the meta because the types come from the run itself: `progress` has
+    # no other way to name them. The other kinds keep their meta as it is, so that runs
+    # started before this can still resume.
+    meta = {
+        "kind": "by-type",
+        "seeds": seeds,
+        "category": category,
+        "jobs": [list(j) for j in jobs],
+        **_param_meta(p),
+    }
+    return pd.DataFrame(_map_jobs(_type_job, jobs, workers, ctx, checkpoint, meta))

@@ -18,6 +18,7 @@ jobs:
       - run: uv sync --locked
       - run: uv run ruff check
       - run: uv run ruff format --check src tests scripts
+      - run: npx --yes prettier@3.8.1 --check "**/*.md"  # docs formatting
       # unit tests on synthetic networks plus the browser-module tests (node --test);
       # the full validation battery needs the ~1.1 GB connectome and is marked slow
       - run: uv run pytest
