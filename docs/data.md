@@ -95,13 +95,13 @@ z-score (median/MAD). Across types the 5–95 % range of log2(R/L) is −0.47 �
 share of each neuron's input that comes from traced partners, and the same pair's asymmetry
 in FAFB where the type is matched.
 
-| Neurons behind results | log2(R/L) | z | Verdict |
-|---|---|---|---|
-| **MN9** (6,012 vs 556 input synapses) | −3.43 | −12.8 | **flagged**: 13th most asymmetric type in the CNS; symmetric in FAFB (CB0701, −0.08). MN9_R is most likely incompletely reconstructed |
-| **LB3c** (99.5 vs 254) | 1.34 | 4.9 | **flagged**: right sugar GRNs carry 2.5× the input and 1.4× the output of the left ones; in FAFB the LB3 imbalance goes the other way (−0.97) |
-| LB1d (1 vs 4 neurons) | −0.80 | −3.1 | flagged, on a single left neuron |
-| LB3b, TTMn | 0.62, 0.57 | 2.2, 2.0 | not flagged |
-| DNp01, pIP10, dPR1, dMS9, all pC1 (P1), LC4, LB1a–c | −0.4 … 0.45 | < 1.6 | symmetric. Input from traced partners: pIP10, dPR1, dMS9, pC1, LC4 ≥ 95 %; DNp01 83–86 %; gustatory neurons 60–81 % (much of their input lies on untraced fragments) |
+| Neurons behind results                              | log2(R/L)   | z        | Verdict                                                                                                                                                              |
+| --------------------------------------------------- | ----------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **MN9** (6,012 vs 556 input synapses)               | −3.43       | −12.8    | **flagged**: 13th most asymmetric type in the CNS; symmetric in FAFB (CB0701, −0.08). MN9_R is most likely incompletely reconstructed                                |
+| **LB3c** (99.5 vs 254)                              | 1.34        | 4.9      | **flagged**: right sugar GRNs carry 2.5× the input and 1.4× the output of the left ones; in FAFB the LB3 imbalance goes the other way (−0.97)                        |
+| LB1d (1 vs 4 neurons)                               | −0.80       | −3.1     | flagged, on a single left neuron                                                                                                                                     |
+| LB3b, TTMn                                          | 0.62, 0.57  | 2.2, 2.0 | not flagged                                                                                                                                                          |
+| DNp01, pIP10, dPR1, dMS9, all pC1 (P1), LC4, LB1a–c | −0.4 … 0.45 | < 1.6    | symmetric. Input from traced partners: pIP10, dPR1, dMS9, pC1, LC4 ≥ 95 %; DNp01 83–86 %; gustatory neurons 60–81 % (much of their input lies on untraced fragments) |
 
 The audit sees totals, not single connections: GF → TTMn has 70 synapses on the right and 20
 on the left while both GF and TTMn totals are symmetric, an asymmetry it cannot attribute.
@@ -113,11 +113,11 @@ flagged, flymsg reads the side that is not.
 `flymsg --dataset fafb fetch` and `build` write the female brain to `data/fafb/` in the same
 schema, for the comparisons in [comparison.md](comparison.md). Sources, pinned to commits:
 
-| File | Size | Source |
-|---|---:|---|
-| `Connectivity_783.parquet` | 101 MB | Shiu et al. model repository, commit `91bdd1e` (MIT): 15.1 M connections, synapse counts and the model's signs |
-| `Completeness_783.csv` | 3.3 MB | same: the 138,639 neurons of the model |
-| `Supplemental_file1_neuron_annotations.tsv` | 32 MB | flyconnectome/flywire_annotations, commit `8587524`: cell types, classes, side, nerve, `dimorphism`, `fru_dsx`, top transmitter. No licence file; the repository asks to cite Berg et al. 2025 (the MaleCNS paper, cited from its preprint), Schlegel et al. 2024, Matsliah et al. 2024 and Dorkenwald et al. 2024 |
+| File                                        |   Size | Source                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Connectivity_783.parquet`                  | 101 MB | Shiu et al. model repository, commit `91bdd1e` (MIT): 15.1 M connections, synapse counts and the model's signs                                                                                                                                                                                                     |
+| `Completeness_783.csv`                      | 3.3 MB | same: the 138,639 neurons of the model                                                                                                                                                                                                                                                                             |
+| `Supplemental_file1_neuron_annotations.tsv` |  32 MB | flyconnectome/flywire_annotations, commit `8587524`: cell types, classes, side, nerve, `dimorphism`, `fru_dsx`, top transmitter. No licence file; the repository asks to cite Berg et al. 2025 (the MaleCNS paper, cited from its preprint), Schlegel et al. 2024, Matsliah et al. 2024 and Dorkenwald et al. 2024 |
 
 Mapping: `type` = `cell_type` (also `flywireType`), `instance` = type + side, `superclass`
 = `super_class`, `class` = `cell_class`, `subclass` = `cell_sub_class`, `entryNerve` = `nerve`,

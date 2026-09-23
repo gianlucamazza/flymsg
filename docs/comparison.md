@@ -13,10 +13,10 @@ same 20 sugar GRNs (their list, one ID missing in v783), no adaptive threshold, 
 1 s per input rate.
 
 | Sugar input | Pearson r, all active neurons | MN9 (CB0701_R), brian2 | MN9, flymsg | Downstream neurons > 10 Hz, median flymsg / brian2 |
-|---|---|---|---|---|
-| 50 Hz | 0.998 | 11.0 Hz | 12.5 Hz | 0.99 (42 neurons) |
-| 100 Hz | 0.999 | 61.9 Hz | 60.5 Hz | 0.95 (205) |
-| 200 Hz | 1.000 | 90.7 Hz | 88.0 Hz | 0.98 (273) |
+| ----------- | ----------------------------- | ---------------------- | ----------- | -------------------------------------------------- |
+| 50 Hz       | 0.998                         | 11.0 Hz                | 12.5 Hz     | 0.99 (42 neurons)                                  |
+| 100 Hz      | 0.999                         | 61.9 Hz                | 60.5 Hz     | 0.95 (205)                                         |
+| 200 Hz      | 1.000                         | 90.7 Hz                | 88.0 Hz     | 0.98 (273)                                         |
 
 MN9 varies by about ±4 Hz between brian2 runs at 200 Hz, so the two engines agree within
 noise. The check found six places where flymsg had departed from the published model; the
@@ -51,14 +51,14 @@ female `w_syn` × 1.81, so that the same biological connection weighs the same; 
 P1, pIP10 and dPR1 have no FAFB counterpart (male-specific or unmatched) and TTMn lies in the
 VNC, which FAFB lacks.
 
-| Case (target) | Input | Male target | Female target | Shared types responding, male / female | Jaccard |
-|---|---|---|---|---|---|
-| sugar GRNs → MN9 (CB0701) | 50 Hz | 5.6 Hz | 46.7 Hz | 45 / 219 | 0.19 |
-| | 100 Hz | 30.0 Hz | 75.6 Hz | 229 / 254 | 0.39 |
-| | 200 Hz | 80.0 Hz | 87.8 Hz | 269 / 262 | 0.43 |
-| LC4_R → DNp01 | 50 Hz | 161.1 Hz | 48.9 Hz | 256 / 185 | 0.34 |
-| | 100 Hz | 210.0 Hz | 82.2 Hz | 360 / 270 | 0.34 |
-| | 200 Hz | 250.0 Hz | 133.3 Hz | 463 / 344 | 0.38 |
+| Case (target)             | Input  | Male target | Female target | Shared types responding, male / female | Jaccard |
+| ------------------------- | ------ | ----------- | ------------- | -------------------------------------- | ------- |
+| sugar GRNs → MN9 (CB0701) | 50 Hz  | 5.6 Hz      | 46.7 Hz       | 45 / 219                               | 0.19    |
+|                           | 100 Hz | 30.0 Hz     | 75.6 Hz       | 229 / 254                              | 0.39    |
+|                           | 200 Hz | 80.0 Hz     | 87.8 Hz       | 269 / 262                              | 0.43    |
+| LC4_R → DNp01             | 50 Hz  | 161.1 Hz    | 48.9 Hz       | 256 / 185                              | 0.34    |
+|                           | 100 Hz | 210.0 Hz    | 82.2 Hz       | 360 / 270                              | 0.34    |
+|                           | 200 Hz | 250.0 Hz    | 133.3 Hz      | 463 / 344                              | 0.38    |
 
 Stimuli: male LB3b_R + LB3c_R (17) vs the Shiu et al. sugar set (20, FlyWire `left`, all
 FAFB type LB3); male LC4_R (55) vs female LC4_R (50). Both sugar runs measure the
@@ -88,23 +88,23 @@ FAFB types all these labellar GRNs as one LB3; MaleCNS splits them into LB3a (wa
 of the 122 FAFB LB3 neurons to the male subtype with the most similar output profile
 (`runs/lb3-fafb-split.csv`; median margin between best and second 0.11):
 
-| Shiu et al. set | LB3a-like | LB3b-like | LB3c-like | LB3d-like |
-|---|---|---|---|---|
-| sugar (20 in v783) | 0 | 1 | 13 | 6 |
-| water (17) | **13** | 0 | 4 | 0 |
-| not in their sets (85) | 17 | 25 | 21 | 22 |
+| Shiu et al. set        | LB3a-like | LB3b-like | LB3c-like | LB3d-like |
+| ---------------------- | --------- | --------- | --------- | --------- |
+| sugar (20 in v783)     | 0         | 1         | 13        | 6         |
+| water (17)             | **13**    | 0         | 4         | 0         |
+| not in their sets (85) | 17        | 25        | 21        | 22        |
 
 The water set lands on LB3a, the subtype matched to ppk28 (water), which supports the
 method. The sugar set is 14 sugar-like and 6 LB3d-like neurons. Running the published model
 (`compare.shiu_rates`: their signs, no adaptation, 10 × 1 s) on the parts
 (`runs/lb3-fafb-mn9.txt`):
 
-| Stimulus | MN9 at 100 Hz | MN9 at 200 Hz |
-|---|---|---|
-| all 20 (their set) | 62.1 Hz | 88.6 Hz |
-| 14 LB3b/c-like | 44.7 Hz | 68.6 Hz |
-| 6 LB3d-like | 5.3 Hz | 52.9 Hz |
-| 6 random LB3b/c-like (3 draws) | 1.7–7.8 Hz | 36.1–43.1 Hz |
+| Stimulus                       | MN9 at 100 Hz | MN9 at 200 Hz |
+| ------------------------------ | ------------- | ------------- |
+| all 20 (their set)             | 62.1 Hz       | 88.6 Hz       |
+| 14 LB3b/c-like                 | 44.7 Hz       | 68.6 Hz       |
+| 6 LB3d-like                    | 5.3 Hz        | 52.9 Hz       |
+| 6 random LB3b/c-like (3 draws) | 1.7–7.8 Hz    | 36.1–43.1 Hz  |
 
 In the published model the sugar-like neurons carry most of the MN9 response (72 % at
 100 Hz); the LB3d-like ones add about a quarter by summation and, neuron for neuron, drive

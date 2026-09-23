@@ -7,11 +7,11 @@ geometry at source resolution from the public MaleCNS volumes on GCS
 
 ## Sources
 
-| data | format | use |
-|---|---|---|
-| neuron surfaces | `neuroglancer_multilod_draco`, sharded (murmurhash3, gzip) | octree LOD, Draco decoded in workers |
-| skeletons | Neuroglancer precomputed skeletons, unsharded | fallback beyond the triangle budget, and placeholder while surfaces load |
-| neuropils | 114 legacy single-resolution meshes (brain + VNC ROIs) | translucent context shells |
+| data            | format                                                     | use                                                                      |
+| --------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| neuron surfaces | `neuroglancer_multilod_draco`, sharded (murmurhash3, gzip) | octree LOD, Draco decoded in workers                                     |
+| skeletons       | Neuroglancer precomputed skeletons, unsharded              | fallback beyond the triangle budget, and placeholder while surfaces load |
+| neuropils       | 114 legacy single-resolution meshes (brain + VNC ROIs)     | translucent context shells                                               |
 
 ## Pipeline
 
@@ -58,12 +58,12 @@ Intel Iris Xe (TGL GT2), Chromium with ANGLE on OpenGL, 1400 × 900, replay of L
 loading, same conditions for both columns ("before" is commit `da10e5d`, which had no MSAA
 in effect: the composer's targets were not multisampled):
 
-| | before | now |
-|---|---|---|
-| GPU frame (p50) | 71 ms | 52 ms |
-| fps (p50) | 12 | 18 |
-| CPU frame (p50) | 25 ms | 1 ms |
-| draw calls | 2,677 | 16 |
+|                         | before | now               |
+| ----------------------- | ------ | ----------------- |
+| GPU frame (p50)         | 71 ms  | 52 ms             |
+| fps (p50)               | 12     | 18                |
+| CPU frame (p50)         | 25 ms  | 1 ms              |
+| draw calls              | 2,677  | 16                |
 | skeleton segments drawn | 18.9 M | 10.2 M (½ px LOD) |
 
 Cost split of one frame (ratio 1): surfaces 10 ms, skeletons 24 ms (94 ms as 2,662 separate
