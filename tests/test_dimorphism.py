@@ -192,7 +192,11 @@ def test_map_jobs_runs_the_first_jobs_first_and_keeps_the_job_order():
 
 def test_progress_reads_finished_and_started_jobs_without_the_data(tmp_path):
     ck = tmp_path / "loop.jsonl"
-    meta = {"kind": "loop", "n_null": 5, "sets": {"dMS9": ["dMS9"], "both": ["dMS9"]}}
+    meta = {
+        "kind": "loop",
+        "n_null": 5,
+        "sets": {k: list(v) for k, v in dimorphism.LOOP_SETS.items()},
+    }
     job = ["pIP10 song pathway", "dMS9"]
     ck.write_text(json.dumps({"meta": meta, "job": job, "rows": []}) + "\n")
     started = dimorphism._partial(ck, ("P1 courtship drive", "dMS9"))
@@ -203,4 +207,5 @@ def test_progress_reads_finished_and_started_jobs_without_the_data(tmp_path):
     assert table.loc[("P1 courtship drive", "dMS9"), "draws"] == 2
     assert table.loc[("P1 courtship drive", "dMS9"), "state"] == "started"
     assert table.loc[("pIP10 song pathway", "both"), "state"] == "waiting"
+    assert not table.loc[("pIP10 song pathway", "both"), "confirmatory"]
     assert table["confirmatory"].tolist()[0]  # confirmatory jobs first

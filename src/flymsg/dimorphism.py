@@ -116,18 +116,12 @@ T1_CONFIRMATORY = [
 ]
 
 
-def _silencing_job(job: tuple[str, str]) -> list[dict]:
-    (neurons, W, p, seeds, n_null), checkpoint, meta = parallel.context()
-    case_name, category = job
-    case = validate.case_by_name(case_name)
-    stim = case.stim_idx(neurons)
-    targets = case.target_idx(neurons)
-    keep_on = np.zeros(len(neurons), dtype=bool)
-    keep_on[np.concatenate([stim, targets])] = True
-    flag = _category(category)(neurons).to_numpy() & ~keep_on
-    silenced = np.flatnonzero(flag)
+def _case_rates(W, neurons, case, stim, p, seeds):
+    """A function giving the targets' rates (and, on request, their per-seed rates) under a
+    silencing. Runs stop at the end of the stimulus: the rates there are identical to those
+    of the full protocol run (docs/dimorphism.md)."""
 
-    def target_rates(silence):
+    def rates(silence=None, per_seed: bool = False):
         out, _ = validate.respond(
             W,
             neurons,
@@ -136,35 +130,82 @@ def _silencing_job(job: tuple[str, str]) -> list[dict]:
             p,
             seeds,
             silence=silence,
-            duration_ms=validate.STIM_MS,  # rates only: stop at the stimulus end
+            duration_ms=validate.STIM_MS,
         )
-        return np.array([out[t]["rate"] for t in case.targets])
+        mean = np.array([out[t]["rate"] for t in case.targets])
+        if not per_seed:
+            return mean
+        return mean, np.array([out[t]["seed_rates"] for t in case.targets])
 
-    base = target_rates(None)
+    return rates
+
+
+def _category_draw(neurons, case, which, keep_on, *_):
+    """What a category test silences and what its null draws from: every neuron of the
+    category (except stimulus and targets), against as many neurons outside it with the same
+    superclass mix."""
+    flag = _category(which)(neurons).to_numpy() & ~keep_on
+    key = neurons["superclass"].fillna("none").to_numpy()
+    return np.flatnonzero(flag), key, ~keep_on & ~flag, f"{case.name}/{which}"
+
+
+def _set_draw(neurons, case, which, keep_on, sets, W, p, seeds, stim):
+    """What a cell-type test silences and what its null draws from: the named types, against
+    as many of the case's own responders matched on superclass and transmitter sign. Drawing
+    from responders asks whether these neurons matter more than other active neurons of the
+    same kind, not whether silencing active neurons does anything."""
+    tested = np.concatenate([data.resolve(neurons, t) for t in sets[which]])
+    all_tested = np.concatenate(
+        [data.resolve(neurons, t) for ts in sets.values() for t in ts]
+    )
+    results = [  # responders read the stimulus window only
+        sim.run(W, stim, validate.RATE_HZ, validate.STIM_MS, validate.STIM_MS, p, s)
+        for s in range(seeds)
+    ]
+    pool = np.zeros(len(neurons), dtype=bool)
+    pool[responders(results, stim)] = True
+    pool[np.concatenate([np.flatnonzero(keep_on), all_tested])] = False
+    key = (
+        neurons["superclass"].fillna("none").astype(str)
+        + "/"
+        + neurons["sign"].astype(str)
+    ).to_numpy()
+    return tested, key, pool, f"loop/{case.name}/{which}"
+
+
+def _job(job: tuple[str, str]) -> list[dict]:
+    """One silencing test: silence a category (`sets` is None) or a named set of cell types,
+    then compare each target's change with `n_null` matched random silencings."""
+    (neurons, W, p, seeds, n_null, sets), checkpoint, meta = parallel.context()
+    case_name, which = job
+    case = validate.case_by_name(case_name)
+    stim = case.stim_idx(neurons)
+    keep_on = np.zeros(len(neurons), dtype=bool)
+    keep_on[np.concatenate([stim, case.target_idx(neurons)])] = True
+    rates = _case_rates(W, neurons, case, stim, p, seeds)
+    silenced, key, pool, label = (
+        _category_draw(neurons, case, which, keep_on)
+        if sets is None
+        else _set_draw(neurons, case, which, keep_on, sets, W, p, seeds, stim)
+    )
+    base, base_seeds = rates(per_seed=True)
     if not silenced.size:  # nothing of this category outside stimulus and targets
-        return [
-            {"case": case_name, "silenced": category, "n_silenced": 0, "target": t,
-             "base_hz": base[j], "silenced_hz": base[j], "drop": np.nan,
-             "null_drop_mean": np.nan, "null_drop_min": np.nan, "null_drop_max": np.nan,
-             "p_drop": np.nan, "p_rise": np.nan}
-            for j, t in enumerate(case.targets)
-        ]  # fmt: skip
-    obs = target_rates(silenced)
-    # null: as many neurons outside the category, same superclass mix, never stimulus or
-    # targets: silencing N category neurons vs N others
-    sc = neurons["superclass"].fillna("none").to_numpy()
-    rng = np.random.default_rng(
-        zlib.crc32(f"{case_name}/{category}".encode())
-    )  # stable
+        return _rows(case_name, which, 0, case.targets, base, base, np.empty((0, 0)),
+                     base_seeds, base_seeds)  # fmt: skip
+    obs, obs_seeds = rates(silenced, per_seed=True)
+    rng = np.random.default_rng(zlib.crc32(label.encode()))  # stable across runs
     null = _null_rates(
-        f"{case_name} / {category}",
+        f"{case_name} / {which}",
         n_null,
-        lambda: _matched_draw(rng, sc, ~keep_on & ~flag, silenced),
-        target_rates,
+        lambda: _matched_draw(rng, key, pool, silenced),
+        rates,
         _partial(checkpoint, job),
         meta,
     )
-    return _rows(case_name, category, silenced.size, case.targets, base, obs, null)
+    return _rows(
+        case_name, which, silenced.size, case.targets, base, obs, null,
+        base_seeds, obs_seeds,
+    )  # fmt: skip
 
 
 def _null_rates(
@@ -249,7 +290,7 @@ def progress(checkpoint: Path) -> pd.DataFrame:
         raise OSError(f"no checkpoint or partial file for {checkpoint}")
     if meta["kind"] == "loop":
         jobs = [(c, k) for c in LOOP_CASES for k in meta["sets"]]
-        first = T2_CONFIRMATORY
+        first = confirmatory_jobs(meta["sets"])
     else:
         jobs = [(c, k) for c in SILENCING_CASES for k in CATEGORIES]
         first = T1_CONFIRMATORY
@@ -351,14 +392,21 @@ def _matched_draw(
     return np.concatenate(pick)
 
 
-def _rows(case_name, silenced, n_silenced, targets, base, obs, null) -> list[dict]:
+def _rows(
+    case_name, silenced, n_silenced, targets, base, obs, null, base_seeds, obs_seeds
+) -> list[dict]:
     """One row per target: drop (negative: the response rises) against the null draws, with
-    empirical one-sided p for a drop and for a rise (+1 smoothing)."""
+    empirical one-sided p for a drop and for a rise (+1 smoothing). The per-seed rates are
+    kept so that two silencings can later be compared with a bootstrap."""
     n_null = len(null)
     rows = []
     for j, t in enumerate(targets):
         drop = 1 - obs[j] / base[j] if base[j] else np.nan
-        null_drop = 1 - null[:, j] / base[j] if base[j] else np.full(n_null, np.nan)
+        null_drop = (
+            (1 - null[:, j] / base[j] if base[j] else np.full(n_null, np.nan))
+            if n_null
+            else np.array([np.nan])
+        )
         rows.append(
             {
                 "case": case_name,
@@ -371,8 +419,14 @@ def _rows(case_name, silenced, n_silenced, targets, base, obs, null) -> list[dic
                 "null_drop_mean": float(np.nanmean(null_drop)),
                 "null_drop_min": float(np.nanmin(null_drop)),
                 "null_drop_max": float(np.nanmax(null_drop)),
-                "p_drop": (1 + int((null_drop >= drop).sum())) / (1 + n_null),
-                "p_rise": (1 + int((null_drop <= drop).sum())) / (1 + n_null),
+                "p_drop": (1 + int((null_drop >= drop).sum())) / (1 + n_null)
+                if n_null
+                else np.nan,
+                "p_rise": (1 + int((null_drop <= drop).sum())) / (1 + n_null)
+                if n_null
+                else np.nan,
+                "base_seed_hz": [float(x) for x in base_seeds[j]],
+                "silenced_seed_hz": [float(x) for x in obs_seeds[j]],
             }
         )
     return rows
@@ -393,12 +447,10 @@ def silencing(
     category with the same superclass mix. Empirical one-sided p for a drop and for a rise,
     with +1 smoothing (smallest 1 / (n_null + 1))."""
     W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
-    ctx = (neurons, W, p, seeds, n_null)
+    ctx = (neurons, W, p, seeds, n_null, None)
     jobs = [(c, k) for c in cases for k in CATEGORIES]
     meta = {"kind": "silencing", "seeds": seeds, "n_null": n_null, **_param_meta(p)}
-    rows = _map_jobs(
-        _silencing_job, jobs, workers, ctx, checkpoint, meta, T1_CONFIRMATORY
-    )
+    rows = _map_jobs(_job, jobs, workers, ctx, checkpoint, meta, T1_CONFIRMATORY)
     return pd.DataFrame(rows)
 
 
@@ -407,63 +459,31 @@ def _param_meta(p: sim.Params) -> dict:
 
 
 # the predicted feedback loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1 (docs/dimorphism.md)
+LOOP_CASES = ("pIP10 song pathway", "P1 courtship drive")
+# T2 (v0.5's predicted loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1) and T3 (the route the
+# T2 result pointed to, dMS9 -> vMS12 -> IN03B024 -> dPR1). Both are pre-registered in
+# docs/dimorphism.md; the sets not named as confirmatory there are descriptive.
 LOOP_SETS = {
     "dMS9": ("dMS9",),
     "inhibitory feedback": ("vPR9_a", "IN00A038"),
     "both": ("dMS9", "vPR9_a", "IN00A038"),
 }
-LOOP_CASES = ("pIP10 song pathway", "P1 courtship drive")
-# pre-registered confirmatory tests (T2); "both" is descriptive
-T2_CONFIRMATORY = [(c, k) for c in LOOP_CASES for k in ("dMS9", "inhibitory feedback")]
+T3_SETS = {
+    "IN03B024": ("IN03B024",),
+    "vMS12": ("vMS12_a", "vMS12_b", "vMS12_c"),
+    "dMS9 + IN03B024": ("dMS9", "IN03B024"),
+}
+LOOP_PRESETS = {"t2": LOOP_SETS, "t3": T3_SETS}
+CONFIRMATORY_SETS = {"t2": ("dMS9", "inhibitory feedback"), "t3": ("IN03B024", "vMS12")}
 
 
-def _loop_job(job: tuple[str, str]) -> list[dict]:
-    (neurons, W, p, seeds, n_null, sets), checkpoint, meta = parallel.context()
-    case_name, set_name = job
-    case = validate.case_by_name(case_name)
-    stim = case.stim_idx(neurons)
-    targets = case.target_idx(neurons)
-    tested = np.concatenate([data.resolve(neurons, t) for t in sets[set_name]])
-    all_tested = np.concatenate(
-        [data.resolve(neurons, t) for ts in sets.values() for t in ts]
-    )
-    results = [  # responders read the stimulus window only
-        sim.run(W, stim, validate.RATE_HZ, validate.STIM_MS, validate.STIM_MS, p, s)
-        for s in range(seeds)
-    ]
-    pool = np.zeros(len(neurons), dtype=bool)
-    pool[responders(results, stim)] = True
-    pool[np.concatenate([stim, targets, all_tested])] = False
-    key = (
-        neurons["superclass"].fillna("none").astype(str)
-        + "/"
-        + neurons["sign"].astype(str)
-    ).to_numpy()
-
-    def target_rates(silence):
-        out, _ = validate.respond(
-            W,
-            neurons,
-            stim,
-            case.targets,
-            p,
-            seeds,
-            silence=silence,
-            duration_ms=validate.STIM_MS,  # rates only: stop at the stimulus end
-        )
-        return np.array([out[t]["rate"] for t in case.targets])
-
-    base, obs = target_rates(None), target_rates(tested)
-    rng = np.random.default_rng(zlib.crc32(f"loop/{case_name}/{set_name}".encode()))
-    null = _null_rates(
-        f"{case_name} / {set_name}",
-        n_null,
-        lambda: _matched_draw(rng, key, pool, tested),
-        target_rates,
-        _partial(checkpoint, job),
-        meta,
-    )
-    return _rows(case_name, set_name, tested.size, case.targets, base, obs, null)
+def confirmatory_jobs(sets: dict) -> list[tuple[str, str]]:
+    """The pre-registered confirmatory (case, set) pairs of whichever preset `sets` is; an
+    unknown set of sets has none, and every job is then treated alike."""
+    for preset, names in CONFIRMATORY_SETS.items():
+        if set(sets) == set(LOOP_PRESETS[preset]):
+            return [(c, k) for c in LOOP_CASES for k in names]
+    return []
 
 
 def loop_silencing(
@@ -491,7 +511,9 @@ def loop_silencing(
         "sets": {k: list(v) for k, v in sets.items()},
         **_param_meta(p),
     }
-    rows = _map_jobs(_loop_job, jobs, workers, ctx, checkpoint, meta, T2_CONFIRMATORY)
+    rows = _map_jobs(
+        _job, jobs, workers, ctx, checkpoint, meta, confirmatory_jobs(sets)
+    )
     return pd.DataFrame(rows)
 
 
