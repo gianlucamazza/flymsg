@@ -144,7 +144,8 @@ neurons that spiked. Parallel commands (`calibrate`, `select-model`, `dimorphism
 The 1,000-draw silencing tests take many CPU hours. They stop each run at the end of the
 stimulus, since they use only its rates, which are identical to those of the full run.
 They report progress with a measured ETA and, with `--checkpoint FILE`, save every null
-draw and resume from it.
+draw and resume from it. `flymsg dimorphism --progress --checkpoint FILE` shows how far a
+run has got, reading the files only.
 
 ## Reference
 

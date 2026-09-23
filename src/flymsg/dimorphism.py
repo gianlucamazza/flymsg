@@ -222,6 +222,58 @@ def _partial(checkpoint: Path | None, job) -> Path | None:
     )
 
 
+def progress(checkpoint: Path) -> pd.DataFrame:
+    """How far a checkpointed silencing run has got: one row per job with the null draws it
+    has (finished jobs from the checkpoint, started ones from their `.partial` files; a
+    started job is not necessarily running now).
+    Read-only, so it can be called while the run continues."""
+    meta = None
+    if checkpoint.exists():
+        lines = checkpoint.read_text().splitlines()
+        if lines:
+            meta = json.loads(lines[0])["meta"]
+    parts = sorted(checkpoint.parent.glob(f"{checkpoint.name}.*.partial"))
+    if meta is None and parts:
+        meta = json.loads(parts[0].read_text().splitlines()[0])
+    if meta is None:
+        raise OSError(f"no checkpoint or partial file for {checkpoint}")
+    if meta["kind"] == "loop":
+        jobs = [(c, k) for c in LOOP_CASES for k in meta["sets"]]
+        first = T2_CONFIRMATORY
+    else:
+        jobs = [(c, k) for c in SILENCING_CASES for k in CATEGORIES]
+        first = T1_CONFIRMATORY
+    n_null = meta["n_null"]
+    done = set()
+    if checkpoint.exists():
+        done = {
+            tuple(json.loads(line)["job"])
+            for line in checkpoint.read_text().splitlines()
+        }
+    rows = []
+    for job in jobs:
+        part = _partial(checkpoint, job)
+        if tuple(job) in done:
+            draws, state = n_null, "done"
+        elif part.exists():
+            draws, state = max(0, len(part.read_text().splitlines()) - 1), "started"
+        else:
+            draws, state = 0, "waiting"
+        rows.append(
+            {
+                "case": job[0],
+                "silenced": job[1],
+                "confirmatory": tuple(job) in {tuple(j) for j in first},
+                "draws": draws,
+                "of": n_null,
+                "state": state,
+            }
+        )
+    return pd.DataFrame(rows).sort_values(
+        ["confirmatory", "draws"], ascending=[False, False]
+    )
+
+
 class CheckpointMismatch(ValueError):
     """A checkpoint file written with other parameters than the current run."""
 

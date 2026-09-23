@@ -452,6 +452,11 @@ def main() -> None:
     )
     s.add_argument("--null", type=int, default=20, help="random silencings per test")
     s.add_argument(
+        "--progress",
+        action="store_true",
+        help="instead: how far the run of --checkpoint has got (read-only, no data needed)",
+    )
+    s.add_argument(
         "--checkpoint",
         type=Path,
         help="--silencing/--loop: save each finished job here and resume from it",
@@ -512,6 +517,8 @@ def main() -> None:
             return data.fetch(a.data, a.dataset)
         if a.cmd == "build":
             return data.build(a.data, a.dataset)
+        if getattr(a, "progress", False):  # reads the checkpoint files only
+            return print(dimorphism.progress(a.checkpoint).to_string(index=False))
         if a.dataset == "fafb" and a.cmd in (
             "validate",
             "calibrate",

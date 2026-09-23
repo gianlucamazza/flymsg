@@ -8,6 +8,7 @@
 - Worker processes start from a forkserver (`parallel.py`) instead of forking a
   multi-threaded caller; long silencing runs report progress with a measured ETA, save
   every null draw and resume from `--checkpoint FILE`, running the confirmatory tests first.
+- `dimorphism --progress --checkpoint FILE`: draws per job of a checkpointed run, read-only.
 - `validate.respond(duration_ms=STIM_MS)` stops a run at the end of the stimulus: identical
   rates at 2–2.7× less cost, used by all silencing analyses.
 

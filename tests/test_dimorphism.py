@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -186,3 +188,19 @@ def test_map_jobs_runs_the_first_jobs_first_and_keeps_the_job_order():
     rows = dimorphism._map_jobs(job, jobs, 1, None, None, {}, first=[("c",), ("a",)])
     assert calls[:2] == [("a",), ("c",)] and set(calls[2:]) == {("b",), ("d",)}
     assert [r["job"] for r in rows] == ["a", "b", "c", "d"]
+
+
+def test_progress_reads_finished_and_started_jobs_without_the_data(tmp_path):
+    ck = tmp_path / "loop.jsonl"
+    meta = {"kind": "loop", "n_null": 5, "sets": {"dMS9": ["dMS9"], "both": ["dMS9"]}}
+    job = ["pIP10 song pathway", "dMS9"]
+    ck.write_text(json.dumps({"meta": meta, "job": job, "rows": []}) + "\n")
+    started = dimorphism._partial(ck, ("P1 courtship drive", "dMS9"))
+    started.write_text(json.dumps(meta) + "\n" + '{"pick": 1, "rates": [1.0]}\n' * 2)
+    table = dimorphism.progress(ck).set_index(["case", "silenced"])
+    assert table.loc[tuple(job), "state"] == "done"
+    assert table.loc[tuple(job), "draws"] == 5
+    assert table.loc[("P1 courtship drive", "dMS9"), "draws"] == 2
+    assert table.loc[("P1 courtship drive", "dMS9"), "state"] == "started"
+    assert table.loc[("pIP10 song pathway", "both"), "state"] == "waiting"
+    assert table["confirmatory"].tolist()[0]  # confirmatory jobs first
