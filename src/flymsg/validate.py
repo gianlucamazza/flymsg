@@ -77,6 +77,9 @@ class Case:
             else self.stim(neurons)
         )
 
+    def target_idx(self, neurons: pd.DataFrame) -> np.ndarray:
+        return np.concatenate([data.resolve(neurons, t) for t in self.targets])
+
 
 CASES = [
     Case(
@@ -117,6 +120,14 @@ def control_idx(
     return np.concatenate(picks)
 
 
+def case_by_name(name: str) -> "Case":
+    """The validation case with this name; a KeyError listing the names if there is none."""
+    for c in CASES:
+        if c.name == name:
+            return c
+    raise KeyError(f"unknown case {name!r}; cases: {', '.join(c.name for c in CASES)}")
+
+
 def respond(
     W,
     neurons,
@@ -147,6 +158,8 @@ def respond(
     out = {}
     for t in targets:
         idx = np.flatnonzero(types == t)
+        if not idx.size:
+            raise KeyError(f"target type {t!r} is not in this dataset")
         best = idx[np.argmax(rates[idx])]
         lat = latency[:, best]
         out[t] = {

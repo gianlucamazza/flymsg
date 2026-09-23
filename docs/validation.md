@@ -131,15 +131,16 @@ labels. A subtype is used as sugar-sensing only when two independent lines agree
 | LB3a | 0.58 | **0.90** | 0.03 | water |
 | LB3b | **0.77** | 0.65 | 0.04 | sugar |
 | LB3c | **0.96** | 0.77 | 0.01 | sugar |
-| LB3d | **0.90** | 0.72 | 0.02 | high salt |
+| LB3d | **0.90** | 0.71 | 0.02 | high salt |
 | LB1a / LB1c / LB1e | ≤ 0.05 | ≤ 0.06 | **0.64 / 0.82 / 0.57** | bitter |
 
 The lines agree on LB3a, LB3b and LB3c, so the sugar set is LB3b + LB3c.
 
 The **bitter** set follows the same rule. The gustatory connectome (Tastekin et al. 2025) matches
 LB1a–d to Gr33a-GAL4, expressed in all bitter GRNs, and links LB1e to Ir94e (mild aversion
-to some amino acids). Fingerprints against Shiu's FAFB sets: LB1a/b/c/d nearest bitter
-(0.64 / 0.87 / 0.82 / 0.84), LB1e nearest their Ir94e set (0.93 vs 0.57 bitter). Both lines
+to some amino acids). Fingerprints against Shiu's FAFB sets (`flymsg compare --fingerprint LB1a LB1b LB1c LB1d
+LB1e`): LB1a/b/c/d nearest bitter (0.64 / 0.87 / 0.82 / 0.84), LB1e nearest their Ir94e set
+(0.92 vs 0.57 bitter). Both lines
 agree: bitter = LB1a–d; LB1e is left out. LB3d disagrees and
 is left out: FAFB types all these neurons as one LB3, so Shiu's sugar set, chosen by
 connectivity clustering, may include LB3d-like (salt) neurons. MN9 (MN9_L, MN9_R; FAFB

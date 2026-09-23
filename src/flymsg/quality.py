@@ -67,6 +67,8 @@ def pair_asymmetry(neurons: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
     out["log2_RL"] = np.log2((out["in_R"] + 1) / (out["in_L"] + 1))
     med = out["log2_RL"].median()
     mad = 1.4826 * (out["log2_RL"] - med).abs().median()
+    if not mad:  # every pair equally asymmetric: no spread to score against
+        raise ValueError("the log2(R/L) spread is zero, so no z-score can be computed")
     out["z"] = (out["log2_RL"] - med) / mad
     out["flag"] = out["z"].abs() > Z_FLAG
     return out

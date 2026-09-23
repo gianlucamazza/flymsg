@@ -26,7 +26,7 @@ if v > v_th + θ:  spike;  v ← v_rest;  g ← 0;  refractory for t_ref;  θ �
 A spike of presynaptic neuron _j_ reaches _i_ after a fixed `delay` and adds
 `sign_j · n_ij · w_syn` to _g_i_, where `n_ij` is the synapse count of the connection.
 Stimulated neurons get independent Poisson input spikes at `--rate` Hz, each adding
-`poisson_scale · w_syn` (68.75 mV) directly to _v_, and have no refractory period, so they
+`poisson_scale · w_syn` (48.1 mV at the default `w_syn`) directly to _v_, and have no refractory period, so they
 fire once per input spike.
 
 The update reproduces the published brian2 model (Shiu et al. repository, `model.py`,
@@ -67,9 +67,11 @@ input rate; see the [findings log](validation.md#findings-log) and
 | `tau_th`                  |                                           100 ms |             | **flymsg**                                                                                          |
 | `dt`                      |                                           0.1 ms |             | Shiu et al. 2024                                                                                    |
 
-Scale check: one synapse moves a resting _v_ by at most 0.043 mV (peak 9.2 ms after the spike,
-`w_syn · τ_syn/(τ_m − τ_syn) · (e^(−t/τ_m) − e^(−t/τ_syn))`), so a silent neuron needs about 160
-coincident synapses to cross the 7 mV gap to threshold.
+Scale check: at the default `w_syn` one synapse moves a resting _v_ by at most 0.030 mV
+(peak 9.2 ms after the spike, `w_syn · τ_syn/(τ_m − τ_syn) · (e^(−t/τ_m) − e^(−t/τ_syn))`
+with τ_m 20 ms, τ_syn 5 ms), so a silent neuron needs about 230 coincident synapses to cross
+the 7 mV gap to threshold. Both numbers scale with `w_syn`: at Shiu's 0.275 they are
+0.043 mV and ~160 synapses.
 
 ## Synapse sign
 

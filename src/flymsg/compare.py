@@ -34,7 +34,25 @@ SHIU_BITTER = [
     720575940610481370, 720575940619028208, 720575940614281266, 720575940613061118,
     720575940604027168,
 ]  # fmt: skip
+SHIU_IR94E = [
+    720575940614211295, 720575940638218173, 720575940628832256,
+    720575940626016017, 720575940621375231, 720575940612920386,
+    720575940614273292, 720575940628198503, 720575940626241636,
+    720575940619387814, 720575940624604560, 720575940615274425,
+    720575940610683315, 720575940627265265, 720575940624079544,
+    720575940629211607, 720575940615089369, 720575940631082124,
+]  # fmt: skip
 SHIU_MN9 = 720575940660219265  # FAFB CB0701_R; MaleCNS MN9 has flywireType CB0701
+SHIU_MN9_PAIR = (720575940660219265, 720575940645521262)  # their `ids_mn9`, both sides
+
+# The four lists above are `neu_sugar`, `neu_water`, `neu_bitter` and `neu_ir94e` of
+# figures.ipynb at the pinned commit 91bdd1e, checked against it id by id.
+REFERENCE_SETS = {
+    "sugar": SHIU_SUGAR,
+    "water": SHIU_WATER,
+    "bitter": SHIU_BITTER,
+    "Ir94e": SHIU_IR94E,
+}
 
 
 def ids_to_idx(neurons: pd.DataFrame, ids) -> np.ndarray:
@@ -204,4 +222,84 @@ def nearest_male_type(
         rows.append(
             {"idx": int(i), "bodyId": int(fn["bodyId"].iat[i]), **sims, "nearest": best}
         )
+    return pd.DataFrame(rows)
+
+
+LB3_SUBTYPES = ["LB3a", "LB3b", "LB3c", "LB3d"]
+
+
+def sex_cases(
+    male: tuple[pd.DataFrame, pd.DataFrame], female: tuple[pd.DataFrame, pd.DataFrame]
+) -> dict[str, tuple[np.ndarray, np.ndarray, str]]:
+    """The cases of `sex_comparison` that both datasets can run: sugar GRNs → MN9 and
+    LC4_R → DNp01. The male sugar set is the validated one (LB3b_R + LB3c_R) and the female
+    one is Shiu et al.'s; both read the contralateral pathway, the one they scored (see
+    docs/comparison.md)."""
+    from flymsg import data, validate
+
+    mn, fn = male[0], female[0]
+    return {
+        "sugar GRNs -> MN9": (
+            validate.sugar_grns(mn),
+            ids_to_idx(fn, SHIU_SUGAR),
+            "CB0701",
+        ),
+        "LC4_R -> DNp01": (
+            data.resolve(mn, "LC4_R"),
+            data.resolve(fn, "LC4_R"),
+            "DNp01",
+        ),
+    }
+
+
+def lb3_split(
+    male: tuple[pd.DataFrame, pd.DataFrame], female: tuple[pd.DataFrame, pd.DataFrame]
+) -> pd.DataFrame:
+    """Every FAFB LB3 neuron assigned to the male subtype with the most similar output
+    profile, with the Shiu et al. set it belongs to (sugar, water, bitter, Ir94e or none).
+    MaleCNS splits FAFB's single LB3 into LB3a (water), LB3b/c (sugar) and LB3d (high salt),
+    so this says what their sugar set is made of."""
+    fn = female[0]
+    idx = np.flatnonzero(fn["type"].to_numpy() == "LB3")
+    out = nearest_male_type(male, female, idx, LB3_SUBTYPES)
+    in_set = {i: k for k, v in REFERENCE_SETS.items() for i in v}
+    out["shiu_set"] = [in_set.get(b, "none") for b in out["bodyId"]]
+    return out
+
+
+def lb3_mn9_rates(
+    female: tuple[pd.DataFrame, pd.DataFrame],
+    split: pd.DataFrame,
+    rates_hz=(100.0, 200.0),
+    seeds: int = 10,
+    draws: int = 3,
+    seed: int = 0,
+) -> pd.DataFrame:
+    """MN9's rate in the published model when the parts of Shiu et al.'s sugar set are
+    stimulated separately: all of it, the sugar-like (LB3b/c) part, the LB3d-like part, and
+    `draws` random subsets of sugar-like neurons as large as the LB3d-like part, which say
+    whether the difference is just the number of neurons."""
+    fn, fe = female
+    mn9 = ids_to_idx(fn, [SHIU_MN9])
+    sug = split[split["shiu_set"] == "sugar"]
+    parts = {
+        "all (their set)": sug["idx"].to_numpy(),
+        "LB3b/c-like": sug[sug["nearest"].isin(["LB3b", "LB3c"])]["idx"].to_numpy(),
+        "LB3d-like": sug[sug["nearest"] == "LB3d"]["idx"].to_numpy(),
+    }
+    rng = np.random.default_rng(seed)
+    n_d = parts["LB3d-like"].size
+    for d in range(draws):
+        parts[f"{n_d} random LB3b/c-like ({d + 1})"] = rng.choice(
+            parts["LB3b/c-like"],
+            size=min(n_d, parts["LB3b/c-like"].size),
+            replace=False,
+        )
+    rows = []
+    for name, stim in parts.items():
+        row = {"stimulus": name, "n": int(stim.size)}
+        for rate in rates_hz:
+            r = shiu_rates(fn, fe, stim, rate, seeds=seeds)
+            row[f"MN9 at {rate:.0f} Hz"] = float(r[mn9].max()) if mn9.size else np.nan
+        rows.append(row)
     return pd.DataFrame(rows)

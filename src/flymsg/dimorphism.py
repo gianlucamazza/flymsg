@@ -26,6 +26,16 @@ CATEGORIES = {
 }
 
 
+def _category(name: str):
+    """The category test; a KeyError listing the categories if the name is unknown."""
+    try:
+        return CATEGORIES[name]
+    except KeyError:
+        raise KeyError(
+            f"unknown category {name!r}; categories: {', '.join(CATEGORIES)}"
+        ) from None
+
+
 def responders(results: list[sim.Result], stim: np.ndarray) -> np.ndarray:
     """Neurons firing during the stimulus in >= MIN_SEED_SHARE of the seeds, minus `stim`."""
     fired = np.stack([r.rate(0, r.stim_ms) > 0 for r in results])
@@ -109,12 +119,12 @@ T1_CONFIRMATORY = [
 def _silencing_job(job: tuple[str, str]) -> list[dict]:
     (neurons, W, p, seeds, n_null), checkpoint, meta = parallel.context()
     case_name, category = job
-    case = next(c for c in validate.CASES if c.name == case_name)
+    case = validate.case_by_name(case_name)
     stim = case.stim_idx(neurons)
-    targets = np.concatenate([data.resolve(neurons, t) for t in case.targets])
+    targets = case.target_idx(neurons)
     keep_on = np.zeros(len(neurons), dtype=bool)
     keep_on[np.concatenate([stim, targets])] = True
-    flag = CATEGORIES[category](neurons).to_numpy() & ~keep_on
+    flag = _category(category)(neurons).to_numpy() & ~keep_on
     silenced = np.flatnonzero(flag)
 
     def target_rates(silence):
@@ -373,7 +383,7 @@ def silencing(
     edges: pd.DataFrame,
     p: sim.Params,
     seeds: int = 3,
-    n_null: int = 20,
+    n_null: int = 1000,
     workers: int = 4,
     cases=SILENCING_CASES,
     checkpoint: Path | None = None,
@@ -410,9 +420,9 @@ T2_CONFIRMATORY = [(c, k) for c in LOOP_CASES for k in ("dMS9", "inhibitory feed
 def _loop_job(job: tuple[str, str]) -> list[dict]:
     (neurons, W, p, seeds, n_null, sets), checkpoint, meta = parallel.context()
     case_name, set_name = job
-    case = next(c for c in validate.CASES if c.name == case_name)
+    case = validate.case_by_name(case_name)
     stim = case.stim_idx(neurons)
-    targets = np.concatenate([data.resolve(neurons, t) for t in case.targets])
+    targets = case.target_idx(neurons)
     tested = np.concatenate([data.resolve(neurons, t) for t in sets[set_name]])
     all_tested = np.concatenate(
         [data.resolve(neurons, t) for ts in sets.values() for t in ts]
@@ -488,7 +498,7 @@ def loop_silencing(
 def _type_job(job: tuple[str, str]) -> list[dict]:
     (neurons, W, p, seeds, case_name, base, silenced_by_type), _, _ = parallel.context()
     t = job[1]
-    case = next(c for c in validate.CASES if c.name == case_name)
+    case = validate.case_by_name(case_name)
     out, _ = validate.respond(
         W,
         neurons,
@@ -517,16 +527,16 @@ def type_silencing(
     """Silence, one cell type at a time, the responders of `case_name` that belong to
     `category`, and report each target's drop (negative: the response rises). Only types
     that fire in the case are tried, since silencing a silent type changes nothing."""
-    case = next(c for c in validate.CASES if c.name == case_name)
+    case = validate.case_by_name(case_name)
     stim = case.stim_idx(neurons)
-    targets = np.concatenate([data.resolve(neurons, t) for t in case.targets])
+    targets = case.target_idx(neurons)
     W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
     results = [
         sim.run(W, stim, validate.RATE_HZ, validate.STIM_MS, validate.STIM_MS, p, s)
         for s in range(seeds)
     ]
     resp = np.setdiff1d(responders(results, stim), targets)
-    resp = resp[CATEGORIES[category](neurons).to_numpy()[resp]]
+    resp = resp[_category(category)(neurons).to_numpy()[resp]]
     types = neurons["type"].fillna(neurons["bodyId"].astype(str)).to_numpy()
     by_type = {t: resp[types[resp] == t] for t in np.unique(types[resp])}
     base_out, _ = validate.respond(

@@ -85,6 +85,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 
 | Command                                                         | What it does                                                                                            |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `compare [--sex \| --fingerprint TYPE… \| --lb3-split]`         | male vs female: synapse density, the same model on both, the FAFB LB3 split                             |
 | `fetch`, `build`                                                | download and compact the connectome (`--dataset fafb` for the female brain, ~135 MB)                    |
 | `info TYPE`                                                     | annotations, top partner types, Neuroglancer link                                                       |
 | `path SRC DST [--alt K]`                                        | strongest chain by input fraction; `--alt` adds routes avoiding the previous intermediate types         |
@@ -95,7 +96,8 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `dimorphism [--silencing \| --loop \| --by-type CASE CATEGORY]` | dimorphic neurons among responders; silencing by category, by cell type, or of the predicted dMS9 loop  |
 | `viz --sim STIM \| --path SRC DST \| --types …`                 | export a 3D scene; the page streams geometry from the public volumes                                    |
 
-The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`,
+The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?detail=`,
+`?adaptive=0`,
 `?neuropils=0|1`, `?budget=<M triangles>` and `?bench=<s>` ([viz](docs/viz.md)).
 
 ## How it works

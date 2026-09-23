@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -273,3 +275,70 @@ def test_kernel_reproduces_the_numpy_reference_exactly():
         assert np.array_equal(a.counts, b.counts)
         assert np.array_equal(np.isnan(a.first_spike_ms), np.isnan(b.first_spike_ms))
         assert np.allclose(a.first_spike_ms, b.first_spike_ms, equal_nan=True, rtol=0)
+
+
+def test_download_writes_through_a_part_file_and_checks_the_size(tmp_path, monkeypatch):
+    import io
+
+    from flymsg import data as d
+
+    class Response(io.BytesIO):
+        def __init__(self, body, length):
+            super().__init__(body)
+            self.headers = {"Content-Length": str(length)}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    dest = tmp_path / "file.bin"
+    monkeypatch.setattr(d.urllib.request, "urlopen", lambda *a, **k: Response(b"xy", 2))
+    d.download("http://x/file", dest)
+    assert dest.read_bytes() == b"xy" and not dest.with_suffix(".bin.part").exists()
+
+    # a truncated body is rejected, and the partial file is not left behind
+    monkeypatch.setattr(d.urllib.request, "urlopen", lambda *a, **k: Response(b"x", 2))
+    with pytest.raises(OSError, match="size 1 != 2"):
+        d.download("http://x/file2", tmp_path / "file2.bin")
+    assert not (tmp_path / "file2.bin.part").exists()
+
+
+def test_download_retries_a_server_error_but_not_a_404(tmp_path, monkeypatch):
+    import io
+    import urllib.error
+
+    from flymsg import data as d
+
+    calls = []
+
+    def flaky(*a, **k):
+        calls.append(1)
+        if len(calls) < 3:
+            raise urllib.error.HTTPError("u", 503, "busy", {}, None)
+
+        class R(io.BytesIO):
+            headers: ClassVar = {"Content-Length": "1"}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *x):
+                return False
+
+        return R(b"z")
+
+    monkeypatch.setattr(d.urllib.request, "urlopen", flaky)
+    d.download("http://x/f", tmp_path / "f.bin")
+    assert len(calls) == 3 and (tmp_path / "f.bin").read_bytes() == b"z"
+
+    monkeypatch.setattr(
+        d.urllib.request,
+        "urlopen",
+        lambda *a, **k: (_ for _ in ()).throw(
+            urllib.error.HTTPError("u", 404, "gone", {}, None)
+        ),
+    )
+    with pytest.raises(urllib.error.HTTPError):
+        d.download("http://x/missing", tmp_path / "g.bin")

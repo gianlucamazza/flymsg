@@ -263,6 +263,42 @@ def cmd_select_model(a, neurons, edges):
     print(f"winner (pre-registered rule): {winner}")
 
 
+def cmd_compare(a, neurons, edges):
+    """Regenerate the male-vs-female numbers of docs/comparison.md."""
+    male, female = (neurons, edges), data.load(a.data, "fafb")
+    rho, n_types = compare.synapse_density_ratio(male, female)
+    print(f"synapse density male/female: {rho:.2f} over {n_types} matched types")
+    a.out.mkdir(parents=True, exist_ok=True)
+    if a.sex:
+        print(f"same model on both sexes, female w_syn x {rho:.2f} ...")
+        table = compare.sex_comparison(
+            male, female, compare.sex_cases(male, female), seeds=a.seeds,
+            female_w_scale=rho,
+        )  # fmt: skip
+        _write(table, a.out / "sex-comparison.csv")
+    if a.fingerprint:
+        table = compare.fingerprint(male, female, a.fingerprint, compare.REFERENCE_SETS)
+        print(table.round(2).to_string())
+    if a.lb3_split:
+        split = compare.lb3_split(male, female)
+        print(
+            pd.crosstab(split["shiu_set"], split["nearest"]).to_string(),
+            end="\n\n",
+        )
+        _write(split, a.out / "lb3-fafb-split.csv")
+        print(f"published model on the parts of their sugar set ({a.seeds} seeds) ...")
+        print(
+            compare.lb3_mn9_rates(female, split, seeds=a.seeds)
+            .round(1)
+            .to_string(index=False)
+        )
+
+
+def _write(table, path) -> None:
+    table.to_csv(path, index=False)
+    print(table.round(3).to_string(index=False), f"\n-> {path}", sep="\n")
+
+
 def cmd_dimorphism(a, neurons, edges):
     params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
     if a.by_type:
@@ -436,6 +472,24 @@ def main() -> None:
         help="A vs B- only (the pre-registered replication; use fresh seeds)",
     )
     s = sub.add_parser(
+        "compare",
+        help="male vs female: synapse density, same model on both, the FAFB LB3 split",
+    )
+    s.add_argument("--sex", action="store_true", help="same model on both sexes")
+    s.add_argument(
+        "--fingerprint",
+        nargs="+",
+        metavar="TYPE",
+        help="cosine of each male type's output profile against Shiu et al.'s FAFB sets",
+    )
+    s.add_argument(
+        "--lb3-split",
+        action="store_true",
+        help="assign each FAFB LB3 neuron to a male subtype, then MN9 per part",
+    )
+    s.add_argument("--seeds", type=int, default=3)
+    s.add_argument("--out", type=Path, default=Path("runs"))
+    s = sub.add_parser(
         "dimorphism",
         help="share of fru/dsx+, male-specific and dimorphic neurons among responders",
     )
@@ -450,7 +504,7 @@ def main() -> None:
         action="store_true",
         help="instead: silence the predicted dMS9 feedback loop vs matched responders",
     )
-    s.add_argument("--null", type=int, default=20, help="random silencings per test")
+    s.add_argument("--null", type=int, default=1000, help="random silencings per test")
     s.add_argument(
         "--progress",
         action="store_true",
@@ -511,6 +565,10 @@ def main() -> None:
     )
     s.add_argument("--out", type=Path, default=Path("runs/viz"))
     a = p.parse_args()
+    if getattr(a, "progress", False) and a.checkpoint is None:
+        p.error("--progress needs --checkpoint FILE")
+    if getattr(a, "by_type", None) and getattr(a, "checkpoint", None):
+        p.error("--checkpoint is not supported with --by-type")
 
     try:
         if a.cmd == "fetch":
@@ -522,6 +580,7 @@ def main() -> None:
         if a.dataset == "fafb" and a.cmd in (
             "validate",
             "calibrate",
+            "compare",
             "dimorphism",
             "viz",
         ):
@@ -534,6 +593,7 @@ def main() -> None:
             "sim": cmd_sim,
             "validate": cmd_validate,
             "calibrate": cmd_calibrate,
+            "compare": cmd_compare,
             "dimorphism": cmd_dimorphism,
             "select-model": cmd_select_model,
             "audit": cmd_audit,
@@ -544,6 +604,8 @@ def main() -> None:
     except OSError as err:  # missing data files, failed downloads
         sys.exit(f"flymsg: {err}")
     except dimorphism.CheckpointMismatch as err:
+        sys.exit(f"flymsg: {err}")
+    except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")
     except KeyboardInterrupt:
         resume = (
