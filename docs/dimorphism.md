@@ -105,6 +105,50 @@ Descriptive: silencing both sets together gives +61 % (pIP10, p 0.012) and +75 %
 p 0.001), close to dMS9 alone, which fits dMS9 being the part that matters. Silencing dMS9
 also raises pIP10 itself after P1 (+14 %, p 0.001).
 
+## Reading the two results carefully
+
+- **The two categories overlap little.** Only 318 of the 948 sexually dimorphic neurons are
+  also fru/dsx+, so the confirmed result is not a subset of the one that failed.
+- **A category's size sets the power of its test.** Silencing ~4,900 superclass-matched
+  random neurons raises dPR1 by +21 % on average, with draws up to +90 %: only a very large
+  effect can clear that null, and fru/dsx+'s +79 % does not. The 948-neuron null moves dPR1
+  by ±10 % at the median, which is why the same size of effect passes there. "Not confirmed"
+  therefore means "not distinguishable from silencing that many neurons", not "no effect".
+- **T2's inhibitory test is stringent by construction.** Its null silences 8 active VNC
+  inhibitory responders, which on their own can raise dPR1 by up to 110 %. What sinks the
+  prediction is not only the p value: after pIP10 silencing vPR9_a + IN00A038 _lowers_ dPR1,
+  the opposite of what a feedback inhibitor should do.
+- dPR1 is far from saturation (a 2.2 ms refractory period allows ~450 Hz), so the rises are
+  not a ceiling artefact.
+
+### Where the restraint comes from (post-hoc, found after T2, not yet tested)
+
+Silencing dMS9 and looking at what changes gives a longer chain than the one v0.5 proposed.
+The inhibitory input to dPR1 that collapses is **IN03B024** (2 GABAergic VNC neurons, 731 and
+802 synapses onto dPR1): from 90 Hz to 29 Hz when dMS9 is silenced. Its drive comes from
+**vMS12_a/b/c** (12 cholinergic fru+ neurons, a quarter of its excitatory input), which dMS9
+drives with 4,054 / 1,028 / 1,480 synapses and which fall to 0 Hz without it:
+
+**dPR1 →822→ dMS9 →6,562→ vMS12_a/b/c →1,458→ IN03B024 →1,533→ dPR1**
+
+The v0.5 route (dMS9 →670→ vPR9_a →128→ dPR1) is thin next to this one, which fits T2's
+rejection. This chain was found by looking at the result, so it is a hypothesis, not a
+finding, and the numbers above are wiring and one descriptive comparison.
+
+**T3, pre-registered for the next run** (fixed 2026-09-23, before running it; same protocol,
+1,000 matched-responder null draws, threshold p ≤ 0.05/3 = 0.0167 for a rise of dPR1 after
+pIP10 and after P1):
+
+1. Silencing **IN03B024** (2 neurons) raises dPR1.
+2. Silencing **vMS12_a + vMS12_b + vMS12_c** (12 neurons) raises dPR1.
+3. Epistasis: silencing **dMS9 together with IN03B024** raises dPR1 no more than silencing
+   IN03B024 alone (their 95 % bootstrap intervals overlap). If dMS9 acts through another
+   route as well, this fails.
+
+The chain is supported only if 1 and 2 pass in both cases and 3 holds; if 1 passes and 2
+fails, the drive to IN03B024 comes from somewhere else; if 1 fails, IN03B024 is not the
+route either.
+
 ### Which cell types (`--by-type`, `runs/silencing-by-type-*.txt`)
 
 Silencing the fru/dsx+ responders one cell type at a time (3 seeds, no null) points to one

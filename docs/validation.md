@@ -378,6 +378,8 @@ each, threshold p ≤ 0.00625 over 8 confirmatory tests.** Reports:
   (p 0.63) and +32 % after P1, inside the null (p 0.036). **The v0.5 prediction of the loop
   dPR1 → dMS9 → vPR9_a / IN00A038 → dPR1 is therefore half wrong**, and the docs are
   corrected: dMS9 restrains dPR1, by a route this test does not identify.
+- Post-hoc, kept as a lead and pre-registered as T3: the inhibition of dPR1 that disappears
+  with dMS9 silenced is IN03B024 (1,533 synapses onto dPR1), driven by vMS12_a/b/c.
 - Cost and method: 1,000 draws × 3 seeds × 15 jobs. Runs stop at the end of the stimulus
   (identical rates in the scored window, 2–2.7× cheaper) and are resumable, since the whole
   battery takes many CPU hours on this machine.

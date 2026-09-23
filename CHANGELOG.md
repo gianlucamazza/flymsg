@@ -12,6 +12,10 @@
   dMS9 (+67 %, +74 %, p 0.001 against matched active neurons) and rejects the inhibitory
   half: silencing vPR9_a + IN00A038 lowers dPR1 after pIP10 and stays inside the null after
   P1. The route by which dMS9 restrains dPR1 is open.
+- **Post-hoc lead, pre-registered as T3 for the next run:** with dMS9 silenced, the
+  inhibitory neurons that actually stop driving dPR1 are IN03B024 (1,533 synapses onto dPR1,
+  90 → 29 Hz), fed by vMS12_a/b/c, which dMS9 drives with 6,562 synapses and which fall
+  silent. Chain: dPR1 → dMS9 → vMS12 → IN03B024 → dPR1.
 
 ### Tools
 
