@@ -69,8 +69,10 @@ the threshold is 0.00625.
 
 Descriptive (not part of the 8 confirmatory tests): male-specific neurons (1,332/1,418)
 change dPR1 by −2 % after P1 and −13 % after pIP10 (p 0.99, 0.015 for a drop); fru/dsx+
-silencing lowers pIP10 after P1 by 12 % (p 0.001 for a drop), the one clear fall. Looming
-escape is still running.
+silencing lowers pIP10 after P1 by 12 % (p 0.001 for a drop), the one clear fall.
+**Looming escape depends on none of the three categories**: silencing any of them moves
+DNp01 by under 1 % and TTMn by −10 … +18 %, inside the null in every case (p 0.11 … 0.93).
+The 1,000 draws confirm what the v0.5 run with 100 draws showed.
 
 - **Enrichment is not necessity.** Courtship responses survive the loss of thousands of
   dimorphic neurons, because they run mostly through the direct P1 → pIP10 → dPR1 links,

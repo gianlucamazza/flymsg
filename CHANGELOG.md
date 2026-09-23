@@ -7,7 +7,8 @@
 - **Pre-registered silencing tests (T1, T2), 1,000 null draws each.** Silencing the 948
   sexually dimorphic neurons raises dPR1 by 61–64 % after either courtship stimulus
   (p = 0.001): confirmed. fru/dsx+ is not confirmed (p 0.011 after P1): silencing ~4,900
-  neurons raises dPR1 by +21 % on average by itself.
+  neurons raises dPR1 by +21 % on average by itself. Looming escape depends on none of the
+  three categories, now with 1,000 draws.
 - **Correction:** v0.5 predicted the loop dPR1 → dMS9 → vPR9_a / IN00A038 → dPR1. T2 keeps
   dMS9 (+67 %, +74 %, p 0.001 against matched active neurons) and rejects the inhibitory
   half: silencing vPR9_a + IN00A038 lowers dPR1 after pIP10 and stays inside the null after
