@@ -53,7 +53,13 @@ def pair_asymmetry(neurons: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
     per = g["in"].median().unstack()
     per_out = g["out"].median().unstack()
     count = g.size().unstack()
+    if not {"L", "R"} <= set(per.columns):
+        raise ValueError(
+            "no neuron has a left or a right instance, so no pair to compare"
+        )
     both = per.dropna().index
+    if both.empty:
+        raise ValueError("no cell type has neurons on both sides")
     out = pd.DataFrame(
         {
             "n_L": count.loc[both, "L"].astype(int),

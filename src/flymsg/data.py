@@ -172,13 +172,12 @@ def build_fafb(out: Path) -> None:
     )
     pre = np.searchsorted(ids, c["Presynaptic_ID"].to_numpy())
     post = np.searchsorted(ids, c["Postsynaptic_ID"].to_numpy())
-    if not (
-        np.array_equal(ids[pre], c["Presynaptic_ID"])
-        and np.array_equal(ids[post], c["Postsynaptic_ID"])
-    ):
-        raise ValueError(
-            "connectivity references neurons outside the completeness list"
-        )
+    # searchsorted returns len(ids) for an id above them all, so clip before checking
+    for idx, col in ((pre, "Presynaptic_ID"), (post, "Postsynaptic_ID")):
+        if not np.array_equal(ids[np.minimum(idx, len(ids) - 1)], c[col]):
+            raise ValueError(
+                f"{col}: connectivity references neurons outside the completeness list"
+            )
     shiu = np.zeros(len(ids), dtype=np.int8)
     shiu[pre] = c["Excitatory"].to_numpy()
     neurons["shiu_sign"] = shiu

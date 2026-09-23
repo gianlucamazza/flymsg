@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import ClassVar
 
 import numpy as np
@@ -342,3 +343,58 @@ def test_download_retries_a_server_error_but_not_a_404(tmp_path, monkeypatch):
     )
     with pytest.raises(urllib.error.HTTPError):
         d.download("http://x/missing", tmp_path / "g.bin")
+
+
+def _fafb_raw(tmp_path, extra_edge=False):
+    """The three FAFB source files, as `build_fafb` expects them."""
+    raw = tmp_path / "raw"
+    raw.mkdir(parents=True)
+    ids = [30, 10, 20]  # unsorted on purpose: build_fafb sorts them
+    pd.DataFrame({"root_id": ids, "x": 1}).set_index("root_id").to_csv(
+        raw / Path(data.FAFB_RAW["completeness"]).name
+    )
+    ann = pd.DataFrame(
+        {
+            "root_id": ids,
+            "cell_type": ["C", "A", "B"],
+            "side": ["left", "right", "left"],
+            "super_class": ["central"] * 3,
+            "cell_class": [None] * 3,
+            "cell_sub_class": [None] * 3,
+            "nerve": [None] * 3,
+            "dimorphism": [None] * 3,
+            "fru_dsx": [None] * 3,
+            "synonyms": [None] * 3,
+            "top_nt": ["acetylcholine", "gaba", "glutamate"],
+        }
+    )
+    ann.to_csv(raw / Path(data.FAFB_RAW["annotations"]).name, sep="\t", index=False)
+    pre = [10, 20, 99] if extra_edge else [10, 20]
+    conn = pd.DataFrame(
+        {
+            "Presynaptic_ID": pre,
+            "Postsynaptic_ID": [20, 30] + ([10] if extra_edge else []),
+            "Connectivity": [5, 7] + ([1] if extra_edge else []),
+            "Excitatory": [1, -1] + ([1] if extra_edge else []),
+        }
+    )
+    conn.to_parquet(raw / Path(data.FAFB_RAW["connectivity"]).name)
+    return raw
+
+
+def test_build_fafb_maps_the_shiu_tables_into_the_malecns_schema(tmp_path):
+    _fafb_raw(tmp_path)
+    data.build_fafb(tmp_path)
+    neurons = pd.read_parquet(tmp_path / "neurons.parquet")
+    edges = pd.read_parquet(tmp_path / "edges.parquet")
+    assert neurons["bodyId"].tolist() == [10, 20, 30]  # sorted
+    assert neurons["instance"].tolist() == ["A_R", "B_L", "C_L"]
+    assert neurons["sign"].tolist() == [-1, -1, 1]  # gaba, glutamate, acetylcholine
+    assert neurons["shiu_sign"].tolist() == [1, -1, 0]  # the model's own signs
+    assert edges[["pre", "post", "weight"]].values.tolist() == [[0, 1, 5], [1, 2, 7]]
+
+
+def test_build_fafb_refuses_connectivity_outside_the_neuron_list(tmp_path):
+    _fafb_raw(tmp_path, extra_edge=True)
+    with pytest.raises(ValueError, match="outside the completeness list"):
+        data.build_fafb(tmp_path)

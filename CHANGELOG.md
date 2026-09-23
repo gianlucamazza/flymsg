@@ -30,8 +30,20 @@
 - Corrected stale numbers in `docs/model.md` (an input spike adds 48.1 mV, not 68.75; a
   synapse's peak is 0.030 mV and ~230 coincident synapses reach threshold) and one
   fingerprint value in `docs/validation.md`.
-- Tests: `compare`'s numeric functions, `graph`, `data.download`'s retry and size check, and
-  a smoke test per CLI subcommand (66 tests).
+- Tests: `compare`'s numeric functions, `graph`, `data.download`, `data.build_fafb`,
+  `validate.calibrate` and `compare_models`, and a smoke test per CLI subcommand (72 tests).
+  Two defects they found are fixed: `build_fafb`'s integrity check raised `IndexError`
+  instead of its message for an id above every known one, and `audit` on a dataset with one
+  side only failed with a bare `L`.
+
+### Internals
+
+- One job runs every silencing test (category, cell-type set, per type); `sim.network`
+  replaces seven hand-written weight-matrix calls; `validate.run` splits into per-check
+  helpers and `cli.main` into `build_parser` plus a command table (217 lines to 33).
+- The viewer's pure logic moves out of `main.js` into `budget.js`, `activity.js`,
+  `colors.js` and `lod.js`, each with node tests; `flymsg viz` now collects the page's
+  modules instead of listing them.
 
 - `dimorphism --silencing` reports one-sided p for a drop and for a rise (`p_drop`,
   `p_rise`); `dimorphism --loop` tests the predicted dMS9 loop against silencing matched

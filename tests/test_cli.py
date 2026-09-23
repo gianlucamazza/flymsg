@@ -46,10 +46,13 @@ def test_info_path_and_sim_run_on_a_tiny_dataset(monkeypatch, capsys, data_dir):
     assert "Hz" in out or "B" in out
 
 
-def test_audit_runs(monkeypatch, capsys, data_dir):
-    # a single side only: the audit must say so rather than divide by a zero MAD
-    with pytest.raises((SystemExit, ValueError)):
+def test_audit_on_one_sided_types_says_so_instead_of_dividing_by_zero(
+    monkeypatch, capsys, data_dir
+):
+    # every type has a right side only, so there is no left/right spread to score against
+    with pytest.raises(SystemExit) as e:
         run(monkeypatch, capsys, "--data", str(data_dir), "audit")
+    assert "no pair to compare" in str(e.value)
 
 
 def test_unknown_neuron_query_is_a_message_not_a_traceback(

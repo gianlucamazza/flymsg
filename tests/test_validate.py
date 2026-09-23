@@ -138,3 +138,51 @@ def test_respond_stopping_at_the_stimulus_end_gives_the_same_rates():
     for t in ("A", "B"):
         assert full[t]["rate"] > 0
         assert np.array_equal(full[t]["seed_rates"], short[t]["seed_rates"])
+
+
+def _one_case_network(monkeypatch):
+    """S -> T on a tiny network, with CASES reduced to it so the battery runs in a moment."""
+    neurons = pd.DataFrame(
+        {
+            "type": ["S", "T", "X"],
+            "instance": ["S", "T", "X"],
+            "superclass": ["sensory", "motor", "sensory"],
+            "class": ["c", "m", "c"],
+            "sign": np.ones(3, dtype=np.int8),
+        }
+    )
+    edges = pd.DataFrame({"pre": [0], "post": [1], "weight": [200]})
+    monkeypatch.setattr(validate, "CASES", [validate.Case("c", "S", ["T"], "")])
+    monkeypatch.setattr(validate, "NEGATIVES", [])
+    return neurons, edges
+
+
+def test_calibrate_orders_by_checks_passed_then_closeness_to_the_published_model(
+    monkeypatch,
+):
+    neurons, edges = _one_case_network(monkeypatch)
+    out = validate.calibrate(
+        neurons, edges, [sim.SHIU_W_SYN, 0.05], [0.0], seeds=1, workers=1
+    )
+    assert list(out.columns) == ["w_syn", "th_jump", "passed", "total", "failed"]
+    assert len(out) == 2 and out["passed"].is_monotonic_decreasing
+    # the silent model fails checks the published weight passes
+    assert out.iloc[0]["w_syn"] == sim.SHIU_W_SYN
+
+
+def test_calibrate_breaks_ties_towards_the_published_weight(monkeypatch):
+    neurons, edges = _one_case_network(monkeypatch)
+    out = validate.calibrate(neurons, edges, [0.3, 1.0], [0.0], seeds=1, workers=1)
+    assert out["passed"].nunique() == 1  # both work on this easy network
+    assert out.iloc[0]["w_syn"] == 0.3  # nearer to Shiu's 0.275
+
+
+def test_compare_models_reports_one_battery_per_model_in_the_given_order(monkeypatch):
+    neurons, edges = _one_case_network(monkeypatch)
+    models = {
+        "A": sim.Params(w_syn=0.3),
+        "B": sim.Params(w_syn=0.005),
+    }  # B too weak to fire T
+    reports = validate.compare_models(neurons, edges, models, seeds=1, workers=1)
+    assert list(reports) == ["A", "B"]
+    assert reports["A"]["passed"].sum() > reports["B"]["passed"].sum()
