@@ -1,6 +1,6 @@
 [project]
 name = "flymsg"
-version = "0.5.2"
+version = "0.6.0"
 description = "Simulate and view the complete male Drosophila CNS connectome (MaleCNS v1.0)"
 readme = "README.md"
 license = "MIT"

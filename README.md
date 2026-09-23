@@ -44,9 +44,12 @@ browser to replay the activity.
   departed from the published model ([comparison](docs/comparison.md#engine-check)).
 - **Courtship circuits run through the dimorphic network; escape and feeding do not.**
   Responders to P1 and pIP10 stimulation are 4–19× enriched in fru/dsx+, male-specific and
-  dimorphic neurons over superclass-matched chance. Silencing shows that the song pathway
-  works through its direct links and is held back by the dimorphic network: the model
-  predicts a negative feedback loop dPR1 → dMS9 → vPR9_a → dPR1
+  dimorphic neurons over superclass-matched chance. Two pre-registered silencing tests with
+  1,000 matched null draws each then asked what is necessary: silencing the 948 sexually
+  dimorphic neurons raises the song neuron dPR1 by 61–64 % after either stimulus (confirmed),
+  and silencing the two dMS9 neurons alone raises it by two thirds, more than silencing any
+  matched active neurons. The same tests reject the other half of v0.5's prediction: the
+  inhibitory neurons vPR9_a and IN00A038 are not the route by which dMS9 holds dPR1 back
   ([dimorphism](docs/dimorphism.md)).
 - **Synapse counts are not comparable across datasets.** A male neuron has a median 1.81× the
   synapses of its female counterpart over 7,327 matched cell types, a difference between the

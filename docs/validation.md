@@ -362,6 +362,25 @@ may make the right-side sugar stimulus stronger than a left one. GF → TTMn's l
 difference (20 vs 70 synapses) is a single-connection asymmetry the totals-based audit
 cannot attribute; DNp01, pIP10, dPR1, dMS9, the P1 (pC1) neurons and LC4 are symmetric.
 
+**2026-09-23: pre-registered silencing tests (T1, T2; docs/dimorphism.md), 1,000 null draws
+each, threshold p ≤ 0.00625 over 8 confirmatory tests.** Reports:
+`runs/silencing-1000.txt`, `runs/loop-silencing.txt`.
+
+- **T1**: silencing the 948 sexually dimorphic neurons raises dPR1 by 61 % (after pIP10) and
+  64 % (after P1), p = 0.001 both, more than any of 1,000 superclass-matched random
+  silencings: confirmed. The fru/dsx+ category is not confirmed: the rise is larger
+  (+79 … +100 %) but after P1 eleven random silencings of ~4,900 neurons matched it
+  (p 0.011). Silencing a fifth of the CNS moves dPR1 by +21 % on average, so the effect is
+  not specific to the category.
+- **T2**: silencing dMS9 (2 neurons) raises dPR1 by 67 % and 74 % (p 0.001), against a null
+  of silencing 2 matched responders. Silencing vPR9_a + IN00A038 does not: −6 % after pIP10
+  (p 0.63) and +32 % after P1, inside the null (p 0.036). **The v0.5 prediction of the loop
+  dPR1 → dMS9 → vPR9_a / IN00A038 → dPR1 is therefore half wrong**, and the docs are
+  corrected: dMS9 restrains dPR1, by a route this test does not identify.
+- Cost and method: 1,000 draws × 3 seeds × 15 jobs. Runs stop at the end of the stimulus
+  (identical rates in the scored window, 2–2.7× cheaper) and are resumable, since the whole
+  battery takes many CPU hours on this machine.
+
 ## Limits of this validation
 
 - Five cases, all short feedforward chains (1–2 hops) close to the stimulus. They say little
