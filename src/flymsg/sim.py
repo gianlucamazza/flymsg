@@ -46,6 +46,15 @@ class Params:
     dt: float = 0.1  # ms
 
 
+def network(
+    neurons: pd.DataFrame, edges: pd.DataFrame, p: "Params"
+) -> sparse.csc_matrix:
+    """The weight matrix of a dataset at these parameters: the usual way to build one, from
+    the neurons' `sign` column. `weight_matrix` stays for the variants that need another
+    sign column or a scaled weight (see `compare`)."""
+    return weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
+
+
 def weight_matrix(
     edges: pd.DataFrame, sign: np.ndarray, n: int, w_syn: float
 ) -> sparse.csc_matrix:

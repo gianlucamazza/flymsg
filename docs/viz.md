@@ -80,3 +80,13 @@ GL=gl node scripts/shoot.mjs "http://127.0.0.1:8000/?bench=110" out.png 115
 ```
 
 `GL=vulkan` uses ANGLE on Vulkan, the default `GL=swiftshader` software rendering.
+
+## Known defect
+
+A replay exported for the pIP10 case (`flymsg viz --sim pIP10`) renders a black viewport
+although the page reports the geometry as drawn (28 surfaces, 219 skeletons, 1.8 M triangles)
+and the activity data is correct (199 of its 247 neurons glow at t = 150 ms when
+`activity.js` is run on the exported `activity.bin` outside the browser). The same neurons
+render normally as an anatomy export (`--types pIP10 dPR1 dMS9`), and a replay of the LC4
+case renders normally. Reproduced with the pre-refactor viewer as well, so it is not caused
+by the module split of v0.6.0. Not yet explained.

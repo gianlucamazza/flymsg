@@ -103,3 +103,12 @@ export function select(neurons, view, opts) {
   }
   return { meshes, skeletons, tris: spent };
 }
+
+/**
+ * Loading priority of a neuron: its projected size on screen, raised by its firing rate, with
+ * the stimulated neurons always first.
+ */
+export function priorityOf(n, view) {
+  const onScreen = n.bounds ? Math.min(projectedPx(n.bounds, view), 1e6) : 1;
+  return (n.group === "stimulus" ? 1e12 : 0) + (1 + (n.rate ?? 0)) * onScreen;
+}

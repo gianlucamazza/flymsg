@@ -15,16 +15,12 @@ import pandas as pd
 from flymsg import sim
 
 STATIC = Path(__file__).parent / "viz_static"
-PAGE = (
-    "index.html",
-    "main.js",
-    "precomputed.js",
-    "colors.js",
-    "lod.js",
-    "perf.js",
-    "geometry.js",
-    "geometry-worker.js",
-)
+
+
+def page_files() -> list[Path]:
+    """The page and every module beside it (vendor/ is copied as a tree). Collected rather
+    than listed, so that a new module cannot be left out of an export."""
+    return [STATIC / "index.html", *sorted(STATIC.glob("*.js"))]
 
 
 def select_from_result(
@@ -85,7 +81,7 @@ def export(
             missing_ok=True
         )  # an anatomy export must not pick up an old replay
     (out / "scene.json").write_text(json.dumps(scene))
-    for f in PAGE:
-        shutil.copy(STATIC / f, out / f)
+    for f in page_files():
+        shutil.copy(f, out / f.name)
     shutil.copytree(STATIC / "vendor", out / "vendor", dirs_exist_ok=True)
     return scene

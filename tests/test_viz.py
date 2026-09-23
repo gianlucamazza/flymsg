@@ -69,7 +69,11 @@ def test_export_replay_bundle(tmp_path):
         [0, 1],
         [255, 0],
     ]  # columns follow idx order, clipped to uint8
-    assert all((tmp_path / f).exists() for f in viz.PAGE)
+    # every module beside the page is exported, or the page would fail to load
+    assert all((tmp_path / f.name).exists() for f in viz.page_files())
+    assert {f.name for f in viz.page_files()} >= {
+        f.name for f in (viz.STATIC).glob("*.js")
+    }
     assert (tmp_path / "vendor/three/build/three.module.min.js").exists()
 
 

@@ -128,10 +128,9 @@ def summarize(
 
 
 def cmd_sim(a, neurons, edges):
-    n = len(neurons)
     stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.stim]))
     params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
-    W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), n, params.w_syn)
+    W = sim.network(neurons, edges, params)
     stim_ms = a.stim_ms or a.duration
     print(
         f"stimulating {stim.size} neurons at {a.rate} Hz for {stim_ms} of {a.duration} ms, {a.seeds} seed(s) ..."
@@ -358,9 +357,7 @@ def cmd_viz(a, neurons, edges):
         groups = ["path"] * idx.size
     else:
         stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.sim]))
-        W = sim.weight_matrix(
-            edges, neurons["sign"].to_numpy(), len(neurons), sim.Params.w_syn
-        )
+        W = sim.network(neurons, edges, sim.Params())
         print(f"simulating {stim.size} stimulated neurons for {a.duration} ms ...")
         result = sim.run(W, stim, a.rate, a.duration, a.stim_ms, seed=a.seed)
         idx = viz.select_from_result(result, stim, a.min_rate)
@@ -372,7 +369,25 @@ def cmd_viz(a, neurons, edges):
     )
 
 
-def main() -> None:
+COMMANDS = {
+    "info": cmd_info,
+    "path": cmd_path,
+    "sim": cmd_sim,
+    "validate": cmd_validate,
+    "calibrate": cmd_calibrate,
+    "compare": cmd_compare,
+    "dimorphism": cmd_dimorphism,
+    "select-model": cmd_select_model,
+    "audit": cmd_audit,
+    "viz": cmd_viz,
+}
+# these need the whole connectome loaded; fetch and build make it, and --progress
+# only reads checkpoint files
+MALECNS_ONLY = ("validate", "calibrate", "compare", "dimorphism", "viz")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """The command line, as a parser that can be built and inspected on its own."""
     p = argparse.ArgumentParser(
         prog="flymsg",
         description="Explore and simulate the male Drosophila CNS connectome",
@@ -568,6 +583,11 @@ def main() -> None:
         help="replay: only neurons above this rate (Hz)",
     )
     s.add_argument("--out", type=Path, default=Path("runs/viz"))
+    return p
+
+
+def main() -> None:
+    p = build_parser()
     a = p.parse_args()
     if getattr(a, "progress", False) and a.checkpoint is None:
         p.error("--progress needs --checkpoint FILE")
@@ -579,28 +599,11 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
-        if a.dataset == "fafb" and a.cmd in (
-            "validate",
-            "calibrate",
-            "compare",
-            "dimorphism",
-            "viz",
-        ):
+        if a.dataset == "fafb" and a.cmd in MALECNS_ONLY:
             # the battery needs the VNC, and the 3D view streams MaleCNS geometry
             sys.exit(f"flymsg: {a.cmd} needs --dataset malecns")
         neurons, edges = data.load(a.data, a.dataset)
-        {
-            "info": cmd_info,
-            "path": cmd_path,
-            "sim": cmd_sim,
-            "validate": cmd_validate,
-            "calibrate": cmd_calibrate,
-            "compare": cmd_compare,
-            "dimorphism": cmd_dimorphism,
-            "select-model": cmd_select_model,
-            "audit": cmd_audit,
-            "viz": cmd_viz,
-        }[a.cmd](a, neurons, edges)
+        COMMANDS[a.cmd](a, neurons, edges)
     except KeyError as err:  # unknown neuron query
         sys.exit(f"flymsg: {err.args[0]}")
     except OSError as err:  # missing data files, failed downloads

@@ -205,6 +205,94 @@ def dose_ok(rates: list[float]) -> bool:
     return steps_ok and rates[-1] > rates[0]
 
 
+def _response_rows(case, target, r, c, seeds, need) -> list[tuple]:
+    """The positive check (does the known target fire reliably?) and the specific check (does
+    it need this wiring rather than any drive of that size?)."""
+    return [
+        (
+            case.name,
+            "positive",
+            target,
+            r["rate"],
+            f"{r['reliable']}/{seeds} seeds >= {MIN_SPIKES} spikes",
+            r["latency"],
+            r["reliable"] >= need,
+        ),
+        (
+            case.name,
+            "specific",
+            target,
+            c["rate"],
+            (
+                f"control {_ci(c['seed_rates'])}, target {_ci(r['seed_rates'])};"
+                f" needs <= {(r['rate'] - MARGIN_HZ) / SPECIFICITY:.1f} Hz"
+            ),
+            np.nan,
+            r["rate"] >= SPECIFICITY * c["rate"] + MARGIN_HZ,
+        ),
+    ]
+
+
+def _order_rows(case, pos) -> list[tuple]:
+    """Successive stages of one pathway must fire in order."""
+    rows = []
+    for a, b in pairwise(case.targets):
+        ok, note = in_order(pos[a]["latencies"], pos[b]["latencies"], MIN_SEED_SHARE)
+        rows.append((case.name, "order", f"{a} before {b}", np.nan, note, np.nan, ok))
+    return rows
+
+
+def _dose_row(case, target, curve) -> tuple:
+    """The response must grow with the input rate. The share of the peak reached at the
+    standard rate is descriptive (Shiu et al. tuned w_syn so that 100 Hz sugar input gives
+    ~80 % of maximal MN9 firing)."""
+    at_std = curve[DOSE_RATES_HZ.index(RATE_HZ)]
+    top = (
+        f", {100 * at_std / max(curve):.0f}% of peak at {RATE_HZ:.0f} Hz"
+        if max(curve)
+        else ""
+    )
+    return (
+        case.name,
+        "dose",
+        target,
+        curve[-1],
+        " / ".join(f"{c:.0f}" for c in curve)
+        + f" Hz at {'/'.join(f'{r:.0f}' for r in DOSE_RATES_HZ)} Hz{top}",
+        np.nan,
+        dose_ok(curve),
+    )
+
+
+def _stability_row(case, persistent) -> tuple:
+    """Activity must die out after the stimulus."""
+    return (
+        case.name,
+        "stability",
+        "self-sustained neurons",
+        persistent,
+        f"<= {MAX_PERSISTENT}",
+        np.nan,
+        persistent <= MAX_PERSISTENT,
+    )
+
+
+def _negative_row(name, target, neg, ref, against) -> tuple:
+    """A stimulus known to suppress the response must leave the target far below it."""
+    return (
+        name,
+        "negative",
+        target,
+        neg["rate"],
+        (
+            f"{_ci(neg['seed_rates'])}; must stay < {ref / SPECIFICITY:.1f}"
+            f" Hz (1/{SPECIFICITY:.0f} of {against})"
+        ),
+        np.nan,
+        neg["rate"] < ref / SPECIFICITY,
+    )
+
+
 def run(
     neurons: pd.DataFrame,
     edges: pd.DataFrame,
@@ -215,60 +303,16 @@ def run(
 ) -> pd.DataFrame:
     """One row per check: case, kind, subject, value, note, latency_ms, passed.
     Simulations use seeds seed0 .. seed0+seeds-1; control draws use `control_seed`."""
-    W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
+    W = sim.network(neurons, edges, p)
     rng = np.random.default_rng(control_seed)
     need = int(np.ceil(MIN_SEED_SHARE * seeds))
     rows = []
     positive_rate = {}  # (case, target) -> rate, for the negative checks
     for case in CASES:
         stim = case.stim_idx(neurons)
-        target_idx = np.concatenate([data.resolve(neurons, t) for t in case.targets])
+        control = control_idx(neurons, edges, stim, case.target_idx(neurons), rng)
         pos, persistent = respond(W, neurons, stim, case.targets, p, seeds, seed0=seed0)
-        ctrl, _ = respond(
-            W,
-            neurons,
-            control_idx(neurons, edges, stim, target_idx, rng),
-            case.targets,
-            p,
-            seeds,
-            seed0=seed0,
-        )
-        for t in case.targets:
-            r, c = pos[t], ctrl[t]
-            positive_rate[case.name, t] = r["rate"]
-            rows.append(
-                (
-                    case.name,
-                    "positive",
-                    t,
-                    r["rate"],
-                    f"{r['reliable']}/{seeds} seeds >= {MIN_SPIKES} spikes",
-                    r["latency"],
-                    r["reliable"] >= need,
-                )
-            )
-            rows.append(
-                (
-                    case.name,
-                    "specific",
-                    t,
-                    c["rate"],
-                    (
-                        f"control {_ci(c['seed_rates'])}, target {_ci(r['seed_rates'])};"
-                        f" needs <= {(r['rate'] - MARGIN_HZ) / SPECIFICITY:.1f} Hz"
-                    ),
-                    np.nan,
-                    r["rate"] >= SPECIFICITY * c["rate"] + MARGIN_HZ,
-                )
-            )
-        if case.chain:
-            for a, b in pairwise(case.targets):
-                ok, note = in_order(
-                    pos[a]["latencies"], pos[b]["latencies"], MIN_SEED_SHARE
-                )
-                rows.append(
-                    (case.name, "order", f"{a} before {b}", np.nan, note, np.nan, ok)
-                )
+        ctrl, _ = respond(W, neurons, control, case.targets, p, seeds, seed0=seed0)
         sweep = {
             r: pos
             if r == RATE_HZ
@@ -276,53 +320,20 @@ def run(
             for r in DOSE_RATES_HZ
         }
         for t in case.targets:
-            curve = [sweep[r][t]["rate"] for r in DOSE_RATES_HZ]
-            # share of the peak reached at the standard rate (Shiu et al. tuned w_syn so
-            # that 100 Hz sugar input gives ~80 % of maximal MN9 firing): descriptive only
-            at_std = curve[DOSE_RATES_HZ.index(RATE_HZ)]
-            top = (
-                f", {100 * at_std / max(curve):.0f}% of peak at {RATE_HZ:.0f} Hz"
-                if max(curve)
-                else ""
-            )
+            positive_rate[case.name, t] = pos[t]["rate"]
+            rows += _response_rows(case, t, pos[t], ctrl[t], seeds, need)
+        if case.chain:
+            rows += _order_rows(case, pos)
+        for t in case.targets:
             rows.append(
-                (
-                    case.name,
-                    "dose",
-                    t,
-                    curve[-1],
-                    " / ".join(f"{c:.0f}" for c in curve)
-                    + f" Hz at {'/'.join(f'{r:.0f}' for r in DOSE_RATES_HZ)} Hz{top}",
-                    np.nan,
-                    dose_ok(curve),
-                )
+                _dose_row(case, t, [sweep[r][t]["rate"] for r in DOSE_RATES_HZ])
             )
-        rows.append(
-            (
-                case.name,
-                "stability",
-                "self-sustained neurons",
-                persistent,
-                f"<= {MAX_PERSISTENT}",
-                np.nan,
-                persistent <= MAX_PERSISTENT,
-            )
-        )
+        rows.append(_stability_row(case, persistent))
     for name, stim_fn, target, against in NEGATIVES:
         neg, _ = respond(W, neurons, stim_fn(neurons), [target], p, seeds, seed0=seed0)
-        ref = positive_rate[against, target]
         rows.append(
-            (
-                name,
-                "negative",
-                target,
-                neg[target]["rate"],
-                (
-                    f"{_ci(neg[target]['seed_rates'])}; must stay < {ref / SPECIFICITY:.1f}"
-                    f" Hz (1/{SPECIFICITY:.0f} of {against})"
-                ),
-                np.nan,
-                neg[target]["rate"] < ref / SPECIFICITY,
+            _negative_row(
+                name, target, neg[target], positive_rate[against, target], against
             )
         )
     return pd.DataFrame(

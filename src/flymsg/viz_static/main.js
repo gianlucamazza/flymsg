@@ -22,8 +22,17 @@ import {
   parseMultilodManifest,
   parseSkeleton,
 } from "./precomputed.js";
-import { projectedPx, select } from "./lod.js";
-import { DIMORPHISM_COLORS, FRU_DSX_COLORS, dimorphismClass, fruDsxClass } from "./colors.js";
+import { priorityOf, select } from "./lod.js";
+import {
+  DIMORPHISM_COLORS,
+  FRU_DSX_COLORS,
+  NT_COLORS,
+  PALETTE,
+  colourOf as colourIn,
+  isShown as shownIn,
+} from "./colors.js";
+import { effectiveBudget, scaledRatio, trisPerByte, vertsPerTri } from "./budget.js";
+import { activityAt } from "./activity.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
 
@@ -35,29 +44,6 @@ const ROIS = {
   vnc: "rois/malecns-vnc-neuropil-roi-v0",
 };
 
-const PALETTE = [
-  "#4cc9f0",
-  "#f72585",
-  "#b5e48c",
-  "#ffd166",
-  "#9b5de5",
-  "#ff7b00",
-  "#00f5d4",
-  "#ef476f",
-  "#8ecae6",
-  "#e9c46a",
-];
-const NT_COLORS = {
-  acetylcholine: "#4cc9f0",
-  gaba: "#f72585",
-  glutamate: "#ffd166",
-  histamine: "#9b5de5",
-  dopamine: "#00f5d4",
-  serotonin: "#ff7b00",
-  octopamine: "#b5e48c",
-  unclear: "#7b8494",
-  unknown: "#7b8494",
-};
 const TAU_MS = 15; // display decay of a spike's glow
 const HISTORY_BINS = 5;
 const MAX_INSTANCES = 65536; // loaded fragments at once
@@ -270,27 +256,14 @@ const neurons = meta.neurons.map((n, k) => ({
   skeletonState: "idle",
 }));
 const N = neurons.length;
-const hash = (s) =>
-  [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 const COLOR_MODES = ["group", "transmitter", "type", "dimorphism", "fru/dsx"];
 const view = {
   colorBy: COLOR_MODES.includes(query.get("color")) ? query.get("color") : "group", // ?color=
   filter: "",
   groupsOn: Object.fromEntries(groups.map((g) => [g, true])),
 };
-const colourOf = (n) =>
-  view.colorBy === "group"
-    ? PALETTE[groups.indexOf(n.group) % PALETTE.length]
-    : view.colorBy === "transmitter"
-      ? (NT_COLORS[n.nt] ?? NT_COLORS.unknown)
-      : view.colorBy === "dimorphism"
-        ? DIMORPHISM_COLORS[dimorphismClass(n.dimorphism)]
-        : view.colorBy === "fru/dsx"
-          ? FRU_DSX_COLORS[fruDsxClass(n.fruDsx)]
-          : PALETTE[hash(n.type) % PALETTE.length];
-const isShown = (n) =>
-  view.groupsOn[n.group] &&
-  (!view.filter || n.type.toLowerCase().includes(view.filter));
+const colourOf = (n) => colourIn(n, view, groups);
+const isShown = (n) => shownIn(n, view);
 const activity = new Float32Array(N);
 
 // ---------- surface meshes: one BatchedMesh holds every loaded fragment ----------
@@ -423,14 +396,6 @@ function recall(key) {
 // Learned from decoded fragments: the selection budgets triangles from compressed sizes, and the
 // GPU buffer runs out of vertices or indices, whichever comes first.
 const stats = { bytes: 0, tris: 0, verts: 0, capacityHits: 0 };
-const trisPerByte = () => (stats.bytes > 1e5 ? stats.tris / stats.bytes : 0.6); // 0.6: GF coarsest LOD
-const vertsPerTri = () => (stats.tris > 1e5 ? stats.verts / stats.tris : 0.6);
-/** Triangles the BatchedMesh can actually hold, with 10% slack for fragmentation. */
-function effectiveBudget() {
-  const byVerts = capacity.vertices / vertsPerTri();
-  const byIndices = capacity.indices / 3;
-  return 0.9 * Math.min(settings.budgetM * 1e6, byVerts, byIndices);
-}
 
 function addFragment(n, key, geometry) {
   let gid;
@@ -874,11 +839,6 @@ function eyeView() {
   return { eye, pxPerUnit };
 }
 
-function priorityOf(n, v) {
-  const onScreen = n.bounds ? Math.min(projectedPx(n.bounds, v), 1e6) : 1;
-  return (n.group === "stimulus" ? 1e12 : 0) + (1 + (n.rate ?? 0)) * onScreen;
-}
-
 function updateSelection() {
   const now = performance.now();
   if (!selectionDirty || (now - lastMove < 120 && now - lastSelection < 250))
@@ -905,8 +865,8 @@ function updateSelection() {
     v,
     {
       detailPx: settings.detailPx,
-      budgetTris: effectiveBudget(),
-      trisPerByte: trisPerByte(),
+      budgetTris: effectiveBudget(stats, capacity, settings.budgetM),
+      trisPerByte: trisPerByte(stats),
       transform: meshInfo.transform,
     },
   );
@@ -1010,16 +970,15 @@ const clock = {
 const clockEl = document.getElementById("clock");
 let shownT = null; // replay time whose activity is on the GPU
 function updateActivity(t) {
-  const b = Math.min(Math.floor(t / A.bin_ms), A.bins - 1);
-  for (let k = 0; k < N; k++) {
-    let s = 0;
-    for (let j = Math.max(0, b - HISTORY_BINS + 1); j <= b; j++) {
-      const c = spikes[j * N + k];
-      if (c) s += c * Math.exp(-Math.max(0, t - (j + 0.5) * A.bin_ms) / TAU_MS);
-    }
-    activity[k] = Math.min(1, 0.5 * s);
-    skelActivity.image.data[4 * k] = activity[k];
-  }
+  activityAt(
+    spikes,
+    { n: N, bins: A.bins, binMs: A.bin_ms },
+    t,
+    activity,
+    TAU_MS,
+    HISTORY_BINS,
+  );
+  for (let k = 0; k < N; k++) skelActivity.image.data[4 * k] = activity[k];
   skelActivity.needsUpdate = true;
   const inst = instanceActivity.image.data;
   for (const n of neurons)
@@ -1263,7 +1222,7 @@ function setQuality(r, n) {
   tuneFrames = 0; // wait for frames measured at the new quality
   invalidate();
 }
-const scaled = (frameMs) => Math.round(ratio * Math.sqrt(TARGET_FRAME_MS / frameMs) * 20) / 20;
+const scaled = (frameMs) => scaledRatio(ratio, frameMs, TARGET_FRAME_MS);
 function tuneQuality(live) {
   if (!settings.adaptive) return;
   if (!live) {
@@ -1326,9 +1285,9 @@ if (query.has("bench")) {
         winding: windingChecks,
       capacity: {
         hits: stats.capacityHits,
-        effective_budget: Math.round(effectiveBudget()),
-        verts_per_tri: +vertsPerTri().toFixed(3),
-        tris_per_byte: +trisPerByte().toFixed(3),
+        effective_budget: Math.round(effectiveBudget(stats, capacity, settings.budgetM)),
+        verts_per_tri: +vertsPerTri(stats).toFixed(3),
+        tris_per_byte: +trisPerByte(stats).toFixed(3),
         ...capacity,
       },
       });

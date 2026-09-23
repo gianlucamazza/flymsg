@@ -82,7 +82,7 @@ def run(
     neurons: pd.DataFrame, edges: pd.DataFrame, p: sim.Params, seeds: int = 3
 ) -> pd.DataFrame:
     """Enrichment for every validation case, at the validation protocol's stimulus."""
-    W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
+    W = sim.network(neurons, edges, p)
     rng = np.random.default_rng(0)
     out = []
     for case in validate.CASES:
@@ -458,7 +458,7 @@ def silencing(
     how much each target's response drops, against silencing as many neurons outside the
     category with the same superclass mix. Empirical one-sided p for a drop and for a rise,
     with +1 smoothing (smallest 1 / (n_null + 1))."""
-    W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
+    W = sim.network(neurons, edges, p)
     ctx = (neurons, W, p, seeds, n_null, None)
     jobs = [(c, k) for c in cases for k in CATEGORIES]
     meta = {"kind": "silencing", "seeds": seeds, "n_null": n_null, **_param_meta(p)}
@@ -513,7 +513,7 @@ def loop_silencing(
     many of the case's own responders, matched on superclass and transmitter sign (never the
     stimulus, the targets or any tested neuron): do these neurons matter more than other
     active neurons of the same kind?"""
-    W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
+    W = sim.network(neurons, edges, p)
     ctx = (neurons, W, p, seeds, n_null, sets)
     jobs = [(c, k) for c in cases for k in sets]
     meta = {
@@ -565,7 +565,7 @@ def type_silencing(
     case = validate.case_by_name(case_name)
     stim = case.stim_idx(neurons)
     targets = case.target_idx(neurons)
-    W = sim.weight_matrix(edges, neurons["sign"].to_numpy(), len(neurons), p.w_syn)
+    W = sim.network(neurons, edges, p)
     results = [
         sim.run(W, stim, validate.RATE_HZ, validate.STIM_MS, validate.STIM_MS, p, s)
         for s in range(seeds)
