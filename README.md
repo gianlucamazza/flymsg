@@ -183,4 +183,4 @@ If you use flymsg, cite the data and the model it builds on (see also
 
 Code: [MIT](LICENSE). The connectome data are not part of this repository; they are
 downloaded from their public sources under their own licences. Vendored three.js and lil-gui
-are MIT (`src/flymsg/viz_static/vendor/`).
+are MIT (`src/flymsg/viz_static/vendor/`). See [NOTICE](NOTICE) for what the licence does not cover.
