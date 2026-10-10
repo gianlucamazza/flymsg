@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import compare, data, dimorphism, graph, quality, sim, validate, viz
+from flymsg import compare, data, dimorphism, graph, quality, sim, validate, viz, wiring
 
 NG = "https://neuroglancer-demo.appspot.com/#!"
 
@@ -151,6 +151,39 @@ def cmd_sim(a, neurons, edges):
             ["bodyId", "type", "instance", "superclass", "rate"]
         ].to_csv(a.out, index=False)
         print(f"per-neuron stimulus-window rates (mean over seeds) -> {a.out}")
+
+
+def cmd_wiring_null(a, neurons, edges):
+    """N1. Parameters and seeds are the pre-registered ones; there is no flag to change them."""
+    shuffled, stats = wiring.shuffle_targets(edges)
+    print(
+        f"shuffle seed {wiring.SHUFFLE_SEED}: {stats['n_edges']:,} edges,"
+        f" {stats['n_self_loops']:,} self-loops,"
+        f" {stats['n_duplicate_pairs']:,} duplicate pairs"
+        f" ({stats['n_extra_edges']:,} extra edges)"
+    )
+    if a.stats:
+        return
+    params = sim.Params()
+    print(
+        f"criterion v4, w_syn={params.w_syn} th_jump={params.th_jump},"
+        f" seeds 0..{wiring.N1_SEEDS - 1}, real graph then shuffle"
+    )
+    real = validate.run(neurons, edges, params, wiring.N1_SEEDS)
+    shuf = validate.run(neurons, shuffled, params, wiring.N1_SEEDS)
+    out = Path("runs")
+    out.mkdir(exist_ok=True)
+    real.to_csv(out / "n1-real.csv", index=False)
+    shuf.to_csv(out / "n1-shuffle.csv", index=False)
+    for name, report in ("real", real), ("shuffle", shuf):
+        passed = int(report["passed"].sum())
+        print(
+            f"{name}: {passed}/{len(report)} checks passed (descriptive except specific)"
+        )
+    still = shuf.loc[shuf["passed"], ["case", "kind", "subject"]]
+    print("shuffle still passes:")
+    print(still.to_string(index=False) if len(still) else "(none)")
+    print(wiring.verdict(wiring.confirmatory(real, shuf)))
 
 
 def cmd_validate(a, neurons, edges):
@@ -380,10 +413,11 @@ COMMANDS = {
     "select-model": cmd_select_model,
     "audit": cmd_audit,
     "viz": cmd_viz,
+    "wiring-null": cmd_wiring_null,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
-MALECNS_ONLY = ("validate", "calibrate", "compare", "dimorphism", "viz")
+MALECNS_ONLY = ("validate", "calibrate", "compare", "dimorphism", "viz", "wiring-null")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -454,6 +488,15 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--seeds", type=int, default=1, help="number of seeds to average")
     s.add_argument("--out", type=Path)
     s = sub.add_parser(
+        "wiring-null",
+        help="N1: one degree-preserving shuffle, then criterion v4 on both graphs",
+    )
+    s.add_argument(
+        "--stats",
+        action="store_true",
+        help="print the shuffle census and stop, without simulating",
+    )
+    s = sub.add_parser(
         "validate", help="run the validation battery (known circuits + controls)"
     )
     s.add_argument("--seeds", type=int, default=3)
@@ -473,7 +516,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s.add_argument("--seeds", type=int, default=10)
     s.add_argument("--workers", type=int, default=4)
-    s.add_argument("--th-jump-a", type=float, default=sim.Params.th_jump)
+    # Pre-registered model A uses th_jump 2. The simulator default stays 0, so this
+    # flag does not borrow sim.Params.th_jump.
+    s.add_argument("--th-jump-a", type=float, default=2.0)
     s.add_argument(
         "--rho-range", type=float, nargs=2, default=[1.43, 2.43], metavar=("LO", "HI")
     )

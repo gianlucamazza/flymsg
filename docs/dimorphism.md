@@ -30,10 +30,10 @@ Output: `runs/dimorphism.txt`.
 
 Bold: p = 0.001. Counts of responders in the category in brackets.
 
-- **Courtship circuits run through the dimorphic network.** P1 and pIP10 responses are 3–16×
-  enriched in fru/dsx+, male-specific and dimorphic neurons, within their superclasses. This is
-  the model's side of the known picture: P1 and pIP10 sit in the fruitless circuit that
-  builds courtship song.
+- **Courtship circuits run through the dimorphic network.** P1 and pIP10 responses are
+  4.3–18.6× enriched in fru/dsx+, male-specific and dimorphic neurons, within their
+  superclasses. This is the model's side of the known picture: P1 and pIP10 sit in the
+  fruitless circuit that builds courtship song.
 - **Escape and feeding avoid it.** Looming and sugar responses contain about half the
   expected share of fru/dsx+ and male-specific neurons.
 - **The giant fiber's reach depends on the model.** With the v0.3 defaults its 29
@@ -118,7 +118,7 @@ also raises pIP10 itself after P1 (+14 %, p 0.001).
   therefore means "not distinguishable from silencing that many neurons", not "no effect".
 - **T2's inhibitory test is stringent by construction.** Its null silences 8 active VNC
   inhibitory responders, which on their own can raise dPR1 by up to 110 %. What sinks the
-  prediction is not only the p value: after pIP10 silencing vPR9*a + IN00A038 \_lowers* dPR1,
+  prediction is not only the p value: after pIP10 silencing `vPR9_a` + IN00A038 lowers dPR1,
   the opposite of what a feedback inhibitor should do.
 - dPR1 is far from saturation (a 2.2 ms refractory period allows ~450 Hz), so the rises are
   not a ceiling artefact.
@@ -232,6 +232,7 @@ lowered dPR1 by 9 %, and IN00A038 was never tested (it is not fru+).
 
 - Annotations, not measurements: `fruDsx` and `dimorphism` are the release's best calls; the
   "potentially" levels are included.
-- Enrichment says where the simulated activity goes; silencing tests necessity, with 100 null
-  draws per category test and none for the per-type scan.
-- The null matches superclass only, not transmitter or proximity to the stimulus.
+- Enrichment says where the simulated activity goes. Silencing tests necessity with 1,000
+  null draws: the T1 null matches superclass, and the T2 and T3 null matches the case's
+  responders, superclass and transmitter sign. The per-type scan still has no null.
+- Neither null matches proximity to the stimulus.

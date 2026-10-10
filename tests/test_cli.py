@@ -84,12 +84,30 @@ def test_bad_duration_is_a_message(monkeypatch, capsys, data_dir):
     assert "bin_ms" in str(e.value)
 
 
+def test_select_model_uses_preregistered_model_a_threshold():
+    """Model A is th_jump 2. The simulator default stays 0, so the flag cannot borrow it."""
+    from flymsg import sim
+
+    args = cli.build_parser().parse_args(["select-model"])
+    assert sim.Params.th_jump == 0
+    assert args.th_jump_a == 2
+
+
 def test_progress_without_checkpoint_is_an_argparse_error(
     monkeypatch, capsys, data_dir
 ):
     with pytest.raises(SystemExit) as e:
         run(monkeypatch, capsys, "--data", str(data_dir), "dimorphism", "--progress")
     assert e.value.code == 2
+
+
+def test_wiring_null_stats_prints_the_census_and_does_not_simulate(
+    monkeypatch, capsys, data_dir
+):
+    out = run(monkeypatch, capsys, "--data", str(data_dir), "wiring-null", "--stats")
+    assert "self-loops" in out
+    assert "duplicate pairs" in out
+    assert "criterion" not in out
 
 
 def test_fafb_only_commands_are_refused_on_the_male_dataset(

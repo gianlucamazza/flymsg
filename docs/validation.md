@@ -5,7 +5,7 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
 `src/flymsg/validate.py`; the full battery also runs as a slow test
 (`uv run pytest -m slow`).
 
-## Current status (v0.5)
+## Current status (v0.6)
 
 - **Criterion v4, 29/29 with the defaults** (`w_syn` 0.192, no adaptive threshold) at seeds
   0–2, at seeds 0–9 (model selection) and at fresh seeds 10–19 with fresh control draws
@@ -23,7 +23,9 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
 ## Protocol
 
 Every case stimulates a population with Poisson input at 100 Hz for 300 ms, runs 600 ms in
-total and uses 3 seeds (0, 1, 2). For each target type the **best neuron** (highest mean
+total and uses 3 seeds (0, 1, 2). Silencing tests stop at the end of that 300 ms stimulus:
+the rates in the scored window are identical to the 600 ms run. For each target type the
+**best neuron** (highest mean
 stimulus-window rate over seeds) is scored; many targets are bilateral pairs and a unilateral
 stimulus drives one side (LC4_R → DNp01_R and TTMn_R). Three kinds of check:
 

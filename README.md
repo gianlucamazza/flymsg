@@ -91,6 +91,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `path SRC DST [--alt K]`                                        | strongest chain by input fraction; `--alt` adds routes avoiding the previous intermediate types         |
 | `sim STIM…`                                                     | simulate a Poisson stimulus; per-type rates, reliability across seeds, latency, self-sustained activity |
 | `validate`                                                      | the validation battery (a few minutes)                                                                  |
+| `wiring-null [--stats]`                                         | N1: shuffle who connects to whom; `--stats` counts self-loops and stops                                 |
 | `calibrate`, `select-model`                                     | parameter grid search and pre-registered model comparison                                               |
 | `audit`                                                         | reconstruction completeness: flags bilateral neurons with one side far below the other                  |
 | `dimorphism [--silencing \| --loop \| --by-type CASE CATEGORY]` | dimorphic neurons among responders; silencing by category, by cell type, or of the predicted dMS9 loop  |
@@ -146,6 +147,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [validation](docs/validation.md) | current status, protocol, cases, calibration, model selection, findings log |
 | [comparison](docs/comparison.md) | engine check against the published model, male vs female, the LB3 split     |
 | [dimorphism](docs/dimorphism.md) | dimorphic neurons among responders, silencing                               |
+| [related](docs/related.md)       | adjacent whole-CNS models, the raw 211,577 count, wiring null N1            |
 | [viz](docs/viz.md)               | 3D pipeline, levels of detail, rendering quality, GPU measurements          |
 | [CHANGELOG](CHANGELOG.md)        | what changed in each version                                                |
 

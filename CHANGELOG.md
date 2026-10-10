@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.7.0 — 2026-10-11
+
+### Results
+
+- **N1, the degree-preserving shuffle** (`docs/related.md`). Seed 0, default model, criterion
+  v4. The traced graph passes 29/29. The shuffle passes 5/29, all five the `stability` check:
+  activity still dies out. Every `specific` check fails (7/7). `positive`, `order`, `dose`
+  and `negative` fail too. `w_syn` was not changed.
+
+### Docs
+
+- **Related work** (`docs/related.md`): MaleCNS 211,577 is the raw body table, not a second
+  animal; BANC's published backbone-proofread count sits beside the 188,508 / 13,620,865
+  figures used by the embodied model. README links the note.
+- Stale lines brought in line with 0.6.0: an input spike adds 48.1 mV (`docs/model.md`), the
+  validation status heading is v0.6, and the courtship enrichment sentence matches its table
+  (4.3–18.6×).
+
+### Tools
+
+- **`flymsg wiring-null`**: N1's shuffle (`wiring.shuffle_targets`, seed 0). `--stats` prints
+  self-loops and duplicate pairs and does not simulate. Without `--stats` the command runs
+  criterion v4 on the traced graph and on the shuffle, at the default `w_syn` and `th_jump`,
+  seeds 0–2, and writes `runs/n1-real.csv` and `runs/n1-shuffle.csv`. No flag changes the
+  seed or the weights.
+
 ## 0.6.0 — 2026-09-23
 
 ### Results
