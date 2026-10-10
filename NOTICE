@@ -1,0 +1,10 @@
+flymsg
+Copyright (c) 2026 Gianluca Mazza
+
+The flymsg code is licensed under the MIT License (see LICENSE).
+
+This license covers the flymsg code. It does not cover:
+- the connectome data it downloads: MaleCNS v1.0 (Janelia FlyEM + Google, CC-BY 4.0) and
+  FlyWire FAFB v783 annotations and connectivity (see docs/data.md for sources and citations);
+- vendored browser libraries in src/flymsg/viz_static/vendor/ (three.js and lil-gui, MIT,
+  their own LICENSE files).
