@@ -19,11 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-This license covers the flymsg code. It does not cover:
-- the connectome data it downloads: MaleCNS v1.0 (Janelia FlyEM + Google, CC-BY 4.0) and
-  FlyWire FAFB v783 annotations and connectivity (see docs/data.md for sources and citations);
-- vendored browser libraries in src/flymsg/viz_static/vendor/ (three.js and lil-gui, MIT,
-  their own LICENSE files).
