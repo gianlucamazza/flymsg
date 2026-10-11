@@ -24,6 +24,8 @@ EXTERNAL = {
     "LICENSE": f"{BLOB}/LICENSE",
     "NOTICE": f"{BLOB}/NOTICE",
     "CITATION.cff": f"{BLOB}/CITATION.cff",
+    "validation/preregistration.yaml": f"{BLOB}/validation/preregistration.yaml",
+    "../validation/preregistration.yaml": f"{BLOB}/validation/preregistration.yaml",
 }
 
 # (output stem, source path, nav label). Order is the site nav.
@@ -32,6 +34,8 @@ PAGES = (
     ("data", "docs/data.md", "Data"),
     ("model", "docs/model.md", "Model"),
     ("validation", "docs/validation.md", "Validation"),
+    ("nulls", "docs/nulls.md", "Nulls"),
+    ("provenance", "docs/provenance.md", "Provenance"),
     ("comparison", "docs/comparison.md", "Comparison"),
     ("dimorphism", "docs/dimorphism.md", "Dimorphism"),
     ("related", "docs/related.md", "Related"),

@@ -16,6 +16,11 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   the `stability` check of every case: activity still dies out. All 7 `specific` checks
   fail on the shuffle. `positive`, `order`, `dose` and `negative` fail too. `w_syn` stays
   0.192. The permutation was not replaced.
+- **Null families** (protocol v1, [nulls](nulls.md)). Four shuffle families, each with a
+  locked draw count (2 in CI, 20 for the confirmatory command). The score is signed
+  pathway weight (`sum` and `max`), not a redraw of N1. Hypotheses, metrics, thresholds
+  and families are in [`validation/preregistration.yaml`](../validation/preregistration.yaml).
+  A confirmatory run that leaves those values fails unless the file version is bumped.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

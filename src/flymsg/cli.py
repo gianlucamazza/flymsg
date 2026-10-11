@@ -3,12 +3,26 @@ import json
 import os
 import sys
 import urllib.parse
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from flymsg import compare, data, dimorphism, graph, quality, sim, validate, viz, wiring
+from flymsg import (
+    compare,
+    data,
+    dimorphism,
+    graph,
+    manifest,
+    nulls,
+    prereg,
+    quality,
+    sim,
+    validate,
+    viz,
+    wiring,
+)
 
 NG = "https://neuroglancer-demo.appspot.com/#!"
 
@@ -127,7 +141,22 @@ def summarize(
     return out[out["p_active"] > 0].sort_values("hz", ascending=False).round(2)
 
 
+def _stamp(out, command, a, neurons, edges, config, seeds, started, extra=None):
+    """Write a run manifest next to this command's outputs."""
+    dataset_dir = a.data / "fafb" if a.dataset == "fafb" else a.data
+    manifest.write(
+        out,
+        command=command,
+        config=config,
+        seeds=seeds,
+        dataset=manifest.dataset_info(a.dataset, a.data, neurons, edges),
+        started_at=started,
+        extra={"data_dir": os.fspath(dataset_dir), **(extra or {})},
+    )
+
+
 def cmd_sim(a, neurons, edges):
+    started = datetime.now(UTC)
     stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.stim]))
     params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
     W = sim.network(neurons, edges, params)
@@ -151,10 +180,29 @@ def cmd_sim(a, neurons, edges):
             ["bodyId", "type", "instance", "superclass", "rate"]
         ].to_csv(a.out, index=False)
         print(f"per-neuron stimulus-window rates (mean over seeds) -> {a.out}")
+        _stamp(
+            a.out.parent,
+            "sim",
+            a,
+            neurons,
+            edges,
+            {
+                "stim": list(a.stim),
+                "rate": a.rate,
+                "duration": a.duration,
+                "stim_ms": a.stim_ms,
+                "w_syn": params.w_syn,
+                "th_jump": params.th_jump,
+            },
+            {"seed0": a.seed, "seeds": a.seeds},
+            started,
+            extra={"out": os.fspath(a.out)},
+        )
 
 
 def cmd_wiring_null(a, neurons, edges):
     """N1. Parameters and seeds are the pre-registered ones; there is no flag to change them."""
+    started = datetime.now(UTC)
     shuffled, stats = wiring.shuffle_targets(edges)
     print(
         f"shuffle seed {wiring.SHUFFLE_SEED}: {stats['n_edges']:,} edges,"
@@ -165,6 +213,9 @@ def cmd_wiring_null(a, neurons, edges):
     if a.stats:
         return
     params = sim.Params()
+    prereg.assert_run_matches(
+        prereg.run_config(params.w_syn, params.th_jump, wiring.N1_SEEDS)
+    )
     print(
         f"criterion v4, w_syn={params.w_syn} th_jump={params.th_jump},"
         f" seeds 0..{wiring.N1_SEEDS - 1}, real graph then shuffle"
@@ -184,10 +235,31 @@ def cmd_wiring_null(a, neurons, edges):
     print("shuffle still passes:")
     print(still.to_string(index=False) if len(still) else "(none)")
     print(wiring.verdict(wiring.confirmatory(real, shuf)))
+    _stamp(
+        out,
+        "wiring-null",
+        a,
+        neurons,
+        edges,
+        {
+            "family": "degree_preserving",
+            "w_syn": params.w_syn,
+            "th_jump": params.th_jump,
+            "preregistration": prereg.load()["version"],
+        },
+        {"shuffle_seed": wiring.SHUFFLE_SEED, "seeds": wiring.N1_SEEDS},
+        started,
+        extra={"stats": stats},
+    )
 
 
 def cmd_validate(a, neurons, edges):
+    started = datetime.now(UTC)
     params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
+    prereg.assert_run_matches(
+        prereg.run_config(params.w_syn, params.th_jump, a.seeds),
+        exploratory=a.exploratory,
+    )
     print(
         f"w_syn={params.w_syn} th_jump={params.th_jump}, {a.seeds} seed(s) per run ..."
     )
@@ -195,6 +267,24 @@ def cmd_validate(a, neurons, edges):
     print(report.round(1).to_string(index=False))
     failed = int((~report["passed"]).sum())
     print(f"\n{len(report) - failed}/{len(report)} checks passed")
+    out = a.out or Path("runs/validate")
+    out.mkdir(parents=True, exist_ok=True)
+    report.to_csv(out / "report.csv", index=False)
+    _stamp(
+        out,
+        "validate",
+        a,
+        neurons,
+        edges,
+        {
+            "w_syn": params.w_syn,
+            "th_jump": params.th_jump,
+            "exploratory": a.exploratory,
+            "preregistration": prereg.load()["version"],
+        },
+        {"seeds": a.seeds, "seed0": 0, "control_seed": 0},
+        started,
+    )
     if failed:
         sys.exit(1)
 
@@ -254,9 +344,54 @@ def cmd_audit(a, neurons, edges):
     print(flagged.head(a.top).round(2).to_string())
 
 
+def cmd_nulls(a, neurons, edges):
+    """Pre-registered multi-draw null families. Default draw count is the CI value."""
+    started = datetime.now(UTC)
+    locked = prereg.load()
+    draws = locked["nulls"]["draws_full"] if a.full else a.draws
+    families = tuple(a.families) if a.families else nulls.FAMILIES
+    params = sim.Params()
+    prereg.assert_run_matches(
+        prereg.run_config(params.w_syn, params.th_jump, draws=draws),
+        exploratory=a.exploratory,
+    )
+    print(
+        f"{len(families)} families x {draws} draws, "
+        f"w_syn={params.w_syn} th_jump={params.th_jump} ..."
+    )
+    results = nulls.run_all(neurons, edges, draws, families, a.seed0)
+    text = nulls.format_report(results)
+    print(text)
+    out = a.out or Path("runs/nulls")
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "report.txt").write_text(text + "\n", encoding="utf-8")
+    for family, got in results.items():
+        got["headline"].to_csv(out / f"{family}-headline.csv", index=False)
+        for metric, table in got["by_metric"].items():
+            table.to_csv(out / f"{family}-{metric}.csv", index=False)
+        got["real"].to_csv(out / f"{family}-real.csv", index=False)
+    _stamp(
+        out,
+        "nulls",
+        a,
+        neurons,
+        edges,
+        {
+            "families": list(families),
+            "w_syn": params.w_syn,
+            "th_jump": params.th_jump,
+            "preregistration": locked["version"],
+            "full": a.full,
+        },
+        {"seed0": a.seed0, "draws": draws},
+        started,
+    )
+
+
 def cmd_select_model(a, neurons, edges):
     """Pre-registered selection between the calibrated model (A) and the published model at
     MaleCNS synapse density without compensation (B); B-/B+ are sensitivity variants."""
+    started = datetime.now(UTC)
     fafb = data.load(a.data, "fafb")
     rho, n_types = compare.synapse_density_ratio((neurons, edges), fafb)
     lo, hi = a.rho_range
@@ -293,10 +428,27 @@ def cmd_select_model(a, neurons, edges):
     print("\n" + ", ".join(f"{k} {v}/{total}" for k, v in passed.items()))
     winner = validate.select_model(passed, eligible, tie_break)
     print(f"winner (pre-registered rule): {winner}")
+    if a.out:
+        _stamp(
+            a.out,
+            "select-model",
+            a,
+            neurons,
+            edges,
+            {
+                "replication": a.replication,
+                "th_jump_a": a.th_jump_a,
+                "rho_range": list(a.rho_range),
+                "winner": winner,
+            },
+            {"seed0": a.seed0, "seeds": a.seeds, "control_seed": a.control_seed},
+            started,
+        )
 
 
 def cmd_compare(a, neurons, edges):
     """Regenerate the male-vs-female numbers of docs/comparison.md."""
+    started = datetime.now(UTC)
     male, female = (neurons, edges), data.load(a.data, "fafb")
     rho, n_types = compare.synapse_density_ratio(male, female)
     print(f"synapse density male/female: {rho:.2f} over {n_types} matched types")
@@ -324,6 +476,16 @@ def cmd_compare(a, neurons, edges):
             .round(1)
             .to_string(index=False)
         )
+    _stamp(
+        a.out,
+        "compare",
+        a,
+        neurons,
+        edges,
+        {"sex": a.sex, "fingerprint": a.fingerprint, "lb3_split": a.lb3_split},
+        {"seeds": a.seeds},
+        started,
+    )
 
 
 def _write(table, path) -> None:
@@ -365,6 +527,7 @@ def cmd_dimorphism(a, neurons, edges):
 
 
 def cmd_calibrate(a, neurons, edges):
+    started = datetime.now(UTC)
     n = len(a.w_syn) * len(a.th_jump)
     print(
         f"{n} parameter sets x {len(validate.CASES) * (1 + len(validate.DOSE_RATES_HZ))} runs"
@@ -374,9 +537,21 @@ def cmd_calibrate(a, neurons, edges):
     print(table.to_string(index=False))
     if a.out:
         table.to_csv(a.out, index=False)
+        _stamp(
+            a.out.parent,
+            "calibrate",
+            a,
+            neurons,
+            edges,
+            {"w_syn": list(a.w_syn), "th_jump": list(a.th_jump)},
+            {"seeds": a.seeds},
+            started,
+            extra={"out": os.fspath(a.out)},
+        )
 
 
 def cmd_viz(a, neurons, edges):
+    started = datetime.now(UTC)
     result = None
     if a.types:
         parts = [data.resolve(neurons, q) for q in a.types]
@@ -400,6 +575,24 @@ def cmd_viz(a, neurons, edges):
         f"{len(scene['neurons'])} neurons exported to {a.out}/ (geometry streams from GCS)\n"
         f"view: python -m http.server -d {a.out} 8000  ->  http://localhost:8000"
     )
+    _stamp(
+        a.out,
+        "viz",
+        a,
+        neurons,
+        edges,
+        {
+            "types": a.types,
+            "path": a.path,
+            "sim": a.sim,
+            "rate": a.rate,
+            "duration": a.duration,
+            "stim_ms": a.stim_ms,
+        },
+        {"seed": a.seed},
+        started,
+        extra={"n_exported": len(scene["neurons"])},
+    )
 
 
 COMMANDS = {
@@ -414,10 +607,19 @@ COMMANDS = {
     "audit": cmd_audit,
     "viz": cmd_viz,
     "wiring-null": cmd_wiring_null,
+    "nulls": cmd_nulls,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
-MALECNS_ONLY = ("validate", "calibrate", "compare", "dimorphism", "viz", "wiring-null")
+MALECNS_ONLY = (
+    "validate",
+    "calibrate",
+    "compare",
+    "dimorphism",
+    "viz",
+    "wiring-null",
+    "nulls",
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -497,11 +699,50 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the shuffle census and stop, without simulating",
     )
     s = sub.add_parser(
+        "nulls",
+        help="pre-registered null families (CI draw count by default; --full for 20)",
+    )
+    locked = prereg.load()
+    s.add_argument(
+        "--draws",
+        type=int,
+        default=locked["nulls"]["draws_ci"],
+        help="seeded draws per family (default: CI count "
+        f"{locked['nulls']['draws_ci']}; full protocol is "
+        f"{locked['nulls']['draws_full']})",
+    )
+    s.add_argument(
+        "--full",
+        action="store_true",
+        help=f"use the pre-registered full draw count ({locked['nulls']['draws_full']})",
+    )
+    s.add_argument(
+        "--families",
+        nargs="+",
+        choices=list(nulls.FAMILIES),
+        help="subset of families (default: all four)",
+    )
+    s.add_argument("--seed0", type=int, default=0, help="first shuffle seed")
+    s.add_argument("--out", type=Path, default=Path("runs/nulls"))
+    s.add_argument(
+        "--exploratory",
+        action="store_true",
+        help="allow a draw count that is not the locked CI or full value",
+    )
+    s = sub.add_parser(
         "validate", help="run the validation battery (known circuits + controls)"
     )
     s.add_argument("--seeds", type=int, default=3)
     s.add_argument("--w-syn", type=float, default=sim.Params.w_syn)
     s.add_argument("--th-jump", type=float, default=sim.Params.th_jump)
+    s.add_argument(
+        "--out", type=Path, help="directory for report.csv and manifest.json"
+    )
+    s.add_argument(
+        "--exploratory",
+        action="store_true",
+        help="allow w_syn, th_jump or seeds that differ from the preregistration",
+    )
     s = sub.add_parser(
         "audit",
         help="reconstruction completeness: left/right asymmetry of bilateral types",
@@ -654,6 +895,8 @@ def main() -> None:
     except OSError as err:  # missing data files, failed downloads
         sys.exit(f"flymsg: {err}")
     except dimorphism.CheckpointMismatch as err:
+        sys.exit(f"flymsg: {err}")
+    except prereg.PreregistrationError as err:
         sys.exit(f"flymsg: {err}")
     except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")

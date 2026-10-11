@@ -97,6 +97,10 @@ self-sustained activity still dies out. All **7/7** `specific` checks fail on th
 so the confirmatory rule holds. `positive`, `order`, `dose` and `negative` fail on the
 shuffle as well. `w_syn` stays 0.192. The permutation was not replaced.
 
+Multi-draw families (degree-preserving, cell-type-preserving, weight-within-type, sign)
+are a separate protocol. They do not replace this one-draw comparison. See
+[nulls](nulls.md).
+
 ## Already open
 
 T3 was run on 2026-10-11. The chain is supported; the counts and p-values are in
