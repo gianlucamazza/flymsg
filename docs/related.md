@@ -3,11 +3,7 @@
 flymsg asks whether the measured MaleCNS wiring, under the fixed LIF model of Shiu et al.
 (_Nature_ 2024; parameters in [model](model.md#parameters)), recruits circuits whose function
 is known from experiments. The checks are criterion v4 in [validation](validation.md#protocol).
-Integration stays at `dt` = 0.1 ms. A 2.5 ms tick described for the embodied BANC model below
-(correspondence, 2026-10-10) is not a flymsg variant.
-
-Read on 2026-10-10. Pages on `theuploadinglab.ai` say they are updated from a research
-repository, so a later edit can move a number.
+Integration stays at `dt` = 0.1 ms.
 
 ## MaleCNS counts
 
@@ -17,23 +13,11 @@ annotation table holds **211,577** bodies. `flymsg build` keeps the **165,122** 
 synapses. The dropped bodies are orphans, glia, fragments and unassigned segments. Both
 rows are the compaction table in [data](data.md#compaction-flymsg-build).
 
-The Uploading Lab's hall of fame lists a male whole CNS of 211,577 neurons ("MCNS male
-number two") beside BANC. That figure is the raw body table, not a second animal and not
-the traced graph.
-
-<https://theuploadinglab.ai/fly/hall-of-fame>
-
 ## BANC
 
 Bates et al. (_Nature_ 2026, doi:10.1038/s41586-026-10735-w) map one female central nervous
 system, brain and ventral nerve cord together (BANC). The paper reports **150,841** neurons
 brought to backbone-proofread status. That count was read from the article's methods.
-
-The Uploading Lab's null-test page states a model of **188,508** neurons and **13,620,865**
-weighted connections. Those two figures are theirs. They were not found in the methods
-passage that gives 150,841.
-
-<https://theuploadinglab.ai/fly/null-tests>
 
 flymsg has no BANC loader. Sex comparisons stay on MaleCNS against FlyWire FAFB, as in
 [comparison](comparison.md).
@@ -44,23 +28,6 @@ Vaxenburg et al. (_Nature_ 2025, doi:10.1038/s41586-025-09029-4) publish a whole
 _Drosophila_ in MuJoCo. FlyBody (TuragaLab) is the open-source model:
 
 <https://github.com/TuragaLab/flybody>
-
-The Uploading Lab's site says the BANC network above drives **42 leg degrees of freedom**
-in a simulated body with sensory feedback, and that the demo has no learned controller.
-Forty-two is their count of leg degrees of freedom, not a measurement made here. flymsg
-stops at the nervous system. It does not run that body, and the clips are not evidence in
-this repository.
-
-<https://theuploadinglab.ai/>
-
-## Their wiring null, as they report it
-
-On the null-test page the current BANC champion (`wi1`, 56 settings on top of the wiring)
-stands and steps on **8 of 12** seeds. Two shuffles of the same connection table, same
-neuron models, same body and same seeds, stand and step on **0 of 12**: one keeps each
-neuron's in- and out-degree, the other keeps cell-type to cell-type counts. The page says
-both are screens, and that the full pre-registered comparison (their stage 5) is still to
-come. This paragraph records that claim. It is not a flymsg result.
 
 ## N1 — specific checks need the measured partners
 
