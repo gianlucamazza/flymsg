@@ -10,6 +10,12 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
 - **Criterion v4, 29/29 with the defaults** (`w_syn` 0.192, no adaptive threshold) at seeds
   0–2, at seeds 0–9 (model selection) and at fresh seeds 10–19 with fresh control draws
   (replication).
+- **N1** (2026-10-11, [related](related.md#n1-specific-checks-need-the-measured-partners)).
+  One degree-preserving shuffle of `post`, seed 0, the same defaults and criterion v4,
+  seeds 0–2. The traced graph passes 29/29. The shuffle passes 5/29, and those five are
+  the `stability` check of every case: activity still dies out. All 7 `specific` checks
+  fail on the shuffle. `positive`, `order`, `dose` and `negative` fail too. `w_syn` stays
+  0.192. The permutation was not replaced.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency
