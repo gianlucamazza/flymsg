@@ -175,6 +175,28 @@ through is an open question**; the two neurons named in v0.5 are not the answer,
 whole answer. AVLP717m (fru+) relays part of P1's drive to pIP10. These per-type numbers come
 from a scan without a null and are indications, unlike T1 and T2.
 
+**T4, pre-registered before any new per-type run** (fixed 2026-10-11, before running it, and
+without T3's outcome). T3's sets stay the ones fixed on 2026-09-23. This test does not split
+them, and it is not part of the T3 command.
+
+The bold claims in the table are dMS9's rise of dPR1 and AVLP717m's drop of pIP10 after P1.
+dMS9 is T2, already decided. vMS12_a belongs to T3's vMS12 set and does not get a second
+confirmatory test. vPR9_a sits in T2's rejected inhibitory set; vPR9_c is the other half of
+that row and is not promoted because its indication goes up. The TN1a range is not a claim
+about one subtype. Every other fru/dsx+ responder type in `runs/silencing-by-type-*.txt`
+stays an indication.
+
+One confirmatory type: **AVLP717m** (2 neurons). The null is the T2/T3 null: as many of the
+case's own responders, matched on superclass and transmitter sign, never the stimulus, the
+targets or the tested neurons. 1,000 draws, 3 seeds, 100 Hz, 300 ms, defaults only (`w_syn`
+0.192, `th_jump` 0; do not pass `--w-syn`). The one confirmatory test is a drop of pIP10
+after P1, p ≤ 0.05. Both courtship cases are run; the silencing after pIP10, and AVLP717m's
+effect on dPR1, are reported and do not change the verdict. A failure is a finding.
+
+```sh
+bg uv run flymsg dimorphism --loop t4 --null 1000 --checkpoint runs/t4-loop.ckpt.jsonl
+```
+
 ## Pre-registered tests (v0.6, fixed 2026-09-22 before running)
 
 The silencing results above are indications: 100 null draws cannot reach a Bonferroni
@@ -233,6 +255,7 @@ lowered dPR1 by 9 %, and IN00A038 was never tested (it is not fru+).
 - Annotations, not measurements: `fruDsx` and `dimorphism` are the release's best calls; the
   "potentially" levels are included.
 - Enrichment says where the simulated activity goes. Silencing tests necessity with 1,000
-  null draws: the T1 null matches superclass, and the T2 and T3 null matches the case's
-  responders, superclass and transmitter sign. The per-type scan still has no null.
+  null draws: the T1 null matches superclass, and the T2, T3 and T4 null matches the case's
+  responders, superclass and transmitter sign. The per-type table above was run with no null.
+  T4 is the pre-registered null for the one bold claim that T2 and T3 do not already test.
 - Neither null matches proximity to the stimulus.

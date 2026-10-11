@@ -566,7 +566,7 @@ def build_parser() -> argparse.ArgumentParser:
         const="t2",
         choices=sorted(dimorphism.LOOP_PRESETS),
         help="instead: silence a pre-registered set of cell types vs matched responders"
-        " (t2: the v0.5 loop; t3: the route it pointed to)",
+        " (t2: the v0.5 loop; t3: the route it pointed to; t4: AVLP717m)",
     )
     s.add_argument("--null", type=int, default=1000, help="random silencings per test")
     s.add_argument(

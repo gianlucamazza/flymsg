@@ -472,9 +472,10 @@ def _param_meta(p: sim.Params) -> dict:
 
 # the predicted feedback loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1 (docs/dimorphism.md)
 LOOP_CASES = ("pIP10 song pathway", "P1 courtship drive")
-# T2 (v0.5's predicted loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1) and T3 (the route the
-# T2 result pointed to, dMS9 -> vMS12 -> IN03B024 -> dPR1). Both are pre-registered in
-# docs/dimorphism.md; the sets not named as confirmatory there are descriptive.
+# T2 (v0.5's predicted loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1), T3 (the route the
+# T2 result pointed to, dMS9 -> vMS12 -> IN03B024 -> dPR1) and T4 (AVLP717m relays P1's
+# drive to pIP10). All three are pre-registered in docs/dimorphism.md; the sets not named
+# as confirmatory there are descriptive. T4's list was fixed without T3's outcome.
 LOOP_SETS = {
     "dMS9": ("dMS9",),
     "inhibitory feedback": ("vPR9_a", "IN00A038"),
@@ -485,8 +486,13 @@ T3_SETS = {
     "vMS12": ("vMS12_a", "vMS12_b", "vMS12_c"),
     "dMS9 + IN03B024": ("dMS9", "IN03B024"),
 }
-LOOP_PRESETS = {"t2": LOOP_SETS, "t3": T3_SETS}
-CONFIRMATORY_SETS = {"t2": ("dMS9", "inhibitory feedback"), "t3": ("IN03B024", "vMS12")}
+T4_SETS = {"AVLP717m": ("AVLP717m",)}
+LOOP_PRESETS = {"t2": LOOP_SETS, "t3": T3_SETS, "t4": T4_SETS}
+CONFIRMATORY_SETS = {
+    "t2": ("dMS9", "inhibitory feedback"),
+    "t3": ("IN03B024", "vMS12"),
+    "t4": ("AVLP717m",),
+}
 
 
 def confirmatory_jobs(sets: dict) -> list[tuple[str, str]]:

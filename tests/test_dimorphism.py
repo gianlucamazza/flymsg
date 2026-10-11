@@ -7,6 +7,20 @@ import pytest
 from flymsg import dimorphism, sim
 
 
+def test_t4_confirms_avlp717m_in_both_courtship_cases_and_leaves_t3_alone():
+    jobs = dimorphism.confirmatory_jobs(dimorphism.T4_SETS)
+    assert jobs == [
+        ("pIP10 song pathway", "AVLP717m"),
+        ("P1 courtship drive", "AVLP717m"),
+    ]
+    assert dimorphism.confirmatory_jobs(dimorphism.T3_SETS) == [
+        ("pIP10 song pathway", "IN03B024"),
+        ("pIP10 song pathway", "vMS12"),
+        ("P1 courtship drive", "IN03B024"),
+        ("P1 courtship drive", "vMS12"),
+    ]
+
+
 def test_responders_need_most_seeds_and_exclude_the_stimulus():
     def result(fired):
         counts = np.array([fired], dtype=np.uint16)

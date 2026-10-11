@@ -100,4 +100,6 @@ shuffle as well. `w_syn` stays 0.192. The permutation was not replaced.
 ## Already open
 
 T3, the route by which dMS9 restrains dPR1, is already pre-registered in
-[dimorphism](dimorphism.md) and noted in the changelog. This note does not restate it.
+[dimorphism](dimorphism.md) and noted in the changelog. T4, whether AVLP717m relays P1's
+drive to pIP10, is pre-registered in the same note and is not part of the T3 run. This note
+does not restate either rule.
