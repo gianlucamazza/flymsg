@@ -76,6 +76,9 @@ class Result:
     first_spike_ms: np.ndarray  # (n,) latency of the first spike, NaN if silent
     bin_ms: float
     stim_ms: float
+    traced: np.ndarray | None = (
+        None  # (steps, n_trace) spike bits; None if not requested
+    )
 
     @property
     def duration_ms(self) -> float:
@@ -94,6 +97,14 @@ class Result:
         return np.flatnonzero(self.rate(t0) > 0)
 
 
+def poisson_kicks(
+    seed: int, rate_hz: float, dt_ms: float, n_steps: int, n_stim: int
+) -> np.ndarray:
+    """The open-loop Poisson draw. One Generator, one call, so a shorter slice is the prefix."""
+    rng = np.random.default_rng(seed)
+    return rng.poisson(rate_hz * dt_ms / 1000.0, (n_steps, n_stim))
+
+
 def run(
     W: sparse.csc_matrix,
     stim: np.ndarray,
@@ -104,16 +115,31 @@ def run(
     seed: int = 0,
     bin_ms: float = 10.0,
     silence: np.ndarray | None = None,
+    kicks: np.ndarray | None = None,
+    trace: np.ndarray | None = None,
 ) -> Result:
     """Simulate; stimulation lasts `stim_ms` (default: the whole run). Neurons in `silence`
     never fire, so they transmit nothing: for the rest of the network this equals zeroing
-    their outgoing synapses, as Shiu et al. silence neurons."""
+    their outgoing synapses, as Shiu et al. silence neurons.
+
+    `kicks` replaces the seeded draw: shape (steps, n_stim), applied in order. `trace` records
+    every spike step of those neurons, in the order given. The recording is written after the
+    spike bookkeeping and does not enter the state update.
+    """
     p = p or Params()
     stim = np.unique(stim)  # duplicates would be dropped by fancy-index +=
-    rng = np.random.default_rng(seed)
     n = W.shape[0]
     steps = int(duration_ms / p.dt)
-    stim_steps = steps if stim_ms is None else int(stim_ms / p.dt)
+    if kicks is None:
+        stim_steps = steps if stim_ms is None else int(stim_ms / p.dt)
+        kicks = poisson_kicks(seed, rate_hz, p.dt, stim_steps, int(stim.size))
+    else:
+        kicks = np.asarray(kicks)
+        if kicks.ndim != 2 or kicks.shape[1] != stim.size:
+            raise ValueError("kicks must have one column per stimulated neuron")
+        if kicks.shape[0] > steps:
+            raise ValueError("kicks are longer than the run")
+        stim_steps = kicks.shape[0]
     per_bin = max(1, round(bin_ms / p.dt))
     if steps % per_bin:
         raise ValueError(f"duration_ms must be a multiple of bin_ms ({bin_ms})")
@@ -124,8 +150,19 @@ def run(
     silent = np.zeros(n, dtype=np.bool_)
     if silence is not None:
         silent[silence] = True
-    # all Poisson input up front: the same draws, in the same order, as one call per step
-    kicks = rng.poisson(rate_hz * p.dt / 1000.0, (stim_steps, stim.size))
+    trace_col = np.full(n, -1, dtype=np.int32)
+    if trace is None:
+        traced = np.zeros((steps, 1), dtype=np.uint8)
+        keep_trace = None
+    else:
+        requested = np.asarray(trace, dtype=np.int64).reshape(-1)
+        _, first_at = np.unique(requested, return_index=True)
+        trace = requested[np.sort(first_at)]
+        if trace.size == 0 or np.any(trace < 0) or np.any(trace >= n):
+            raise ValueError("trace indices are outside the network")
+        trace_col[trace] = np.arange(trace.size, dtype=np.int32)
+        traced = np.zeros((steps, trace.size), dtype=np.uint8)
+        keep_trace = traced
     em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
     gv = p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)  # from the float64 decays
     counts, first = _kernel(
@@ -149,19 +186,22 @@ def run(
         np.float32(p.v_rest),
         np.float32(p.v_th),
         np.float32(p.poisson_scale * p.w_syn),
+        trace_col,
+        traced,
     )
     return Result(
         counts=counts,
         first_spike_ms=np.where(first >= 0, first * p.dt, np.nan),
         bin_ms=per_bin * p.dt,
         stim_ms=stim_steps * p.dt,
+        traced=keep_trace,
     )
 
 
 @numba.njit(cache=True)
 def _kernel(
     indptr, indices, data, n, steps, per_bin, d, ref_steps, stim, kicks, is_stim, silent,
-    jump, em, es, gv, decay_th, v_rest, v_th, kick,
+    jump, em, es, gv, decay_th, v_rest, v_th, kick, trace_col, traced,
 ):  # fmt: skip
     """One simulation. Same operations, order and float32/float64 rounding as the NumPy
     reference (tests/reference_sim.py), so the spikes are identical:
@@ -235,5 +275,8 @@ def _kernel(
             if first[i] < 0:
                 first[i] = t
             ring[slot, k] = i
+            col = trace_col[i]
+            if col >= 0:
+                traced[t, col] = 1
         ring_len[slot] = ns
     return counts, first

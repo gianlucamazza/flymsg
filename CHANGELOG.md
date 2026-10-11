@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.6 — 2026-10-11
+
+### Results
+
+- **The one-bit looming jump fails silence.** `TTMn_R` jumps on time in 3/3 seeds
+  (43.0, 50.7, 47.8 ms), the drive cuts on that spike, and the prefix matches the
+  open loop. With both DNp01 neurons silenced, `TTMn_R` still emits 3 spikes in
+  every seed (third spike 154.8, 145.1, 115.6 ms) and the drive is then cut.
+  Closed-loop stability is 0 neurons still firing from 400 to 600 ms and does not
+  decide. The loop took 90.5 s. `w_syn` stayed 0.192. The protocol was not edited.
+
 ## 0.8.5 — 2026-10-11
 
 ### Validation

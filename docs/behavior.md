@@ -1,16 +1,47 @@
 # One-bit looming jump
 
 Issue #8 asks for one closed loop in which an action changes the sensory input
-that follows it. This note freezes that task on 2026-10-11, before any
-closed-loop simulation. The lock is
+that follows it. This note freezes that task on 2026-10-11. The lock is
 [`validation/behavior.yaml`](../validation/behavior.yaml) (version 1). Changing
 the task, the body, a deciding check, or a FlyBody number requires a new
 version.
 
 `flymsg behavior` prints the protocol and returns before loading the
-connectome. There is no `--run` switch in this version. Criterion v4, N1, and
+connectome. `flymsg behavior --run` executes that loop at the default
+parameters. Criterion v4, N1, and
 [`validation/benchmarks.yaml`](../validation/benchmarks.yaml) stay as they are.
 The looming case is not added again to `validate.CASES`.
+
+## Result (2026-10-11)
+
+The closed loop fails. `w_syn` stayed 0.192 and `th_jump` stayed 0. Seeds 0–2.
+The protocol file was not edited after the numbers. The run started from commit
+`96cee3b` with the runner still uncommitted, so the manifest records that
+commit as dirty. The loop itself took 90.5 s. Same MaleCNS tables as the
+held-out run.
+
+| Check           | Result                                                                                                                                              |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jump`          | pass. `t_jump_ms` is 43.0, 50.7 and 47.8 ms, so 3/3 seeds are inside 300 ms. The median is 47.8 ms                                                  |
+| `feedback`      | pass. The drive stops on the step after the third `TTMn_R` spike. The closed stimulus is 431, 508 and 479 steps                                     |
+| `decoder_match` | pass. Spike times through `t_jump` match the open loop: 17.0/29.8/43.0, 17.2/31.4/50.7 and 17.1/30.8/47.8 ms                                        |
+| `silence`       | fail. With both `DNp01` silenced, `TTMn_R` still emits 3 spikes, at 65.6/110.2/154.8, 68.5/100.1/145.1 and 62.4/89.2/115.6 ms, and the drive is cut |
+
+Jump, feedback, and the decoder prefix hold. Silencing both giant-fiber neurons
+does not keep `TTMn_R` at or below 2 spikes. The third spike is later than in
+the intact loop, and it still arrives inside the 300 ms drive, so the jump rule
+cuts that drive. That is the finding. It is not a retune.
+
+With the drive left on, each seed has 22 `TTMn_R` spikes. With the cut, the
+closed loop stops at the three spikes above. `DNp01(GF)_R` fires first, at 4.8,
+4.9 and 5.1 ms, and `DNp01(GF)_L` at 12.4, 12.9 and 12.5 ms, both before
+`TTMn_R`. On the closed loop, no neuron is still firing from 400 ms to 600 ms.
+The v4 limit of 100 does not decide, and these rows do not rescue silence.
+The times are the model under a 100 Hz Poisson drive. They are not a takeoff
+latency.
+
+`gf_required_for_the_jump_bit` stays `unverified`. The silence arm is the
+model. It does not test the animal.
 
 ## Task
 
@@ -202,11 +233,11 @@ after that result. `wiring.draw` is false.
 
 `gf_required_for_the_jump_bit` is unverified. The statement is that silencing
 both giant-fiber neurons keeps `TTMn_R` below 3 spikes while `LC4_R` is driven
-at 100 Hz for 300 ms. The silence arm will test that statement in the model.
-It does not test the animal. The animal evidence already cited for the circuit
-is von Reyn et al. 2014 and King and Wyman 1980. Until an independent animal
-measurement is brought in under a new version, the prediction stays
-`unverified` and `tests_animal: false`.
+at 100 Hz for 300 ms. The silence arm tested that statement in the model and failed: `TTMn_R` still
+reaches 3 spikes. The arm does not test the animal. The animal evidence already
+cited for the circuit is von Reyn et al. 2014 and King and Wyman 1980. Until an
+independent animal measurement is brought in under a new version, the prediction
+stays `unverified` and `tests_animal: false`.
 
 The equality of the closed-loop prefix and the open-loop prefix is the
 `decoder_match` check. It is a property of this decoder. It is not a biological
@@ -215,11 +246,11 @@ prediction.
 ## Limits
 
 - One bit on one calibration circuit. Scope stays there.
-- An animation of the bit is not acceptance. Acceptance is the four checks above, after a run that this version does not start.
+- An animation of the bit is not acceptance. Acceptance is the four checks above. The run fails silence.
 - No full-body fidelity is claimed, and no subjective experience is claimed.
 - No learned controller is added, and its contribution is not estimated because it is absent.
 - The Poisson rate is not a loom waveform.
 - The model has no gap junction on the giant fiber.
 - FlyBody's flight physics step is ineligible under the coupling rule. Its walking steps are eligible only as a documented later option.
-- Runtime and numerical stability of a closed loop are not measured here. The run, when it exists, records wall time and the reported stability count.
+- The loop took 90.5 s. The closed-loop count of neurons still firing from 400 ms to 600 ms is 0. That count does not decide.
 - A failure does not retune `w_syn` or `th_jump`, does not redraw N1, and does not edit the held-out manifest.

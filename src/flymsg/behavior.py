@@ -1,13 +1,18 @@
 """One-bit looming-jump protocol. The YAML file is the lock.
 
-`summary` only prints it. This version has no closed-loop runner.
+`summary` prints it. `run_loop` executes the frozen closed loop and does not
+edit the protocol, criterion v4, or N1.
 """
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
-from flymsg import prereg, sim, validate
+import numpy as np
+import pandas as pd
+
+from flymsg import data, prereg, sim, validate
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "behavior.yaml"
@@ -57,7 +62,7 @@ def assert_locked(doc: dict | None = None) -> dict:
 
 
 def assert_matches_code(doc: dict | None = None) -> dict:
-    """The scored bar is the live default model, and this stage cannot run."""
+    """The scored bar is the live default model."""
     doc = assert_locked() if doc is None else doc
     protocol = doc["protocol"]
     expected = {
@@ -148,7 +153,7 @@ def assert_matches_code(doc: dict | None = None) -> dict:
 
 
 def summary(doc: dict | None = None) -> str:
-    """The frozen task. No closed loop has been run from this protocol."""
+    """The frozen task and the recorded verdict. Printing it does not simulate."""
     doc = assert_matches_code() if doc is None else doc
     task = doc["task"]
     checks = ", ".join(doc["decides"])
@@ -156,5 +161,418 @@ def summary(doc: dict | None = None) -> str:
         f"behavior v{doc['version']}: {task['id']}; "
         f"{task['stimulus']} -> {task['motor']} ({checks}); "
         f"claim {doc['claim']['status']}; "
-        f"dt {doc['coupling']['neural_dt_ms']} ms; no body step; not run"
+        f"dt {doc['coupling']['neural_dt_ms']} ms; no body step; "
+        "calibration feasibility FAIL: silence"
     )
+
+
+def _idx(neurons: pd.DataFrame, query: str, expect: int, label: str) -> np.ndarray:
+    idx = data.resolve(neurons, query)
+    if idx.size != expect:
+        raise BehaviorError(
+            f"{label} {query} has {idx.size} neurons, the protocol says {expect}"
+        )
+    return idx
+
+
+def _spike_steps(result: sim.Result, column: int) -> np.ndarray:
+    if result.traced is None:
+        raise BehaviorError("the run did not record spikes")
+    return np.flatnonzero(result.traced[:, column])
+
+
+def _still_firing(result: sim.Result, t0_ms: float) -> int:
+    """Neurons with at least one spike from t0_ms to the end of the run."""
+    return int((result.rate(t0_ms) > 0).sum())
+
+
+def _simulate(W, stim, rate, duration, stim_ms, seed, trace, silence=None, kicks=None):
+    """One default-parameter run. An explicit kick matrix replaces `stim_ms`."""
+    return sim.run(
+        W,
+        stim,
+        rate,
+        duration,
+        None if kicks is not None else stim_ms,
+        sim.Params(),
+        seed,
+        silence=silence,
+        kicks=kicks,
+        trace=trace,
+    )
+
+
+def _row(arm, check, seed, value, note, passed, decides):
+    return {
+        "arm": arm,
+        "check": check,
+        "seed": seed,
+        "value": value,
+        "note": note,
+        "passed": passed,
+        "decides": decides,
+    }
+
+
+def assess(doc: dict, records: list[dict]) -> pd.DataFrame:
+    """Apply the frozen checks to one record per seed. No simulation."""
+    protocol = doc["protocol"]
+    if len(records) != protocol["seeds"]:
+        raise BehaviorError(
+            f"the protocol scores {protocol['seeds']} seeds, got {len(records)}"
+        )
+    dt = float(protocol["dt_ms"])
+    deadline = float(doc["decides"]["jump"]["deadline_ms"])
+    need = int(doc["decides"]["jump"]["min_seed_share_num"])
+    max_spikes = int(doc["decides"]["silence"]["max_spikes"])
+    full = int(protocol["stim_ms"] / dt)
+    rows = []
+    on_time = 0
+    feedback_ok = True
+    silence_ok = True
+    match_ok = True
+    persistent = []
+    jump_times = []
+    for rec in records:
+        seed = int(rec["seed"])
+        step = rec["jump_step"]
+        escaped = step is not None
+        timely = escaped and step * dt <= deadline + 1e-9
+        if timely:
+            on_time += 1
+        t_ms = None if step is None else step * dt
+        if t_ms is not None:
+            jump_times.append(t_ms)
+        rows.append(
+            _row(
+                "closed",
+                "jump",
+                seed,
+                t_ms if t_ms is not None else np.nan,
+                "on time" if timely else "no on-time jump",
+                bool(timely),
+                False,
+            )
+        )
+        if not escaped:
+            feedback = True
+            feedback_note = "no third spike; drive stays the open-loop window"
+            expected_steps = full
+        elif step >= full:
+            feedback = rec["closed_stim_steps"] == full
+            expected_steps = full
+            feedback_note = "third spike at or after the open-loop window"
+        else:
+            expected_steps = step + 1
+            feedback = rec["closed_stim_steps"] == expected_steps
+            feedback_note = (
+                f"stimulus steps {rec['closed_stim_steps']}, cut after step {step}"
+            )
+        feedback_ok = feedback_ok and feedback
+        rows.append(
+            _row(
+                "closed",
+                "feedback",
+                seed,
+                expected_steps,
+                feedback_note,
+                bool(feedback),
+                False,
+            )
+        )
+        if not escaped:
+            matched = True
+            match_note = "no jump"
+        else:
+            before = rec["open_spikes"][rec["open_spikes"] <= step]
+            closed_before = rec["closed_spikes"][rec["closed_spikes"] <= step]
+            matched = np.array_equal(before, closed_before)
+            match_note = f"{before.size} spike steps through t_jump"
+        match_ok = match_ok and matched
+        rows.append(
+            _row(
+                "closed",
+                "decoder_match",
+                seed,
+                np.nan,
+                match_note,
+                bool(matched),
+                False,
+            )
+        )
+        n_sil = int(np.asarray(rec["silence_spikes"]).size)
+        drive_cut = int(rec["silence_stim_steps"]) != full
+        sil_pass = n_sil <= max_spikes and not drive_cut
+        silence_ok = silence_ok and sil_pass
+        rows.append(
+            _row(
+                "silence",
+                "silence",
+                seed,
+                n_sil,
+                "drive cut" if drive_cut else "drive stays the open-loop window",
+                bool(sil_pass),
+                False,
+            )
+        )
+        persistent.append(int(rec["persistent"]))
+        rows.append(
+            _row(
+                "closed",
+                "latency",
+                seed,
+                t_ms if t_ms is not None else np.nan,
+                (
+                    f"TTMn_R first {rec['first_ttmn_ms']:.1f} ms; "
+                    f"DNp01(GF)_R first {rec['first_dnp_r_ms']:.1f} ms; "
+                    f"DNp01(GF)_L first {rec['first_dnp_l_ms']:.1f} ms"
+                ),
+                False,
+                False,
+            )
+        )
+        rows.append(
+            _row(
+                "feedback_disabled",
+                "order",
+                seed,
+                rec["first_dnp_r_ms"],
+                (
+                    "DNp01(GF)_R before TTMn_R"
+                    if rec["first_dnp_r_ms"] < rec["first_ttmn_ms"]
+                    else "DNp01(GF)_R not before TTMn_R"
+                ),
+                False,
+                False,
+            )
+        )
+        rows.append(
+            _row(
+                "closed",
+                "stability",
+                seed,
+                rec["persistent"],
+                "neurons still firing from 400 ms to 600 ms",
+                False,
+                False,
+            )
+        )
+    rows.extend(
+        [
+            _row(
+                "closed",
+                "jump",
+                "all",
+                on_time,
+                f"{on_time}/{len(records)} seeds on time; needs {need}",
+                on_time >= need,
+                True,
+            ),
+            _row(
+                "closed",
+                "feedback",
+                "all",
+                np.nan,
+                "every seed that jumps cuts the drive after that spike",
+                feedback_ok,
+                True,
+            ),
+            _row(
+                "silence",
+                "silence",
+                "all",
+                np.nan,
+                f"TTMn_R stays at or below {max_spikes} spikes and the drive is not cut",
+                silence_ok,
+                True,
+            ),
+            _row(
+                "closed",
+                "decoder_match",
+                "all",
+                np.nan,
+                "TTMn_R spike steps through t_jump match the open loop",
+                match_ok,
+                True,
+            ),
+            _row(
+                "closed",
+                "stability",
+                "all",
+                float(np.mean(persistent)),
+                f"mean neurons still firing from 400 ms; v4 limit "
+                f"{doc['reported']['stability']['max_persistent']} does not decide",
+                False,
+                False,
+            ),
+            _row(
+                "closed",
+                "latency",
+                "all",
+                float(np.median(jump_times)) if jump_times else np.nan,
+                "median t_jump_ms of seeds that reached three spikes; not a takeoff time",
+                False,
+                False,
+            ),
+        ]
+    )
+    return pd.DataFrame(rows)
+
+
+def verdict(report: pd.DataFrame) -> str:
+    """The four deciding rows. A reported row cannot change this sentence."""
+    deciding = report[report["decides"].astype(bool)]
+    failed = []
+    for check in _DECIDES:
+        rows = deciding[deciding["check"] == check]
+        if len(rows) != 1:
+            raise BehaviorError(f"deciding check {check} is missing")
+        if not bool(rows["passed"].iloc[0]):
+            failed.append(check)
+    if not failed:
+        return "calibration feasibility PASS"
+    return "calibration feasibility FAIL: " + ", ".join(failed)
+
+
+def run_loop(neurons: pd.DataFrame, edges: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    """The frozen loop at the default parameters. Returns the report and the replay arrays."""
+    doc = assert_matches_code()
+    protocol = doc["protocol"]
+    p = sim.Params()
+    if abs(p.w_syn - protocol["w_syn"]) > 1e-12 or p.th_jump != protocol["th_jump"]:
+        raise BehaviorError("run_loop refuses a parameter other than the default")
+    task = doc["task"]
+    stim = _idx(neurons, task["stimulus"], task["stimulus_n"], "stimulus")
+    motor = _idx(neurons, task["motor"], task["motor_n"], "motor")
+    command = _idx(neurons, task["command"], task["command_n"], "command")
+    instances = [
+        _idx(neurons, name, 1, "command")[0] for name in task["command_instances"]
+    ]
+    if set(instances) != set(command.tolist()):
+        raise BehaviorError("command instances are not the giant-fiber pair")
+    if not np.all(
+        neurons["superclass"].iloc[stim].to_numpy() == task["stimulus_superclass"]
+    ):
+        raise BehaviorError("the stimulus superclass is not the protocol value")
+    if not np.all(
+        neurons["superclass"].iloc[motor].to_numpy() == task["motor_superclass"]
+    ):
+        raise BehaviorError("the motor superclass is not the protocol value")
+    rate = float(protocol["rate_hz"])
+    duration = float(protocol["duration_ms"])
+    stim_ms = float(protocol["stim_ms"])
+    dt = float(protocol["dt_ms"])
+    full = int(stim_ms / dt)
+    min_spikes = int(protocol["min_spikes"])
+    trace = np.array([motor[0], instances[0], instances[1]], dtype=np.int64)
+    W = sim.network(neurons, edges, p)
+    started = time.perf_counter()
+    records = []
+    replay = {}
+    for seed in range(protocol["seed0"], protocol["seed0"] + protocol["seeds"]):
+        kicks = sim.poisson_kicks(seed, rate, dt, full, int(stim.size))
+        opened = _simulate(W, stim, rate, duration, stim_ms, seed, trace, kicks=kicks)
+        open_spikes = _spike_steps(opened, 0)
+        if int(open_spikes.size) != int(opened.counts[:, motor[0]].sum()):
+            raise BehaviorError("the motor trace does not match the binned counts")
+        step = (
+            int(open_spikes[min_spikes - 1]) if open_spikes.size >= min_spikes else None
+        )
+        if step is None or step >= full:
+            closed = opened
+            closed_steps = full
+            closed_spikes = open_spikes
+        else:
+            closed_kicks = kicks[: step + 1]
+            closed = _simulate(
+                W,
+                stim,
+                rate,
+                duration,
+                stim_ms,
+                seed,
+                trace,
+                kicks=closed_kicks,
+            )
+            closed_steps = int(closed_kicks.shape[0])
+            closed_spikes = _spike_steps(closed, 0)
+            if int(closed_spikes.size) != int(closed.counts[:, motor[0]].sum()):
+                raise BehaviorError(
+                    "the closed motor trace does not match the binned counts"
+                )
+        silenced = _simulate(
+            W, stim, rate, duration, stim_ms, seed, trace, silence=command, kicks=kicks
+        )
+        silence_spikes = _spike_steps(silenced, 0)
+        if int(silence_spikes.size) != int(silenced.counts[:, motor[0]].sum()):
+            raise BehaviorError("the silence trace does not match the binned counts")
+        if (
+            silence_spikes.size >= min_spikes
+            and int(silence_spikes[min_spikes - 1]) < full
+        ):
+            cut = int(silence_spikes[min_spikes - 1])
+            silence_kicks = kicks[: cut + 1]
+            silenced = _simulate(
+                W,
+                stim,
+                rate,
+                duration,
+                stim_ms,
+                seed,
+                trace,
+                silence=command,
+                kicks=silence_kicks,
+            )
+            silence_spikes = _spike_steps(silenced, 0)
+            if int(silence_spikes.size) != int(silenced.counts[:, motor[0]].sum()):
+                raise BehaviorError(
+                    "the silence trace does not match the binned counts"
+                )
+            silence_steps = int(silence_kicks.shape[0])
+        else:
+            silence_steps = full
+        records.append(
+            {
+                "seed": seed,
+                "jump_step": step,
+                "closed_stim_steps": closed_steps,
+                "open_spikes": open_spikes,
+                "closed_spikes": closed_spikes,
+                "silence_spikes": silence_spikes,
+                "silence_stim_steps": silence_steps,
+                "persistent": _still_firing(closed, 400.0),
+                "first_ttmn_ms": float(opened.first_spike_ms[motor[0]]),
+                "first_dnp_r_ms": float(opened.first_spike_ms[instances[0]]),
+                "first_dnp_l_ms": float(opened.first_spike_ms[instances[1]]),
+            }
+        )
+        sensory = np.array(kicks, copy=True)
+        if step is not None and step < full:
+            sensory[step + 1 :] = 0
+        replay[f"seed{seed}_sensory"] = sensory
+        replay[f"seed{seed}_ttmn_open"] = open_spikes
+        replay[f"seed{seed}_ttmn_closed"] = closed_spikes
+        replay[f"seed{seed}_ttmn_silence"] = silence_spikes
+    report = assess(doc, records)
+    elapsed = time.perf_counter() - started
+    report = pd.concat(
+        [
+            report,
+            pd.DataFrame(
+                [
+                    _row(
+                        "closed",
+                        "runtime_s",
+                        "all",
+                        elapsed,
+                        "wall time of the closed loop, the open loop and the silence arm",
+                        False,
+                        False,
+                    )
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    replay["elapsed_s"] = np.array([elapsed])
+    return report, replay

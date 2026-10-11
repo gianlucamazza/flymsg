@@ -327,6 +327,49 @@ def _cmd_benchmark_corners(a, neurons, edges, started):
     print(f"report -> {out / 'report.csv'}")
 
 
+def cmd_behavior(a, neurons, edges):
+    """The frozen one-bit loop. No flag chooses another weight, seed, or body."""
+    started = datetime.now(UTC)
+    doc = behavior.assert_matches_code()
+    protocol = doc["protocol"]
+    last = protocol["seed0"] + protocol["seeds"] - 1
+    print(
+        f"behavior v{doc['version']}: closed loop,"
+        f" w_syn={protocol['w_syn']} th_jump={protocol['th_jump']},"
+        f" seeds {protocol['seed0']}-{last}"
+    )
+    report, replay = behavior.run_loop(neurons, edges)
+    print(report.to_string(index=False))
+    text = behavior.verdict(report)
+    print(text)
+    print("reported rows do not decide and are not a retune")
+    out = Path("runs/behavior")
+    out.mkdir(parents=True, exist_ok=True)
+    report.to_csv(out / "report.csv", index=False)
+    np.savez_compressed(out / "replay.npz", **replay)
+    _stamp(
+        out,
+        "behavior --run",
+        a,
+        neurons,
+        edges,
+        {
+            "w_syn": protocol["w_syn"],
+            "th_jump": protocol["th_jump"],
+            "behavior_version": doc["version"],
+            "behavior_sha256": doc["content_sha256"],
+            "checks": list(doc["decides"]),
+            "rate_hz": protocol["rate_hz"],
+            "stim_ms": protocol["stim_ms"],
+            "duration_ms": protocol["duration_ms"],
+        },
+        {"seeds": protocol["seeds"], "seed0": protocol["seed0"]},
+        started,
+        extra={"verdict": text, "replay": os.fspath(out / "replay.npz")},
+    )
+    print(f"report -> {out / 'report.csv'}")
+
+
 def cmd_benchmarks(a, neurons, edges):
     """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
@@ -690,6 +733,7 @@ COMMANDS = {
     "wiring-null": cmd_wiring_null,
     "nulls": cmd_nulls,
     "benchmarks": cmd_benchmarks,
+    "behavior": cmd_behavior,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -702,6 +746,7 @@ MALECNS_ONLY = (
     "wiring-null",
     "nulls",
     "benchmarks",
+    "behavior",
 )
 
 
@@ -724,9 +769,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="malecns (male CNS, default) or fafb (female brain, FlyWire v783, in DATA/fafb)",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser(
+    s = sub.add_parser(
         "behavior",
-        help="print the frozen one-bit looming-jump protocol; it does not simulate",
+        help="print the frozen one-bit looming-jump protocol, or run it with --run",
+    )
+    s.add_argument(
+        "--run",
+        action="store_true",
+        help="run the frozen closed loop at the default parameters",
     )
     s = sub.add_parser(
         "benchmarks",
@@ -986,7 +1036,7 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
-        if a.cmd == "behavior":
+        if a.cmd == "behavior" and not a.run:
             return print(behavior.summary())
         if a.cmd == "benchmarks" and a.run and a.corners:
             p.error("benchmarks takes --run or --corners, not both")

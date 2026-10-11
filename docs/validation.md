@@ -35,7 +35,8 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   frozen before any run. `LC4_R` drives the network; the third `TTMn_R` spike cuts that
   drive. The claim is a calibration feasibility check on the looming case, with jump,
   feedback, DNp01 silence, and a decoder-prefix check. FlyBody is not embedded. The
-  simulation has not been run.
+  closed loop fails silence: with both DNp01 neurons silenced, TTMn_R still reaches
+  3 spikes in every seed. Jump, feedback, and the decoder prefix pass. `w_syn` stays 0.192.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

@@ -150,7 +150,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `path SRC DST [--alt K]`                                        | strongest chain by input fraction; `--alt` adds routes avoiding the previous intermediate types         |
 | `sim STIM…`                                                     | simulate a Poisson stimulus; per-type rates, reliability across seeds, latency, self-sustained activity |
 | `validate`                                                      | the validation battery (a few minutes)                                                                  |
-| `behavior`                                                      | print the frozen one-bit looming-jump protocol; it does not simulate                                    |
+| `behavior`                                                      | print the frozen one-bit looming-jump protocol, or run the closed loop with `--run`                     |
 | `wiring-null [--stats]`                                         | N1: shuffle who connects to whom; `--stats` counts self-loops and stops                                 |
 | `nulls [--full]`                                                | four wiring-null families; default 2 draws (CI); `--full` is the locked 20-draw run                     |
 | `calibrate`, `select-model`                                     | parameter grid search and pre-registered model comparison                                               |
@@ -208,7 +208,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [model](docs/model.md)           | equations, parameters and their origin, synapse signs, density scaling      |
 | [validation](docs/validation.md) | current status, protocol, cases, calibration, model selection, findings log |
 | [benchmarks](docs/benchmarks.md) | held-out partition, the ORN_DM1 failure, both corners fail                  |
-| [behavior](docs/behavior.md)     | one-bit looming jump, frozen before the closed loop                         |
+| [behavior](docs/behavior.md)     | one-bit looming jump; the closed loop fails silence                         |
 | [nulls](docs/nulls.md)           | pre-registered null families, scores, draw counts, methods                  |
 | [provenance](docs/provenance.md) | date, public source and commit for each existing idea                       |
 | [comparison](docs/comparison.md) | engine check against the published model, male vs female, the LB3 split     |
