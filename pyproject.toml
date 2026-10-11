@@ -1,6 +1,6 @@
 [project]
 name = "flymsg"
-version = "0.7.2"
+version = "0.7.3"
 description = "Simulate and view the complete male Drosophila CNS connectome (MaleCNS v1.0)"
 readme = "README.md"
 license = "MIT"
@@ -36,6 +36,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "markdown>=3.11",
     "pytest>=9.1.1",
     "ruff>=0.16.8",
 ]

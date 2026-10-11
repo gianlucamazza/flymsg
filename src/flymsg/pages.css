@@ -1,0 +1,94 @@
+:root {
+  color: #1c1916;
+  background: #f7f5f2;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  align-items: baseline;
+  padding: 0.8rem 1.2rem;
+  background: #1c1916;
+  color: #f7f5f2;
+}
+
+header a {
+  color: inherit;
+}
+
+.name {
+  margin: 0;
+  font-weight: 700;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.9rem;
+}
+
+nav a[aria-current="page"] {
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.repo {
+  margin: 0 0 0 auto;
+}
+
+main {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.2rem 4rem;
+}
+
+main img {
+  max-width: 100%;
+  height: auto;
+}
+
+main :is(h1, h2, h3) {
+  line-height: 1.2;
+}
+
+main a {
+  color: #5c3b16;
+}
+
+pre,
+table {
+  overflow-x: auto;
+}
+
+pre {
+  padding: 0.8rem 1rem;
+  background: #efeae3;
+}
+
+code {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 0.92em;
+}
+
+table {
+  border-collapse: collapse;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid #d9d2c8;
+  padding: 0.3rem 0.7rem 0.3rem 0;
+  text-align: left;
+  vertical-align: top;
+}

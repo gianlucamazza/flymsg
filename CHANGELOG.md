@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.3 — 2026-10-11
+
+### Docs
+
+- **GitHub Pages.** The README and the docs are published at
+  <https://gianlucamazza.github.io/flymsg/>. `scripts/build_pages.py` builds the site, and
+  heading anchors stay the ones the docs already use.
+
 ## 0.7.2 — 2026-10-11
 
 ### Docs

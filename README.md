@@ -12,6 +12,8 @@ flymsg turns the wiring diagram into a spiking network, checks the simulation ag
 circuits whose function is known from experiments, and streams the real neuron shapes into a
 browser to replay the activity.
 
+The same pages are published at <https://gianlucamazza.github.io/flymsg/>.
+
 ## Gallery
 
 Paused frames from the page `flymsg viz` writes, 1400×900, adaptive quality off, with the
