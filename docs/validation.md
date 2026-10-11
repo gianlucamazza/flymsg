@@ -218,6 +218,13 @@ runaway regime depends on the seed near its edge, as already seen with P1.
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-11: T4, AVLP717m drops pIP10 after P1.** 1,000 matched-responder nulls, seeds
+0–2, `w_syn` 0.192, threshold p ≤ 0.05. Silencing AVLP717m (2 neurons) drops pIP10 by
+43% (104 → 60 Hz), p = 0.001. dPR1 after P1 drops 28% (97 → 70 Hz), p = 0.001; that
+row does not decide. After the pIP10 stimulus, dPR1 is unchanged and the matched null
+is not defined (no other excitatory `cb_intrinsic` responder), so that case has no p.
+Report: `runs/t4-loop.txt`.
+
 **2026-10-11: null families, 20 draws, MaleCNS v1.0.** `flymsg nulls --full`, seeds 0–19,
 `w_syn` 0.192, `th_jump` 0. Score: signed one-hop stim → target weight. Headline = sum of
 `max` over the seven specific pathways (real 4077). Smallest _p_ is 1/21. Every pathway
@@ -436,6 +443,12 @@ Silencing vMS12_a+b+c (12) raises it by 67% and 78%. All four rises have p = 0.0
 Silencing dMS9 together with IN03B024 raises it by 100% and 99%, and the 95% bootstrap
 intervals of the per-seed rise overlap in both cases. The chain is supported. `w_syn`
 stayed 0.192. The full record is in [dimorphism](dimorphism.md).
+
+**2026-10-11: T4** (pre-registered 2026-10-11, before the run; `runs/t4-loop.txt`).
+Silencing AVLP717m (2) drops pIP10 after P1 by 43% (104 → 60 Hz), p = 0.001, so the
+confirmatory test passes. The same silencing drops dPR1 after P1 by 28%; that row does
+not decide. After the pIP10 stimulus the matched null is not defined and dPR1 is
+unchanged. `w_syn` stayed 0.192. The full record is in [dimorphism](dimorphism.md).
 
 ## Limits of this validation
 

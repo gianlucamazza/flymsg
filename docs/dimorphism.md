@@ -207,6 +207,12 @@ reported without a p. A failure is a finding.
 bg uv run flymsg dimorphism --loop t4 --null 1000 --checkpoint runs/t4-loop.ckpt.jsonl
 ```
 
+**Result (2026-10-11).** The confirmatory test passes. Silencing AVLP717m (2 neurons) drops
+pIP10 after P1 by 43% (104 → 60 Hz), p = 0.001, the floor of 1,000 draws. The same
+silencing drops dPR1 after P1 by 28% (97 → 70 Hz), p = 0.001; that row is reported and
+does not decide. After the pIP10 stimulus, dPR1 is unchanged (88 → 88 Hz) and the matched
+null is not defined, so that case has no p. `w_syn` stayed 0.192. Report: `runs/t4-loop.txt`.
+
 ## Pre-registered tests (v0.6, fixed 2026-09-22 before running)
 
 The silencing results above are indications: 100 null draws cannot reach a Bonferroni

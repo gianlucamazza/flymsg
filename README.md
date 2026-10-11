@@ -101,7 +101,9 @@ with no dimorphism label.
   inhibitory neurons vPR9_a and IN00A038 are not the route by which dMS9 holds dPR1 back.
   T3 supports the route fixed before the run: silencing IN03B024, or vMS12_a+b+c, raises
   dPR1 after both courtship stimuli (p = 0.001), and silencing dMS9 together with IN03B024
-  raises it no more, because the 95% intervals overlap
+  raises it no more, because the 95% intervals overlap.
+  T4 passes its one test: silencing AVLP717m drops pIP10 after P1 by 43% (p = 0.001).
+  The same silencing after the pIP10 stimulus has no matched null, so that case has no p
   ([dimorphism](docs/dimorphism.md)). The gallery colours the pIP10 replay by the sex annotation.
 - **Synapse counts are not comparable across datasets.** A male neuron has a median 1.81× the
   synapses of its female counterpart over 7,327 matched cell types, a difference between the

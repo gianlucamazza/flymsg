@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.1 — 2026-10-11
+
+### Results
+
+- **T4, whether AVLP717m relays P1's drive to pIP10.** The pre-registered null finished.
+  Silencing AVLP717m (2 neurons) drops pIP10 after P1 by 43% (104 → 60 Hz), p = 0.001.
+  The same silencing drops dPR1 after P1 by 28%; that row does not decide. After the
+  pIP10 stimulus the matched null is not defined, and dPR1 is unchanged. `w_syn` stayed
+  0.192.
+
 ## 0.8.0 — 2026-10-11
 
 ### Reproducibility

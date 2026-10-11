@@ -71,5 +71,5 @@ are a separate protocol. They do not replace this one-draw comparison. See
 ## Already open
 
 T3 was run on 2026-10-11. The chain is supported; the counts and p-values are in
-[dimorphism](dimorphism.md). T4, whether AVLP717m relays P1's drive to pIP10, is
-pre-registered in the same note and has not been run. This note does not restate the rules.
+[dimorphism](dimorphism.md). T4 was run the same day: silencing AVLP717m drops pIP10
+after P1 (p = 0.001). This note does not restate the rules.
