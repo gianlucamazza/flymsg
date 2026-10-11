@@ -24,6 +24,10 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   pathways are 0 on the real graph (LC4_R → TTMn, P1 → dPR1, sugar → MN9, bitter → MN9);
   bitter is not below the nulls. N1 is not redrawn. Hypotheses and thresholds are in
   [`validation/preregistration.yaml`](../validation/preregistration.yaml).
+- **Held-out manifest** (2026-10-11, [benchmarks](benchmarks.md)). Calibration, exploratory
+  and held-out cases are partitioned before any held-out simulation. The confirmatory case
+  is ORN_DM1 → DM1_lPN, scored with the v4 positive, specific and stability checks at the
+  default parameters. The simulation has not been run.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

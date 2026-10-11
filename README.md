@@ -201,6 +201,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [data](docs/data.md)             | sources, files, filtering, schema, the female FAFB dataset, citations       |
 | [model](docs/model.md)           | equations, parameters and their origin, synapse signs, density scaling      |
 | [validation](docs/validation.md) | current status, protocol, cases, calibration, model selection, findings log |
+| [benchmarks](docs/benchmarks.md) | held-out partition, the frozen ORN_DM1 case, sensitivity corners            |
 | [nulls](docs/nulls.md)           | pre-registered null families, scores, draw counts, methods                  |
 | [provenance](docs/provenance.md) | date, public source and commit for each existing idea                       |
 | [comparison](docs/comparison.md) | engine check against the published model, male vs female, the LB3 split     |

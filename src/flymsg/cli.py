@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from flymsg import (
+    benchmarks,
     compare,
     data,
     dimorphism,
@@ -641,6 +642,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="malecns (male CNS, default) or fafb (female brain, FlyWire v783, in DATA/fafb)",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser(
+        "benchmarks",
+        help="print the frozen held-out manifest (no simulation)",
+    )
     sub.add_parser("fetch", help="download raw tables (malecns ~1.1 GB, fafb ~135 MB)")
     sub.add_parser("build", help="compact raw tables to data/*.parquet")
     s = sub.add_parser(
@@ -885,6 +890,8 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
+        if a.cmd == "benchmarks":  # the frozen manifest; it does not simulate
+            return print(benchmarks.summary())
         if a.dataset == "fafb" and a.cmd in MALECNS_ONLY:
             # the battery needs the VNC, and the 3D view streams MaleCNS geometry
             sys.exit(f"flymsg: {a.cmd} needs --dataset malecns")
@@ -897,6 +904,8 @@ def main() -> None:
     except dimorphism.CheckpointMismatch as err:
         sys.exit(f"flymsg: {err}")
     except prereg.PreregistrationError as err:
+        sys.exit(f"flymsg: {err}")
+    except benchmarks.BenchmarkError as err:
         sys.exit(f"flymsg: {err}")
     except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")

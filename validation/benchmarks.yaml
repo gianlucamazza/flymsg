@@ -1,0 +1,89 @@
+# Held-out benchmark manifest. Version 1, fixed 2026-10-11 before any held-out simulation.
+# Changing a locked field requires incrementing `version` and updating
+# `content_sha256` and flymsg.benchmarks.VERSION_HASHES.
+version: 1
+content_sha256: c370092a2236c0485e063f94e654eb8ede44415a03dee5c27f765dd478ceb3dd
+
+dataset:
+  name: MaleCNS v1.0
+  license: CC-BY-4.0
+  neurons_traced: 165122
+
+partition:
+  calibration:
+    - looming escape
+    - giant fiber output
+    - P1 courtship drive
+    - pIP10 song pathway
+    - sugar feeding
+    - bitter feeding
+  exploratory:
+    - LPLC2 to DNp01
+    - LB3a water to MN9
+    - LB3d salt to MN9
+    - LC4 via DNp02
+    - LC4 via DNp11
+    - GF to DLMn
+    - pIP10 to vPR6
+    - pIP10 to vMS11
+    - pCd persistence
+    - T4 T5 direction
+    - MDN backward walking
+    - clock neurons
+  held_out_scored:
+    - ORN_DM1 to DM1_lPN
+  held_out_reported:
+    - ORN_V to V PNs
+
+endpoints:
+  min_spikes: 3
+  min_seed_share_num: 2
+  min_seed_share_den: 3
+  specificity: 3.0
+  margin_hz: 2.0
+  max_persistent: 100
+  rate_hz: 100.0
+  stim_ms: 300.0
+  duration_ms: 600.0
+  seeds: 3
+  seed0: 0
+  control_seed: 0
+  checks: [positive, specific, stability]
+  not_scored: [order, dose, biological_hz, behavior]
+
+confirmatory:
+  id: ORN_DM1 to DM1_lPN
+  stimulus: ORN_DM1
+  stimulus_n: 74
+  target: DM1_lPN
+  target_n: 2
+  observable: recording
+  decides: true
+
+reported:
+  id: ORN_V to V PNs
+  stimulus: ORN_V
+  stimulus_n: 55
+  targets: [V_ilPN, V_l2PN]
+  target_n: [2, 2]
+  observable: recording
+  decides: false
+
+sensitivity:
+  scored:
+    w_syn: 0.19230769230769232
+    th_jump: 0.0
+  corners:
+    - w_syn: 0.19230769230769232
+      th_jump: 0.0
+      role: scored
+    - w_syn: 0.275
+      th_jump: 0.0
+      role: sensitivity
+    - w_syn: 0.19230769230769232
+      th_jump: 2.0
+      role: sensitivity
+  edge_confidence: not_run
+  sign_shuffle: not_this_protocol
+
+rule: "The confirmatory case passes only when positive, specific and stability all pass at the scored corner. A reported case or another corner does not rescue a failure and is not a retune. N1 is not redrawn."

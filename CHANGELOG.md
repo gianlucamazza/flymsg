@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.2 — 2026-10-11
+
+### Validation
+
+- **Held-out manifest, before the run.** Calibration, exploratory and held-out cases are
+  partitioned in `validation/benchmarks.yaml`. The one confirmatory case is ORN_DM1 →
+  DM1_lPN, scored with the v4 positive, specific and stability checks at the default
+  parameters. `flymsg benchmarks` prints that case and does not simulate. Criterion v4
+  and N1 are unchanged.
+
 ## 0.8.1 — 2026-10-11
 
 ### Results
