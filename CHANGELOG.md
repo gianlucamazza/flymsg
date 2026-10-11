@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.4 — 2026-10-11
+
+### Results
+
+- **T3, how dMS9 restrains dPR1.** The run pre-registered on 2026-09-23 finished from its
+  checkpoint. Silencing IN03B024 (2 neurons) raises dPR1 by 101% after pIP10 and 100% after
+  P1. Silencing vMS12_a+b+c (12) raises it by 67% and 78%. All four rises have p = 0.001.
+  Silencing dMS9 together with IN03B024 raises it by 100% and 99%, and the 95% bootstrap
+  intervals of the per-seed rise overlap in both cases. The chain is supported. `w_syn`
+  stayed 0.192.
+
 ## 0.7.3 — 2026-10-11
 
 ### Docs

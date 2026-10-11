@@ -36,6 +36,21 @@ def _category(name: str):
         ) from None
 
 
+def seed_rises(base_seed_hz, silenced_seed_hz) -> list[float]:
+    """Fractional rise of one target, one number per seed: silenced rate / base rate − 1."""
+    return [s / b - 1.0 for b, s in zip(base_seed_hz, silenced_seed_hz, strict=True)]
+
+
+def rise_interval(base_seed_hz, silenced_seed_hz) -> tuple[float, float]:
+    """95% bootstrap interval of the mean per-seed rise, via `validate.bootstrap_ci`."""
+    return validate.bootstrap_ci(seed_rises(base_seed_hz, silenced_seed_hz))
+
+
+def intervals_overlap(a: tuple[float, float], b: tuple[float, float]) -> bool:
+    """Whether two closed intervals share a point. T3's epistasis pass is this, per case."""
+    return a[0] <= b[1] and b[0] <= a[1]
+
+
 def responders(results: list[sim.Result], stim: np.ndarray) -> np.ndarray:
     """Neurons firing during the stimulus in >= MIN_SEED_SHARE of the seeds, minus `stim`."""
     fired = np.stack([r.rate(0, r.stim_ms) > 0 for r in results])

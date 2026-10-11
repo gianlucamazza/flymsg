@@ -207,7 +207,16 @@ runaway regime depends on the seed near its edge, as already seen with P1.
 
 ## Findings log
 
-Negative and surprising results, kept so they are not rediscovered.
+Negative and surprising results, kept so they are not rediscovered. Confirmatory results
+that close an open route are kept here too.
+
+**2026-10-11: T3 supports dPR1 → dMS9 → vMS12 → IN03B024 → dPR1.** 1,000 matched-responder
+nulls, seeds 0–2, `w_syn` 0.192, threshold p ≤ 0.0167. IN03B024 (2 neurons): dPR1 +101%
+after pIP10 (88 → 177 Hz) and +100% after P1 (97 → 193 Hz), p = 0.001 both. vMS12_a+b+c
+(12): +67% (88 → 147 Hz) and +78% (97 → 172 Hz), p = 0.001 both. dMS9 together with
+IN03B024 (4): +100% and +99%. The 95% intervals of the per-seed rise overlap (pIP10
+[0.893, 1.167], P1 [0.966, 1.036]). Tests 1 and 2 pass in both cases and the epistasis
+holds, so the chain is supported. Report: `runs/t3-loop.txt`.
 
 **2026-09-21: first battery run** (`w_syn` 0.275, `th_jump` 4): 15/18 checks passed.
 Failures: GF → DLMn 4.4 Hz (led to the exclusion above); P1 stability, 1,977 self-sustained
@@ -391,6 +400,13 @@ each, threshold p ≤ 0.00625 over 8 confirmatory tests.** Reports:
 - Cost and method: 1,000 draws × 3 seeds × 15 jobs. Runs stop at the end of the stimulus
   (identical rates in the scored window, 2–2.7× cheaper) and are resumable, since the whole
   battery takes many CPU hours on this machine.
+
+**2026-10-11: T3** (pre-registered 2026-09-23; `runs/t3-loop.txt`; the checkpoint was
+resumed). Silencing IN03B024 (2) raises dPR1 by 101% after pIP10 and 100% after P1.
+Silencing vMS12_a+b+c (12) raises it by 67% and 78%. All four rises have p = 0.001.
+Silencing dMS9 together with IN03B024 raises it by 100% and 99%, and the 95% bootstrap
+intervals of the per-seed rise overlap in both cases. The chain is supported. `w_syn`
+stayed 0.192. The full record is in [dimorphism](dimorphism.md).
 
 ## Limits of this validation
 

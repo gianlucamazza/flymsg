@@ -92,7 +92,10 @@ with no dimorphism label.
   dimorphic neurons raises the song neuron dPR1 by 61–64 % after either stimulus (confirmed),
   and silencing the two dMS9 neurons alone raises it by two thirds, more than silencing any
   matched active neurons. The same tests reject the other half of v0.5's prediction: the
-  inhibitory neurons vPR9_a and IN00A038 are not the route by which dMS9 holds dPR1 back
+  inhibitory neurons vPR9_a and IN00A038 are not the route by which dMS9 holds dPR1 back.
+  T3 supports the route fixed before the run: silencing IN03B024, or vMS12_a+b+c, raises
+  dPR1 after both courtship stimuli (p = 0.001), and silencing dMS9 together with IN03B024
+  raises it no more, because the 95% intervals overlap
   ([dimorphism](docs/dimorphism.md)). The gallery colours the pIP10 replay by the sex annotation.
 - **Synapse counts are not comparable across datasets.** A male neuron has a median 1.81× the
   synapses of its female counterpart over 7,327 matched cell types, a difference between the

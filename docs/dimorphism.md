@@ -137,9 +137,9 @@ The v0.5 route (dMS9 →670→ vPR9_a →128→ dPR1) is thin next to this one, 
 rejection. This chain was found by looking at the result, so it is a hypothesis, not a
 finding, and the numbers above are wiring and one descriptive comparison.
 
-**T3, pre-registered for the next run** (fixed 2026-09-23, before running it; same protocol,
-1,000 matched-responder null draws, threshold p ≤ 0.05/3 = 0.0167 for a rise of dPR1 after
-pIP10 and after P1):
+**T3** (fixed 2026-09-23, before running it; run 2026-10-11, checkpoint resumed, not
+replaced; same protocol, 1,000 matched-responder null draws, threshold p ≤ 0.05/3 = 0.0167
+for a rise of dPR1 after pIP10 and after P1). Report: `runs/t3-loop.txt`.
 
 1. Silencing **IN03B024** (2 neurons) raises dPR1.
 2. Silencing **vMS12_a + vMS12_b + vMS12_c** (12 neurons) raises dPR1.
@@ -150,6 +150,14 @@ pIP10 and after P1):
 The chain is supported only if 1 and 2 pass in both cases and 3 holds; if 1 passes and 2
 fails, the drive to IN03B024 comes from somewhere else; if 1 fails, IN03B024 is not the
 route either.
+
+**Result (2026-10-11).** All three hold, so the chain is supported. Silencing IN03B024
+(2 neurons) raises dPR1 by 101% after pIP10 (88 → 177 Hz) and by 100% after P1 (97 → 193 Hz),
+p = 0.001 both, the floor of 1,000 draws. Silencing vMS12_a+b+c (12 neurons) raises it by
+67% (88 → 147 Hz) and 78% (97 → 172 Hz), p = 0.001 both. Silencing dMS9 together with
+IN03B024 (4 neurons) raises it by 100% and 99%. The 95% bootstrap intervals of the per-seed
+dPR1 rise overlap in both cases: pIP10 [0.893, 1.167] for both silencings, P1 [0.966, 1.036]
+for both. `w_syn` stayed 0.192.
 
 ### Which cell types (`--by-type`, `runs/silencing-by-type-*.txt`)
 
@@ -170,9 +178,9 @@ vPR9_a (670 synapses from dMS9, 128 onto dPR1) and IN00A038 (161, 132). From tha
 v0.5 predicted a disynaptic negative feedback loop, **dPR1 → dMS9 → vPR9_a / IN00A038 →
 dPR1**. The pre-registered test T2 (above) keeps the first step and rejects the second:
 silencing dMS9 raises dPR1 by two thirds, beyond any matched silencing, while silencing
-vPR9_a and IN00A038 does not (it lowers dPR1 after pIP10). **What dMS9 restrains dPR1
-through is an open question**; the two neurons named in v0.5 are not the answer, or not the
-whole answer. AVLP717m (fru+) relays part of P1's drive to pIP10. These per-type numbers come
+vPR9_a and IN00A038 does not (it lowers dPR1 after pIP10). T3, above, supports the longer
+chain **dPR1 → dMS9 → vMS12_a/b/c → IN03B024 → dPR1**. The two neurons named in v0.5 are
+not that route. AVLP717m (fru+) relays part of P1's drive to pIP10. These per-type numbers come
 from a scan without a null and are indications, unlike T1 and T2.
 
 **T4, pre-registered before any new per-type run** (fixed 2026-10-11, before running it, and

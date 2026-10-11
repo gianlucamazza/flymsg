@@ -7,6 +7,20 @@ import pytest
 from flymsg import dimorphism, sim
 
 
+def test_rise_interval_is_the_shipped_bootstrap_and_overlap_is_closed():
+    from flymsg import validate
+
+    base = [10.0, 10.0, 10.0]
+    doubled = [20.0, 20.0, 20.0]
+    quadrupled = [40.0, 40.0, 40.0]
+    low = dimorphism.rise_interval(base, doubled)
+    high = dimorphism.rise_interval(base, quadrupled)
+    assert low == validate.bootstrap_ci(dimorphism.seed_rises(base, doubled))
+    assert high == validate.bootstrap_ci([3.0, 3.0, 3.0])
+    assert dimorphism.intervals_overlap(low, low)
+    assert not dimorphism.intervals_overlap(low, high)
+
+
 def test_t4_confirms_avlp717m_in_both_courtship_cases_and_leaves_t3_alone():
     jobs = dimorphism.confirmatory_jobs(dimorphism.T4_SETS)
     assert jobs == [
