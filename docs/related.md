@@ -72,5 +72,5 @@ are a separate protocol. They do not replace this one-draw comparison. See
 
 T3 was run on 2026-10-11. The chain is supported; the counts and p-values are in
 [dimorphism](dimorphism.md). T4 was run the same day: silencing AVLP717m drops pIP10
-after P1 (p = 0.001). The held-out partition for issue #7 is frozen in
-[benchmarks](benchmarks.md) and has not been simulated. This note does not restate the rules.
+after P1 (p = 0.001). The held-out case ORN_DM1 → DM1_lPN fails specific and
+stability; the record is in [benchmarks](benchmarks.md). This note does not restate the rules.

@@ -7,7 +7,42 @@ sensitivity check that is not a retune. This note freezes that partition on
 held-out case, a check, or a sensitivity corner requires a new version. Criterion v4
 stays the baseline: `flymsg validate` is unchanged, and N1 is not redrawn.
 
-`flymsg benchmarks` prints the frozen confirmatory case. It does not simulate.
+`flymsg benchmarks` prints the frozen confirmatory case. `flymsg benchmarks --run`
+scores that case and the reported case at the scored corner. It does not edit the
+manifest, criterion v4, or N1.
+
+## Result (2026-10-11)
+
+The scored run fails. `w_syn` stayed 0.192 and `th_jump` stayed 0. Seeds 0–2, control
+seed 0. The manifest was not edited after the numbers. The two sensitivity corners
+were not run, and neither would replace this result.
+
+| Case              | Check     | Result                                                                               |
+| ----------------- | --------- | ------------------------------------------------------------------------------------ |
+| ORN_DM1 → DM1_lPN | positive  | pass. 284.4 Hz, 3/3 seeds, median first spike 3.4 ms                                 |
+| ORN_DM1 → DM1_lPN | specific  | fail. Target 284.4 Hz, control 185.6 Hz. Intervals [283.3, 286.7] and [173.3, 193.3] |
+| ORN_DM1 → DM1_lPN | stability | fail. 4894 neurons still fire from 400 ms to 600 ms; the limit is 100                |
+| ORN_V → V_ilPN    | positive  | pass. 264.4 Hz, first spike 4.4 ms. Does not decide                                  |
+| ORN_V → V_ilPN    | specific  | fail. Control 225.6 Hz, interval [223.3, 230.0] against [260.0, 266.7]               |
+| ORN_V → V_l2PN    | positive  | pass. 116.7 Hz, first spike 9.2 ms. Does not decide                                  |
+| ORN_V → V_l2PN    | specific  | fail. Control 95.6 Hz, interval [90.0, 100.0] against [116.7, 116.7]                 |
+| ORN_V → V PNs     | stability | fail. 4833 neurons still fire. Does not decide                                       |
+
+The specific check needs the class-matched control at or below 94.1 Hz for DM1_lPN.
+The control is other olfactory neurons, the same count, excluding the targets and
+their strong inputs. DM1_lPN does fire. A same-sized olfactory drive fires it too, and
+the activity does not die out. That is the finding.
+
+ORN_V is the same pattern on the reported case. It does not rescue DM1, and it does
+not score CO2 avoidance.
+
+These rates are the model under a 100 Hz Poisson input for 300 ms. They are not a
+match to an odor recording. The first-spike times are the model's medians, not a claim
+about the odor puffs in Kazama and Wilson.
+
+The table is `runs/benchmarks/report.csv`, which is not committed. The run used
+commit `51b5305` plus the scorer added with this result; the manifest records that
+tree as dirty. Dataset file hashes are in `runs/benchmarks/manifest.json`.
 
 ## Inventory
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.3 — 2026-10-11
+
+### Results
+
+- **Held-out ORN_DM1 → DM1_lPN fails.** Positive passes (284.4 Hz, 3/3 seeds, first
+  spike 3.4 ms). Specific fails: the class-matched olfactory control reaches 185.6 Hz,
+  and the check needs it at or below 94.1 Hz. Stability fails: 4894 neurons still fire
+  after the stimulus (limit 100). ORN_V → V_ilPN and V_l2PN shows the same pattern and
+  does not decide. `w_syn` stayed 0.192. The manifest was not edited.
+
 ## 0.8.2 — 2026-10-11
 
 ### Validation

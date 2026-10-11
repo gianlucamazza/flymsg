@@ -105,6 +105,10 @@ with no dimorphism label.
   T4 passes its one test: silencing AVLP717m drops pIP10 after P1 by 43% (p = 0.001).
   The same silencing after the pIP10 stimulus has no matched null, so that case has no p
   ([dimorphism](docs/dimorphism.md)). The gallery colours the pIP10 replay by the sex annotation.
+- **The held-out olfactory case fails.** ORN_DM1 recruits DM1_lPN (284.4 Hz, 3/3 seeds),
+  and the CO2 ORNs recruit their PNs, but neither is specific against other olfactory
+  neurons and both leave thousands of neurons firing after the stimulus. The weight stays
+  0.192 ([benchmarks](docs/benchmarks.md)).
 - **Synapse counts are not comparable across datasets.** A male neuron has a median 1.81× the
   synapses of its female counterpart over 7,327 matched cell types, a difference between the
   reconstructions. Male vs female simulations are corrected for it

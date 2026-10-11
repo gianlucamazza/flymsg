@@ -290,6 +290,47 @@ def cmd_validate(a, neurons, edges):
         sys.exit(1)
 
 
+def cmd_benchmarks(a, neurons, edges):
+    """The frozen held-out cases at the scored corner. No flag changes the case or the weight."""
+    started = datetime.now(UTC)
+    doc = benchmarks.assert_matches_code()
+    corner = doc["sensitivity"]["scored"]
+    print(
+        f"benchmarks v{doc['version']}: scored corner only,"
+        f" w_syn={corner['w_syn']} th_jump={corner['th_jump']},"
+        f" seeds {doc['endpoints']['seed0']}-{doc['endpoints']['seed0'] + doc['endpoints']['seeds'] - 1}"
+    )
+    report = benchmarks.score(neurons, edges)
+    print(report.round(1).to_string(index=False))
+    print(benchmarks.verdict(report))
+    print("reported rows do not decide and are not a retune")
+    out = Path("runs/benchmarks")
+    out.mkdir(parents=True, exist_ok=True)
+    report.to_csv(out / "report.csv", index=False)
+    _stamp(
+        out,
+        "benchmarks --run",
+        a,
+        neurons,
+        edges,
+        {
+            "w_syn": corner["w_syn"],
+            "th_jump": corner["th_jump"],
+            "benchmarks_version": doc["version"],
+            "benchmarks_sha256": doc["content_sha256"],
+            "checks": doc["endpoints"]["checks"],
+        },
+        {
+            "seeds": doc["endpoints"]["seeds"],
+            "seed0": doc["endpoints"]["seed0"],
+            "control_seed": doc["endpoints"]["control_seed"],
+        },
+        started,
+        extra={"verdict": benchmarks.verdict(report)},
+    )
+    print(f"report -> {out / 'report.csv'}")
+
+
 def audit_focus_types(neurons: pd.DataFrame) -> list[str]:
     """Cell types behind published results: validation stimuli and targets, the negative
     case, sex-comparison targets and the neurons of the predicted dPR1 feedback loop."""
@@ -609,6 +650,7 @@ COMMANDS = {
     "viz": cmd_viz,
     "wiring-null": cmd_wiring_null,
     "nulls": cmd_nulls,
+    "benchmarks": cmd_benchmarks,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -620,6 +662,7 @@ MALECNS_ONLY = (
     "viz",
     "wiring-null",
     "nulls",
+    "benchmarks",
 )
 
 
@@ -642,9 +685,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="malecns (male CNS, default) or fafb (female brain, FlyWire v783, in DATA/fafb)",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser(
+    s = sub.add_parser(
         "benchmarks",
-        help="print the frozen held-out manifest (no simulation)",
+        help="print the frozen held-out manifest, or score it with --run",
+    )
+    s.add_argument(
+        "--run",
+        action="store_true",
+        help="score the frozen cases at the default corner (no other parameters)",
     )
     sub.add_parser("fetch", help="download raw tables (malecns ~1.1 GB, fafb ~135 MB)")
     sub.add_parser("build", help="compact raw tables to data/*.parquet")
@@ -890,7 +938,7 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
-        if a.cmd == "benchmarks":  # the frozen manifest; it does not simulate
+        if a.cmd == "benchmarks" and not a.run:
             return print(benchmarks.summary())
         if a.dataset == "fafb" and a.cmd in MALECNS_ONLY:
             # the battery needs the VNC, and the 3D view streams MaleCNS geometry

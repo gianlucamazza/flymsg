@@ -25,9 +25,10 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   bitter is not below the nulls. N1 is not redrawn. Hypotheses and thresholds are in
   [`validation/preregistration.yaml`](../validation/preregistration.yaml).
 - **Held-out manifest** (2026-10-11, [benchmarks](benchmarks.md)). Calibration, exploratory
-  and held-out cases are partitioned before any held-out simulation. The confirmatory case
-  is ORN_DM1 → DM1_lPN, scored with the v4 positive, specific and stability checks at the
-  default parameters. The simulation has not been run.
+  and held-out cases were partitioned before the run. ORN_DM1 → DM1_lPN fails: positive
+  passes at 284.4 Hz, specific fails against a 185.6 Hz olfactory control, and 4894
+  neurons stay active (limit 100). The reported ORN_V case fails the same way and does
+  not decide. `w_syn` stays 0.192. The manifest was not edited.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency
