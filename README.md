@@ -82,7 +82,11 @@ with no dimorphism label.
   29/29 to 5/29. The five that remain are the `stability` check of every case:
   self-sustained activity still dies out. All 7 `specific` checks fail, and so do
   `positive`, `order`, `dose` and `negative`. The synapse weight stays 0.192
-  ([related](docs/related.md)).
+  ([related](docs/related.md)). Four further null families, 20 draws each on MaleCNS v1.0,
+  put the one-hop signed pathway weights above every draw (_p_ = 1/21): degree-preserving
+  null mean 21.4 against a real headline of 4077; cell-type-preserving 3196; weight-within-type
+  680; sign 1314. Four pathways have no direct synapses (including sugar → MN9). See
+  [nulls](docs/nulls.md).
 - **The engine matches the published model.** On the female FlyWire brain, with the same
   sugar neurons, flymsg and Shiu et al.'s brian2 code agree within noise (r ≥ 0.998 over all
   active neurons). The check uncovered six places where an earlier version of flymsg had

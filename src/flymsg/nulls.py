@@ -26,6 +26,24 @@ def cell_types(neurons: pd.DataFrame) -> np.ndarray:
     return neurons["type"].fillna("untyped").astype(str).to_numpy()
 
 
+def type_codes(neurons: pd.DataFrame) -> tuple[np.ndarray, dict[str, int]]:
+    """Integer codes for cell types, aligned with `neurons` rows."""
+    labels = cell_types(neurons)
+    codes, uniques = pd.factorize(labels, sort=False)
+    return codes.astype(np.int32), {str(u): int(i) for i, u in enumerate(uniques)}
+
+
+def permute_within(values: np.ndarray, groups: np.ndarray, seed: int) -> np.ndarray:
+    """Permute `values` independently inside each group. O(n log n), no per-group scan."""
+    rng = np.random.default_rng(seed)
+    rand = rng.random(values.size)
+    order_g = np.argsort(groups, kind="mergesort")
+    order_r = np.lexsort((rand, groups))
+    out = values.copy()
+    out[order_g] = values[order_r]
+    return out
+
+
 def shuffle_degree_preserving(edges: pd.DataFrame, seed: int) -> pd.DataFrame:
     """N1's permutation of `post` (configuration model)."""
     shuffled, _ = wiring.shuffle_targets(edges, seed)
@@ -42,14 +60,9 @@ def shuffle_cell_type_preserving(
     model inside groups).
     """
     out = edges.copy()
-    post = out["post"].to_numpy().copy()
-    types = cell_types(neurons)[post]
-    rng = np.random.default_rng(seed)
-    for label in np.unique(types):
-        idx = np.flatnonzero(types == label)
-        if idx.size > 1:
-            post[idx] = rng.permutation(post[idx])
-    out["post"] = post
+    post = out["post"].to_numpy()
+    codes, _ = type_codes(neurons)
+    out["post"] = permute_within(post, codes[post], seed)
     return out
 
 
@@ -62,14 +75,9 @@ def shuffle_weight_within_type(
     inside a cell type keeps that type's weight multiset.
     """
     out = edges.copy()
-    weight = out["weight"].to_numpy().copy()
-    types = cell_types(neurons)[out["pre"].to_numpy()]
-    rng = np.random.default_rng(seed)
-    for label in np.unique(types):
-        idx = np.flatnonzero(types == label)
-        if idx.size > 1:
-            weight[idx] = rng.permutation(weight[idx])
-    out["weight"] = weight
+    weight = out["weight"].to_numpy()
+    codes, _ = type_codes(neurons)
+    out["weight"] = permute_within(weight, codes[out["pre"].to_numpy()], seed)
     return out
 
 
@@ -121,39 +129,71 @@ def pathway_rows(neurons: pd.DataFrame) -> list[dict]:
     return rows
 
 
-def pathway_scores(
-    neurons: pd.DataFrame, edges: pd.DataFrame, pathways: list[dict] | None = None
+def _score_arrays(
+    pre: np.ndarray,
+    post: np.ndarray,
+    weight: np.ndarray,
+    sign: np.ndarray,
+    codes: np.ndarray,
+    lookup: dict[str, int],
+    pathways: list[dict],
+    n: int,
 ) -> pd.DataFrame:
-    """Signed stim → target-type weight: sum over the type and max onto one neuron."""
-    pathways = pathways if pathways is not None else pathway_rows(neurons)
-    pre = edges["pre"].to_numpy()
-    post = edges["post"].to_numpy()
-    weight = edges["weight"].to_numpy().astype(np.float64)
-    sign = neurons["sign"].to_numpy().astype(np.float64)
-    types = cell_types(neurons)
-    signed = weight * sign[pre]
+    signed = weight.astype(np.float64) * sign.astype(np.float64)[pre]
     rows = []
     for spec in pathways:
-        stim = spec["stim"]
-        from_stim = np.isin(pre, stim)
-        to_type = types[post] == spec["target"]
-        hit = from_stim & to_type
-        per_post: dict[int, float] = {}
-        if hit.any():
-            for p, w in zip(post[hit], signed[hit], strict=True):
-                per_post[int(p)] = per_post.get(int(p), 0.0) + float(w)
-        values = np.array(list(per_post.values()), dtype=np.float64)
+        stim_mask = np.zeros(n, dtype=bool)
+        stim_mask[spec["stim"]] = True
+        target = lookup.get(spec["target"])
+        if target is None:
+            rows.append(
+                {
+                    "case": spec["case"],
+                    "target": spec["target"],
+                    "kind": spec["kind"],
+                    "tail": spec["tail"],
+                    "sum": 0.0,
+                    "max": 0.0,
+                }
+            )
+            continue
+        hit = stim_mask[pre] & (codes[post] == target)
+        if not hit.any():
+            total, peak = 0.0, 0.0
+        else:
+            posts = post[hit]
+            totals = np.bincount(posts, weights=signed[hit], minlength=n)
+            vals = totals[np.unique(posts)]
+            total, peak = float(vals.sum()), float(vals.max())
         rows.append(
             {
                 "case": spec["case"],
                 "target": spec["target"],
                 "kind": spec["kind"],
                 "tail": spec["tail"],
-                "sum": float(values.sum()) if values.size else 0.0,
-                "max": float(values.max()) if values.size else 0.0,
+                "sum": total,
+                "max": peak,
             }
         )
     return pd.DataFrame(rows)
+
+
+def pathway_scores(
+    neurons: pd.DataFrame, edges: pd.DataFrame, pathways: list[dict] | None = None
+) -> pd.DataFrame:
+    """Signed stim → target-type weight: sum over the type and max onto one neuron."""
+    pathways = pathways if pathways is not None else pathway_rows(neurons)
+    codes, lookup = type_codes(neurons)
+    return _score_arrays(
+        edges["pre"].to_numpy(),
+        edges["post"].to_numpy(),
+        edges["weight"].to_numpy(),
+        neurons["sign"].to_numpy(),
+        codes,
+        lookup,
+        pathways,
+        len(neurons),
+    )
 
 
 def empirical_p(real: float, nulls: np.ndarray, tail: str) -> float:
@@ -215,6 +255,31 @@ def compare_to_nulls(
     return pd.DataFrame(rows)
 
 
+def _draw_arrays(
+    family: str,
+    pre: np.ndarray,
+    post: np.ndarray,
+    weight: np.ndarray,
+    sign: np.ndarray,
+    codes: np.ndarray,
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return (post, weight, sign) for one seeded draw. `pre` never changes."""
+    if family == "degree_preserving":
+        return np.random.default_rng(seed).permutation(post), weight, sign
+    if family == "cell_type_preserving":
+        return permute_within(post, codes[post], seed), weight, sign
+    if family == "weight_within_type":
+        return post, permute_within(weight, codes[pre], seed), sign
+    if family == "sign":
+        out = sign.copy()
+        fast = np.flatnonzero(out != 0)
+        if fast.size > 1:
+            out[fast] = np.random.default_rng(seed).permutation(out[fast])
+        return post, weight, out
+    raise KeyError(f"unknown null family {family!r}; families: {', '.join(FAMILIES)}")
+
+
 def run_family(
     family: str,
     neurons: pd.DataFrame,
@@ -225,11 +290,17 @@ def run_family(
 ) -> dict:
     """Real scores plus `draws` seeded nulls for one family."""
     pathways = pathways if pathways is not None else pathway_rows(neurons)
-    real = pathway_scores(neurons, edges, pathways)
+    codes, lookup = type_codes(neurons)
+    pre = edges["pre"].to_numpy()
+    post = edges["post"].to_numpy()
+    weight = edges["weight"].to_numpy()
+    sign = neurons["sign"].to_numpy()
+    n = len(neurons)
+    real = _score_arrays(pre, post, weight, sign, codes, lookup, pathways, n)
     null_tables = []
     for i in range(draws):
-        n, e = apply_family(family, neurons, edges, seed0 + i)
-        null_tables.append(pathway_scores(n, e, pathways))
+        p, w, s = _draw_arrays(family, pre, post, weight, sign, codes, seed0 + i)
+        null_tables.append(_score_arrays(pre, p, w, s, codes, lookup, pathways, n))
     reports = {m: compare_to_nulls(real, null_tables, m) for m in ("sum", "max")}
     real_h = headline(real)
     null_h = [headline(t) for t in null_tables]

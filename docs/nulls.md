@@ -88,10 +88,54 @@ platform, timestamps).
 
 ## Results
 
-Numbers come only from a run on the named dataset. They are not copied from
-elsewhere. The confirmatory MaleCNS v1.0 table lives in `runs/nulls/report.txt`
-next to that run's manifest. A short copy is recorded in the
-[findings log](validation.md#findings-log) after the run.
+Dataset: MaleCNS v1.0 after `flymsg build` (165,122 neurons, 25,563,197 edges).
+Draws: **20** per family, seeds 0–19. `w_syn` 0.192, `th_jump` 0. Manifest
+dataset hashes: `neurons.parquet`
+`7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c`,
+`edges.parquet`
+`2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a`.
+Smallest possible _p_ is 1/21 ≈ 0.0476.
+
+Real signed stim → target weights (one-hop):
+
+| Pathway           |  sum |  max |
+| ----------------- | ---: | ---: |
+| LC4_R → DNp01     | 2580 | 2580 |
+| LC4_R → TTMn      |    0 |    0 |
+| DNp01 → TTMn      |   90 |   70 |
+| P1 → pIP10        | 1537 |  812 |
+| P1 → dPR1         |    0 |    0 |
+| pIP10 → dPR1      | 1112 |  615 |
+| sugar GRNs → MN9  |    0 |    0 |
+| bitter GRNs → MN9 |    0 |    0 |
+
+Headline (sum of the seven specific `max` values = 4077; bitter `sum` = 0):
+
+| Family                 | real | null mean | null s.d. | _p_ (upper) |   _z_ |
+| ---------------------- | ---: | --------: | --------: | ----------: | ----: |
+| `degree_preserving`    | 4077 |     21.40 |     21.30 |        1/21 | 190.4 |
+| `cell_type_preserving` | 4077 |    3196.3 |     256.3 |        1/21 |  3.44 |
+| `weight_within_type`   | 4077 |    679.75 |    107.64 |        1/21 |  31.6 |
+| `sign`                 | 4077 |    1314.3 |     419.0 |        1/21 |  6.59 |
+
+Bitter `sum` is 0 on the real graph and is not below the nulls (_p_ = 0.86
+under degree-preserving; 1.0 under the other three). Those rows have no
+one-hop signed weight.
+
+`cell_type_preserving` leaves every **sum** unchanged (_p_ = 1), as the
+method requires. The headline still moves because **max** can move inside a
+type: LC4*R → DNp01 max 2580 vs null mean 1447.45 (\_p* = 1/21, _z_ = 8.69).
+DNp01 → TTMn max 70 is below the null mean 82.00 (_p_ = 1, _z_ = −1.19).
+pIP10 → dPR1 max 615 is below the null mean 811.70 (_p_ = 1, _z_ = −1.24).
+P1 → pIP10 max 812 vs 855.15 (_p_ = 14/21, _z_ = −0.62). All eight pathways
+are in the command output; none were dropped.
+
+Pathways with real weight 0 (LC4_R → TTMn, P1 → dPR1, sugar → MN9, bitter →
+MN9) cannot stand out on this one-hop score. Their criterion v4 `specific`
+checks, when they pass, run through more than one hop. N1 remains the
+battery comparison for those.
+
+The full per-pathway tables are in the findings log.
 
 ## References
 

@@ -12,7 +12,9 @@
   cell-type-preserving, weight shuffle within presynaptic cell type, and sign shuffle.
   Each draw is seeded. The score is signed stim→target weight (`sum` and `max`); every
   pathway is reported. Default `--draws` is 2 (CI). `flymsg nulls --full` is the locked
-  20-draw command. N1's one-draw battery is not redrawn.
+  20-draw command. N1's one-draw battery is not redrawn. On MaleCNS v1.0 with 20 draws
+  the headline (4077) is above every draw of every family (_p_ = 1/21). Four one-hop
+  pathways are 0, including sugar → MN9.
 - **Run manifests.** Commands that write outputs also write `manifest.json` (git commit,
   dataset name and file hashes, config, seeds, package versions, platform, timestamps).
 - **Provenance.** `docs/provenance.md` lists the public source and introducing commit for
