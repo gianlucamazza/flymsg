@@ -40,9 +40,10 @@ These rates are the model under a 100 Hz Poisson input for 300 ms. They are not 
 match to an odor recording. The first-spike times are the model's medians, not a claim
 about the odor puffs in Kazama and Wilson.
 
-The table is `runs/benchmarks/report.csv`, which is not committed. The run used
-commit `51b5305` plus the scorer added with this result; the manifest records that
-tree as dirty. Dataset file hashes are in `runs/benchmarks/manifest.json`.
+The numbers are from one run on 2026-10-11. The scorer was not committed yet, so
+`runs/benchmarks/manifest.json` records git `51b5305` with a dirty tree. The result
+itself is commit `b3e1859`. The csv and the manifest stay in `runs/`, outside git.
+Dataset file hashes are in that manifest.
 
 ## Inventory
 
@@ -124,7 +125,9 @@ stay the release's `consensus_nt`.
 A pass says that, under this stimulus and these three checks, DM1_lPN is recruited by
 ORN_DM1 beyond a class-matched control, and the network does not run away. It does not
 say that the model smells, that the rate matches an odor recording, or that `w_syn`
-should move. A failure is a finding. The v4 battery remains the baseline comparison.
+should move. A failure is a finding. The scored run is that failure: positive
+passes, and specific and stability do not. The record is the Result section above.
+`w_syn` did not move. The v4 battery remains the baseline comparison.
 
 ## References
 
