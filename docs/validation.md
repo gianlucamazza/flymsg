@@ -42,6 +42,11 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   parameter that transfers into this LIF without being tuned on the behaviour it would
   explain. The silence failure is a parallel path onto TTMn_R, not a missing giant-fiber
   gap junction. Neuromodulation and associative plasticity stay blocked on the same ground.
+- **No held-out behavior remains eligible** (2026-10-11). The frozen partition already
+  assigned every mapped behavior to calibration, or listed it as exploratory and
+  disqualified it in the same note. The one-bit loop is not that protocol and failed
+  silence. No exploratory row is promoted, and no new run is added. The five milestone
+  boxes stay empty.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

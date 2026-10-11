@@ -119,6 +119,9 @@ with no dimorphism label.
   short-term synaptic dynamics and compartments have no value that transfers into
   this LIF. The silence failure is not a giant-fiber gap junction. Neuromodulation
   and associative learning stay blocked ([model](docs/model.md)).
+- **No held-out behavior is eligible.** The frozen partition has no remaining task that
+  can fill the validated-behavior milestone. Exploratory rows stay exploratory
+  ([validation](docs/validation.md)).
 - **Synapse counts are not comparable across datasets.** A male neuron has a median 1.81× the
   synapses of its female counterpart over 7,327 matched cell types, a difference between the
   reconstructions. Male vs female simulations are corrected for it

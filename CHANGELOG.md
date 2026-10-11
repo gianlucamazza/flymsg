@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.10 — 2026-10-11
+
+### Results
+
+- **No held-out behavior is eligible.** The frozen partition assigned every mapped
+  behavior to calibration or to a disqualified exploratory row. Nothing is promoted
+  and nothing is rerun. The validated-behavior milestone stays unmet. `w_syn` stays
+  0.192.
+
 ## 0.8.9 — 2026-10-11
 
 ### Results

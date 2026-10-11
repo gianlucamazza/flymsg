@@ -100,6 +100,11 @@ no single recorded motor target in the manifest. T4/T5 need a moving bar, and th
 simulator's stimulus is a Poisson rate on a whole type. DN1pA acts over hours, outside
 a 600 ms run.
 
+No row in this inventory is promoted to a held-out behavior. The promotion would
+choose the test after the olfactory failure and the silence failure. A later case
+still needs a new version and a source that did not select the model. This note does
+not add that source.
+
 ## Confirmatory test
 
 One case: stimulate **ORN_DM1** and score **DM1_lPN**. Couto, Alenius and Dickson
