@@ -134,6 +134,34 @@ density-scaled weight the plain model stays stable (zero self-sustained neurons 
 validation case). The adaptive threshold is therefore off by default and kept as an option;
 `--th-jump 2 --w-syn 0.275` restores the v0.3–v0.4 model.
 
+## Extensions not adopted (2026-10-11)
+
+Issue #9 asks for one added mechanism only where a measured discrepancy comes with a
+parameter that transfers into this LIF. None of the four candidates has one. No variant
+is added. `w_syn` and `th_jump` stay at the default.
+
+| Candidate                    | Discrepancy already on record                                                      | Why it is not added                                                                                                                                                         |
+| ---------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cell-type parameters         | One membrane time constant and one threshold for every neuron                      | MaleCNS does not measure τ_m, threshold or refractory period per type. A per-type value would be invented.                                                                  |
+| Gap junctions                | GF → TTMn follows like a `shak-B²` fly, not like wild type. GF → DLMn was excluded | The published numbers are conductances fitted inside a compartmental model ([validation](validation.md)). They do not transfer, and the connectome has no electrical edges. |
+| Short-term synaptic dynamics | None is measured in this repository                                                | No facilitation or depression time constant is in the tables or in a frozen protocol.                                                                                       |
+| Compartments                 | One point neuron per traced cell                                                   | No compartment map is loaded by the simulator. Expanding the CNS to detailed cells is the expansion the issue forbids.                                                      |
+
+The looming silence failure is not a reason to add a giant-fiber gap junction. Silencing
+`DNp01` removes that cell's output, chemical and electrical together. `TTMn_R` still
+reaches 3 spikes, so some other partner still drives it. A synapse that starts at `DNp01`
+cannot put those spikes back. Which partner is not named here: that would be a new
+measurement, and it is not this decision.
+
+Issue #10 stays blocked. Dopamine, octopamine and serotonin have sign 0. The sugar and
+bitter cases are stimulus identity, not a feeding state. No receptor-to-parameter map is
+in the repository. A variable named hunger is not this experiment.
+
+Issue #11 stays blocked. No synapse set, learning rule or reinforcement signal is
+specified. A network-wide STDP rule is not the task. A body is not required. The missing
+piece is the evidence. #11 depends on #10 only if that modulator is the reinforcement
+signal.
+
 ## Performance
 
 One compiled kernel (numba) on one core: about 5 s per simulated second for the whole CNS,

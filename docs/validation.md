@@ -37,6 +37,11 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   feedback, DNp01 silence, and a decoder-prefix check. FlyBody is not embedded. The
   closed loop fails silence: with both DNp01 neurons silenced, TTMn_R still reaches
   3 spikes in every seed. Jump, feedback, and the decoder prefix pass. `w_syn` stays 0.192.
+- **No biological extension** (2026-10-11, [model](model.md)). Cell-type parameters, gap
+  junctions, short-term synaptic dynamics and compartments are not added. None has a
+  parameter that transfers into this LIF without being tuned on the behaviour it would
+  explain. The silence failure is a parallel path onto TTMn_R, not a missing giant-fiber
+  gap junction. Neuromodulation and associative plasticity stay blocked on the same ground.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

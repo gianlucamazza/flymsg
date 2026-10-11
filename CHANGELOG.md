@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.7 — 2026-10-11
+
+### Results
+
+- **No biological extension is added.** Cell-type parameters, gap junctions, short-term
+  synaptic dynamics and compartments have no value that transfers into this LIF. The
+  looming silence failure is not a giant-fiber gap junction: silencing DNp01 removes that
+  cell's output, and TTMn_R still fires. Neuromodulation (#10) and associative learning
+  (#11) stay blocked. `w_syn` stayed 0.192. Nothing was retuned.
+
 ## 0.8.6 — 2026-10-11
 
 ### Results
