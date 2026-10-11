@@ -100,7 +100,7 @@ def summary(doc: dict | None = None) -> str:
         f"benchmarks v{doc['version']}: {case['stimulus']} -> {case['target']} "
         f"({checks}); scored corner w_syn {corner['w_syn']} th_jump {corner['th_jump']}; "
         f"seeds {doc['endpoints']['seed0']}-{doc['endpoints']['seed0'] + doc['endpoints']['seeds'] - 1}; "
-        "scored run 2026-10-11 confirmatory FAIL"
+        "scored run and both sensitivity corners: confirmatory FAIL"
     )
 
 
@@ -137,22 +137,29 @@ def _jobs(doc: dict) -> list[tuple]:
     ]
 
 
-def score(
+_COLUMNS = [
+    "case",
+    "kind",
+    "subject",
+    "value",
+    "note",
+    "latency_ms",
+    "passed",
+    "decides",
+]
+
+
+def _same_corner(left: sim.Params, w_syn: float, th_jump: float) -> bool:
+    return abs(left.w_syn - w_syn) <= 1e-12 and left.th_jump == th_jump
+
+
+def _score_at(
     neurons: pd.DataFrame,
     edges: pd.DataFrame,
-    p: sim.Params | None = None,
+    p: sim.Params,
+    doc: dict,
 ) -> pd.DataFrame:
-    """Positive, specific and stability for the frozen cases. No order, dose or retune.
-
-    The control draw uses `control_seed` once and is not reseeded between cases.
-    A reported row does not decide. Counts that differ from the manifest abort
-    before the network is built.
-    """
-    doc = assert_matches_code()
-    p = sim.Params() if p is None else p
-    corner = doc["sensitivity"]["scored"]
-    if abs(p.w_syn - corner["w_syn"]) > 1e-12 or p.th_jump != corner["th_jump"]:
-        raise BenchmarkError("held-out score uses only the scored corner")
+    """One corner. The control generator starts again at `control_seed`."""
     ends = doc["endpoints"]
     seeds, seed0 = ends["seeds"], ends["seed0"]
     jobs = []
@@ -181,19 +188,61 @@ def score(
                 )
             ]
         rows.append((*validate._stability_row(case, persistent), decides))
-    return pd.DataFrame(
-        rows,
-        columns=[
-            "case",
-            "kind",
-            "subject",
-            "value",
-            "note",
-            "latency_ms",
-            "passed",
-            "decides",
-        ],
-    )
+    return pd.DataFrame(rows, columns=_COLUMNS)
+
+
+def score(
+    neurons: pd.DataFrame,
+    edges: pd.DataFrame,
+    p: sim.Params | None = None,
+) -> pd.DataFrame:
+    """Positive, specific and stability at the scored corner. No order, dose or retune.
+
+    A reported row does not decide. Counts that differ from the manifest abort
+    before the network is built.
+    """
+    doc = assert_matches_code()
+    p = sim.Params() if p is None else p
+    corner = doc["sensitivity"]["scored"]
+    if not _same_corner(p, corner["w_syn"], corner["th_jump"]):
+        raise BenchmarkError("held-out score uses only the scored corner")
+    return _score_at(neurons, edges, p, doc)
+
+
+def sensitivity_corners(doc: dict | None = None) -> list[sim.Params]:
+    """The two frozen sensitivity rows. The scored corner is not one of them."""
+    doc = assert_matches_code() if doc is None else doc
+    scored = doc["sensitivity"]["scored"]
+    found = []
+    for row in doc["sensitivity"]["corners"]:
+        if row["role"] != "sensitivity":
+            continue
+        if _same_corner(sim.Params(), row["w_syn"], row["th_jump"]) or (
+            abs(row["w_syn"] - scored["w_syn"]) <= 1e-12
+            and row["th_jump"] == scored["th_jump"]
+        ):
+            raise BenchmarkError("sensitivity corner duplicates the scored corner")
+        found.append(sim.Params(w_syn=row["w_syn"], th_jump=row["th_jump"]))
+    if len(found) != 2:
+        raise BenchmarkError(
+            f"manifest has {len(found)} sensitivity corners, expected 2"
+        )
+    return found
+
+
+def score_sensitivity(neurons: pd.DataFrame, edges: pd.DataFrame) -> pd.DataFrame:
+    """The frozen sensitivity corners only. Each one restarts the control generator.
+
+    Nothing here replaces the scored result, and the scored corner is not run again.
+    """
+    doc = assert_matches_code()
+    frames = []
+    for p in sensitivity_corners(doc):
+        report = _score_at(neurons, edges, p, doc)
+        report.insert(0, "th_jump", p.th_jump)
+        report.insert(0, "w_syn", p.w_syn)
+        frames.append(report)
+    return pd.concat(frames, ignore_index=True)
 
 
 def verdict(report: pd.DataFrame) -> str:
@@ -202,3 +251,13 @@ def verdict(report: pd.DataFrame) -> str:
     ok = bool(len(deciding) and deciding["passed"].all())
     name = deciding["case"].iloc[0] if len(deciding) else "confirmatory"
     return f"confirmatory {name}: {'PASS' if ok else 'FAIL'}"
+
+
+def corner_verdicts(report: pd.DataFrame) -> str:
+    """One line per sensitivity corner. None of them replaces the scored result."""
+    lines = []
+    grouped = report.groupby(["w_syn", "th_jump"], sort=False)
+    for (w_syn, th_jump), part in grouped:
+        lines.append(f"w_syn {w_syn} th_jump {th_jump}: {verdict(part)}")
+    lines.append("these corners do not replace the scored result")
+    return "\n".join(lines)

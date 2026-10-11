@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.4 — 2026-10-11
+
+### Results
+
+- **The held-out failure survives both sensitivity corners.** At the Shiu weight
+  (`w_syn` 0.275, `th_jump` 0) DM1_lPN is 301.1 Hz against a 200 Hz control, and 7797
+  neurons stay active. With adaptation (`w_syn` 0.192, `th_jump` 2) it is 185.6 Hz
+  against 105.6 Hz, and 2669 neurons stay active. Specific and stability fail at both
+  corners. ORN_V does not decide. The scored result stays the verdict. The manifest
+  was not edited.
+
 ## 0.8.3 — 2026-10-11
 
 ### Results

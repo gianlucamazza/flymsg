@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from flymsg import benchmarks, cli, sim, validate
 
@@ -137,3 +138,82 @@ def test_score_applies_v4_and_leaves_the_battery_alone(monkeypatch):
         assert "scored corner" in str(err)
     else:
         raise AssertionError("expected the scored corner to be required")
+
+
+def test_sensitivity_corners_are_the_two_manifest_rows():
+    corners = benchmarks.sensitivity_corners()
+    assert [(c.w_syn, c.th_jump) for c in corners] == [
+        (0.275, 0.0),
+        (sim.Params.w_syn, 2.0),
+    ]
+    assert benchmarks.content_hash(benchmarks.load()) == benchmarks.VERSION_HASHES[1]
+
+
+def test_score_sensitivity_does_not_rerun_the_scored_corner(monkeypatch):
+    neurons = _held_out_neurons()
+    edges = pd.DataFrame(
+        {
+            "pre": np.array([], dtype=int),
+            "post": np.array([], dtype=int),
+            "weight": np.array([], dtype=float),
+        }
+    )
+    seen = []
+
+    def fake_network(_neurons, _edges, p):
+        seen.append((p.w_syn, p.th_jump))
+
+    def fake_respond(
+        W,
+        neurons,
+        stim,
+        targets,
+        p,
+        seeds,
+        rate_hz=validate.RATE_HZ,
+        silence=None,
+        seed0=0,
+        duration_ms=validate.DURATION_MS,
+    ):
+        return {
+            t: {
+                "rate": 30.0,
+                "reliable": 3,
+                "latencies": np.array([10.0, 11.0, 12.0]),
+                "seed_rates": np.array([30.0, 30.0, 30.0]),
+                "latency": 11.0,
+            }
+            for t in targets
+        }, 0.0
+
+    monkeypatch.setattr(sim, "network", fake_network)
+    monkeypatch.setattr(validate, "respond", fake_respond)
+    before = [case.name for case in validate.CASES]
+    report = benchmarks.score_sensitivity(neurons, edges)
+    assert [case.name for case in validate.CASES] == before
+    assert seen == [(0.275, 0.0), (sim.Params.w_syn, 2.0)]
+    assert list(report["w_syn"].unique()) == [0.275, sim.Params.w_syn]
+    text = benchmarks.corner_verdicts(report)
+    assert "w_syn 0.275 th_jump 0.0" in text
+    assert "th_jump 2.0" in text
+    assert text.endswith("these corners do not replace the scored result")
+
+
+def test_benchmarks_corners_needs_the_dataset(monkeypatch, capsys, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        "sys.argv", ["flymsg", "--data", str(tmp_path), "benchmarks", "--corners"]
+    )
+    try:
+        cli.main()
+    except SystemExit as err:
+        assert "fetch" in str(err)
+    else:
+        raise AssertionError("expected a missing-data exit")
+
+
+def test_benchmarks_refuses_run_and_corners_together(monkeypatch, capsys):
+    monkeypatch.setattr("sys.argv", ["flymsg", "benchmarks", "--run", "--corners"])
+    with pytest.raises(SystemExit):
+        cli.main()
+    assert "not both" in capsys.readouterr().err

@@ -28,7 +28,9 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   and held-out cases were partitioned before the run. ORN_DM1 → DM1_lPN fails: positive
   passes at 284.4 Hz, specific fails against a 185.6 Hz olfactory control, and 4894
   neurons stay active (limit 100). The reported ORN_V case fails the same way and does
-  not decide. `w_syn` stays 0.192. The manifest was not edited.
+  not decide. Both sensitivity corners fail the same two checks: at `w_syn` 0.275 the
+  control is 200 Hz and 7797 neurons stay active; at `th_jump` 2 the control is 105.6 Hz
+  and 2669 stay active. Neither corner replaces the scored result. `w_syn` stays 0.192.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

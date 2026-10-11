@@ -107,8 +107,9 @@ with no dimorphism label.
   ([dimorphism](docs/dimorphism.md)). The gallery colours the pIP10 replay by the sex annotation.
 - **The held-out olfactory case fails.** ORN_DM1 recruits DM1_lPN (284.4 Hz, 3/3 seeds),
   and the CO2 ORNs recruit their PNs, but neither is specific against other olfactory
-  neurons and both leave thousands of neurons firing after the stimulus. The weight stays
-  0.192 ([benchmarks](docs/benchmarks.md)).
+  neurons and both leave thousands of neurons firing after the stimulus. The same
+  failure survives the Shiu weight and adaptation. The scored weight stays 0.192
+  ([benchmarks](docs/benchmarks.md)).
 - **Synapse counts are not comparable across datasets.** A male neuron has a median 1.81× the
   synapses of its female counterpart over 7,327 matched cell types, a difference between the
   reconstructions. Male vs female simulations are corrected for it
@@ -205,7 +206,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [data](docs/data.md)             | sources, files, filtering, schema, the female FAFB dataset, citations       |
 | [model](docs/model.md)           | equations, parameters and their origin, synapse signs, density scaling      |
 | [validation](docs/validation.md) | current status, protocol, cases, calibration, model selection, findings log |
-| [benchmarks](docs/benchmarks.md) | held-out partition, the ORN_DM1 failure, sensitivity corners not run        |
+| [benchmarks](docs/benchmarks.md) | held-out partition, the ORN_DM1 failure, both corners fail                  |
 | [nulls](docs/nulls.md)           | pre-registered null families, scores, draw counts, methods                  |
 | [provenance](docs/provenance.md) | date, public source and commit for each existing idea                       |
 | [comparison](docs/comparison.md) | engine check against the published model, male vs female, the LB3 split     |

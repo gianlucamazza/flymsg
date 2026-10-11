@@ -14,8 +14,8 @@ manifest, criterion v4, or N1.
 ## Result (2026-10-11)
 
 The scored run fails. `w_syn` stayed 0.192 and `th_jump` stayed 0. Seeds 0–2, control
-seed 0. The manifest was not edited after the numbers. The two sensitivity corners
-were not run, and neither would replace this result.
+seed 0. The manifest was not edited after the numbers. Both sensitivity corners fail
+the same two checks. Neither replaces this result.
 
 | Case              | Check     | Result                                                                               |
 | ----------------- | --------- | ------------------------------------------------------------------------------------ |
@@ -44,6 +44,29 @@ The numbers are from one run on 2026-10-11. The scorer was not committed yet, so
 `runs/benchmarks/manifest.json` records git `51b5305` with a dirty tree. The result
 itself is commit `b3e1859`. The csv and the manifest stay in `runs/`, outside git.
 Dataset file hashes are in that manifest.
+
+## Sensitivity (2026-10-11)
+
+`flymsg benchmarks --corners` ran the two frozen rows and did not rerun the scored
+corner. Seeds 0–2, control seed 0, same two cases. The manifest hash is unchanged.
+
+| Corner       | w_syn | th_jump | DM1_lPN        | Control | Still firing |
+| ------------ | ----: | ------: | -------------- | ------: | -----------: |
+| scored       | 0.192 |       0 | 284.4 Hz, pass |   185.6 |         4894 |
+| Shiu weight  | 0.275 |       0 | 301.1 Hz, pass |   200.0 |         7797 |
+| adaptation A | 0.192 |       2 | 185.6 Hz, pass |   105.6 |         2669 |
+
+Specific fails in every row: the control stays above the bar (99.7 Hz at the Shiu
+weight, 61.2 Hz with adaptation). Stability fails in every row. Confirmatory verdict
+at both corners: FAIL. The scored failure survives both perturbations.
+
+ORN_V stays reported. At the Shiu weight, V_ilPN is 287.8 Hz against 252.2 Hz and
+V_l2PN is 131.1 Hz against 104.4 Hz, with 7883 neurons still firing. With adaptation,
+V_ilPN is 165.6 Hz against 125.6 Hz and V_l2PN is 75.6 Hz against 51.1 Hz, with 2685
+neurons still firing. Positive passes. Specific and stability fail. It does not decide.
+
+The corner run started from commit `490c32b` with this command still uncommitted, so
+its manifest records a dirty tree. The csv is `runs/benchmarks/corners/report.csv`.
 
 ## Inventory
 
@@ -126,8 +149,9 @@ A pass says that, under this stimulus and these three checks, DM1_lPN is recruit
 ORN_DM1 beyond a class-matched control, and the network does not run away. It does not
 say that the model smells, that the rate matches an odor recording, or that `w_syn`
 should move. A failure is a finding. The scored run is that failure: positive
-passes, and specific and stability do not. The record is the Result section above.
-`w_syn` did not move. The v4 battery remains the baseline comparison.
+passes, and specific and stability do not. Both sensitivity corners fail the same
+way, and the scored failure survives them. The record is above. `w_syn` did not
+move. The v4 battery remains the baseline comparison.
 
 ## References
 

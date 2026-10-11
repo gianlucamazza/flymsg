@@ -290,9 +290,47 @@ def cmd_validate(a, neurons, edges):
         sys.exit(1)
 
 
+def _cmd_benchmark_corners(a, neurons, edges, started):
+    """The two frozen sensitivity corners. The scored report is left where it is."""
+    doc = benchmarks.assert_matches_code()
+    corners = benchmarks.sensitivity_corners(doc)
+    listed = ", ".join(f"w_syn={p.w_syn} th_jump={p.th_jump}" for p in corners)
+    print(f"benchmarks v{doc['version']}: sensitivity corners only, {listed}")
+    report = benchmarks.score_sensitivity(neurons, edges)
+    print(report.round(1).to_string(index=False))
+    text = benchmarks.corner_verdicts(report)
+    print(text)
+    out = Path("runs/benchmarks/corners")
+    out.mkdir(parents=True, exist_ok=True)
+    report.to_csv(out / "report.csv", index=False)
+    _stamp(
+        out,
+        "benchmarks --corners",
+        a,
+        neurons,
+        edges,
+        {
+            "corners": [{"w_syn": p.w_syn, "th_jump": p.th_jump} for p in corners],
+            "benchmarks_version": doc["version"],
+            "benchmarks_sha256": doc["content_sha256"],
+            "checks": doc["endpoints"]["checks"],
+        },
+        {
+            "seeds": doc["endpoints"]["seeds"],
+            "seed0": doc["endpoints"]["seed0"],
+            "control_seed": doc["endpoints"]["control_seed"],
+        },
+        started,
+        extra={"verdicts": text},
+    )
+    print(f"report -> {out / 'report.csv'}")
+
+
 def cmd_benchmarks(a, neurons, edges):
-    """The frozen held-out cases at the scored corner. No flag changes the case or the weight."""
+    """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
+    if a.corners:
+        return _cmd_benchmark_corners(a, neurons, edges, started)
     doc = benchmarks.assert_matches_code()
     corner = doc["sensitivity"]["scored"]
     print(
@@ -694,6 +732,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="score the frozen cases at the default corner (no other parameters)",
     )
+    s.add_argument(
+        "--corners",
+        action="store_true",
+        help="score the two frozen sensitivity corners (does not replace --run)",
+    )
     sub.add_parser("fetch", help="download raw tables (malecns ~1.1 GB, fafb ~135 MB)")
     sub.add_parser("build", help="compact raw tables to data/*.parquet")
     s = sub.add_parser(
@@ -938,7 +981,9 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
-        if a.cmd == "benchmarks" and not a.run:
+        if a.cmd == "benchmarks" and a.run and a.corners:
+            p.error("benchmarks takes --run or --corners, not both")
+        if a.cmd == "benchmarks" and not a.run and not a.corners:
             return print(benchmarks.summary())
         if a.dataset == "fafb" and a.cmd in MALECNS_ONLY:
             # the battery needs the VNC, and the 3D view streams MaleCNS geometry
