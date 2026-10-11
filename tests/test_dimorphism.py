@@ -7,6 +7,54 @@ import pytest
 from flymsg import dimorphism, sim
 
 
+def test_a_short_matched_pool_is_reported_without_running_the_null(monkeypatch):
+    from flymsg import parallel, validate
+
+    class Case:
+        name = "c"
+        targets = ("T",)
+
+        def stim_idx(self, neurons):
+            return np.array([0])
+
+        def target_idx(self, neurons):
+            return np.array([1])
+
+    monkeypatch.setattr(validate, "case_by_name", lambda name: Case())
+    silenced = np.array([0, 1])
+    key = np.array(["cb_intrinsic/1", "cb_intrinsic/1"])
+    pool = np.array([False, False])
+    monkeypatch.setattr(
+        dimorphism, "_set_draw", lambda *a, **k: (silenced, key, pool, "label")
+    )
+
+    def rates(silence=None, per_seed=False):
+        value = 8.0 if silence is not None else 10.0
+        if per_seed:
+            return np.array([value]), np.full((1, 3), value)
+        return np.array([value])
+
+    def null_must_not_run(*a, **k):
+        raise AssertionError("null ran")
+
+    monkeypatch.setattr(dimorphism, "_case_rates", lambda *a, **k: rates)
+    monkeypatch.setattr(dimorphism, "_null_rates", null_must_not_run)
+    parallel._init(
+        (
+            (np.zeros(2), None, None, 3, 1000, dimorphism.T4_SETS),
+            None,
+            {"kind": "loop"},
+        )
+    )
+    rows = dimorphism._job(("pIP10 song pathway", "AVLP717m"))
+    assert len(rows) == 1
+    assert rows[0]["drop"] == pytest.approx(0.2)
+    assert np.isnan(rows[0]["p_drop"])
+    assert dimorphism.matched_pool_shortfall(key, pool, silenced) == [
+        ("cb_intrinsic/1", 0, 2)
+    ]
+
+
 def test_rise_interval_is_the_shipped_bootstrap_and_overlap_is_closed():
     from flymsg import validate
 

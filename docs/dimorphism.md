@@ -199,7 +199,9 @@ case's own responders, matched on superclass and transmitter sign, never the sti
 targets or the tested neurons. 1,000 draws, 3 seeds, 100 Hz, 300 ms, defaults only (`w_syn`
 0.192, `th_jump` 0; do not pass `--w-syn`). The one confirmatory test is a drop of pIP10
 after P1, p ≤ 0.05. Both courtship cases are run; the silencing after pIP10, and AVLP717m's
-effect on dPR1, are reported and do not change the verdict. A failure is a finding.
+effect on dPR1, are reported and do not change the verdict. The pIP10-stimulus case has no
+other excitatory `cb_intrinsic` responder, so that null is not defined and the case is
+reported without a p. A failure is a finding.
 
 ```sh
 bg uv run flymsg dimorphism --loop t4 --null 1000 --checkpoint runs/t4-loop.ckpt.jsonl

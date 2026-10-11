@@ -208,6 +208,17 @@ def _job(job: tuple[str, str]) -> list[dict]:
         return _rows(case_name, which, 0, case.targets, base, base, np.empty((0, 0)),
                      base_seeds, base_seeds)  # fmt: skip
     obs, obs_seeds = rates(silenced, per_seed=True)
+    short = matched_pool_shortfall(key, pool, silenced)
+    if short:
+        group, have, need = short[0]
+        print(
+            f"{label}: null not defined ({group}: {have} in the pool, need {need})",
+            file=sys.stderr,
+        )
+        return _rows(
+            case_name, which, silenced.size, case.targets, base, obs,
+            np.empty((0, len(case.targets))), base_seeds, obs_seeds,
+        )  # fmt: skip
     rng = np.random.default_rng(zlib.crc32(label.encode()))  # stable across runs
     null = _null_rates(
         f"{case_name} / {which}",
@@ -395,16 +406,29 @@ def _map_jobs(
     return [r for j in jobs for r in done[tuple(j)]]
 
 
+def matched_pool_shortfall(key, pool, like) -> list[tuple[str, int, int]]:
+    """Groups where `pool` has fewer neurons of that key than `like` requires."""
+    groups, counts = np.unique(key[like], return_counts=True)
+    short = []
+    for g, k in zip(groups, counts, strict=True):
+        have = int(np.count_nonzero(pool & (key == g)))
+        if have < int(k):
+            short.append((str(g), have, int(k)))
+    return short
+
+
 def _matched_draw(
     rng, key: np.ndarray, pool: np.ndarray, like: np.ndarray
 ) -> np.ndarray:
     """As many neurons from `pool` as `like` has, with the same count per `key` value."""
+    short = matched_pool_shortfall(key, pool, like)
+    if short:
+        g, have, need = short[0]
+        raise ValueError(f"null pool has {have} neurons of {g!r}, need {need}")
     groups, counts = np.unique(key[like], return_counts=True)
     pick = []
     for g, k in zip(groups, counts, strict=True):
         cand = np.flatnonzero(pool & (key == g))
-        if cand.size < k:
-            raise ValueError(f"null pool has {cand.size} neurons of {g!r}, need {k}")
         pick.append(rng.choice(cand, size=k, replace=False))
     return np.concatenate(pick)
 
