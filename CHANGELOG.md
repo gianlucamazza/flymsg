@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.9 — 2026-10-11
+
+### Results
+
+- **The extension queue is closed as blocked.** Neuromodulation and associative
+  learning have no parameter table, so no module is added. The validated-behavior
+  milestone is not met. Provenance now cites the sensitivity corners, the looming
+  protocol, the silence failure, the extension no-go and the TTMn_R raster.
+  Nothing was rerun.
+
 ## 0.8.8 — 2026-10-11
 
 ### Results
