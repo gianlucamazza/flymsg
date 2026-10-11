@@ -110,6 +110,15 @@ with no dimorphism label.
   neurons and both leave thousands of neurons firing after the stimulus. The same
   failure survives the Shiu weight and adaptation. The scored weight stays 0.192
   ([benchmarks](docs/benchmarks.md)).
+- **The one-bit looming jump fails silence.** `TTMn_R` reaches three spikes on time
+  in 3/3 seeds, and the closed loop stops there. With both DNp01 silenced it still
+  reaches three spikes, later. The raster is
+  [TTMn_R](docs/img/looming-jump.png), explained in [behavior](docs/behavior.md).
+  `w_syn` stays 0.192.
+- **No biological extension is added.** Cell-type parameters, gap junctions,
+  short-term synaptic dynamics and compartments have no value that transfers into
+  this LIF. The silence failure is not a giant-fiber gap junction. Neuromodulation
+  and associative learning stay blocked ([model](docs/model.md)).
 - **Synapse counts are not comparable across datasets.** A male neuron has a median 1.81× the
   synapses of its female counterpart over 7,327 matched cell types, a difference between the
   reconstructions. Male vs female simulations are corrected for it

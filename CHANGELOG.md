@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.8 — 2026-10-11
+
+### Results
+
+- **TTMn_R spike times are drawn.** The raster shows the open loop continuing
+  through the 300 ms drive, the closed loop stopping at the third spike, and both
+  DNp01 silenced still reaching three spikes later. The times are the v0.8.6 run.
+  Nothing was rerun.
+
 ## 0.8.7 — 2026-10-11
 
 ### Results

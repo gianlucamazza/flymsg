@@ -20,6 +20,12 @@ The protocol file was not edited after the numbers. The run started from commit
 commit as dirty. The loop itself took 90.5 s. Same MaleCNS tables as the
 held-out run.
 
+![TTMn_R spikes, seeds 0–2. Black ticks are the closed loop and stop at the third spike. Grey ticks are the open loop after that. Blue ticks are TTMn_R with both DNp01 silenced.](img/looming-jump.png)
+
+Each seed has two rows. The triangle is `t_jump`, and the closed loop has no
+spike after it. With both `DNp01` silenced, `TTMn_R` still reaches three
+spikes, later and inside the 300 ms drive. These times are not a takeoff latency.
+
 | Check           | Result                                                                                                                                              |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `jump`          | pass. `t_jump_ms` is 43.0, 50.7 and 47.8 ms, so 3/3 seeds are inside 300 ms. The median is 47.8 ms                                                  |
