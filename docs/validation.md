@@ -31,6 +31,11 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   not decide. Both sensitivity corners fail the same two checks: at `w_syn` 0.275 the
   control is 200 Hz and 7797 neurons stay active; at `th_jump` 2 the control is 105.6 Hz
   and 2669 stay active. Neither corner replaces the scored result. `w_syn` stays 0.192.
+- **One-bit looming jump** (2026-10-11, [behavior](behavior.md)). The closed-loop task is
+  frozen before any run. `LC4_R` drives the network; the third `TTMn_R` spike cuts that
+  drive. The claim is a calibration feasibility check on the looming case, with jump,
+  feedback, DNp01 silence, and a decoder-prefix check. FlyBody is not embedded. The
+  simulation has not been run.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

@@ -28,6 +28,8 @@ EXTERNAL = {
     "../validation/preregistration.yaml": f"{BLOB}/validation/preregistration.yaml",
     "validation/benchmarks.yaml": f"{BLOB}/validation/benchmarks.yaml",
     "../validation/benchmarks.yaml": f"{BLOB}/validation/benchmarks.yaml",
+    "validation/behavior.yaml": f"{BLOB}/validation/behavior.yaml",
+    "../validation/behavior.yaml": f"{BLOB}/validation/behavior.yaml",
 }
 
 # (output stem, source path, nav label). Order is the site nav.
@@ -37,6 +39,7 @@ PAGES = (
     ("model", "docs/model.md", "Model"),
     ("validation", "docs/validation.md", "Validation"),
     ("benchmarks", "docs/benchmarks.md", "Benchmarks"),
+    ("behavior", "docs/behavior.md", "Behavior"),
     ("nulls", "docs/nulls.md", "Nulls"),
     ("provenance", "docs/provenance.md", "Provenance"),
     ("comparison", "docs/comparison.md", "Comparison"),

@@ -29,6 +29,10 @@ _Drosophila_ in MuJoCo. FlyBody (TuragaLab) is the open-source model:
 
 <https://github.com/TuragaLab/flybody>
 
+Issue #8 compares that model with a one-bit body. The selected task is the
+looming jump in [behavior](behavior.md). FlyBody is not a dependency. The
+protocol is frozen and has not been simulated.
+
 ## N1 — specific checks need the measured partners
 
 Fixed 2026-10-10, before the confirmatory comparison. The census below is that one

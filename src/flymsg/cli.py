@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from flymsg import (
+    behavior,
     benchmarks,
     compare,
     data,
@@ -723,6 +724,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="malecns (male CNS, default) or fafb (female brain, FlyWire v783, in DATA/fafb)",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser(
+        "behavior",
+        help="print the frozen one-bit looming-jump protocol; it does not simulate",
+    )
     s = sub.add_parser(
         "benchmarks",
         help="print the frozen held-out manifest, or score it with --run",
@@ -981,6 +986,8 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
+        if a.cmd == "behavior":
+            return print(behavior.summary())
         if a.cmd == "benchmarks" and a.run and a.corners:
             p.error("benchmarks takes --run or --corners, not both")
         if a.cmd == "benchmarks" and not a.run and not a.corners:
@@ -999,6 +1006,8 @@ def main() -> None:
     except prereg.PreregistrationError as err:
         sys.exit(f"flymsg: {err}")
     except benchmarks.BenchmarkError as err:
+        sys.exit(f"flymsg: {err}")
+    except behavior.BehaviorError as err:
         sys.exit(f"flymsg: {err}")
     except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")

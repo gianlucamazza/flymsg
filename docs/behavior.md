@@ -1,0 +1,225 @@
+# One-bit looming jump
+
+Issue #8 asks for one closed loop in which an action changes the sensory input
+that follows it. This note freezes that task on 2026-10-11, before any
+closed-loop simulation. The lock is
+[`validation/behavior.yaml`](../validation/behavior.yaml) (version 1). Changing
+the task, the body, a deciding check, or a FlyBody number requires a new
+version.
+
+`flymsg behavior` prints the protocol and returns before loading the
+connectome. There is no `--run` switch in this version. Criterion v4, N1, and
+[`validation/benchmarks.yaml`](../validation/benchmarks.yaml) stay as they are.
+The looming case is not added again to `validate.CASES`.
+
+## Task
+
+The task is a one-bit jump on the looming-escape circuit already in the v4
+battery.
+
+| Role    | Identity | Count | Where it sits in MaleCNS v1.0          |
+| ------- | -------- | ----: | -------------------------------------- |
+| Sensory | `LC4_R`  |    55 | superclass `visual_projection`         |
+| Command | `DNp01`  |     2 | instances `DNp01(GF)_R`, `DNp01(GF)_L` |
+| Motor   | `TTMn_R` |     1 | superclass `vnc_motor`                 |
+
+`LC4_R` is the stimulus of the looming case. That case scores types `DNp01` and
+`TTMn`. A unilateral `LC4_R` drive recruits the right-hand motor neuron, so
+this protocol names the instance `TTMn_R`. The giant-fiber instances in the
+table are `DNp01(GF)_R` and `DNp01(GF)_L`. There is no `DNp01_R` row.
+
+The endpoint is measurable inside the existing simulator. The sensory trace is
+the Poisson kick matrix into `LC4_R`. The motor trace is the spike count of the
+one `TTMn_R` neuron. The body state is two fields, `escaped` and `t_jump_ms`.
+`escaped` becomes true on the first 0.1 ms step at which `TTMn_R` has emitted 3
+spikes. From the next step on, the `LC4_R` drive is zero. That cut is the
+action changing the sensory input.
+
+The circuit reference is the same one the validation case already cites. LC4
+and LPLC2 drive the giant fiber, and the giant fiber drives the jump-muscle
+motor neuron (von Reyn et al., _Nat. Neurosci._ 17, 962–970, 2014,
+doi:10.1038/nn.3741; Ache et al., _Curr. Biol._ 29, 1073–1081, 2019,
+doi:10.1016/j.cub.2019.01.079). The chemical weights already reported for this
+case are LC4\*R → DNp01 2580/2580 (sum/max) and DNp01 → TTMn 90/70. The direct
+LC4_R → TTMn weight is 0 ([validation](validation.md)). Those numbers are why
+the case was calibratable. They were not looked up again to choose a target.
+
+Walking, song, grooming, and proboscis extension need a map from motor neurons
+onto joints. This repository does not have that map. The held-out olfactory
+case ORN_DM1 → DM1_lPN fails specific and stability
+([benchmarks](benchmarks.md)), so it is not the substrate. CO2 avoidance stays
+unscored. LPLC2, the alternate LC4 routes, MDN, and T4/T5 stay in the
+exploratory partition.
+
+## What the result is allowed to mean
+
+Looming escape is in the calibration partition. It took part in choosing
+`w_syn`. A closed loop on it is a feasibility demonstration on that circuit.
+`claim.status` is `calibration_feasibility` and `held_out` is false. A pass
+does not show that the model generalizes, takes off, walks, or sees a loom. A
+failure is a finding. `w_syn` and `th_jump` stay at the defaults, N1 is not
+redrawn, and the held-out manifest is not edited.
+
+## Body
+
+Two bodies were compared. The numbers for FlyBody were read on 2026-10-11 from
+the public repository <https://github.com/TuragaLab/flybody> (default branch
+`main`). FlyBody was not installed.
+
+|                             | One-bit jump                         | FlyBody (TuragaLab)                                                                                              |
+| --------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| What it is                  | `escaped`, `t_jump_ms`               | MuJoCo fruit fly for physics and reinforcement learning                                                          |
+| License                     | this repository, MIT                 | Apache-2.0 (`LICENSE`, GitHub SPDX `Apache-2.0`)                                                                 |
+| Paper                       | von Reyn 2014; Ache 2019, as above   | Vaxenburg et al., _Nature_ 643, 1312–1320 (2025), doi:10.1038/s41586-025-09029-4, as cited in the FlyBody README |
+| Action                      | one bit, the third `TTMn_R` spike    | README walking example: 59-dimensional action                                                                    |
+| Tasks in the tree           | this protocol                        | `walk_imitation`, `walk_on_ball`, `flight_imitation`, `vision_flight`                                            |
+| Timestep                    | no body step; neural `dt` is 0.1 ms  | see the coupling table below                                                                                     |
+| Controller                  | the traced LIF, `learned: false`     | README training path is a DMPO agent (Acme, TensorFlow, Ray)                                                     |
+| Install named by the README | none added                           | conda, Python 3.10, optional CUDA 11.8                                                                           |
+| Connectome                  | MaleCNS v1.0, 165,122 traced neurons | no MaleCNS motor-neuron label on the 59 walking actions                                                          |
+| Sex                         | male connectome                      | not stated in the README, `tasks/constants.py`, or the head of `fruitfly.xml`                                    |
+
+FlyBody's published tasks are locomotion and flight. The task list has no
+looming-jump environment. Vision-guided flight observes a rendered camera. It
+does not take `LC4_R` spikes. Nothing read on that day maps `TTMn_R` onto a
+tergotrochanter actuator, or a MaleCNS motor neuron onto an action coordinate.
+
+The documented FlyBody install is Python 3.10 plus optional TensorFlow, Acme,
+Ray, and CUDA. flymsg requires Python 3.13 and does not depend on MuJoCo.
+Compatibility of the two environments was not established, and no FlyBody
+runtime was measured. A DMPO policy would be a learned controller. Issue #8
+keeps any learned controller out of the mechanism under test.
+
+The selected body is the one-bit jump. FlyBody stays related work. It is not a
+dependency of this version.
+
+## Encoding and decoding
+
+Defaults are criterion v4 and `sim.Params`. `w_syn` is 0.19230769230769232 and
+`th_jump` is 0. Seeds are 0, 1, and 2.
+
+| Piece         | Value                                                                   | Provenance                             | Assumption                                                                                  |
+| ------------- | ----------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Drive         | Poisson, 100 Hz, for 300 ms unless the jump cuts it                     | `validate.RATE_HZ`, `validate.STIM_MS` | this is not a loom. Ache et al. encode size and velocity in LC4. No loom waveform is copied |
+| Step          | 0.1 ms                                                                  | `sim.Params.dt`, Shiu et al. 2024      |                                                                                             |
+| Run length    | 600 ms                                                                  | `validate.DURATION_MS`                 |                                                                                             |
+| Generator     | one `numpy` `default_rng(seed)` draw for the 300 ms window, then a mask | same draw order as `sim.run`           |                                                                                             |
+| Jump bit      | first step at which `TTMn_R` has emitted 3 spikes                       | `validate.MIN_SPIKES`                  | 3 spikes are the v4 floor, not a measured muscle tension                                    |
+| Cut           | `LC4_R` kicks are zero on every step strictly after that step           | this protocol                          | the kick on the jump step itself is still the open-loop draw                                |
+| Silence set   | both `DNp01` neurons                                                    | the giant fiber pair                   | the contralateral fiber is included. The protocol does not test the right fiber alone       |
+| Gap junctions | absent, as in the rest of flymsg                                        | [model](model.md)                      | the giant fiber here is the chemical path                                                   |
+
+`LC4` has no `class` value in MaleCNS v1.0. Its superclass is
+`visual_projection`. The class-matched sensory control of criterion v4 is not a
+deciding check here.
+
+The kernel decides a spike before it adds that step's Poisson kick
+(`sim._kernel`, threshold, then delivery, then the kick). The third `TTMn_R`
+spike therefore does not depend on the kick of its own step. Zeroing kicks
+after that step is the cut that later spikes can feel.
+
+## Interface
+
+The body state is `{escaped: bool, t_jump_ms: ms or null}`. Each neural step is
+0.1 ms. This body has no integrator and no slower step
+(`body.timestep_ms: null`).
+
+On the step where the `TTMn_R` count reaches 3, set `escaped` and `t_jump_ms`
+to that step's time. Every later step uses a zero kick. If the count never
+reaches 3, `escaped` stays false, `t_jump_ms` stays null, and the drive follows
+the open-loop 300 ms window.
+
+Replay is fixed by the seed. The runner stores, per seed and per arm:
+
+- the spike-count bins and the first-spike times;
+- the `LC4_R` kick matrix after the mask;
+- `escaped` and `t_jump_ms`;
+- whether `DNp01` was silenced.
+
+The same seed redraws the same open-loop Poisson sequence and applies the mask.
+No second random stream is drawn at the cut.
+
+## Coupling
+
+The neural step stays 0.1 ms. A future body step is eligible only when its
+duration is an integer multiple of 0.1 ms and at least one neural step, and
+when the sensory input is held constant across the neural steps inside it.
+`behavior.integer_multiple` is that test. This version checks the frozen
+FlyBody numbers with it. It does not step MuJoCo.
+
+| Source, read 2026-10-11                       | Value    | In 0.1 ms steps | Eligible later |
+| --------------------------------------------- | -------- | --------------- | -------------- |
+| `fruitfly.xml` `<option timestep>`            | 0.0001 s | 1               | yes            |
+| `tasks/constants.py` `_WALK_PHYSICS_TIMESTEP` | 0.0002 s | 2               | yes            |
+| `_WALK_CONTROL_TIMESTEP`                      | 0.002 s  | 20              | yes            |
+| `_FLY_PHYSICS_TIMESTEP`                       | 5e-5 s   | 0.5             | no             |
+| `_FLY_CONTROL_TIMESTEP`                       | 0.0002 s | 2               | yes            |
+
+The asset file's 0.1 ms option is not the task step. Walking and flight
+override it. Flight's physics step is finer than the neural step, so it fails
+the rule. Walking's physics step is two neural steps, and its control step is
+twenty. Neither is implemented. The selected body declares no second step, so
+there is no coupling left to integrate.
+
+## Deciding checks
+
+All four are required. Seeds 0–2. The default parameters only. A run that has
+not happened cannot pass them.
+
+| Check           | Passes when                                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `jump`          | `t_jump_ms` is at or before 300 ms in at least 2 of 3 seeds                                                              |
+| `feedback`      | on every seed that jumps, kicks after `t_jump` are zero and kicks through `t_jump` equal the open-loop draw of that seed |
+| `silence`       | with both `DNp01` neurons silenced, `TTMn_R` stays at or below 2 spikes in every seed, and the drive is not cut          |
+| `decoder_match` | on every seed that jumps, `TTMn_R` spike times at or before `t_jump` equal the feedback-disabled trace of the same seed  |
+
+`decoder_match` is an integrity check on the mask. The dynamics are causal and
+the kicks match through `t_jump`, so the prefix has to match. A mismatch means
+the runner is not this protocol.
+
+## Reported, and not decisive
+
+| Record              | What is stored                                                                                                    |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `feedback_disabled` | open loop, stimulus fixed at 300 ms, same seeds. This is the trace `decoder_match` reads                          |
+| `latency`           | first-spike times and `t_jump_ms`, in milliseconds. They are not scored against a published takeoff time          |
+| `stability`         | mean number of neurons still firing from 400 ms to 600 ms, next to the v4 limit of 100. The count does not decide |
+| `order`             | whether `DNp01` fires before `TTMn_R`. Descriptive                                                                |
+
+The open-loop arm cannot rescue a failed closed loop. No biological latency is
+copied into a threshold. The 100 Hz Poisson drive is not the loom those papers
+used.
+
+## Wiring
+
+No new shuffle is drawn. N1 already ran looming escape on one
+degree-preserving shuffle of `post`, seed 0. Every specific check that passes
+on the real graph fails on that shuffle, and the looming specific check is one
+of them ([related](related.md)). A further wiring arm would be a second draw
+after that result. `wiring.draw` is false.
+
+## Prediction
+
+`gf_required_for_the_jump_bit` is unverified. The statement is that silencing
+both giant-fiber neurons keeps `TTMn_R` below 3 spikes while `LC4_R` is driven
+at 100 Hz for 300 ms. The silence arm will test that statement in the model.
+It does not test the animal. The animal evidence already cited for the circuit
+is von Reyn et al. 2014 and King and Wyman 1980. Until an independent animal
+measurement is brought in under a new version, the prediction stays
+`unverified` and `tests_animal: false`.
+
+The equality of the closed-loop prefix and the open-loop prefix is the
+`decoder_match` check. It is a property of this decoder. It is not a biological
+prediction.
+
+## Limits
+
+- One bit on one calibration circuit. Scope stays there.
+- An animation of the bit is not acceptance. Acceptance is the four checks above, after a run that this version does not start.
+- No full-body fidelity is claimed, and no subjective experience is claimed.
+- No learned controller is added, and its contribution is not estimated because it is absent.
+- The Poisson rate is not a loom waveform.
+- The model has no gap junction on the giant fiber.
+- FlyBody's flight physics step is ineligible under the coupling rule. Its walking steps are eligible only as a documented later option.
+- Runtime and numerical stability of a closed loop are not measured here. The run, when it exists, records wall time and the reported stability count.
+- A failure does not retune `w_syn` or `th_jump`, does not redraw N1, and does not edit the held-out manifest.

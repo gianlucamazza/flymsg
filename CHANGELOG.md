@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.5 — 2026-10-11
+
+### Validation
+
+- **One-bit looming jump, before the run.** The closed-loop task is `LC4_R` →
+  `TTMn_R`: the third spike cuts the drive. Jump, feedback, DNp01 silence, and a
+  decoder-prefix check are required. The claim is a calibration feasibility check,
+  because looming escape selected the model. FlyBody (Apache-2.0) was compared and
+  not embedded. `flymsg behavior` prints the protocol and does not simulate.
+  Criterion v4, N1, and the held-out manifest are unchanged.
+
 ## 0.8.4 — 2026-10-11
 
 ### Results
