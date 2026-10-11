@@ -6,8 +6,10 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { Pass, FullScreenQuad } from "three/addons/postprocessing/Pass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { CopyShader } from "three/addons/shaders/CopyShader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import GUI from "lil-gui";
 
@@ -31,7 +33,12 @@ import {
   colourOf as colourIn,
   isShown as shownIn,
 } from "./colors.js";
-import { effectiveBudget, scaledRatio, trisPerByte, vertsPerTri } from "./budget.js";
+import {
+  effectiveBudget,
+  scaledRatio,
+  trisPerByte,
+  vertsPerTri,
+} from "./budget.js";
 import { activityAt } from "./activity.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
@@ -143,7 +150,14 @@ function skeletonLod(vertices, edges) {
   return new Promise((resolve) => {
     const id = ++jobId;
     jobs.set(id, resolve);
-    workers[id % workers.length].postMessage({ kind: "skeleton", id, vertices, edges, base: SKEL_EPS_NM, count: SKEL_LEVELS });
+    workers[id % workers.length].postMessage({
+      kind: "skeleton",
+      id,
+      vertices,
+      edges,
+      base: SKEL_EPS_NM,
+      count: SKEL_LEVELS,
+    });
   });
 }
 function geometryFrom({ positions, normals, index }) {
@@ -175,10 +189,14 @@ document.getElementById("loading").remove();
 
 // ---------- renderer, camera, light ----------
 const nativeRatio = Math.min(devicePixelRatio, 2);
-// every frame goes through the composer, so multisampling belongs to its render targets
+// The canvas itself is not antialiased: the scene is drawn into a multisampled target and
+// resolved. The composer buffers stay single-sampled (see ScenePass).
 const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.setPixelRatio(nativeRatio);
 renderer.setSize(innerWidth, innerHeight);
+// setSize updates the viewport but leaves the default scissor (300×150). It is off, and stays
+// off; keep the rectangle equal to the canvas so turning it on cannot clip the picture.
+renderer.setScissor(0, 0, innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 const perf = new Perf(renderer);
 
@@ -188,7 +206,7 @@ const camera = new THREE.PerspectiveCamera(
   40,
   innerWidth / innerHeight,
   0.5,
-  50000,
+  5000,
 );
 world.add(camera);
 world.add(new THREE.HemisphereLight("#dfe8ff", "#1c1612", 0.8));
@@ -201,12 +219,47 @@ controls.enableDamping = true;
 
 const replay = Boolean(meta.activity);
 settings.neuropils ??= !replay;
+// Composer targets stay single-sampled. The scene is drawn into the multisampled target and
+// resolved once; bloom only ever samples that resolved picture.
 const composer = new EffectComposer(
   renderer,
-  new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: MSAA }),
+  new THREE.WebGLRenderTarget(innerWidth, innerHeight, {
+    type: THREE.HalfFloatType,
+  }),
 );
+const msaaTarget = new THREE.WebGLRenderTarget(1, 1, {
+  type: THREE.HalfFloatType,
+  samples: MSAA,
+});
+const sceneRender = new RenderPass(world, camera);
+const resolveMaterial = new THREE.ShaderMaterial({
+  uniforms: THREE.UniformsUtils.clone(CopyShader.uniforms),
+  vertexShader: CopyShader.vertexShader,
+  fragmentShader: CopyShader.fragmentShader,
+  depthTest: false,
+  depthWrite: false,
+  toneMapped: false,
+});
+const resolveQuad = new FullScreenQuad(resolveMaterial);
+class ScenePass extends Pass {
+  constructor() {
+    super();
+    this.needsSwap = false; // RenderPass draws into the read buffer; bloom reads it back
+  }
+  setSize(width, height) {
+    msaaTarget.setSize(width, height);
+  }
+  render(renderer, writeBuffer, readBuffer, deltaTime, maskActive) {
+    const dest = samples > 0 ? msaaTarget : readBuffer;
+    sceneRender.render(renderer, writeBuffer, dest, deltaTime, maskActive);
+    if (dest === readBuffer) return;
+    resolveMaterial.uniforms.tDiffuse.value = msaaTarget.texture;
+    renderer.setRenderTarget(readBuffer);
+    resolveQuad.render(renderer);
+  }
+}
 composer.setSize(innerWidth, innerHeight); // sizes the targets with the pixel ratio
-composer.addPass(new RenderPass(world, camera));
+composer.addPass(new ScenePass());
 // threshold 1: lit surfaces stay below it, only emissive activity blooms; nothing glows
 // without a replay, so the pass is off there
 const bloom = new UnrealBloomPass(
@@ -216,6 +269,54 @@ const bloom = new UnrealBloomPass(
   1.0,
 );
 bloom.enabled = replay;
+// The stock radius-11 blur wrote NaN into its 44×29 mip on this GPU. The composite stretched
+// that NaN over the empty part of the frame, and adding the glow back turned those pixels
+// black (a paused pIP10 replay, 4× MSAA still on). Weights are inlined and the taps unrolled,
+// and a non-finite sample adds nothing, so a bad mip cannot erase the picture. ONE, ONE adds
+// the glow rgb as computed; SRC_ALPHA would scale it by the mip alpha.
+bloom.blendMaterial.depthTest = false;
+bloom.blendMaterial.depthWrite = false;
+bloom.blendMaterial.premultipliedAlpha = true;
+const kernelRadii = [3, 5, 7, 9, 11];
+const blurShader = (radius) => {
+  const coef = Array.from(
+    { length: radius },
+    (_, i) =>
+      (0.39894 * Math.exp((-0.5 * (i * i)) / (radius * radius))) / radius,
+  );
+  const lit = (n) => n.toExponential(8);
+  let taps = "";
+  for (let i = 1; i < radius; i++) {
+    taps += `
+      {
+        vec2 off = direction * invSize * float(${i});
+        vec3 a = texture2D(colorTexture, vUv + off).rgb;
+        vec3 b = texture2D(colorTexture, vUv - off).rgb;
+        if (a.x == a.x) { diffuseSum += a * ${lit(coef[i])}; weightSum += ${lit(coef[i])}; }
+        if (b.x == b.x) { diffuseSum += b * ${lit(coef[i])}; weightSum += ${lit(coef[i])}; }
+      }`;
+  }
+  return `
+    uniform sampler2D colorTexture;
+    uniform vec2 invSize;
+    uniform vec2 direction;
+    varying vec2 vUv;
+    void main() {
+      vec3 center = texture2D(colorTexture, vUv).rgb;
+      float weightSum = 0.0;
+      vec3 diffuseSum = vec3(0.0);
+      if (center.x == center.x) { diffuseSum = center * ${lit(coef[0])}; weightSum = ${lit(coef[0])}; }
+      ${taps}
+      vec3 color = diffuseSum / max(weightSum, 1.0e-4);
+      gl_FragColor = vec4(color.x == color.x ? color : vec3(0.0), 1.0);
+    }`;
+};
+bloom.separableBlurMaterials.forEach((material, i) => {
+  material.fragmentShader = blurShader(kernelRadii[i]);
+  material.depthTest = false;
+  material.depthWrite = false;
+  material.needsUpdate = true;
+});
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
@@ -258,7 +359,9 @@ const neurons = meta.neurons.map((n, k) => ({
 const N = neurons.length;
 const COLOR_MODES = ["group", "transmitter", "type", "dimorphism", "fru/dsx"];
 const view = {
-  colorBy: COLOR_MODES.includes(query.get("color")) ? query.get("color") : "group", // ?color=
+  colorBy: COLOR_MODES.includes(query.get("color"))
+    ? query.get("color")
+    : "group", // ?color=
   filter: "",
   groupsOn: Object.fromEntries(groups.map((g) => [g, true])),
 };
@@ -361,7 +464,12 @@ function makeBatched() {
   const tris = settings.budgetM * 1e6;
   capacity.vertices = Math.ceil(tris * 0.65); // measured 0.54 vertices per triangle, see vertsPerTri
   capacity.indices = Math.ceil(tris * 3);
-  batched = new THREE.BatchedMesh(MAX_INSTANCES, capacity.vertices, capacity.indices, meshMaterial);
+  batched = new THREE.BatchedMesh(
+    MAX_INSTANCES,
+    capacity.vertices,
+    capacity.indices,
+    meshMaterial,
+  );
   batched.sortObjects = false;
   batched.frustumCulled = false; // its bounds are computed once, while still empty; fragments cull individually
   data.add(batched);
@@ -549,7 +657,12 @@ function checkWinding(n) {
   const geoms = [...n.shown.values()].map((f) => f.geometry);
   const origin = centroid(geoms.map((g) => g.getAttribute("position").array));
   let volume = 0;
-  for (const g of geoms) volume += signedVolume(g.getAttribute("position").array, g.index.array, origin);
+  for (const g of geoms)
+    volume += signedVolume(
+      g.getAttribute("position").array,
+      g.index.array,
+      origin,
+    );
   windingChecks.push({
     bodyId: n.bodyId,
     fragments: keys.length,
@@ -622,8 +735,14 @@ const pool = {
 const skelGeometry = new THREE.BufferGeometry();
 function poolAttributes() {
   skelGeometry.dispose(); // frees the GPU buffers of the arrays being replaced
-  skelGeometry.setAttribute("position", new THREE.BufferAttribute(pool.positions, 3));
-  skelGeometry.setAttribute("aNeuron", new THREE.BufferAttribute(pool.neuron, 1));
+  skelGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(pool.positions, 3),
+  );
+  skelGeometry.setAttribute(
+    "aNeuron",
+    new THREE.BufferAttribute(pool.neuron, 1),
+  );
   skelGeometry.setIndex(new THREE.BufferAttribute(pool.index, 1));
 }
 poolAttributes();
@@ -668,7 +787,12 @@ async function loadSkeleton(n) {
   const s = parseSkeleton(buf);
   const lod = await skeletonLod(s.vertices, s.edges);
   appendVertices(n, s.vertices);
-  n.skelLod = { eps: lod.eps, levels: [s.edges, ...lod.coarser], bounds: lod.bounds, level: 0 };
+  n.skelLod = {
+    eps: lod.eps,
+    levels: [s.edges, ...lod.coarser],
+    bounds: lod.bounds,
+    level: 0,
+  };
   setSkeletonLevel(n, eyeView());
   n.skeletonState = "ready";
   skeletonsDirty = true;
@@ -680,7 +804,12 @@ function setSkeletonLevel(n, v) {
   let d2 = 0;
   for (let a = 0; a < 3; a++) {
     const e = v.eye[a];
-    const gap = e < bounds.min[a] ? bounds.min[a] - e : e > bounds.max[a] ? e - bounds.max[a] : 0;
+    const gap =
+      e < bounds.min[a]
+        ? bounds.min[a] - e
+        : e > bounds.max[a]
+          ? e - bounds.max[a]
+          : 0;
     d2 += gap * gap;
   }
   const tolNm = (SKEL_ERROR_PX * Math.sqrt(d2)) / (v.pxPerUnit * nativeRatio);
@@ -1081,7 +1210,24 @@ function pickAt(x, y) {
 
 // ?check exposes internals for headless diagnostics (scripts/shoot.mjs EVAL=...)
 if (query.has("check")) {
-  window.flymsg = { THREE, neurons, renderer, composer, bloom, camera, world, data, skeletons, pickAt, pickTarget, pickMeshMaterial, meshMaterial, get batched() { return batched; } };
+  window.flymsg = {
+    THREE,
+    neurons,
+    renderer,
+    composer,
+    bloom,
+    camera,
+    world,
+    data,
+    skeletons,
+    pickAt,
+    pickTarget,
+    pickMeshMaterial,
+    meshMaterial,
+    get batched() {
+      return batched;
+    },
+  };
 }
 const info = document.getElementById("info");
 let downAt = null;
@@ -1094,7 +1240,10 @@ renderer.domElement.addEventListener("pointerup", (e) => {
     return; // a drag
   const rect = renderer.domElement.getBoundingClientRect();
   const k = pickAt(e.clientX - rect.left, e.clientY - rect.top);
-  if (query.has("check")) console.log(`PICK ${e.clientX},${e.clientY} -> ${k === null ? "none" : neurons[k].bodyId}`);
+  if (query.has("check"))
+    console.log(
+      `PICK ${e.clientX},${e.clientY} -> ${k === null ? "none" : neurons[k].bodyId}`,
+    );
   if (k === null) return;
   const n = neurons[k];
   const lods = [
@@ -1145,7 +1294,10 @@ gui
   .onChange((on) => on || setQuality(nativeRatio, MSAA));
 if (replay) {
   gui.add(bloom, "strength", 0, 3).name("bloom").onChange(invalidate);
-  gui.add(shared.uInactiveAlpha, "value", 0.05, 1, 0.05).name("silent surfaces").onChange(invalidate);
+  gui
+    .add(shared.uInactiveAlpha, "value", 0.05, 1, 0.05)
+    .name("silent surfaces")
+    .onChange(invalidate);
 }
 const gFolder = gui.addFolder("Groups");
 groups.forEach((g) =>
@@ -1211,11 +1363,10 @@ let ratio = nativeRatio,
   lastStep = null; // {ratio, frameMs} before the last ratio reduction
 function setQuality(r, n) {
   if (r === ratio && n === samples) return;
-  if (n !== samples)
-    for (const t of [composer.renderTarget1, composer.renderTarget2]) {
-      t.samples = n;
-      t.dispose(); // recreated with the new sample count on next use
-    }
+  if (n !== samples) {
+    msaaTarget.samples = n;
+    msaaTarget.dispose(); // recreated with the new sample count on next use
+  }
   [ratio, samples] = [r, n];
   renderer.setPixelRatio(r);
   composer.setPixelRatio(r);
@@ -1251,21 +1402,35 @@ function tuneQuality(live) {
       setQuality(Math.max(floorRatio, scaled(frameMs)), 0);
     }
   } else if (frameMs < TARGET_FRAME_MS * 0.7) {
-    if (ratio < nativeRatio) setQuality(Math.min(nativeRatio, scaled(frameMs)), 0);
-    else if (!samples && 2 * frameMs < TARGET_FRAME_MS * 0.9) setQuality(ratio, MSAA); // fits even doubled
+    if (ratio < nativeRatio)
+      setQuality(Math.min(nativeRatio, scaled(frameMs)), 0);
+    else if (!samples && 2 * frameMs < TARGET_FRAME_MS * 0.9)
+      setQuality(ratio, MSAA); // fits even doubled
   }
 }
 
 // ---------- camera, resize, loop ----------
 const extent = Math.max(...volumeUm);
+// The volume is centered on the origin. A fixed far of 50 mm put the whole CNS in the last
+// fraction of the depth range (near 0.5), so surfaces and skeletons z-fought. Every point of
+// the volume lies between |camera| ± radius, whatever the camera is aimed at.
+const sceneRadius = 0.5 * Math.hypot(...volumeUm) * 1.15;
+function fitClip() {
+  const dist = camera.position.length();
+  camera.near = Math.max(0.05, dist - sceneRadius);
+  camera.far = Math.max(dist + sceneRadius, camera.near + 1);
+  camera.updateProjectionMatrix();
+}
 camera.position.set(extent * 0.7, extent * 0.25, extent * 0.55); // oblique: brain and VNC both visible
 controls.target.set(0, 0, 0);
 controls.update();
+fitClip();
 
 addEventListener("resize", () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  renderer.setScissor(0, 0, innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
   selectionDirty = true;
   invalidate();
@@ -1283,13 +1448,15 @@ if (query.has("bench")) {
         pixel_ratio: renderer.getPixelRatio(),
         msaa: samples,
         winding: windingChecks,
-      capacity: {
-        hits: stats.capacityHits,
-        effective_budget: Math.round(effectiveBudget(stats, capacity, settings.budgetM)),
-        verts_per_tri: +vertsPerTri(stats).toFixed(3),
-        tris_per_byte: +trisPerByte(stats).toFixed(3),
-        ...capacity,
-      },
+        capacity: {
+          hits: stats.capacityHits,
+          effective_budget: Math.round(
+            effectiveBudget(stats, capacity, settings.budgetM),
+          ),
+          verts_per_tri: +vertsPerTri(stats).toFixed(3),
+          tris_per_byte: +trisPerByte(stats).toFixed(3),
+          ...capacity,
+        },
       });
       console.log(`BENCH ${JSON.stringify(summary)}`);
     },
@@ -1314,6 +1481,7 @@ renderer.setAnimationLoop(() => {
   }
   if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
   flushInstanceTextures();
+  fitClip();
   perf.begin();
   composer.render();
   perf.end();

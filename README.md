@@ -12,7 +12,7 @@ flymsg turns the wiring diagram into a spiking network, checks the simulation ag
 circuits whose function is known from experiments, and streams the real neuron shapes into a
 browser to replay the activity.
 
-![Replay of a looming stimulus (LC4_R) at 120 ms: active neurons glow in colour, silent ones are see-through](docs/img/replay.png)
+![Replay of a looming stimulus (LC4_R) at 120 ms. Responding neurons fill the brain and the ventral nerve cord, and silent neurons stay desaturated.](docs/img/replay.png)
 
 ## What it does
 
@@ -24,20 +24,33 @@ browser to replay the activity.
 - **Validate**: a battery of known circuits with controls, dose-response and latency-order
   checks (`validate`). Model choices go through pre-registered rules (`calibrate`,
   `select-model`).
+- **Check the wiring**: one shuffle of who connects to whom, each neuron keeping its degree
+  and its outgoing weights (`wiring-null`).
 - **Ask questions about sex differences**: how much simulated responses run through
   dimorphic neurons, and what silencing them does (`dimorphism`); the same model on the
   female FlyWire brain (`--dataset fafb`).
 - **See it**: a three.js page streams source-resolution neuron surfaces, skeletons and
   neuropils from the public data, and replays the simulated activity (`viz`).
 
+![Replay of the pIP10 song pathway at 150 ms. Stimulus neurons are cyan, responding neurons are magenta, and silent neurons stay desaturated.](docs/img/pathway.png)
+
+![pIP10, dPR1 and dMS9 inside the neuropil shells of the brain and the ventral nerve cord.](docs/img/anatomy.png)
+
 ## Results so far
 
-- **The model passes every validation check with no compensation** (29/29, criterion v4).
-  The cases are looming escape (LC4 → Giant Fiber → jump motor neuron), Giant Fiber output,
-  P1 courtship drive and the pIP10 song pathway, sugar → proboscis motor neuron MN9, and
-  bitter taste leaving MN9 silent. The only departure from the published model is a synapse
-  weight scaled for MaleCNS's denser synapse detection, chosen by a pre-registered model
-  selection and confirmed on fresh seeds ([validation](docs/validation.md)).
+- **The model passes every validation check on the traced graph, with no compensation**
+  (29/29, criterion v4). The cases are looming escape (LC4 → Giant Fiber → jump motor
+  neuron), Giant Fiber output, P1 courtship drive and the pIP10 song pathway, sugar →
+  proboscis motor neuron MN9, and bitter taste leaving MN9 silent. The only departure from
+  the published model is a synapse weight scaled for MaleCNS's denser synapse detection,
+  chosen by a pre-registered model selection and confirmed on fresh seeds
+  ([validation](docs/validation.md)).
+- **Those specific checks need the measured partners.** One shuffle of who connects to whom,
+  with each neuron keeping its degree and its outgoing weights, drops the same battery from
+  29/29 to 5/29. The five that remain are the `stability` check of every case:
+  self-sustained activity still dies out. All 7 `specific` checks fail, and so do
+  `positive`, `order`, `dose` and `negative`. The synapse weight stays 0.192
+  ([related](docs/related.md)).
 - **The engine matches the published model.** On the female FlyWire brain, with the same
   sugar neurons, flymsg and Shiu et al.'s brian2 code agree within noise (r ≥ 0.998 over all
   active neurons). The check uncovered six places where an earlier version of flymsg had

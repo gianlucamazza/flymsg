@@ -51,6 +51,21 @@ frames are live and over the 60 fps budget, MSAA goes first, then the pixel rati
 (to 0.5×), but a lower ratio is kept only if it really shortens the frame; at rest full quality
 returns. Geometry is never reduced to meet a frame rate.
 
+Multisampling belongs to the scene target, not to the composer. The scene is resolved into the
+single-sampled buffers, and bloom samples only that picture: pixels above threshold 1, blurred
+through five mips, added back on top.
+
+The widest of those mips is an 11-tap blur into a target about 44×29. That pass wrote NaN on
+this GPU. The composite stretched the NaN across the empty part of the frame, and the additive
+copy turned those pixels black, so a paused pIP10 replay went black while the page still
+counted its surfaces. With bloom off, the same frame (4× MSAA still on) is the whole circuit.
+The blur inlines its weights and unrolls the taps, and a non-finite sample adds nothing, so
+one bad mip cannot erase the picture.
+
+The clip planes track the camera. The volume is a sphere about the origin, and near/far bracket
+that sphere, so the depth buffer covers the CNS. A fixed far plane of 50 mm left the whole
+volume in the last fraction of the depth range.
+
 ## Measurements
 
 Intel Iris Xe (TGL GT2), Chromium with ANGLE on OpenGL, 1400 × 900, replay of LC4_R playing
@@ -80,13 +95,3 @@ GL=gl node scripts/shoot.mjs "http://127.0.0.1:8000/?bench=110" out.png 115
 ```
 
 `GL=vulkan` uses ANGLE on Vulkan, the default `GL=swiftshader` software rendering.
-
-## Known defect
-
-A replay exported for the pIP10 case (`flymsg viz --sim pIP10`) renders a black viewport
-although the page reports the geometry as drawn (28 surfaces, 219 skeletons, 1.8 M triangles)
-and the activity data is correct (199 of its 247 neurons glow at t = 150 ms when
-`activity.js` is run on the exported `activity.bin` outside the browser). The same neurons
-render normally as an anatomy export (`--types pIP10 dPR1 dMS9`), and a replay of the LC4
-case renders normally. Reproduced with the pre-refactor viewer as well, so it is not caused
-by the module split of v0.6.0. Not yet explained.

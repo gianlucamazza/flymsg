@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.7.1 — 2026-10-11
+
+### Viewer
+
+- **A bad bloom mip no longer erases a replay.** The 11-tap blur into a target about 44×29
+  wrote NaN on this GPU. The composite stretched it over the empty part of the frame, and
+  adding the glow back turned those pixels black, so a paused pIP10 replay went black while
+  the page still counted its surfaces. The blur inlines its weights and unrolls the taps, and
+  a non-finite sample adds nothing. With bloom off and 4× MSAA still on, the same frame was
+  already the whole circuit. Clip planes track the volume. The unexplained black-viewport note
+  in `docs/viz.md` is replaced by this account. Geometry is unchanged.
+
+### Docs
+
+- **README.** The traced graph still passes 29/29. On N1's shuffle the same battery is 5/29,
+  all five the `stability` check, and every `specific` check fails. `w_syn` stays 0.192.
+  Figures from the fixed viewer: LC4_R at 120 ms, the pIP10 pathway at 150 ms, and pIP10,
+  dPR1 and dMS9 in the neuropil shells.
+
+### Licence
+
+- Exclusions for the connectome data and the vendored three.js and lil-gui live in `NOTICE`.
+  `LICENSE` is the plain MIT text. The README points at `NOTICE`.
+
 ## 0.7.0 — 2026-10-11
 
 ### Results
