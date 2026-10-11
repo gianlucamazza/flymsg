@@ -110,6 +110,33 @@ def test_wiring_null_stats_prints_the_census_and_does_not_simulate(
     assert "criterion" not in out
 
 
+def test_nulls_defaults_are_the_locked_ci_draw_count():
+    from flymsg import prereg
+
+    args = cli.build_parser().parse_args(["nulls"])
+    locked = prereg.load()["nulls"]
+    assert args.draws == locked["draws_ci"] == 2
+    assert not args.full
+    full = cli.build_parser().parse_args(["nulls", "--full"])
+    assert full.full
+
+
+def test_validate_rejects_a_weight_that_is_not_in_the_preregistration(
+    monkeypatch, capsys, data_dir
+):
+    with pytest.raises(SystemExit) as e:
+        run(
+            monkeypatch,
+            capsys,
+            "--data",
+            str(data_dir),
+            "validate",
+            "--w-syn",
+            "0.275",
+        )
+    assert "preregistration" in str(e.value).lower() or "w_syn" in str(e.value)
+
+
 def test_fafb_only_commands_are_refused_on_the_male_dataset(
     monkeypatch, capsys, data_dir
 ):

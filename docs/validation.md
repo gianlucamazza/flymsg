@@ -16,6 +16,14 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   the `stability` check of every case: activity still dies out. All 7 `specific` checks
   fail on the shuffle. `positive`, `order`, `dose` and `negative` fail too. `w_syn` stays
   0.192. The permutation was not replaced.
+- **Null families** (protocol v1, 2026-10-11, [nulls](nulls.md)). Four shuffle families,
+  **20 draws** each, seeds 0–19, MaleCNS v1.0. The headline (sum of seven specific `max`
+  weights = 4077) sits above every draw of every family (_p_ = 1/21): degree-preserving
+  null mean 21.40 (_z_ = 190.4), cell-type-preserving 3196.3 (_z_ = 3.44),
+  weight-within-type 679.75 (_z_ = 31.6), sign 1314.3 (_z_ = 6.59). Four one-hop
+  pathways are 0 on the real graph (LC4_R → TTMn, P1 → dPR1, sugar → MN9, bitter → MN9);
+  bitter is not below the nulls. N1 is not redrawn. Hypotheses and thresholds are in
+  [`validation/preregistration.yaml`](../validation/preregistration.yaml).
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency
@@ -209,6 +217,27 @@ runaway regime depends on the seed near its edge, as already seen with P1.
 
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
+
+**2026-10-11: null families, 20 draws, MaleCNS v1.0.** `flymsg nulls --full`, seeds 0–19,
+`w_syn` 0.192, `th_jump` 0. Score: signed one-hop stim → target weight. Headline = sum of
+`max` over the seven specific pathways (real 4077). Smallest _p_ is 1/21. Every pathway
+is reported.
+
+| Family                 | headline real | null mean | null s.d. |  _p_ |   _z_ |
+| ---------------------- | ------------: | --------: | --------: | ---: | ----: |
+| `degree_preserving`    |          4077 |     21.40 |     21.30 | 1/21 | 190.4 |
+| `cell_type_preserving` |          4077 |    3196.3 |     256.3 | 1/21 |  3.44 |
+| `weight_within_type`   |          4077 |    679.75 |    107.64 | 1/21 |  31.6 |
+| `sign`                 |          4077 |    1314.3 |     419.0 | 1/21 |  6.59 |
+
+Real one-hop weights: LC4*R → DNp01 2580/2580 (sum/max), DNp01 → TTMn 90/70, P1 → pIP10
+1537/812, pIP10 → dPR1 1112/615. LC4_R → TTMn, P1 → dPR1, sugar → MN9 and bitter → MN9
+are 0. Bitter `sum` is not below the nulls (\_p* = 18/21 under degree-preserving; 1 under
+the others). Under `cell_type_preserving`, every **sum** is invariant (_p_ = 1). **max**
+for LC4*R → DNp01 is 2580 vs null mean 1447.45 (\_p* = 1/21, _z_ = 8.69); DNp01 → TTMn
+max 70 is below the null mean 82.00 (_z_ = −1.19); pIP10 → dPR1 max 615 is below 811.70
+(_z_ = −1.24). The one-hop score cannot test the four zero-weight pathways; N1 remains
+the battery comparison. `w_syn` stayed 0.192.
 
 **2026-10-11: T3 supports dPR1 → dMS9 → vMS12 → IN03B024 → dPR1.** 1,000 matched-responder
 nulls, seeds 0–2, `w_syn` 0.192, threshold p ≤ 0.0167. IN03B024 (2 neurons): dPR1 +101%

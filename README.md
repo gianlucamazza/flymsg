@@ -58,7 +58,9 @@ with no dimorphism label.
   checks (`validate`). Model choices go through pre-registered rules (`calibrate`,
   `select-model`).
 - **Check the wiring**: one shuffle of who connects to whom, each neuron keeping its degree
-  and its outgoing weights (`wiring-null`).
+  and its outgoing weights (`wiring-null`); four pre-registered null families with many
+  seeded draws (`nulls`). Every run that writes outputs also writes a
+  [manifest](docs/nulls.md) (commit, dataset hashes, config, seeds, packages, platform).
 - **Ask questions about sex differences**: how much simulated responses run through
   dimorphic neurons, and what silencing them does (`dimorphism`); the same model on the
   female FlyWire brain (`--dataset fafb`).
@@ -80,7 +82,11 @@ with no dimorphism label.
   29/29 to 5/29. The five that remain are the `stability` check of every case:
   self-sustained activity still dies out. All 7 `specific` checks fail, and so do
   `positive`, `order`, `dose` and `negative`. The synapse weight stays 0.192
-  ([related](docs/related.md)).
+  ([related](docs/related.md)). Four further null families, 20 draws each on MaleCNS v1.0,
+  put the one-hop signed pathway weights above every draw (_p_ = 1/21): degree-preserving
+  null mean 21.4 against a real headline of 4077; cell-type-preserving 3196; weight-within-type
+  680; sign 1314. Four pathways have no direct synapses (including sugar → MN9). See
+  [nulls](docs/nulls.md).
 - **The engine matches the published model.** On the female FlyWire brain, with the same
   sugar neurons, flymsg and Shiu et al.'s brian2 code agree within noise (r ≥ 0.998 over all
   active neurons). The check uncovered six places where an earlier version of flymsg had
@@ -138,6 +144,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `sim STIM…`                                                     | simulate a Poisson stimulus; per-type rates, reliability across seeds, latency, self-sustained activity |
 | `validate`                                                      | the validation battery (a few minutes)                                                                  |
 | `wiring-null [--stats]`                                         | N1: shuffle who connects to whom; `--stats` counts self-loops and stops                                 |
+| `nulls [--full]`                                                | four wiring-null families; default 2 draws (CI); `--full` is the locked 20-draw run                     |
 | `calibrate`, `select-model`                                     | parameter grid search and pre-registered model comparison                                               |
 | `audit`                                                         | reconstruction completeness: flags bilateral neurons with one side far below the other                  |
 | `dimorphism [--silencing \| --loop \| --by-type CASE CATEGORY]` | dimorphic neurons among responders; silencing by category, by cell type, or of the predicted dMS9 loop  |
@@ -166,8 +173,9 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
    - successive stages fire in order;
    - activity dies out after the stimulus.
 4. **Rules before results.** Criteria, calibrations and model selections are written down in
-   [validation](docs/validation.md) before they run, and a failure is recorded rather than
-   tuned away.
+   [validation](docs/validation.md) and
+   [`validation/preregistration.yaml`](validation/preregistration.yaml) before they run, and
+   a failure is recorded rather than tuned away.
 5. **3D view.** The export holds only metadata and activity. The page reads the public
    multi-resolution meshes and skeletons directly from Google Cloud Storage, refining detail
    near the camera within a triangle budget ([viz](docs/viz.md)).
@@ -191,6 +199,8 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [data](docs/data.md)             | sources, files, filtering, schema, the female FAFB dataset, citations       |
 | [model](docs/model.md)           | equations, parameters and their origin, synapse signs, density scaling      |
 | [validation](docs/validation.md) | current status, protocol, cases, calibration, model selection, findings log |
+| [nulls](docs/nulls.md)           | pre-registered null families, scores, draw counts, methods                  |
+| [provenance](docs/provenance.md) | date, public source and commit for each existing idea                       |
 | [comparison](docs/comparison.md) | engine check against the published model, male vs female, the LB3 split     |
 | [dimorphism](docs/dimorphism.md) | dimorphic neurons among responders, silencing                               |
 | [related](docs/related.md)       | adjacent whole-CNS models, the raw 211,577 count, wiring null N1            |

@@ -1,0 +1,91 @@
+# Pre-registered confirmatory protocol. Version 1.
+# Changing any locked field requires incrementing `version` and updating
+# `content_sha256` and flymsg.prereg.VERSION_HASHES. The test suite fails if
+# live constants, a confirmatory run config, or this file disagree without that bump.
+version: 1
+content_sha256: fe54f4512b024a37d3c8602c1fe9944f89f500675c1bbc01aa456bda657cafa8
+
+hypothesis:
+  id: H1
+  statement: "Criterion v4 specific-check pathways carry more signed synaptic weight from the stimulated neurons onto their named targets than the same score under each pre-registered null family. The bitter (negative) pathway is weaker, not stronger. Agreement of the model with known circuits is not enough by itself to show that the measured partners are required."
+
+criterion:
+  name: v4
+  min_spikes: 3
+  min_seed_share_num: 2
+  min_seed_share_den: 3
+  specificity: 3.0
+  margin_hz: 2.0
+  max_persistent: 100
+  rate_hz: 100.0
+  stim_ms: 300.0
+  duration_ms: 600.0
+  dose_rates_hz: [25.0, 50.0, 100.0, 200.0]
+  control_min_weight: 5
+  shiu_w_syn: 0.275
+  density_divisor: 1.43
+  th_jump: 0.0
+  seeds: 3
+  seed0: 0
+  control_seed: 0
+
+n1:
+  family: degree_preserving
+  shuffle_seed: 0
+  seeds: 3
+  metric: criterion_v4_specific
+  rule: "Every specific check that passes on the real graph fails on this one shuffle. Other kinds are reported and not scored. This single draw is not replaced."
+
+nulls:
+  draws_ci: 2
+  draws_full: 20
+  metrics: [sum, max]
+  headline_metric: max
+  rule: "Report every pre-registered pathway under every family. No pathway is dropped after seeing the draws. The family headline is the sum of max over the seven specific pathways (upper tail) and, separately, bitter sum (lower tail). Empirical p uses +1 smoothing. With n draws the smallest p is 1/(1+n)."
+  families:
+    - id: degree_preserving
+      method: "Permute the post column (configuration-model draw). Each neuron keeps its outgoing weights; the multiset of in-degrees is unchanged. Same algorithm as N1, many seeds."
+      citations: ["Maslov & Sneppen 2002", "Newman 2003"]
+    - id: cell_type_preserving
+      method: "Permute post independently among edges that already target the same postsynaptic cell type. Type-to-type synapse counts and individual in-degrees stay; which neuron of that type receives each edge is randomized."
+      citations: ["Newman 2003", "Rubinov & Sporns 2010"]
+    - id: weight_within_type
+      method: "Keep every (pre, post) pair. Permute weights among outgoing edges of the same presynaptic cell type."
+      citations: ["Rubinov & Sporns 2010"]
+    - id: sign
+      method: "Permute the sign column among neurons with a non-zero fast-transmitter sign. Topology and weights stay. Neurons with sign 0 stay at 0."
+      citations: ["Rubinov & Sporns 2010"]
+
+pathways:
+  - case: looming escape
+    target: DNp01
+    kind: specific
+    tail: upper
+  - case: looming escape
+    target: TTMn
+    kind: specific
+    tail: upper
+  - case: giant fiber output
+    target: TTMn
+    kind: specific
+    tail: upper
+  - case: P1 courtship drive
+    target: pIP10
+    kind: specific
+    tail: upper
+  - case: P1 courtship drive
+    target: dPR1
+    kind: specific
+    tail: upper
+  - case: pIP10 song pathway
+    target: dPR1
+    kind: specific
+    tail: upper
+  - case: sugar feeding
+    target: MN9
+    kind: specific
+    tail: upper
+  - case: bitter feeding
+    target: MN9
+    kind: negative
+    tail: lower
