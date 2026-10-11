@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.2 — 2026-10-11
+
+### Docs
+
+- **Gallery.** The README collects the viewer frames and says what each colour means:
+  LC4_R at 120 ms, the pIP10 pathway at 150 ms, that replay coloured by the sex annotation
+  (male-specific, dimorphic, no label), and pIP10, dPR1 and dMS9 in the neuropil shells.
+  `docs/viz.md` points at the gallery.
+
 ## 0.7.1 — 2026-10-11
 
 ### Viewer

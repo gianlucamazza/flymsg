@@ -12,7 +12,38 @@ flymsg turns the wiring diagram into a spiking network, checks the simulation ag
 circuits whose function is known from experiments, and streams the real neuron shapes into a
 browser to replay the activity.
 
-![Replay of a looming stimulus (LC4_R) at 120 ms. Responding neurons fill the brain and the ventral nerve cord, and silent neurons stay desaturated.](docs/img/replay.png)
+## Gallery
+
+Paused frames from the page `flymsg viz` writes, 1400×900, adaptive quality off, with the
+geometry loaded. A replay colours neurons by group unless a frame says otherwise, keeps
+silent neurons desaturated, and hides the neuropil shells. An anatomy view draws the shells
+and does not replay spikes. Rebuild the scenes with `flymsg viz --sim LC4_R`, `--sim pIP10`
+and `--types pIP10 dPR1 dMS9`. The page takes `?t=`, `?paused` and `?color=`. Rendering is
+described in [viz](docs/viz.md).
+
+![Looming stimulus LC4_R at 120 ms. Responding neurons fill the brain and the ventral nerve cord, and silent neurons stay desaturated.](docs/img/replay.png)
+
+**Looming, LC4_R, 120 ms, stimulus on.** The pulse lasts 300 ms. The stimulus is the 55
+LC4_R neurons. The response fills the brain and the ventral nerve cord.
+
+![pIP10 song pathway at 150 ms. The two stimulus neurons are cyan, responding neurons are magenta, and silent neurons stay desaturated.](docs/img/pathway.png)
+
+**Song pathway, pIP10, 150 ms, stimulus on.** Both pIP10 neurons are the cyan stimulus.
+Recruited neurons are magenta.
+
+![The same pIP10 replay at 150 ms, coloured by sex annotation. Male-specific neurons are magenta, dimorphic neurons are yellow, and neurons without that label are grey.](docs/img/dimorphism.png)
+
+**Same replay, coloured by the sex annotation.** "Potentially …" calls join their class.
+Magenta is male-specific, and both pIP10 neurons are in it. Yellow is dimorphic, and both
+dMS9 neurons are in it. Grey has no dimorphism label; both dPR1 neurons are there, and they
+carry `fru+dsx` on the other field. Enrichment for the whole cases is in
+[dimorphism](docs/dimorphism.md).
+
+![Anatomy of pIP10, dPR1 and dMS9, one colour per type, inside the neuropil shells of the brain and the ventral nerve cord.](docs/img/anatomy.png)
+
+**Anatomy, no replay.** One colour per type for the six neurons, drawn inside all 114
+neuropil shells. pIP10 is male-specific, dMS9 is sexually dimorphic, and dPR1 is `fru+dsx`
+with no dimorphism label.
 
 ## What it does
 
@@ -30,11 +61,8 @@ browser to replay the activity.
   dimorphic neurons, and what silencing them does (`dimorphism`); the same model on the
   female FlyWire brain (`--dataset fafb`).
 - **See it**: a three.js page streams source-resolution neuron surfaces, skeletons and
-  neuropils from the public data, and replays the simulated activity (`viz`).
-
-![Replay of the pIP10 song pathway at 150 ms. Stimulus neurons are cyan, responding neurons are magenta, and silent neurons stay desaturated.](docs/img/pathway.png)
-
-![pIP10, dPR1 and dMS9 inside the neuropil shells of the brain and the ventral nerve cord.](docs/img/anatomy.png)
+  neuropils from the public data, and replays the simulated activity (`viz`). The frames are
+  in the gallery.
 
 ## Results so far
 
@@ -63,7 +91,7 @@ browser to replay the activity.
   and silencing the two dMS9 neurons alone raises it by two thirds, more than silencing any
   matched active neurons. The same tests reject the other half of v0.5's prediction: the
   inhibitory neurons vPR9_a and IN00A038 are not the route by which dMS9 holds dPR1 back
-  ([dimorphism](docs/dimorphism.md)).
+  ([dimorphism](docs/dimorphism.md)). The gallery colours the pIP10 replay by the sex annotation.
 - **Synapse counts are not comparable across datasets.** A male neuron has a median 1.81× the
   synapses of its female counterpart over 7,327 matched cell types, a difference between the
   reconstructions. Male vs female simulations are corrected for it

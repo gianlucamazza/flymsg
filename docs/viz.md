@@ -3,7 +3,8 @@
 `flymsg viz` writes only `scene.json` (neurons, groups, rates) and, for a replay,
 `activity.bin` (spike counts per 10 ms bin). The page (`src/flymsg/viz_static/`) streams all
 geometry at source resolution from the public MaleCNS volumes on GCS
-(`gs://flyem-male-cns/v1.0/segmentation`, CORS and Range requests, no token).
+(`gs://flyem-male-cns/v1.0/segmentation`, CORS and Range requests, no token). Example frames,
+and what each colour means, are in the README gallery.
 
 ## Sources
 
