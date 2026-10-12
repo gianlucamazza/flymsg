@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -49,3 +50,19 @@ def test_archive_drops_local_paths_and_never_overwrites(tmp_path, monkeypatch):
     (src / "t.csv").write_text("a\n2\n")
     with pytest.raises(SystemExit, match="new version"):
         archive.main(["x/v1"])
+
+
+def test_no_archived_file_is_ignored_by_git():
+    files = [
+        str(p.relative_to(ROOT)) for p in (ROOT / "results").rglob("*") if p.is_file()
+    ]
+    if not (ROOT / ".git").exists():
+        pytest.skip("not a git checkout")
+    out = subprocess.run(
+        ["git", "check-ignore", "--no-index", *files],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert out.stdout == ""

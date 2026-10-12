@@ -1,0 +1,81 @@
+case,target,w_syn_factor,th_jump,share,holds
+P1 courtship drive,dPR1,0.8,0.0,1.0,True
+P1 courtship drive,dPR1,0.8,2.0,1.0,True
+P1 courtship drive,dPR1,0.9,0.0,1.0,True
+P1 courtship drive,dPR1,0.9,2.0,1.0,True
+P1 courtship drive,dPR1,1.0,0.0,1.0,True
+P1 courtship drive,dPR1,1.0,2.0,1.0,True
+P1 courtship drive,dPR1,1.1,0.0,1.0,True
+P1 courtship drive,dPR1,1.1,2.0,1.0,True
+P1 courtship drive,dPR1,1.2,0.0,1.0,True
+P1 courtship drive,dPR1,1.2,2.0,1.0,True
+P1 courtship drive,pIP10,0.8,0.0,1.0,True
+P1 courtship drive,pIP10,0.8,2.0,1.0,True
+P1 courtship drive,pIP10,0.9,0.0,1.0,True
+P1 courtship drive,pIP10,0.9,2.0,1.0,True
+P1 courtship drive,pIP10,1.0,0.0,1.0,True
+P1 courtship drive,pIP10,1.0,2.0,1.0,True
+P1 courtship drive,pIP10,1.1,0.0,1.0,True
+P1 courtship drive,pIP10,1.1,2.0,1.0,True
+P1 courtship drive,pIP10,1.2,0.0,1.0,True
+P1 courtship drive,pIP10,1.2,2.0,1.0,True
+bitter feeding,MN9,0.8,0.0,0.0,False
+bitter feeding,MN9,0.8,2.0,0.0,False
+bitter feeding,MN9,0.9,0.0,0.0,False
+bitter feeding,MN9,0.9,2.0,0.0,False
+bitter feeding,MN9,1.0,0.0,0.0,False
+bitter feeding,MN9,1.0,2.0,0.0,False
+bitter feeding,MN9,1.1,0.0,0.0,False
+bitter feeding,MN9,1.1,2.0,0.0,False
+bitter feeding,MN9,1.2,0.0,0.0,False
+bitter feeding,MN9,1.2,2.0,0.0,False
+giant fiber output,TTMn,0.8,0.0,0.8,True
+giant fiber output,TTMn,0.8,2.0,0.2,False
+giant fiber output,TTMn,0.9,0.0,0.8,True
+giant fiber output,TTMn,0.9,2.0,0.8,True
+giant fiber output,TTMn,1.0,0.0,1.0,True
+giant fiber output,TTMn,1.0,2.0,0.8,True
+giant fiber output,TTMn,1.1,0.0,1.0,True
+giant fiber output,TTMn,1.1,2.0,1.0,True
+giant fiber output,TTMn,1.2,0.0,1.0,True
+giant fiber output,TTMn,1.2,2.0,1.0,True
+looming escape,DNp01,0.8,0.0,1.0,True
+looming escape,DNp01,0.8,2.0,1.0,True
+looming escape,DNp01,0.9,0.0,1.0,True
+looming escape,DNp01,0.9,2.0,1.0,True
+looming escape,DNp01,1.0,0.0,1.0,True
+looming escape,DNp01,1.0,2.0,1.0,True
+looming escape,DNp01,1.1,0.0,1.0,True
+looming escape,DNp01,1.1,2.0,1.0,True
+looming escape,DNp01,1.2,0.0,1.0,True
+looming escape,DNp01,1.2,2.0,1.0,True
+looming escape,TTMn,0.8,0.0,1.0,True
+looming escape,TTMn,0.8,2.0,1.0,True
+looming escape,TTMn,0.9,0.0,1.0,True
+looming escape,TTMn,0.9,2.0,1.0,True
+looming escape,TTMn,1.0,0.0,1.0,True
+looming escape,TTMn,1.0,2.0,1.0,True
+looming escape,TTMn,1.1,0.0,1.0,True
+looming escape,TTMn,1.1,2.0,1.0,True
+looming escape,TTMn,1.2,0.0,1.0,True
+looming escape,TTMn,1.2,2.0,1.0,True
+pIP10 song pathway,dPR1,0.8,0.0,1.0,True
+pIP10 song pathway,dPR1,0.8,2.0,1.0,True
+pIP10 song pathway,dPR1,0.9,0.0,1.0,True
+pIP10 song pathway,dPR1,0.9,2.0,1.0,True
+pIP10 song pathway,dPR1,1.0,0.0,1.0,True
+pIP10 song pathway,dPR1,1.0,2.0,1.0,True
+pIP10 song pathway,dPR1,1.1,0.0,1.0,True
+pIP10 song pathway,dPR1,1.1,2.0,1.0,True
+pIP10 song pathway,dPR1,1.2,0.0,1.0,True
+pIP10 song pathway,dPR1,1.2,2.0,1.0,True
+sugar feeding,MN9,0.8,0.0,0.0,False
+sugar feeding,MN9,0.8,2.0,0.0,False
+sugar feeding,MN9,0.9,0.0,0.4,False
+sugar feeding,MN9,0.9,2.0,0.0,False
+sugar feeding,MN9,1.0,0.0,1.0,True
+sugar feeding,MN9,1.0,2.0,0.4,False
+sugar feeding,MN9,1.1,0.0,1.0,True
+sugar feeding,MN9,1.1,2.0,1.0,True
+sugar feeding,MN9,1.2,0.0,1.0,True
+sugar feeding,MN9,1.2,2.0,1.0,True

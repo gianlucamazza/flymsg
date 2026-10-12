@@ -20,6 +20,7 @@ DIRS = (
     "behavior",
     "silence-scan/v1",
     "silence-scan/v2",
+    "silence-scan/v3",
     "jump/intact",
     "jump/dnp01",
     "loop",

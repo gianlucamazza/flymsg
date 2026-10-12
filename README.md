@@ -57,8 +57,9 @@ intact replay: `TTMn_R` still fires. [Open the comparison](https://gianlucamazza
 
 **Residual partner, DNp02 or DNp06 silenced as well.** With DNp01 already silenced, `TTMn_R`
 goes from 7 spikes to 0 ([DNp02](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp02/?run=difference&t=60&paused&select=800146),
-[DNp06](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp06/?run=difference&t=60&paused&select=800146)); the scan figure is
-[here](docs/img/silence-scan-v2.svg).
+[DNp06](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp06/?run=difference&t=60&paused&select=800146)). The pre-registered
+scan named both ([v2](docs/img/silence-scan-v2.svg)) and a replication on fresh seeds named
+them again ([v3](docs/img/silence-scan-v3.svg)).
 
 ## What it does
 
@@ -137,6 +138,8 @@ goes from 7 spikes to 0 ([DNp02](https://gianlucamazza.github.io/flymsg/live/dnp
   pre-registered scan missed its threshold because each null contained the other unit;
   version 2, fixed after that result but before its own run, excludes it and names both
   (p 0.001 each against 0.025) ([behavior](docs/behavior.md#result-of-version-2-2026-10-12)).
+  Version 3 repeats version 2 on fresh seeds 30–32 and names both again
+  ([behavior](docs/behavior.md#result-of-version-3-2026-10-12)): the naming replicates.
 - **No biological extension is added.** Cell-type parameters, gap junctions,
   short-term synaptic dynamics and compartments have no value that transfers into
   this LIF. Silencing DNp01 removes that cell's output, and `TTMn_R` still fires,

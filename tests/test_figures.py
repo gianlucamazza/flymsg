@@ -42,11 +42,17 @@ def test_silence_scan_marks_passes_and_reports_p():
          "mean": [0.0, 6.0], "passes": [True, False]}
     )  # fmt: skip
     confirm = pd.DataFrame(
-        {"unit": ["A"], "counts": ["[0, 0, 0]"], "null_mean": [5.0], "p": [0.001]}
+        {"unit": ["A"], "counts": ["[0, 0, 0]"], "null_mean": [5.0], "p": [0.001],
+         "names_partner": [True]}
+    )  # fmt: skip
+    root = _parse(
+        figures.silence_scan(screen, confirm, [6, 6, 6], [6, 6, 6], "30–32", 3)
     )
-    root = _parse(figures.silence_scan(screen, confirm, [6, 6, 6], [6, 6, 6]))
     texts = _texts(root)
     assert "p 0.001" in texts and "null mean 5.00" in texts
+    assert "Confirmation, fresh seeds 30–32" in texts
+    assert any(t.startswith("Residual TTMn_R partner scan v3") and
+               t.endswith("verdict names_partner A") for t in texts)  # fmt: skip
     reds = [e for e in root.iter() if e.get("fill") == figures.RED]
     assert len(reds) >= 6  # the passing unit's bar and seeds, and the confirm seeds
 

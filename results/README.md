@@ -8,7 +8,7 @@ is a new version. `scripts/build_figures.py` draws `docs/img/*.svg` from these f
 | Directory                     | Command                                                  |
 | ----------------------------- | -------------------------------------------------------- |
 | `behavior/`                   | `flymsg behavior --run` (one-bit loop, behavior v1)      |
-| `silence-scan/v1/`, `v2/`     | `flymsg silence-scan --run` (residual partner scan, #20) |
+| `silence-scan/v1/` … `v3/`    | `flymsg silence-scan --run` (residual partner scan, #20) |
 | `jump/intact/`, `jump/dnp01/` | `flymsg jump --sim LC4_R [--silence DNp01]` (M1)         |
 | `loop/`                       | `flymsg loop --sim LC4_R …` (M2)                         |
 | `sensitivity/v1/`             | `flymsg sensitivity --run` (#28)                         |

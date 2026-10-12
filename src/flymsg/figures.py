@@ -200,6 +200,8 @@ def silence_scan(
     confirm: pd.DataFrame,
     base_screen: Sequence[float],
     base_confirm: Sequence[float],
+    confirm_seeds: str = "20–22",
+    version: int = 2,
 ) -> str:
     """Screen: TTMn_R spikes per silenced unit (bar = mean, dots = seeds) against the base
     arm and the half-of-base bar. Confirm: the screen passes on fresh seeds against the
@@ -219,7 +221,7 @@ def silence_scan(
         for s in _counts(row["counts"]):
             a.dot(i, s, colour, 2)
     b = Panel(700, 40, 250, 220, (-0.6, len(confirm) - 0.4), (0, top),
-              "Confirmation, fresh seeds 20–22")  # fmt: skip
+              f"Confirmation, fresh seeds {confirm_seeds}")  # fmt: skip
     b.frame(range(len(confirm)), [str(u) for u in confirm["unit"]])
     base_c = float(np.mean(base_confirm))
     b.hline(base_c, GREY, "4 3", f"base arm {base_c:.1f}")
@@ -232,8 +234,14 @@ def silence_scan(
         b.text(b.X(i), b.Y(0) - 8, f"p {row['p']:.3f}", RED, "middle")
     b.text(b.x0, b.y0 + b.h + 30, "red dots: observed per seed; grey bar: matched null",
            GREY)  # fmt: skip
-    return document(980, 340, "Residual TTMn_R partner scan v2 (model, LC4_R 100 Hz, "
-                    "both DNp01 silenced): verdict names_partner DNp02, DNp06", [a, b])  # fmt: skip
+    named = (
+        list(confirm.loc[confirm["names_partner"], "unit"])
+        if "names_partner" in confirm
+        else []
+    )
+    verdict = f"names_partner {', '.join(named)}" if named else "none"
+    return document(980, 340, f"Residual TTMn_R partner scan v{version} (model, LC4_R 100 Hz, "
+                    f"both DNp01 silenced): verdict {verdict}", [a, b])  # fmt: skip
 
 
 def embodiment(intact: dict, silenced: dict, loop: dict) -> str:
