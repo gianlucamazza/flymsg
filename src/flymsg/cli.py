@@ -1124,8 +1124,16 @@ def cmd_viz(a, neurons, edges):
         result = sim.run(
             W, stim, a.rate, a.duration, a.stim_ms, seed=a.seed, silence=silence
         )
-        idx = viz.select_from_result(result, stim, a.min_rate)
-        groups = np.where(np.isin(idx, stim), "stimulus", "response").tolist()
+        keep = (
+            np.concatenate([data.resolve(neurons, q) for q in a.keep])
+            if a.keep
+            else None
+        )
+        idx = viz.select_from_result(result, stim, a.min_rate, keep)
+        fired = result.rate(0, a.stim_ms)[idx] > a.min_rate
+        groups = np.where(
+            np.isin(idx, stim), "stimulus", np.where(fired, "response", "kept")
+        ).tolist()
     scene = viz.export(a.out, neurons, idx, groups, result, edges)
     print(
         f"{len(scene['neurons'])} neurons exported to {a.out}/ (geometry streams from GCS)\n"
@@ -1145,6 +1153,7 @@ def cmd_viz(a, neurons, edges):
             "duration": a.duration,
             "stim_ms": a.stim_ms,
             "silence": list(a.silence or []),
+            "keep": list(a.keep or []),
         },
         {"seed": a.seed},
         started,
@@ -1570,6 +1579,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--duration", type=float, default=600.0, help="ms")
     s.add_argument("--stim-ms", type=float, default=300.0)
     s.add_argument("--seed", type=int, default=0)
+    s.add_argument(
+        "--keep",
+        nargs="+",
+        help="with --sim: always export these neurons, even if silent (group 'kept')",
+    )
     s.add_argument(
         "--min-rate",
         type=float,

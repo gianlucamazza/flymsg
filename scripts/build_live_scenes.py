@@ -13,13 +13,29 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# exported even when silent, so a comparison shows them at zero, not "not exported"
+KEEP_LOOMING = ["--keep", "TTMn_R", "DNp01", "DNp02", "DNp06"]
 SCENES = {
-    "looming": ["--sim", "LC4_R"],
+    "looming": ["--sim", "LC4_R", *KEEP_LOOMING],
     "song": ["--sim", "pIP10"],
     "anatomy": ["--types", "pIP10", "dPR1", "dMS9"],
-    "looming-dnp01-silenced": ["--sim", "LC4_R", "--silence", "DNp01"],
-    "looming-dnp01-dnp02-silenced": ["--sim", "LC4_R", "--silence", "DNp01", "DNp02"],
-    "looming-dnp01-dnp06-silenced": ["--sim", "LC4_R", "--silence", "DNp01", "DNp06"],
+    "looming-dnp01-silenced": ["--sim", "LC4_R", "--silence", "DNp01", *KEEP_LOOMING],
+    "looming-dnp01-dnp02-silenced": [
+        "--sim",
+        "LC4_R",
+        "--silence",
+        "DNp01",
+        "DNp02",
+        *KEEP_LOOMING,
+    ],
+    "looming-dnp01-dnp06-silenced": [
+        "--sim",
+        "LC4_R",
+        "--silence",
+        "DNp01",
+        "DNp06",
+        *KEEP_LOOMING,
+    ],
 }
 # Pairs shown by flymsg viz-compare: (A, B, labels, statuses, notes)
 COMPARISONS = {

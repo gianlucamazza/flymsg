@@ -34,6 +34,10 @@ def test_select_keeps_stim_first_then_every_responder_by_rate():
     assert (
         viz.select_from_result(r, np.array([0, 0]), 0.0).tolist()[0] == 0
     )  # duplicates folded
+    # a kept neuron is appended once even if silent; one already listed is not repeated
+    assert viz.select_from_result(r, np.array([0]), 0.0, np.array([3, 4, 3])).tolist() == [
+        0, 4, 2, 5, 3,
+    ]  # fmt: skip
 
 
 NEURONS = pd.DataFrame(
@@ -256,3 +260,19 @@ def test_incomparable_runs_are_refused(tmp_path):
         viz.compare_bundles(a, longer, tmp_path / "c", ("A", "B"), ("exploratory",) * 2)
     with pytest.raises(ValueError, match="status"):
         viz.compare_bundles(a, a, tmp_path / "c", ("A", "B"), ("validated", "wrong"))
+
+
+def test_viz_keep_exports_a_silenced_neuron_as_kept(
+    monkeypatch, capsys, data_dir, tmp_path
+):
+    from test_cli import run
+
+    out = tmp_path / "scene"
+    run(monkeypatch, capsys, "--data", str(data_dir), "viz", "--sim", "A_R",
+        "--silence", "B", "--keep", "C", "--duration", "100", "--stim-ms", "100",
+        "--out", str(out))  # fmt: skip
+    scene = json.loads((out / "scene.json").read_text())
+    groups = {n["type"]: n["group"] for n in scene["neurons"]}
+    assert groups["A"] == "stimulus" and groups["C"] == "kept" and "B" not in groups
+    config = json.loads((out / "manifest.json").read_text())["config"]
+    assert config["keep"] == ["C"]
