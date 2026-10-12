@@ -63,16 +63,21 @@ This fixture intentionally retains the complete trace in memory and scans the mo
 
 ## Embodied v1 roadmap
 
-Proposed 2026-10-12 (PR #42); the target interfaces below are not implemented classes. The
-E gates and the M issues of [#31](https://github.com/gianlucamazza/flymsg/issues/31) describe
-the same path; this table is the map between them, so there is one roadmap.
+Proposed 2026-10-12 (PRs #42 and #47); the target interfaces below are not implemented
+classes. Three issue series describe this path: the M milestones of [#31](https://github.com/gianlucamazza/flymsg/issues/31), the E gates, and
+the research workstreams. They overlap, so this table is the one map between them. The
+research workstreams were filed as R1–R4, which collides with runtime R1–R2 ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40));
+here they are research A–D.
 
-| Gate | Issue                                                    | Same work as                                                                                                                                 | Status                                                                                                                                                                                 |
-| ---- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| E1   | [#43](https://github.com/gianlucamazza/flymsg/issues/43) | runtime R0 ([runtime](runtime.md))                                                                                                           | done in v0.8.21: `CpuRuntime` shares `sim._advance`; block-wise runs with checkpoint and restore match `sim.run` bit for bit on synthetic tests and on MaleCNS (LC4_R, DNp01 silenced) |
-| E2   | [#44](https://github.com/gianlucamazza/flymsg/issues/44) | M2 sensor transduction ([#34](https://github.com/gianlucamazza/flymsg/issues/34))                                                            | open                                                                                                                                                                                   |
-| E3   | [#45](https://github.com/gianlucamazza/flymsg/issues/45) | M1–M2 body and feedback ([#33](https://github.com/gianlucamazza/flymsg/issues/33), [#34](https://github.com/gianlucamazza/flymsg/issues/34)) | open                                                                                                                                                                                   |
-| E4   | [#46](https://github.com/gianlucamazza/flymsg/issues/46) | M3–M4 ([#35](https://github.com/gianlucamazza/flymsg/issues/35), [#36](https://github.com/gianlucamazza/flymsg/issues/36))                   | blocked: `validation/motor_map.yaml` has no mapped row                                                                                                                                 |
+| Step                     | Issues                                                                                                                                                                                                                                             | Status                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Online neural stepping   | E1 [#43](https://github.com/gianlucamazza/flymsg/issues/43), runtime R0 ([runtime](runtime.md))                                                                                                                                                    | done in v0.8.21: `CpuRuntime` runs in blocks through checkpoint and restore and matches `sim.run` bit for bit, also on MaleCNS |
+| Looming stimulus and LC4 | E2 [#44](https://github.com/gianlucamazza/flymsg/issues/44), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34), research A [#49](https://github.com/gianlucamazza/flymsg/issues/49)                                                      | exploratory encoder and runtime bridge in v0.8.23 (below); no LC4 tuning data, no bodyId map                                   |
+| Closed loop on the body  | E3 [#45](https://github.com/gianlucamazza/flymsg/issues/45), E5 [#52](https://github.com/gianlucamazza/flymsg/issues/52), M1 [#33](https://github.com/gianlucamazza/flymsg/issues/33), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34) | open; M0 records feedback but does not feed it to the neural runtime                                                           |
+| Motor map                | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research B [#50](https://github.com/gianlucamazza/flymsg/issues/50), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | blocked: `validation/motor_map.yaml` has no mapped row                                                                         |
+| Physical body            | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research C [#51](https://github.com/gianlucamazza/flymsg/issues/51), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | open; FlyBody not selected ([#19](https://github.com/gianlucamazza/flymsg/issues/19))                                          |
+| Falsification            | research D [#53](https://github.com/gianlucamazza/flymsg/issues/53), M4 [#36](https://github.com/gianlucamazza/flymsg/issues/36)                                                                                                                   | blocked on the steps above; existing calibration tasks are not held-out evidence                                               |
+| Observability            | E6 [#54](https://github.com/gianlucamazza/flymsg/issues/54), workbench [#27](https://github.com/gianlucamazza/flymsg/issues/27)                                                                                                                    | open; run manifests exist (`flymsg.run_manifest/v1`)                                                                           |
 
 ### Objective
 
@@ -123,6 +128,51 @@ These are target interfaces, not implemented classes. The existing `flymsg.embod
 - Map a specific motor pathway to a physical actuator only after sourcing muscle/kinematic evidence.
 - Evaluate FlyBody/MuJoCo separately for physics, sex/morphology mismatch, licensing and Python environment isolation.
 - Compare closed-loop behavior with independent experimental recordings, not the calibrated looming task alone.
+
+### E2 exploratory looming encoder
+
+Added in v0.8.23 (PR #47). Exploratory, not validated perception.
+
+`flymsg.sensory.encode_looming` turns a circular object of radius `r`, approaching along the
+viewing axis at constant speed `v` from distance `d0`, into timestamped drive samples on an
+integer-microsecond grid. The distance is `d(t) = d0 - vt`, the angular size `2 atan(r/d)` and
+the expansion rate its derivative, `2rv / (d² + r²)`. The rate is
+`min(max_rate, baseline + gain × expansion)`. Gain and ceiling have no measured value, so the
+caller states both; there is no default. A sample holds until the next one.
+
+`flymsg.sensory_runtime.schedule_sensory_drive` draws seeded Poisson counts from those rates
+and schedules them on a `CpuRuntime` at its current step boundary. The neural tick and the
+number of input columns come from the runtime, so a rate cannot be scaled by the wrong step.
+
+This is not a measured LC4 tuning curve, a retinal model or a sensor-to-bodyId map. The
+`sim`, `validate` and `behavior` paths are unchanged, and the 29/29 calibration checks and the
+failed held-out and silence checks are not evidence for this encoder. Before E2 can pass it
+needs LC4/LPLC2 tuning data with uncertainty, a map from samples to MaleCNS sensory bodyIds,
+and a comparison with the constant-rate Poisson drive and a time-shuffled control.
+
+### Evidence each step needs
+
+From the research plan of PR #47. A step that lacks its evidence keeps the synthetic label.
+
+- **Looming transduction.** What LC4 encodes (angular size, expansion, contrast,
+  time-to-collision), over which stimulus regime, with what trial-to-trial variability; whether
+  LC4 and LPLC2 are interchangeable. Record DOI, data accession, licence, fly sex, genotype,
+  stimulus geometry and contrast, neural identity, recording modality and sampling, latency
+  distribution, replicates, confidence intervals and whether raw trials are available. Hold
+  out animals or trials before any fit. Anchors: von Reyn et al. 2014 (doi:10.1038/nn.3741),
+  Ache et al. 2019 (doi:10.1016/j.cub.2019.01.079).
+- **Motor map.** Which TTMn bodyIds innervate which jump muscles, bilaterally, with measured
+  activation, force and timing. Record bodyId, cell type, muscle, laterality, source,
+  anatomical evidence, confidence, units, morphology sex and the FlyBody actuator with its
+  commit. Without evidence a row stays `unmapped` and the command fails.
+- **Physical body.** Pin FlyBody and MuJoCo, isolate them from the Python 3.13 runtime,
+  record the morphology and sex mismatch, and validate timebase, units, contacts and
+  integration stability before comparing kinematics with independent recordings. A walking
+  policy is not a connectome motor decoder.
+- **Falsification.** Freeze protocols and seeds before running: real against shuffled
+  connectome, looming against matched non-looming controls, intact against bilateral DNp01
+  silencing, feedback against matched open loop, and sensitivity over parameters, seeds and
+  datasets. Report effect sizes, intervals, failure thresholds and every negative result.
 
 ### Acceptance gates
 

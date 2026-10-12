@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.23 — 2026-10-12
+
+### Embodiment
+
+- **Exploratory looming encoder (E2, PR #47).** `flymsg.sensory.encode_looming` maps an
+  approaching disc to angular size, expansion rate and a bounded drive rate; gain and
+  ceiling have no default because no measured value exists. `schedule_sensory_drive` turns
+  the rates into seeded Poisson input blocks on a `CpuRuntime`, taking the neural tick and
+  input width from the runtime (`tick_us`, `n_inputs`). Not an LC4 tuning curve and not
+  mapped to bodyIds; no scored path changes. Documented under E2 in `docs/embodiment.md`,
+  which now holds one map of the M, E and research issue series and the evidence each step
+  needs.
+  `w_syn` stays 0.192.
+
 ## 0.8.22 — 2026-10-12
 
 ### Architecture
