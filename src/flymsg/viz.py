@@ -81,7 +81,13 @@ def export(
             missing_ok=True
         )  # an anatomy export must not pick up an old replay
     (out / "scene.json").write_text(json.dumps(scene))
+    copy_page(out)
+    return scene
+
+
+def copy_page(out: Path) -> None:
+    """Copy the page, its modules and vendor/ into `out`, next to a scene."""
+    out.mkdir(parents=True, exist_ok=True)
     for f in page_files():
         shutil.copy(f, out / f.name)
     shutil.copytree(STATIC / "vendor", out / "vendor", dirs_exist_ok=True)
-    return scene

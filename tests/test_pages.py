@@ -59,6 +59,11 @@ def test_built_site_resolves_its_own_links(tmp_path: Path):
             assert target.is_file(), f"{page.name} {kind} {url}"
             if frag:
                 assert frag in _ids(target), f"{page.name} → {url}"
+    for name in ("looming", "song", "anatomy"):
+        scene = tmp_path / "live" / name
+        assert (scene / "index.html").is_file(), name
+        assert (scene / "scene.json").is_file(), name
+        assert (scene / "vendor").is_dir(), name
     # The documentation table's deep links are the ones that have to survive.
     validation = ids_of["validation.html"]
     assert {"findings-log", "protocol", "references"} <= validation

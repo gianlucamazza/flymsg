@@ -15,6 +15,8 @@ from pathlib import Path
 
 import markdown
 
+from flymsg import viz
+
 ROOT = Path(__file__).resolve().parents[2]
 REPO = "https://github.com/gianlucamazza/flymsg"
 BLOB = f"{REPO}/blob/main"
@@ -154,6 +156,11 @@ def build(out: Path, root: Path = ROOT) -> None:
     img = root / "docs" / "img"
     if img.is_dir():
         shutil.copytree(img, out / "img")
+    live = root / "docs" / "live"
+    for scene in sorted(live.iterdir()) if live.is_dir() else ():
+        dst = out / "live" / scene.name
+        shutil.copytree(scene, dst)
+        viz.copy_page(dst)
     for stem, rel, label in PAGES:
         body = render((root / rel).read_text(encoding="utf-8"))
         heading = _title(body, label)
