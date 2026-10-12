@@ -127,16 +127,16 @@ intact replay: `TTMn_R` still fires. [Open the comparison](https://gianlucamazza
   reaches three spikes, later. The raster is
   [TTMn_R](docs/img/looming-jump.png), explained in [behavior](docs/behavior.md).
   `w_syn` stays 0.192.
-- **The residual `TTMn_R` partner is not named yet.** With both DNp01 silenced, silencing
-  DNp02 or DNp06 as well removes every `TTMn_R` spike on six seeds, but the pre-registered
-  test failed its threshold (p 0.036 and 0.041 against 0.025) because each null contained
-  the other unit. Version 2 excludes it and is fixed before its run
-  ([behavior](docs/behavior.md#residual-partner-scan)).
+- **The residual `TTMn_R` drive goes through DNp02 and DNp06, in the model.** With both
+  DNp01 silenced, silencing either one as well removes every `TTMn_R` spike. Version 1 of the
+  pre-registered scan missed its threshold because each null contained the other unit;
+  version 2, fixed after that result but before its own run, excludes it and names both
+  (p 0.001 each against 0.025) ([behavior](docs/behavior.md#result-of-version-2-2026-10-12)).
 - **No biological extension is added.** Cell-type parameters, gap junctions,
   short-term synaptic dynamics and compartments have no value that transfers into
   this LIF. Silencing DNp01 removes that cell's output, and `TTMn_R` still fires,
-  so the silence failure is not a missing giant-fiber gap junction. The other
-  partner is not named. Neuromodulation and associative learning are closed as
+  so the silence failure is not a missing giant-fiber gap junction; the residual
+  drive goes through DNp02 and DNp06. Neuromodulation and associative learning are closed as
   blocked ([model](docs/model.md)).
 - **No held-out behavior is eligible.** The frozen partition has no remaining task that
   can fill the validated-behavior milestone. Exploratory rows stay exploratory
