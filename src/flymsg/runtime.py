@@ -246,6 +246,19 @@ class CpuRuntime:
     def snapshot(self) -> dict[str, np.ndarray]:
         return {name: value.copy() for name, value in self._state.items()}
 
+    def read(self, idx: np.ndarray) -> dict[str, np.ndarray]:
+        """Copies of `v`, `g`, `th` and the refractory flag of neurons `idx` at the current
+        boundary; cheaper than `snapshot` when only a few neurons are watched."""
+        idx = np.asarray(idx, dtype=np.int64)
+        s = self._state
+        return {
+            "v": s["v"][idx].copy(),
+            "g": s["g"][idx].copy(),
+            "th": s["th"][idx].copy(),
+            # refractory at the next step: the kernel holds a neuron while step < ref_until
+            "refractory": s["ref_until"][idx] > self._step,
+        }
+
     def result(self) -> sim.Result:
         if self._step != self._steps:
             raise ValueError(

@@ -1,5 +1,7 @@
 """Reference implementation of `sim.run`: the vectorised NumPy loop that the compiled kernel
-replaced (flymsg v0.4.0). The kernel must reproduce its spikes exactly (tests/test_core.py)."""
+replaced (flymsg v0.4.0). The kernel must reproduce its spikes exactly (tests/test_core.py).
+With `record`, it also returns v, g and th of those neurons after every step, the oracle for
+flymsg.tracing (tests/test_tracing.py)."""
 
 import numpy as np
 from scipy import sparse
@@ -17,7 +19,8 @@ def run_reference(
     seed: int = 0,
     bin_ms: float = 10.0,
     silence: np.ndarray | None = None,
-) -> Result:
+    record: np.ndarray | None = None,
+):
     """Simulate; stimulation lasts `stim_ms` (default: the whole run). Neurons in `silence`
     never fire, so they transmit nothing: for the rest of the network this equals zeroing
     their outgoing synapses, as Shiu et al. silence neurons."""
@@ -61,6 +64,7 @@ def run_reference(
     decay_th = np.float32(np.exp(-p.dt / p.tau_th))
     lam, kick = rate_hz * p.dt / 1000.0, np.float32(p.poisson_scale * p.w_syn)
 
+    rec = None if record is None else {"v": [], "g": [], "th": []}
     for t in range(steps):
         ref = np.concatenate(recent) if recent else np.empty(0, dtype=np.int64)
         # state update, skipped while refractory (v stays at v_rest, g is frozen)
@@ -94,9 +98,15 @@ def run_reference(
         counts[t // per_bin, spiking] += 1
         first[spiking[first[spiking] < 0]] = t
         in_flight[t % d] = spiking
-    return Result(
+        if rec is not None:
+            for k, x in (("v", v), ("g", g), ("th", th)):
+                rec[k].append(x[record].copy())
+    result = Result(
         counts=counts,
         first_spike_ms=np.where(first >= 0, first * p.dt, np.nan),
         bin_ms=per_bin * p.dt,
         stim_ms=stim_steps * p.dt,
     )
+    if rec is None:
+        return result
+    return result, {k: np.stack(x) for k, x in rec.items()}
