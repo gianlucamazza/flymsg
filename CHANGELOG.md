@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.36 — 2026-10-12
+
+### Comparison
+
+- **Male/female type mapping and a pilot (#29).** `validation/homology/` holds a versioned
+  mapping of every male cell type to FAFB through MaleCNS `flywireType`, with one category
+  each (matched 7,422; outside FAFB tissue 3,118; annotation not in FAFB 715; male-specific
+  288; not mapped 208; 1,511 female types unnamed), and the LC4 → DNp01 pilot: the LC4 share
+  of the giant fiber's input is about twice as large in the male (16–18% against 8–9%), a
+  difference between two reconstructions that is not attributed to sex.
+
 ## 0.8.35 — 2026-10-12
 
 ### Embodiment

@@ -123,3 +123,40 @@ MN9 at least as well as sugar-like ones at high rates. The headline result stand
 contribution from neurons that one study matched to high-salt receptor lines. In the male
 model at the data's synapse scale the same split matters much more: LB3b+c alone leave MN9
 silent, LB3b+c+d drive it (findings log).
+
+## Type mapping and a pilot circuit (#29)
+
+`flymsg homology` writes [`validation/homology/`](../validation/homology/mapping.meta.json):
+`mapping.csv`, one row per male cell type and per FAFB type no male neuron names, and
+`mapping.meta.json` with the schema (`flymsg.homology/v1`), the evidence (MaleCNS
+`flywireType`, the release's call of the FAFB type of each male neuron), both datasets'
+file hashes, the commit and the counts. Each male type gets one category, so a missing
+match is not read as a missing cell:
+
+| Category                         | Cell types | Male neurons |
+| -------------------------------- | ---------: | -----------: |
+| matched (flywireType in FAFB)    |      7,422 |      136,434 |
+| annotation not in FAFB table     |        715 |        4,080 |
+| outside FAFB tissue (VNC)        |      3,118 |       19,312 |
+| male-specific annotation         |        288 |        1,363 |
+| not mapped                       |        208 |        1,328 |
+| female type with no male mapping |      1,511 |            — |
+
+**Pilot: LC4 → DNp01**, the giant-fiber input of the looming case, present in both brains.
+
+| Dataset | DNp01        | LC4 synapses | Divided by 1.81 | All input synapses | LC4 share of input |
+| ------- | ------------ | -----------: | --------------: | -----------------: | -----------------: |
+| male    | DNp01(GF)\_R |        2,580 |           1,425 |             16,051 |              16.1% |
+| male    | DNp01(GF)\_L |        3,782 |           2,089 |             20,684 |              18.3% |
+| female  | DNp01_L      |          374 |             374 |              4,327 |               8.6% |
+| female  | DNp01_R      |          431 |             431 |              5,147 |               8.4% |
+
+The male giant fiber receives 3.7–4.0 times the female's total input, more than the median
+density ratio of 1.81 over 7,327 matched types, so most of the raw difference belongs to how
+each reconstruction saw this neuron. The LC4 share of each giant fiber's own input, which
+needs no global scale, is still about twice as large in the male. Neither table drops weak
+connections (the smallest weight is 1 in both). This is a description of two
+reconstructions, not a sex difference: the two volumes differ in imaging, segmentation and
+synapse detection, the giant fiber's large dendrite may be counted differently in each, and
+one animal per sex leaves no room for individual variation. A sex claim would need those
+ruled out first.
