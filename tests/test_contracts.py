@@ -10,7 +10,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from test_cli import data_dir  # noqa: F401  (fixture)
 
 from flymsg import (
     behavior,
@@ -29,7 +28,7 @@ from flymsg import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_b1_dataset_tables(data_dir):  # noqa: F811
+def test_b1_dataset_tables(data_dir):
     neurons, edges = data.load(data_dir)
     assert list(neurons.columns) == [*data.ANN_COLS, "nt", "sign"]
     assert neurons["bodyId"].is_monotonic_increasing

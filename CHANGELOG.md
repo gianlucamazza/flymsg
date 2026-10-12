@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.32 — 2026-10-12
+
+### Platform
+
+- **Exploratory experiments and the run index (#27).** `flymsg experiment FILE` validates a
+  versioned `flymsg.experiment/v1` config (schema, fields, names in the dataset) and runs it
+  into `runs/experiments/<config hash>/` with metrics and a manifest; the same config is
+  refused a second time, and only the `exploratory` label is accepted. `flymsg runs` lists
+  every run manifest with its label without loading the dataset; older manifests are
+  labelled from their command and verdict. A golden end-to-end test runs on the tiny CI
+  dataset. The shared test dataset moved to `tests/conftest.py`.
+
 ## 0.8.31 — 2026-10-12
 
 ### Analysis
