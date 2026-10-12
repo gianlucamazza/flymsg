@@ -201,13 +201,13 @@ def test_the_null_pool_of_one_pass_holds_no_other_pass(monkeypatch):
     )
     monkeypatch.setattr(silence_scan, "screen_pass", lambda *_: True)
     seen = []
-    real = silence_scan.dimorphism.matched_pool_shortfall
+    real = silence_scan.draws.matched_pool_shortfall
 
     def spy(key, pool, like):
         seen.append((tuple(like.tolist()), pool.copy()))
         return real(key, pool, like)
 
-    monkeypatch.setattr(silence_scan.dimorphism, "matched_pool_shortfall", spy)
+    monkeypatch.setattr(silence_scan.draws, "matched_pool_shortfall", spy)
     out = silence_scan.scan(
         neurons, edges, _small(silence_scan.load(), 20), np.array([0]), 2, np.array([1])
     )

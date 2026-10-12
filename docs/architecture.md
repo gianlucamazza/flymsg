@@ -27,9 +27,7 @@ a manifest. Long batches fan out to worker processes on one machine.
 - **The lock pattern is copied five times.** `behavior`, `benchmarks`, `motor_map`,
   `silence_scan` and `prereg` each define `load`, `content_hash`, `assert_locked` and a
   `VERSION_HASHES` table with the same code.
-- **The draw engine lives in an experiment.** Matched draws, checkpointed null draws and the
-  job map are private functions of `dimorphism`; `silence_scan` imports them by their
-  underscore names.
+- **The draw engine lived in an experiment** until v0.8.29 (`flymsg.draws`).
 - **`cli.py` is 1,100 lines.** Each command parses, runs, prints and writes its own outputs and
   manifest.
 - **The viewer bundle had no version** until v0.8.26 (`flymsg.scene/v1`).
@@ -87,9 +85,11 @@ result.
    `check`; `behavior`, `benchmarks`, `motor_map` and `silence_scan` keep their names, error
    classes and `VERSION_HASHES` and call it. `prereg` keeps its own check, which also owns
    the parser and the canonical hash. B3 stays green.
-3. **Draw engine.** Move matched draws, checkpointed null draws and the job map from
-   `dimorphism` into a public module; `dimorphism` and `silence_scan` import it. Existing
-   checkpoints must replay (same pick hashes).
+3. **Draw engine** (done in v0.8.29). `flymsg.draws` holds matched draws, checkpointed null
+   draws and the job map (`matched_draw`, `matched_pool_shortfall`, `null_rates`,
+   `pick_hash`, `partial_path`, `map_jobs`, `CheckpointMismatch`); `dimorphism` and
+   `silence_scan` import them by public name. Pick hashes and partial file names are
+   unchanged: the T4 checkpoint resumes and gives the same rows.
 4. **Viewer bundle version** (done in v0.8.26). `scene.json` carries `schema:
 flymsg.scene/v1` (`viz.SCENE_SCHEMA`); the page warns in the console on another or no
    version. B5 checks that exporter and page name the same version.

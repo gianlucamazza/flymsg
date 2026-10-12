@@ -15,6 +15,7 @@ from flymsg import (
     compare,
     data,
     dimorphism,
+    draws,
     graph,
     manifest,
     nulls,
@@ -1208,7 +1209,7 @@ def main() -> None:
         sys.exit(f"flymsg: {err.args[0]}")
     except OSError as err:  # missing data files, failed downloads
         sys.exit(f"flymsg: {err}")
-    except dimorphism.CheckpointMismatch as err:
+    except draws.CheckpointMismatch as err:
         sys.exit(f"flymsg: {err}")
     except prereg.PreregistrationError as err:
         sys.exit(f"flymsg: {err}")
