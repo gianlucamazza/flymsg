@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### 3D view
+
+- **Whole-CNS layer:** every soma in the volume (140,024 of 165,122 neurons) drawn as a point
+  coloured by region around the scene's neurons, from `somaLocation` in the MaleCNS
+  annotations (`scripts/build_somata.py`, `docs/live/cns/`). Context only; `?somata=0` hides
+  it. Sensory neurons, whose somata are in the periphery, are counted, not drawn.
+
 ### Tooling
 
 - **`scripts/bench_viewer.py`** (#24): builds the site, opens each scene with `?bench=` in a

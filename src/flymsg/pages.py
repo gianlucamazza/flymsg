@@ -167,7 +167,8 @@ def build(out: Path, root: Path = ROOT) -> None:
     for scene in sorted(live.iterdir()) if live.is_dir() else ():
         dst = out / "live" / scene.name
         shutil.copytree(scene, dst)
-        viz.copy_page(dst)
+        if (scene / "scene.json").is_file():  # cns/ holds shared layers, not a scene
+            viz.copy_page(dst)
     for stem, rel, label in PAGES:
         body = render((root / rel).read_text(encoding="utf-8"))
         heading = _title(body, label)
