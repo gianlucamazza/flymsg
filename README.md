@@ -269,3 +269,7 @@ If you use flymsg, cite the data and the model it builds on (see also
 Code: [MIT](LICENSE). The connectome data are not part of this repository; they are
 downloaded from their public sources under their own licences. Vendored three.js and lil-gui
 are MIT (`src/flymsg/viz_static/vendor/`). See [NOTICE](NOTICE) for what the licence does not cover.
+
+## Experimental embodiment contracts
+
+The [M0 coupling ADR and example](docs/embodiment.md) define a deterministic neural/body interface with a synthetic mock body, explicit multirate clocks and provenance. This fixture does not yet connect the LIF engine to a physical body or establish biological motor mappings.
