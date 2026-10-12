@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Pre-registration
+
+- **Residual partner scan v3, a replication of v2** (#20). Every rule of v2 unchanged,
+  confirm seeds 30–32 (the runner refuses the spent 10–12 and 20–22), a failure rule fixed
+  before the run, and one descriptive output: the other screen pass's spikes in each confirm
+  arm. Committed before the run; no tag until it reports.
+
 ## 0.8.40 — 2026-10-12
 
 ### Figures and live scenes

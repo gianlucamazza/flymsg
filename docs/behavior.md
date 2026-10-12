@@ -287,7 +287,7 @@ prediction.
 Issue [#20](https://github.com/gianlucamazza/flymsg/issues/20) leaves the
 partner that still drives `TTMn_R` with both `DNp01` silenced unnamed. This
 section freezes the measurement that would name it. The lock is
-[`validation/silence_scan.yaml`](../validation/silence_scan.yaml) (version 1).
+[`validation/silence_scan.yaml`](../validation/silence_scan.yaml) (now version 3; version 1 is the file at v0.8.16, version 2 at v0.8.27).
 The candidate rule, the screen, the draw count, the p and the verdict are code
 in `src/flymsg/silence_scan.py`, tested on synthetic graphs. `flymsg
 silence-scan` prints the protocol and does not load the connectome; `--run`
@@ -361,6 +361,23 @@ Three limits hold. Version 2 was written after the version 1 result was seen,
 although before its own run; a replication on further fresh seeds would remove that doubt.
 The result is about this LIF on MaleCNS, not the fly. `gf_required_for_the_jump_bit` stays
 `unverified`, and version 1 of the one-bit protocol is not edited.
+
+### Version 3 (replication, fixed 2026-10-12, before its run)
+
+Version 2 chose its null rule after the version 1 result was seen. Version 3 repeats version
+2 with every rule unchanged and only the confirm seeds moved to 30–32, which no version has
+used; the runner refuses seeds 10–12 and 20–22. A test checks against the v0.8.27 file that
+nothing else changed. The screen runs on seeds 0–2 again, so it selects the same units by
+construction.
+
+Failure rule, fixed here before the run: if DNp02 or DNp06 does not reach `names_partner`,
+the v2 naming is reported as not replicated, #20 is reopened with both results, and neither
+run is dropped. If both reach it, the naming is reported as replicated on fresh seeds and
+stays model-side.
+
+One description is added and decides nothing: in each confirm arm, the spikes of the other
+screen pass per seed (DNp06 when DNp02 is silenced, and the reverse). It turns the seed 0
+observation that `TTMn_R` needs both into three seeds, with no test attached.
 
 **Blind.** The 2026-10-12 listing of `TTMn_R` inputs was read before this
 lock, so it chooses nothing. No unit is named here. The runner computes the
