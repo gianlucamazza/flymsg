@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.30 — 2026-10-12
+
+### Viz
+
+- **Compare two replays (#23).** `flymsg viz-compare` pairs two existing exports without
+  simulating, refusing a mismatched dataset or time base; a neuron one export lacks is "not
+  exported", never silent. The page switches A, B and `|A − B|`, colours neurons by more,
+  fewer or the same spikes, and shows each run's label, status and the manifest keys that
+  differ; a failed protocol is labelled as such. `flymsg viz --silence` exports an
+  intervention. The site adds LC4_R against LC4_R with both DNp01 silenced, the failed
+  silence check: `TTMn_R` fires 22 times, and still 7 times silenced.
+
 ## 0.8.29 — 2026-10-12
 
 ### Architecture

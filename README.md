@@ -52,6 +52,9 @@ carry `fru+dsx` on the other field. Enrichment for the whole cases is in
 neuropil shells. pIP10 is male-specific, dMS9 is sexually dimorphic, and dPR1 is `fru+dsx`
 with no dimorphism label. [Open live](https://gianlucamazza.github.io/flymsg/live/anatomy/).
 
+**Intervention, LC4_R with both DNp01 silenced.** The failed silence check, against the
+intact replay: `TTMn_R` still fires. [Open the comparison](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146).
+
 ## What it does
 
 - **Explore the wiring**: annotations and partners of any cell type (`info`); the strongest
@@ -182,6 +185,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `dimorphism [--silencing \| --loop \| --by-type CASE CATEGORY]` | dimorphic neurons among responders; silencing by category, by cell type, or of the predicted dMS9 loop  |
 | `viz --sim STIM \| --path SRC DST \| --types …`                 | export a 3D scene; the page streams geometry from the public volumes                                    |
 | `trace STIM --neurons N…`                                       | record v, g, threshold, spikes and input of chosen neurons; model states, not recordings                |
+| `viz-compare A B --labels … --status …`                         | pair two replay exports; refuses mismatched datasets or time bases; no simulation                       |
 
 The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?detail=`,
 `?adaptive=0`,
