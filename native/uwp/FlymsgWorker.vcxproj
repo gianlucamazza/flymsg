@@ -15,7 +15,8 @@
   <Import Project="packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props" />
   <PropertyGroup>
     <TargetName>FlymsgWorker</TargetName><CppWinRTOptimized>true</CppWinRTOptimized>
-    <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
+    <!-- an app with no IDL of its own: no merged .winmd to package -->
+    <CppWinRTGenerateWindowsMetadata>false</CppWinRTGenerateWindowsMetadata>
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled><AppxBundle>Never</AppxBundle>
     <OutDir>$(ProjectDir)..\..\build\uwp\</OutDir><IntDir>$(ProjectDir)..\..\build\uwp-obj\</IntDir>
   </PropertyGroup>
@@ -28,7 +29,7 @@
       <Optimization>MaxSpeed</Optimization><RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <Link><SubSystem>Windows</SubSystem><AdditionalDependencies>WindowsApp.lib;d3d12.lib;dxgi.lib;bcrypt.lib;OneCore.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
+    <Link><SubSystem>Windows</SubSystem><GenerateWindowsMetadata>false</GenerateWindowsMetadata><AdditionalDependencies>WindowsApp.lib;d3d12.lib;dxgi.lib;bcrypt.lib;OneCore.lib;%(AdditionalDependencies)</AdditionalDependencies></Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <AppxManifest Include="AppxManifest.xml" /><None Include="packages.config" />
