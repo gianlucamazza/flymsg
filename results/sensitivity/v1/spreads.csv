@@ -1,0 +1,33 @@
+case,target,metric,default_median,seed_range_at_default,median_min,median_max
+P1 courtship drive,dPR1,rate,100.0,16.666666666666657,73.33333333333334,106.66666666666667
+P1 courtship drive,dPR1,latency,10.0,2.4000000000000004,9.4,11.100000000000001
+P1 courtship drive,dPR1,recruited,1882.0,122.0,1020.0,2841.0
+P1 courtship drive,dPR1,persistent,0.0,0.0,0.0,82.0
+P1 courtship drive,pIP10,rate,106.66666666666667,10.0,73.33333333333334,116.66666666666667
+P1 courtship drive,pIP10,latency,7.6000000000000005,2.6000000000000005,7.1000000000000005,8.5
+P1 courtship drive,pIP10,recruited,1882.0,122.0,1020.0,2841.0
+P1 courtship drive,pIP10,persistent,0.0,0.0,0.0,82.0
+bitter feeding,MN9,rate,0.0,0.0,0.0,0.0
+bitter feeding,MN9,latency,,,,
+bitter feeding,MN9,recruited,117.0,157.0,44.0,868.0
+bitter feeding,MN9,persistent,0.0,0.0,0.0,0.0
+giant fiber output,TTMn,rate,16.666666666666668,10.0,6.666666666666667,23.333333333333336
+giant fiber output,TTMn,latency,35.4,77.5,28.8,63.1
+giant fiber output,TTMn,recruited,2.0,2.0,2.0,4.0
+giant fiber output,TTMn,persistent,0.0,0.0,0.0,0.0
+looming escape,DNp01,rate,210.0,3.3333333333333144,123.33333333333334,220.0
+looming escape,DNp01,latency,4.9,0.6000000000000005,4.7,5.300000000000001
+looming escape,DNp01,recruited,1081.0,68.0,393.0,1804.0
+looming escape,DNp01,persistent,0.0,0.0,0.0,31.0
+looming escape,TTMn,rate,70.0,6.666666666666671,16.666666666666668,86.66666666666667
+looming escape,TTMn,latency,17.1,1.6000000000000014,15.100000000000001,22.900000000000002
+looming escape,TTMn,recruited,1081.0,68.0,393.0,1804.0
+looming escape,TTMn,persistent,0.0,0.0,0.0,31.0
+pIP10 song pathway,dPR1,rate,90.0,26.66666666666667,66.66666666666667,90.0
+pIP10 song pathway,dPR1,latency,12.9,17.3,12.200000000000001,13.9
+pIP10 song pathway,dPR1,recruited,245.0,15.0,173.0,287.0
+pIP10 song pathway,dPR1,persistent,0.0,0.0,0.0,0.0
+sugar feeding,MN9,rate,30.0,16.666666666666664,0.0,56.66666666666667
+sugar feeding,MN9,latency,40.5,44.9,34.300000000000004,167.9
+sugar feeding,MN9,recruited,439.0,340.0,61.0,793.0
+sugar feeding,MN9,persistent,0.0,0.0,0.0,46.0

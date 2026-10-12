@@ -1,0 +1,29 @@
+arm,check,seed,value,note,passed,decides
+closed,jump,0,43.0,on time,True,False
+closed,feedback,0,431.0,"stimulus steps 431, cut after step 430",True,False
+closed,decoder_match,0,,3 spike steps through t_jump,True,False
+silence,silence,0,3.0,drive cut,False,False
+closed,latency,0,43.0,TTMn_R first 17.0 ms; DNp01(GF)_R first 4.8 ms; DNp01(GF)_L first 12.4 ms,False,False
+feedback_disabled,order,0,4.800000000000001,DNp01(GF)_R before TTMn_R,False,False
+closed,stability,0,0.0,neurons still firing from 400 ms to 600 ms,False,False
+closed,jump,1,50.7,on time,True,False
+closed,feedback,1,508.0,"stimulus steps 508, cut after step 507",True,False
+closed,decoder_match,1,,3 spike steps through t_jump,True,False
+silence,silence,1,3.0,drive cut,False,False
+closed,latency,1,50.7,TTMn_R first 17.2 ms; DNp01(GF)_R first 4.9 ms; DNp01(GF)_L first 12.9 ms,False,False
+feedback_disabled,order,1,4.9,DNp01(GF)_R before TTMn_R,False,False
+closed,stability,1,0.0,neurons still firing from 400 ms to 600 ms,False,False
+closed,jump,2,47.800000000000004,on time,True,False
+closed,feedback,2,479.0,"stimulus steps 479, cut after step 478",True,False
+closed,decoder_match,2,,3 spike steps through t_jump,True,False
+silence,silence,2,3.0,drive cut,False,False
+closed,latency,2,47.800000000000004,TTMn_R first 17.1 ms; DNp01(GF)_R first 5.1 ms; DNp01(GF)_L first 12.5 ms,False,False
+feedback_disabled,order,2,5.1000000000000005,DNp01(GF)_R before TTMn_R,False,False
+closed,stability,2,0.0,neurons still firing from 400 ms to 600 ms,False,False
+closed,jump,all,3.0,3/3 seeds on time; needs 2,True,True
+closed,feedback,all,,every seed that jumps cuts the drive after that spike,True,True
+silence,silence,all,,TTMn_R stays at or below 2 spikes and the drive is not cut,False,True
+closed,decoder_match,all,,TTMn_R spike steps through t_jump match the open loop,True,True
+closed,stability,all,0.0,mean neurons still firing from 400 ms; v4 limit 100 does not decide,False,False
+closed,latency,all,47.800000000000004,median t_jump_ms of seeds that reached three spikes; not a takeoff time,False,False
+closed,runtime_s,all,90.46267412498128,"wall time of the closed loop, the open loop and the silence arm",False,False

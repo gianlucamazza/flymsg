@@ -23,10 +23,12 @@
 
 ### Reproducibility
 
-- **`results/`** holds the small outputs the docs cite (184 KB), copied from `runs/` with
+- **`results/`** holds the small outputs the docs cite (123 KB), copied from `runs/` with
   their manifests by `scripts/archive_results.py`, which drops local paths and refuses to
   overwrite a differing directory. `scripts/build_figures.py` now reads from it, so a clone
   can redraw every figure; only the Kenyon cell figure still needs the MaleCNS tables.
+  Its CSV files were caught by the `*.csv` ignore rule when #74 merged; they are now
+  tracked, and a test fails if git ignores any archived file.
 - **`looming-jump.svg`** replaces the hand-made `looming-jump.png`: the same TTMn_R raster of
   the behavior v1 run, now drawn by the script from `results/behavior/replay.npz`.
 
