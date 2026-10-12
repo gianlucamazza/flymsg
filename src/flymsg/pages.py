@@ -39,6 +39,7 @@ EXTERNAL = {
     "../validation/homology/mapping.meta.json": f"{BLOB}/validation/homology/mapping.meta.json",
     "../validation/sensitivity.yaml": f"{BLOB}/validation/sensitivity.yaml",
     "../validation/silence_scan.yaml": f"{BLOB}/validation/silence_scan.yaml",
+    "../validation/partner_followup.yaml": f"{BLOB}/validation/partner_followup.yaml",
 }
 
 # (output stem, source path, nav label). Order is the site nav.

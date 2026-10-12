@@ -461,3 +461,51 @@ edit of the held-out manifest. `gf_required_for_the_jump_bit` stays
 worker. The screen is three runs per candidate plus three base runs. Each
 confirmed unit needs 3 × max(1000, 20 _m_) runs, about 3.2 h on one worker at
 1000 draws. The run will use `--checkpoint`.
+
+## Residual partner follow-up
+
+Scan v3 names DNp02 and DNp06 on the right side and shows that each is necessary. Issue
+[#76](https://github.com/gianlucamazza/flymsg/issues/76) asks two more questions of the
+model, locked in
+[`validation/partner_followup.yaml`](../validation/partner_followup.yaml) before any run.
+The runner is `src/flymsg/partner_followup.py`, tested on synthetic graphs. `flymsg
+partner-followup` prints the protocol; `--run` executes it on seeds 40–42.
+
+### Seen before the lock: the mirrored arms (exploratory)
+
+`scripts/silence_mirror.py` ran the scan arms on both sides, seeds 0–2, after the v3 verdict.
+The right side reproduces the scan base arm. `TTMn` spikes during the 300 ms drive:
+
+| Silenced                                  | `LC4_R` → `TTMn_R` | `LC4_L` → `TTMn_L` |
+| ----------------------------------------- | ------------------ | ------------------ |
+| nothing                                   | 21, 21, 21         | 11, 11, 10         |
+| DNp01                                     | 7, 5, 6            | 2, 1, 3            |
+| DNp01 + DNp02 (both sides)                | 0, 0, 0            | 0, 0, 0            |
+| DNp01 + DNp06 (both sides)                | 0, 0, 0            | 0, 0, 0            |
+| DNp01 + DNp02 and DNp06 of the same side  | 0, 0, 0            | 0, 0, 0            |
+| DNp01 + DNp02 and DNp06 of the other side | 4, 5, 5            | 0, 2, 2            |
+
+The scan silenced each type on both sides; here the effect follows the pair on the side of
+the stimulus. The left side is weaker: `TTMn_L` receives 2,424 synapses against 3,608 for
+`TTMn_R`, and with DNp01 silenced only 1–3 spikes remain, close to the 2-spike bar.
+
+### Version 1 (fixed 2026-10-12, before its run)
+
+**Left.** The scan's silence arm mirrored (`LC4_L` at 100 Hz, both `DNp01` silenced,
+`TTMn_L`), testing only DNp02 and DNp06 with the scan's matched-responder null (1,000
+draws, lower tail, α 0.05 / 2). Verdict: `replicates` if both reach `names_partner`,
+`partial` if one does, `not_replicated` if neither, `no_residual` if the base arm already
+stays at 2 spikes or fewer, and `undetermined` if a null is not defined. Because the base
+arm is weak, `no_residual` is a likely outcome and is stated here as one.
+
+**Drive.** No LC4 and both `DNp01` silenced. `DNp02_R`, `DNp06_R` and the pair are driven
+directly at 200 Hz for 300 ms, about the rate each fired during the looming drive in the v3
+partner counts. An arm reaches the jump bit with at least 3 `TTMn_R` spikes in every seed.
+The pair is compared with 1,000 pairs of descending cholinergic neurons (DNp01, DNp02, DNp06
+excluded) driven the same way, upper tail. Verdicts, in order: `single_sufficient` if either
+alone reaches the bar; `insufficient` if the pair does not; `not_specific` if the pair does
+but p is above 0.05; `conjunction` if both single arms stay at 2 spikes or fewer; otherwise
+`pair_sufficient`.
+
+Every null draw is kept (`null_draws.csv`). The run starts from a commit on `main`. Results
+stay model-side; `gf_required_for_the_jump_bit` stays `unverified`.
