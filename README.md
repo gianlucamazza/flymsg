@@ -229,7 +229,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [benchmarks](docs/benchmarks.md)     | held-out partition, the ORN_DM1 failure, both corners fail                    |
 | [behavior](docs/behavior.md)         | one-bit looming jump; the closed loop fails silence                           |
 | [architecture](docs/architecture.md) | module layers, the six contracts and their tests, migration order             |
-| [embodiment](docs/embodiment.md)     | M0 neural/body contract and multirate fixture; synthetic body, no motor map   |
+| [embodiment](docs/embodiment.md)     | M0 neural/body contract, synthetic body, no motor map; the E1–E4 roadmap      |
 | [runtime](docs/runtime.md)           | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned           |
 | [nulls](docs/nulls.md)               | pre-registered null families, scores, draw counts, methods                    |
 | [provenance](docs/provenance.md)     | date, public source and commit for each existing idea                         |
