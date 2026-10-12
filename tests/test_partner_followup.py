@@ -137,10 +137,15 @@ def _toy():
         }
     )
     idx = {
-        "LC4_L": np.array([0]), "TTMn_L": np.array([2]), "DNp01": np.array([1]),
-        "DNp02": np.array([3, 8]), "DNp06": np.array([4, 9]), "TTMn_R": np.array([7]),
-        "DNp02_R": np.array([8]), "DNp06_R": np.array([9]),
-    }  # fmt: skip
+        "LC4_L": np.array([0]),
+        "TTMn_L": np.array([2]),
+        "DNp01": np.array([1]),
+        "DNp02": np.array([3, 8]),
+        "DNp06": np.array([4, 9]),
+        "TTMn_R": np.array([7]),
+        "DNp02_R": np.array([8]),
+        "DNp06_R": np.array([9]),
+    }
     return neurons, edges, idx
 
 

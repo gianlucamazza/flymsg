@@ -29,8 +29,14 @@ from flymsg import pages
 ROOT = Path(__file__).resolve().parents[1]
 
 # the gallery scenes and the heaviest comparison pages
-SCENES = ("looming", "song", "anatomy", "looming-bilateral", "dnp01-vs-dnp02",
-          "right-vs-left")  # fmt: skip
+SCENES = (
+    "looming",
+    "song",
+    "anatomy",
+    "looming-bilateral",
+    "dnp01-vs-dnp02",
+    "right-vs-left",
+)
 
 
 class Quiet(SimpleHTTPRequestHandler):
@@ -51,9 +57,11 @@ def shoot(args: list[str], timeout: float) -> tuple[str, str | None]:
     """Run shoot.mjs in its own process group, so a timeout also ends its browser."""
     proc = subprocess.Popen(
         ["node", str(ROOT / "scripts" / "shoot.mjs"), *args],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
         start_new_session=True,
-    )  # fmt: skip
+    )
     try:
         out, error = proc.communicate(timeout=timeout)[0], None
     except subprocess.TimeoutExpired:
@@ -90,9 +98,12 @@ def main() -> None:
         threading.Thread(target=server.serve_forever, daemon=True).start()
         port = server.server_address[1]
         commit = subprocess.run(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True,
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
             check=True,
-        ).stdout.strip()  # fmt: skip
+        ).stdout.strip()
         for scene in a.scenes:
             load_before = os.getloadavg()
             url = f"http://127.0.0.1:{port}/live/{scene}/?bench={a.seconds}"
@@ -118,8 +129,10 @@ def main() -> None:
             with path.open("a") as f:
                 f.write(json.dumps(rec) + "\n")
             b = rec["bench"] or {}
-            print(f"{scene}: fps p50 {b.get('fps', {}).get('p50')}, "
-                  f"loaded {b.get('loaded', {}).get('bytes')} bytes")  # fmt: skip
+            print(
+                f"{scene}: fps p50 {b.get('fps', {}).get('p50')}, "
+                f"loaded {b.get('loaded', {}).get('bytes')} bytes"
+            )
         server.shutdown()
     print(f"-> {path.relative_to(ROOT)}")
 

@@ -15,9 +15,19 @@ def _run(mode, gain=1e-3, replay=None, seed=3):
     p = sim.Params()
     W = sim.weight_matrix(edges, sign, n, p.w_syn)
     return loop.run_loop(
-        W, np.array([0]), 1, looming=LOOM, transducer=TRANS, decoder_gain_n=gain,
-        mass_kg=1e-6, duration_ms=80.0, seed=seed, mode=mode, replay_counts=replay, p=p,
-    )  # fmt: skip
+        W,
+        np.array([0]),
+        1,
+        looming=LOOM,
+        transducer=TRANS,
+        decoder_gain_n=gain,
+        mass_kg=1e-6,
+        duration_ms=80.0,
+        seed=seed,
+        mode=mode,
+        replay_counts=replay,
+        p=p,
+    )
 
 
 def test_a_jump_changes_the_input_that_follows():

@@ -218,9 +218,29 @@ def _constants(p: Params) -> tuple:
 
 @numba.njit(cache=True)
 def _kernel(
-    indptr, indices, data, n, steps, per_bin, d, ref_steps, stim, kicks, is_stim, silent,
-    jump, em, es, gv, decay_th, v_rest, v_th, kick, trace_col, traced,
-):  # fmt: skip
+    indptr,
+    indices,
+    data,
+    n,
+    steps,
+    per_bin,
+    d,
+    ref_steps,
+    stim,
+    kicks,
+    is_stim,
+    silent,
+    jump,
+    em,
+    es,
+    gv,
+    decay_th,
+    v_rest,
+    v_th,
+    kick,
+    trace_col,
+    traced,
+):
     """One simulation. Same operations, order and float32/float64 rounding as the NumPy
     reference (tests/reference_sim.py), so the spikes are identical:
     1. state update of non-refractory neurons (a neuron spiking at step s is refractory at

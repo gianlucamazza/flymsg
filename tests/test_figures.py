@@ -38,21 +38,33 @@ def test_panel_maps_limits_to_its_box():
 
 def test_silence_scan_marks_passes_and_reports_p():
     screen = pd.DataFrame(
-        {"unit": ["A", "B"], "counts": ["[0, 0, 0]", "[5, 6, 7]"],
-         "mean": [0.0, 6.0], "passes": [True, False]}
-    )  # fmt: skip
+        {
+            "unit": ["A", "B"],
+            "counts": ["[0, 0, 0]", "[5, 6, 7]"],
+            "mean": [0.0, 6.0],
+            "passes": [True, False],
+        }
+    )
     confirm = pd.DataFrame(
-        {"unit": ["A"], "counts": ["[0, 0, 0]"], "null_mean": [5.0], "p": [0.001],
-         "names_partner": [True]}
-    )  # fmt: skip
+        {
+            "unit": ["A"],
+            "counts": ["[0, 0, 0]"],
+            "null_mean": [5.0],
+            "p": [0.001],
+            "names_partner": [True],
+        }
+    )
     root = _parse(
         figures.silence_scan(screen, confirm, [6, 6, 6], [6, 6, 6], "30–32", 3)
     )
     texts = _texts(root)
     assert "p 0.001" in texts and "null mean 5.00" in texts
     assert "Confirmation, fresh seeds 30–32" in texts
-    assert any(t.startswith("Residual TTMn_R partner scan v3") and
-               t.endswith("verdict names_partner A") for t in texts)  # fmt: skip
+    assert any(
+        t.startswith("Residual TTMn_R partner scan v3")
+        and t.endswith("verdict names_partner A")
+        for t in texts
+    )
     reds = [e for e in root.iter() if e.get("fill") == figures.RED]
     assert len(reds) >= 6  # the passing unit's bar and seeds, and the confirm seeds
 
@@ -61,8 +73,12 @@ def test_embodiment_draws_every_mode():
     t = np.arange(1.0, 11.0)
     loop = {}
     for m in ("closed", "disconnected", "shuffled", "replay"):
-        loop |= {f"{m}_t_ms": t, f"{m}_height_m": np.zeros(10),
-                 f"{m}_rate_hz": np.ones(10), f"{m}_motor_spikes": np.ones(10)}  # fmt: skip
+        loop |= {
+            f"{m}_t_ms": t,
+            f"{m}_height_m": np.zeros(10),
+            f"{m}_rate_hz": np.ones(10),
+            f"{m}_motor_spikes": np.ones(10),
+        }
     body = {"time_ms": list(t), "height_m": [0.0] * 10, "takeoff_ms": 3.0}
     root = _parse(figures.embodiment(body, body, loop))
     lines = [e for e in root.iter() if e.tag.endswith("polyline")]
@@ -80,11 +96,16 @@ def test_kc_persistence_one_line_per_group_and_the_note():
 
 def test_homology_pilot_labels_share_as_percent():
     pilot = pd.DataFrame(
-        {"dataset": ["male", "female"], "DNp01": ["DNp01(GF)_R", "DNp01_L"],
-         "LC4_synapses": [100, 50], "density_scaled": [50.0, 50.0],
-         "share_of_input": [0.16, 0.08], "density_ratio": [2.0, 2.0],
-         "ratio_types": [10, 10]}
-    )  # fmt: skip
+        {
+            "dataset": ["male", "female"],
+            "DNp01": ["DNp01(GF)_R", "DNp01_L"],
+            "LC4_synapses": [100, 50],
+            "density_scaled": [50.0, 50.0],
+            "share_of_input": [0.16, 0.08],
+            "density_ratio": [2.0, 2.0],
+            "ratio_types": [10, 10],
+        }
+    )
     texts = _texts(_parse(figures.homology_pilot(pilot)))
     assert {"16.0%", "8.0%", "male R", "female L"} <= set(texts)
 

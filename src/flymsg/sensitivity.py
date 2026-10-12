@@ -136,9 +136,17 @@ def _job(job: tuple) -> list[dict]:
     W = sim.network(neurons, edges, p)
     stim, targets = case_inputs(case, neurons)
     rows = measure(
-        W, neurons, stim, targets, p, seed0=g["seed0"], seeds=g["seeds"],
-        rate_hz=g["rate_hz"], stim_ms=g["stim_ms"], duration_ms=g["duration_ms"],
-    )  # fmt: skip
+        W,
+        neurons,
+        stim,
+        targets,
+        p,
+        seed0=g["seed0"],
+        seeds=g["seeds"],
+        rate_hz=g["rate_hz"],
+        stim_ms=g["stim_ms"],
+        duration_ms=g["duration_ms"],
+    )
     for row in rows:
         row.update(w_syn_factor=factor, th_jump=th_jump, case=case)
     return rows
@@ -225,8 +233,9 @@ def svg(cells: pd.DataFrame, doc: dict) -> str:
         x0 = 60 + (n % cols) * (pw + 60)
         y0 = 100 + (n // cols) * (ph + 60)
         top = max(floor * 1.5, float(g["rate"].max()) * 1.1)
-        a = figures.Panel(x0, y0, pw, ph, (factors[0], factors[-1]), (0, top),
-                          f"{case} → {target}")  # fmt: skip
+        a = figures.Panel(
+            x0, y0, pw, ph, (factors[0], factors[-1]), (0, top), f"{case} → {target}"
+        )
         a.frame(factors, [f"{f:g}" for f in factors])
         a.hline(floor, figures.GREY, "4 3")
         for c, th in enumerate(ths):

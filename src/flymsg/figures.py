@@ -208,9 +208,16 @@ def silence_scan(
     base arm and the null mean."""
     screen = screen.sort_values("mean").reset_index(drop=True)
     top = max(8.0, max(base_screen) + 1, max(max(_counts(c)) for c in screen["counts"]))
-    a = Panel(60, 40, 560, 220, (-0.7, len(screen) - 0.3), (0, top),
-              "Screen, seeds 0–2: DNp01 and one unit silenced",
-              ylabel="TTMn_R spikes in 300 ms")  # fmt: skip
+    a = Panel(
+        60,
+        40,
+        560,
+        220,
+        (-0.7, len(screen) - 0.3),
+        (0, top),
+        "Screen, seeds 0–2: DNp01 and one unit silenced",
+        ylabel="TTMn_R spikes in 300 ms",
+    )
     a.frame(range(len(screen)), [str(u) for u in screen["unit"]], rotate=-35)
     base = float(np.mean(base_screen))
     a.hline(base, GREY, "4 3", f"base arm (DNp01 only) {base:.1f}")
@@ -220,8 +227,15 @@ def silence_scan(
         a.bar(i, 0.6, 0, row["mean"], colour, 0.35)
         for s in _counts(row["counts"]):
             a.dot(i, s, colour, 2)
-    b = Panel(700, 40, 250, 220, (-0.6, len(confirm) - 0.4), (0, top),
-              f"Confirmation, fresh seeds {confirm_seeds}")  # fmt: skip
+    b = Panel(
+        700,
+        40,
+        250,
+        220,
+        (-0.6, len(confirm) - 0.4),
+        (0, top),
+        f"Confirmation, fresh seeds {confirm_seeds}",
+    )
     b.frame(range(len(confirm)), [str(u) for u in confirm["unit"]])
     base_c = float(np.mean(base_confirm))
     b.hline(base_c, GREY, "4 3", f"base arm {base_c:.1f}")
@@ -229,62 +243,132 @@ def silence_scan(
         b.bar(i, 0.5, 0, row["null_mean"], GREY, 0.35)
         for s in _counts(row["counts"]):
             b.dot(i, s, RED, 2.5)
-        b.text(b.X(i), b.Y(row["null_mean"]) - 4, f"null mean {row['null_mean']:.2f}",
-               GREY, "middle")  # fmt: skip
+        b.text(
+            b.X(i),
+            b.Y(row["null_mean"]) - 4,
+            f"null mean {row['null_mean']:.2f}",
+            GREY,
+            "middle",
+        )
         b.text(b.X(i), b.Y(0) - 8, f"p {row['p']:.3f}", RED, "middle")
-    b.text(b.x0, b.y0 + b.h + 30, "red dots: observed per seed; grey bar: matched null",
-           GREY)  # fmt: skip
+    b.text(
+        b.x0,
+        b.y0 + b.h + 30,
+        "red dots: observed per seed; grey bar: matched null",
+        GREY,
+    )
     named = (
         list(confirm.loc[confirm["names_partner"], "unit"])
         if "names_partner" in confirm
         else []
     )
     verdict = f"names_partner {', '.join(named)}" if named else "none"
-    return document(980, 340, f"Residual TTMn_R partner scan v{version} (model, LC4_R 100 Hz, "
-                    f"both DNp01 silenced): verdict {verdict}", [a, b])  # fmt: skip
+    return document(
+        980,
+        340,
+        f"Residual TTMn_R partner scan v{version} (model, LC4_R 100 Hz, "
+        f"both DNp01 silenced): verdict {verdict}",
+        [a, b],
+    )
 
 
 def embodiment(intact: dict, silenced: dict, loop: dict) -> str:
     """M1 height with and without DNp01; M2 input rate, height and motor spikes per mode."""
     m_to_um = 1e6
     t1 = float(max(intact["time_ms"][-1], silenced["time_ms"][-1]))
-    heights = [intact["height_m"], silenced["height_m"],
-               *(loop[f"{m}_height_m"] for m in ("closed", "shuffled"))]  # fmt: skip
+    heights = [
+        intact["height_m"],
+        silenced["height_m"],
+        *(loop[f"{m}_height_m"] for m in ("closed", "shuffled")),
+    ]
     # an axis needs a span: 1 µm when no body leaves the ground
     hmax = max(1.0, max(float(np.max(h)) for h in heights) * m_to_um * 1.1)
-    a = Panel(70, 40, 380, 150, (0, t1), (0, hmax),
-              "M1: jump body driven by TTMn_R (LC4_R 100 Hz)",
-              "time (ms)", "height (µm)")  # fmt: skip
+    a = Panel(
+        70,
+        40,
+        380,
+        150,
+        (0, t1),
+        (0, hmax),
+        "M1: jump body driven by TTMn_R (LC4_R 100 Hz)",
+        "time (ms)",
+        "height (µm)",
+    )
     a.frame()
     a.line(intact["time_ms"], [h * m_to_um for h in intact["height_m"]], BLUE)
     a.line(silenced["time_ms"], [h * m_to_um for h in silenced["height_m"]], RED)
-    a.legend([(f"intact, takeoff {intact['takeoff_ms']:g} ms", BLUE),
-              (f"DNp01 silenced, takeoff {silenced['takeoff_ms']:g} ms", RED)],
-             x=a.X(330), y=a.Y(hmax * 0.6))  # fmt: skip
+    a.legend(
+        [
+            (f"intact, takeoff {intact['takeoff_ms']:g} ms", BLUE),
+            (f"DNp01 silenced, takeoff {silenced['takeoff_ms']:g} ms", RED),
+        ],
+        x=a.X(330),
+        y=a.Y(hmax * 0.6),
+    )
     t = loop["closed_t_ms"]
-    modes = (("closed", BLUE, ""), ("disconnected", GOLD, "5 3"),
-             ("replay", GREEN, "1 3"), ("shuffled", RED, ""))  # fmt: skip
+    modes = (
+        ("closed", BLUE, ""),
+        ("disconnected", GOLD, "5 3"),
+        ("replay", GREEN, "1 3"),
+        ("shuffled", RED, ""),
+    )
     rmax = max(1.0, max(float(np.max(loop[f"{m}_rate_hz"])) for m, _, _ in modes) * 1.1)
-    b = Panel(540, 40, 380, 150, (0, float(t[-1])), (0, rmax),
-              "M2: input rate (engineered transducer)", "time (ms)", "Hz")  # fmt: skip
+    b = Panel(
+        540,
+        40,
+        380,
+        150,
+        (0, float(t[-1])),
+        (0, rmax),
+        "M2: input rate (engineered transducer)",
+        "time (ms)",
+        "Hz",
+    )
     b.frame()
-    c = Panel(70, 250, 380, 150, (0, float(t[-1])), (0, hmax),
-              "M2: body height", "time (ms)", "height (µm)")  # fmt: skip
+    c = Panel(
+        70,
+        250,
+        380,
+        150,
+        (0, float(t[-1])),
+        (0, hmax),
+        "M2: body height",
+        "time (ms)",
+        "height (µm)",
+    )
     c.frame()
     smax = max(int(np.sum(loop[f"{m}_motor_spikes"])) for m, _, _ in modes) + 1
-    d = Panel(540, 250, 380, 150, (0, float(t[-1])), (0, smax),
-              "M2: cumulative TTMn_R spikes", "time (ms)", "spikes")  # fmt: skip
+    d = Panel(
+        540,
+        250,
+        380,
+        150,
+        (0, float(t[-1])),
+        (0, smax),
+        "M2: cumulative TTMn_R spikes",
+        "time (ms)",
+        "spikes",
+    )
     d.frame()
     for m, colour, dash in modes:
         b.line(t, loop[f"{m}_rate_hz"], colour, 1.2, dash)
         c.line(t, loop[f"{m}_height_m"] * m_to_um, colour, 1.5, dash)
         d.line(t, np.cumsum(loop[f"{m}_motor_spikes"]), colour, 1.5, dash, step=True)
     d.legend([(m, colour) for m, colour, _ in modes], x=d.x0 + 8)
-    c.text(c.x0, c.y0 + c.h + 44,
-           "closed, disconnected and replay coincide: the disc is centimetres away, so a "
-           "body moving microns does not change the input", GREY)  # fmt: skip
-    return document(960, 470, "Embodiment M1/M2 (engineered decoder and transducer; "
-                    "not a behaviour of the fly)", [a, b, c, d])  # fmt: skip
+    c.text(
+        c.x0,
+        c.y0 + c.h + 44,
+        "closed, disconnected and replay coincide: the disc is centimetres away, so a "
+        "body moving microns does not change the input",
+        GREY,
+    )
+    return document(
+        960,
+        470,
+        "Embodiment M1/M2 (engineered decoder and transducer; "
+        "not a behaviour of the fly)",
+        [a, b, c, d],
+    )
 
 
 def kc_persistence(
@@ -293,19 +377,35 @@ def kc_persistence(
     """Population rate over time per group, with the stimulus window shaded."""
     colours = [BLUE, RED, GREEN, GOLD, GREY]
     top = max(1.0, max(float(np.max(v)) for v in groups.values()) * 1.1)
-    a = Panel(70, 40, 560, 220, (0, float(t_ms[-1])), (0, top),
-              "Mean rate per neuron of each group (10 ms bins)", "time (ms)",
-              "Hz")  # fmt: skip
+    a = Panel(
+        70,
+        40,
+        560,
+        220,
+        (0, float(t_ms[-1])),
+        (0, top),
+        "Mean rate per neuron of each group (10 ms bins)",
+        "time (ms)",
+        "Hz",
+    )
     a.frame().vspan(0, stim_ms)
     a.text(a.X(stim_ms / 2), a.y0 + 12, "stimulus", GREY, "middle")
     for (label, v), colour in zip(groups.items(), colours, strict=False):
         a.line(t_ms, v, colour, 1.5, step=True)
-    a.legend([(k, c) for k, c in zip(groups, colours, strict=False)],
-             x=a.x0 + a.w + 14, y=a.y0 + 12)  # fmt: skip
+    a.legend(
+        [(k, c) for k, c in zip(groups, colours, strict=False)],
+        x=a.x0 + a.w + 14,
+        y=a.y0 + 12,
+    )
     for k, part in enumerate(note.split("\n")):
         a.text(a.x0, a.y0 + a.h + 44 + 13 * k, part, GREY)
-    return document(900, 350, "Held-out ORN_DM1 case (exploratory diagnosis): activity "
-                    "outlasts the stimulus in the Kenyon cells", [a])  # fmt: skip
+    return document(
+        900,
+        350,
+        "Held-out ORN_DM1 case (exploratory diagnosis): activity "
+        "outlasts the stimulus in the Kenyon cells",
+        [a],
+    )
 
 
 def homology_pilot(pilot: pd.DataFrame) -> str:
@@ -314,28 +414,57 @@ def homology_pilot(pilot: pd.DataFrame) -> str:
     labels = [f"{r.dataset} {str(r.DNp01)[-1]}" for r in rows.itertuples()]
     colours = [BLUE if r.dataset == "male" else RED for r in rows.itertuples()]
     smax = float(rows["share_of_input"].max()) * 100 * 1.25
-    a = Panel(70, 40, 360, 200, (-0.6, len(rows) - 0.4), (0, smax),
-              "LC4 share of the giant fiber's input", ylabel="% of input synapses")  # fmt: skip
+    a = Panel(
+        70,
+        40,
+        360,
+        200,
+        (-0.6, len(rows) - 0.4),
+        (0, smax),
+        "LC4 share of the giant fiber's input",
+        ylabel="% of input synapses",
+    )
     a.frame(range(len(rows)), labels)
     synmax = float(rows["LC4_synapses"].max()) * 1.15
-    b = Panel(520, 40, 360, 200, (-0.6, len(rows) - 0.4), (0, synmax),
-              "LC4 → DNp01 synapses: raw (bar), divided by density ratio (dot)",
-              ylabel="synapses")  # fmt: skip
+    b = Panel(
+        520,
+        40,
+        360,
+        200,
+        (-0.6, len(rows) - 0.4),
+        (0, synmax),
+        "LC4 → DNp01 synapses: raw (bar), divided by density ratio (dot)",
+        ylabel="synapses",
+    )
     b.frame(range(len(rows)), labels)
     for i, r in rows.iterrows():
         a.bar(i, 0.6, 0, r["share_of_input"] * 100, colours[i], 0.6)
-        a.text(a.X(i), a.Y(r["share_of_input"] * 100) - 4,
-               f"{100 * r['share_of_input']:.1f}%", colours[i], "middle")  # fmt: skip
+        a.text(
+            a.X(i),
+            a.Y(r["share_of_input"] * 100) - 4,
+            f"{100 * r['share_of_input']:.1f}%",
+            colours[i],
+            "middle",
+        )
         b.bar(i, 0.6, 0, r["LC4_synapses"], colours[i], 0.6)
         b.dot(i, r["density_scaled"], "#222", 3)
     ratio = float(rows["density_ratio"].iat[0])
-    b.text(b.x0, b.y0 + b.h + 30,
-           f"male/female synapse density ratio {ratio:.2f} (median over "
-           f"{int(rows['ratio_types'].iat[0])} matched types)", GREY)  # fmt: skip
-    a.text(a.x0, a.y0 + a.h + 30,
-           "a difference between reconstructions, not attributed to sex", GREY)  # fmt: skip
-    return document(920, 300, "Homology pilot (#29): LC4 → DNp01 in MaleCNS and FAFB",
-                    [a, b])  # fmt: skip
+    b.text(
+        b.x0,
+        b.y0 + b.h + 30,
+        f"male/female synapse density ratio {ratio:.2f} (median over "
+        f"{int(rows['ratio_types'].iat[0])} matched types)",
+        GREY,
+    )
+    a.text(
+        a.x0,
+        a.y0 + a.h + 30,
+        "a difference between reconstructions, not attributed to sex",
+        GREY,
+    )
+    return document(
+        920, 300, "Homology pilot (#29): LC4 → DNp01 in MaleCNS and FAFB", [a, b]
+    )
 
 
 def looming_jump(
@@ -344,8 +473,15 @@ def looming_jump(
     """TTMn_R spike raster of the one-bit loop per seed: closed loop up to the third spike,
     the open loop after it, and the DNp01-silenced arm. Times are neural steps × `dt_ms`."""
     rows = len(seeds) * 2
-    a = Panel(110, 84, 760, 30 * rows + 30, (0, drive_ms * 1.07), (rows + 0.3, -0.7),
-              xlabel="time (ms)")  # fmt: skip
+    a = Panel(
+        110,
+        84,
+        760,
+        30 * rows + 30,
+        (0, drive_ms * 1.07),
+        (rows + 0.3, -0.7),
+        xlabel="time (ms)",
+    )
     a.frame(yticks=())
     a.out.append(
         f'<line x1="{a.X(drive_ms):.1f}" x2="{a.X(drive_ms):.1f}" y1="{a.y0}" '
@@ -376,8 +512,18 @@ def looming_jump(
         )
         a.text(a.x0 - 8, a.Y(top) + 4, f"seed {seed} open", "#222", "end")
         a.text(a.x0 - 8, a.Y(low) + 4, f"seed {seed} silence", "#222", "end")
-    a.legend([("open loop, after the jump", "#4b5563"),
-              ("closed loop, stops at the third spike (▼ jump)", "#111827"),
-              ("both DNp01 silenced", BLUE)], x=a.x0 + 20, y=40)  # fmt: skip
-    return document(900, a.y0 + a.h + 50, "TTMn_R spikes in the one-bit looming loop "
-                    "(behavior v1, LC4_R 100 Hz)", [a])  # fmt: skip
+    a.legend(
+        [
+            ("open loop, after the jump", "#4b5563"),
+            ("closed loop, stops at the third spike (▼ jump)", "#111827"),
+            ("both DNp01 silenced", BLUE),
+        ],
+        x=a.x0 + 20,
+        y=40,
+    )
+    return document(
+        900,
+        a.y0 + a.h + 50,
+        "TTMn_R spikes in the one-bit looming loop (behavior v1, LC4_R 100 Hz)",
+        [a],
+    )

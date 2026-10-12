@@ -135,8 +135,19 @@ def load(path: Path) -> dict:
     return locks.load(Path(path))
 
 
-_FIELDS = ("stimulus", "target", "sets", "seed0", "seeds", "explored_seeds", "rate_hz",
-           "stim_ms", "draws", "alpha", "tail")  # fmt: skip
+_FIELDS = (
+    "stimulus",
+    "target",
+    "sets",
+    "seed0",
+    "seeds",
+    "explored_seeds",
+    "rate_hz",
+    "stim_ms",
+    "draws",
+    "alpha",
+    "tail",
+)
 
 
 def assert_registered(doc: dict, name: str, hashes: dict | None = None) -> dict:
@@ -199,10 +210,18 @@ def confirm(
     kw = {k: doc[k] for k in ("seeds", "seed0", "rate_hz", "stim_ms")}
     ref, best = _rates(W, stim, target, p, silence=base if base.size else None, **kw)
     runs = [
-        sim.run(W, stim, doc["rate_hz"], doc["stim_ms"], doc["stim_ms"], p, s,
-                silence=base if base.size else None)
+        sim.run(
+            W,
+            stim,
+            doc["rate_hz"],
+            doc["stim_ms"],
+            doc["stim_ms"],
+            p,
+            s,
+            silence=base if base.size else None,
+        )
         for s in range(doc["seed0"], doc["seed0"] + doc["seeds"])
-    ]  # fmt: skip
+    ]
     pool = np.zeros(len(neurons), dtype=bool)
     pool[dimorphism.responders(runs, stim)] = True
     pool[np.concatenate([stim, target, base, *sets.values()])] = False

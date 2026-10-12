@@ -371,9 +371,15 @@ def cmd_explore(a, neurons, edges):
             sys.exit("flymsg: explore needs SOURCE and TARGET, or --replay DIR")
         cfg = _explore_config(a)
     result = intervention.explore(
-        neurons, edges, cfg["source"], cfg["target"], paths=cfg["paths"],
-        seeds=cfg["seeds"], seed0=cfg["seed0"], base_silence=cfg["base_silence"],
-    )  # fmt: skip
+        neurons,
+        edges,
+        cfg["source"],
+        cfg["target"],
+        paths=cfg["paths"],
+        seeds=cfg["seeds"],
+        seed0=cfg["seed0"],
+        base_silence=cfg["base_silence"],
+    )
     for row in result["anatomy"]:
         print(
             f"anatomy, path {row['path']}: {' -> '.join(row['types'])}  synapses {row['synapses']}"
@@ -410,8 +416,17 @@ def cmd_explore(a, neurons, edges):
         sys.exit(f"flymsg: {out} exists; use --replay {out} to check it")
     out.mkdir(parents=True)
     (out / "explore.json").write_text(json.dumps(result, indent=1))
-    _stamp(out, "explore", a, neurons, edges, cfg, {"seed0": cfg["seed0"], "seeds": cfg["seeds"]},
-           started, extra={"label": "exploratory"})  # fmt: skip
+    _stamp(
+        out,
+        "explore",
+        a,
+        neurons,
+        edges,
+        cfg,
+        {"seed0": cfg["seed0"], "seeds": cfg["seeds"]},
+        started,
+        extra={"label": "exploratory"},
+    )
     print(f"-> {out}")
 
 
@@ -422,8 +437,17 @@ def cmd_confirm(a, neurons, edges):
     print(table.to_string(index=False))
     doc = intervention.load(a.lock)
     out = a.out / a.lock.stem / f"v{doc['version']}"
-    _stamp(out, "confirm", a, neurons, edges, {"lock": str(a.lock), "lock_sha256": doc["content_sha256"]},
-           {"seed0": doc["seed0"], "seeds": doc["seeds"]}, started, extra={"label": "preregistered"})  # fmt: skip
+    _stamp(
+        out,
+        "confirm",
+        a,
+        neurons,
+        edges,
+        {"lock": str(a.lock), "lock_sha256": doc["content_sha256"]},
+        {"seed0": doc["seed0"], "seeds": doc["seeds"]},
+        started,
+        extra={"label": "preregistered"},
+    )
 
 
 def cmd_jump(a, neurons, edges):
@@ -450,11 +474,18 @@ def cmd_jump(a, neurons, edges):
     digest = info["files"]["edges.parquet"]["sha256"]
     git = manifest.git_info()
     out = jump.run_jump(
-        steps, body_id=int(neurons["bodyId"].iat[motor[0]]), gain_n=a.gain_n,
-        mass_kg=a.mass_kg, duration_us=round(a.duration * 1000),
-        provenance=Provenance(f"malecns {info.get('release', '')}".strip(), digest,
-                              git.get("commit") or "unknown", a.seed),
-    )  # fmt: skip
+        steps,
+        body_id=int(neurons["bodyId"].iat[motor[0]]),
+        gain_n=a.gain_n,
+        mass_kg=a.mass_kg,
+        duration_us=round(a.duration * 1000),
+        provenance=Provenance(
+            f"malecns {info.get('release', '')}".strip(),
+            digest,
+            git.get("commit") or "unknown",
+            a.seed,
+        ),
+    )
     print(out["note"])
     print(
         f"{a.motor}: {out['spikes']} spikes; takeoff "
@@ -464,12 +495,26 @@ def cmd_jump(a, neurons, edges):
     a.out.mkdir(parents=True, exist_ok=True)
     (a.out / "trajectory.json").write_text(json.dumps(out))
     _stamp(
-        a.out, "jump", a, neurons, edges,
-        {"sim": list(a.sim), "silence": list(a.silence or []), "motor": a.motor,
-         "gain_n": a.gain_n, "mass_kg": a.mass_kg, "rate": a.rate,
-         "duration": a.duration, "stim_ms": a.stim_ms, "decoder": jump.ENGINEERED},
-        {"seed": a.seed}, started, extra={"label": "exploratory", "note": jump.NOTE},
-    )  # fmt: skip
+        a.out,
+        "jump",
+        a,
+        neurons,
+        edges,
+        {
+            "sim": list(a.sim),
+            "silence": list(a.silence or []),
+            "motor": a.motor,
+            "gain_n": a.gain_n,
+            "mass_kg": a.mass_kg,
+            "rate": a.rate,
+            "duration": a.duration,
+            "stim_ms": a.stim_ms,
+            "decoder": jump.ENGINEERED,
+        },
+        {"seed": a.seed},
+        started,
+        extra={"label": "exploratory", "note": jump.NOTE},
+    )
     print(f"-> {a.out / 'trajectory.json'}")
 
 
@@ -525,10 +570,15 @@ def cmd_loop(a, neurons, edges):
     print(f"neural steps whose input differs between closed and disconnected: {differ}")
     print(jump.NOTE)
     a.out.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(a.out / "loop.npz", **{
-        f"{m}_{k}": v for m, r in runs.items() for k, v in r.items()
-        if isinstance(v, np.ndarray) and k != "input_counts"
-    })  # fmt: skip
+    np.savez_compressed(
+        a.out / "loop.npz",
+        **{
+            f"{m}_{k}": v
+            for m, r in runs.items()
+            for k, v in r.items()
+            if isinstance(v, np.ndarray) and k != "input_counts"
+        },
+    )
     (a.out / "loop.json").write_text(
         json.dumps(
             {
@@ -540,12 +590,28 @@ def cmd_loop(a, neurons, edges):
         )
     )
     _stamp(
-        a.out, "loop", a, neurons, edges,
-        {"sim": list(a.sim), "motor": a.motor, "radius_m": a.radius_m, "distance_m": a.distance_m,
-         "speed_m_s": a.speed_m_s, "transducer_gain": a.transducer_gain, "max_rate_hz": a.max_rate_hz,
-         "gain_n": a.gain_n, "mass_kg": a.mass_kg, "duration": a.duration, "decoder": jump.ENGINEERED},
-        {"seed": a.seed}, started, extra={"label": "exploratory", "note": jump.NOTE},
-    )  # fmt: skip
+        a.out,
+        "loop",
+        a,
+        neurons,
+        edges,
+        {
+            "sim": list(a.sim),
+            "motor": a.motor,
+            "radius_m": a.radius_m,
+            "distance_m": a.distance_m,
+            "speed_m_s": a.speed_m_s,
+            "transducer_gain": a.transducer_gain,
+            "max_rate_hz": a.max_rate_hz,
+            "gain_n": a.gain_n,
+            "mass_kg": a.mass_kg,
+            "duration": a.duration,
+            "decoder": jump.ENGINEERED,
+        },
+        {"seed": a.seed},
+        started,
+        extra={"label": "exploratory", "note": jump.NOTE},
+    )
     print(f"-> {a.out}")
 
 
@@ -805,9 +871,11 @@ def cmd_partner_followup(a, neurons, edges):
     path.mkdir(parents=True, exist_ok=True)
     out["left"].to_csv(path / "left.csv", index=False)
     drive = pd.DataFrame(
-        [{"arm": arm, "counts": counts, "driven_spikes": out["driven_spikes"][arm]}
-         for arm, counts in out["drive_arms"].items()]
-    )  # fmt: skip
+        [
+            {"arm": arm, "counts": counts, "driven_spikes": out["driven_spikes"][arm]}
+            for arm, counts in out["drive_arms"].items()
+        ]
+    )
     drive.to_csv(path / "drive.csv", index=False)
     out["null_draws"].to_csv(path / "null_draws.csv", index=False)
     d = out["drive"]
@@ -1056,9 +1124,12 @@ def cmd_compare(a, neurons, edges):
     if a.sex:
         print(f"same model on both sexes, female w_syn x {rho:.2f} ...")
         table = compare.sex_comparison(
-            male, female, compare.sex_cases(male, female), seeds=a.seeds,
+            male,
+            female,
+            compare.sex_cases(male, female),
+            seeds=a.seeds,
             female_w_scale=rho,
-        )  # fmt: skip
+        )
         _write(table, a.out / "sex-comparison.csv")
     if a.fingerprint:
         table = compare.fingerprint(male, female, a.fingerprint, compare.REFERENCE_SETS)
@@ -1110,9 +1181,15 @@ def cmd_dimorphism(a, neurons, edges):
     elif a.loop:
         print(f"{a.loop}: silencing each set vs matched active neurons ...")
         table = dimorphism.loop_silencing(
-            neurons, edges, params, a.seeds, a.null, a.workers,
-            sets=dimorphism.LOOP_PRESETS[a.loop], checkpoint=a.checkpoint,
-        )  # fmt: skip
+            neurons,
+            edges,
+            params,
+            a.seeds,
+            a.null,
+            a.workers,
+            sets=dimorphism.LOOP_PRESETS[a.loop],
+            checkpoint=a.checkpoint,
+        )
     elif a.silencing:
         print("silencing each category vs random silencings of the same size ...")
         table = dimorphism.silencing(
