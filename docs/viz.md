@@ -6,6 +6,16 @@ geometry at source resolution from the public MaleCNS volumes on GCS
 (`gs://flyem-male-cns/v1.0/segmentation`, CORS and Range requests, no token). Example frames,
 and what each colour means, are in the README gallery.
 
+## Live on the site
+
+The Pages site serves three scenes with this page: the LC4_R and pIP10 replays and the
+pIP10/dPR1/dMS9 anatomy, at <https://gianlucamazza.github.io/flymsg/live/looming/>,
+`…/live/song/` and `…/live/anatomy/`. Their `scene.json`, `activity.bin` and run manifest
+are committed in `docs/live/`; `scripts/build_live_scenes.py` regenerates them from the
+local tables with the gallery commands, exporting every scene before it writes any, so each
+manifest records a clean tree. The site build copies the page next to each scene. Geometry
+is not stored: it streams from GCS as it does locally.
+
 ## Sources
 
 | data            | format                                                     | use                                                                      |

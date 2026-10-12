@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.18 — 2026-10-12
+
+### Site
+
+- **The 3D view runs live on GitHub Pages.** The LC4_R and pIP10 replays and the
+  pIP10/dPR1/dMS9 anatomy are served under `/live/` with the same page `flymsg viz`
+  writes; geometry streams from the public MaleCNS volumes. The scenes are committed in
+  `docs/live/` with their run manifests (clean tree, seed 0, default parameters) and
+  rebuilt by `scripts/build_live_scenes.py`. The README gallery links each frame to its
+  live scene. No scored run changed. `w_syn` stays 0.192.
+
 ## 0.8.17 — 2026-10-12
 
 ### Validation

@@ -23,15 +23,20 @@ and does not replay spikes. Rebuild the scenes with `flymsg viz --sim LC4_R`, `-
 and `--types pIP10 dPR1 dMS9`. The page takes `?t=`, `?paused` and `?color=`. Rendering is
 described in [viz](docs/viz.md).
 
+Each scene also runs live in the browser on the published site: the page streams the
+neuron surfaces from the public MaleCNS volumes, and the scenes are the committed exports
+in `docs/live/` (rebuild them with `scripts/build_live_scenes.py`). A desktop GPU helps.
+
 ![Looming stimulus LC4_R at 120 ms. Responding neurons fill the brain and the ventral nerve cord, and silent neurons stay desaturated.](docs/img/replay.png)
 
 **Looming, LC4_R, 120 ms, stimulus on.** The pulse lasts 300 ms. The stimulus is the 55
 LC4_R neurons. The response fills the brain and the ventral nerve cord.
+[Open live](https://gianlucamazza.github.io/flymsg/live/looming/?t=120&paused).
 
 ![pIP10 song pathway at 150 ms. The two stimulus neurons are cyan, responding neurons are magenta, and silent neurons stay desaturated.](docs/img/pathway.png)
 
 **Song pathway, pIP10, 150 ms, stimulus on.** Both pIP10 neurons are the cyan stimulus.
-Recruited neurons are magenta.
+Recruited neurons are magenta. [Open live](https://gianlucamazza.github.io/flymsg/live/song/?t=150&paused).
 
 ![The same pIP10 replay at 150 ms, coloured by sex annotation. Male-specific neurons are magenta, dimorphic neurons are yellow, and neurons without that label are grey.](docs/img/dimorphism.png)
 
@@ -39,13 +44,13 @@ Recruited neurons are magenta.
 Magenta is male-specific, and both pIP10 neurons are in it. Yellow is dimorphic, and both
 dMS9 neurons are in it. Grey has no dimorphism label; both dPR1 neurons are there, and they
 carry `fru+dsx` on the other field. Enrichment for the whole cases is in
-[dimorphism](docs/dimorphism.md).
+[dimorphism](docs/dimorphism.md). [Open live](https://gianlucamazza.github.io/flymsg/live/song/?t=150&paused&color=dimorphism).
 
 ![Anatomy of pIP10, dPR1 and dMS9, one colour per type, inside the neuropil shells of the brain and the ventral nerve cord.](docs/img/anatomy.png)
 
 **Anatomy, no replay.** One colour per type for the six neurons, drawn inside all 114
 neuropil shells. pIP10 is male-specific, dMS9 is sexually dimorphic, and dPR1 is `fru+dsx`
-with no dimorphism label.
+with no dimorphism label. [Open live](https://gianlucamazza.github.io/flymsg/live/anatomy/).
 
 ## What it does
 
