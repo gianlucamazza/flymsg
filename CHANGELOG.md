@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.19 — 2026-10-12
+
+### Embodiment
+
+- **M0 neural/body contract (#32, PR #37).** `flymsg.embodiment` defines versioned
+  contracts for spike events, motor commands, body state, sensor samples and
+  provenance, and a deterministic multirate scheduler on an integer microsecond
+  clock whose neural tick is `sim.Params.dt`. A synthetic one-DOF mock body closes a
+  spike → command → sensor round trip. Invalid versions, datasets, timestamps, maps or
+  masses fail before the first actuator call; any adapter exception stops the run as
+  a `ContractError`. Fixture `bodyId`s are synthetic: `validation/motor_map.yaml`
+  stays all `unmapped`, so no real motor command can be issued. The LIF engine is not
+  coupled online. ADR in `docs/embodiment.md`. `w_syn` stays 0.192.
+
 ## 0.8.18 — 2026-10-12
 
 ### Site

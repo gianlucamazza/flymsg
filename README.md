@@ -228,6 +228,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [validation](docs/validation.md) | current status, protocol, cases, calibration, model selection, findings log   |
 | [benchmarks](docs/benchmarks.md) | held-out partition, the ORN_DM1 failure, both corners fail                    |
 | [behavior](docs/behavior.md)     | one-bit looming jump; the closed loop fails silence                           |
+| [embodiment](docs/embodiment.md) | M0 neural/body contract and multirate fixture; synthetic body, no motor map   |
 | [nulls](docs/nulls.md)           | pre-registered null families, scores, draw counts, methods                    |
 | [provenance](docs/provenance.md) | date, public source and commit for each existing idea                         |
 | [comparison](docs/comparison.md) | engine check against the published model, male vs female, the LB3 split       |
