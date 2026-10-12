@@ -55,10 +55,17 @@ def shoot(args: list[str], timeout: float) -> tuple[str, str | None]:
         start_new_session=True,
     )  # fmt: skip
     try:
-        return proc.communicate(timeout=timeout)[0], None
+        out, error = proc.communicate(timeout=timeout)[0], None
     except subprocess.TimeoutExpired:
         os.killpg(proc.pid, signal.SIGKILL)
         return proc.communicate()[0], f"timeout after {timeout:.0f} s"
+    if proc.returncode:
+        error = f"shoot.mjs exited with {proc.returncode}"
+    try:  # a failed shoot.mjs can leave its browser behind
+        os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    return out, error
 
 
 def main() -> None:
@@ -87,6 +94,7 @@ def main() -> None:
             check=True,
         ).stdout.strip()  # fmt: skip
         for scene in a.scenes:
+            load_before = os.getloadavg()
             url = f"http://127.0.0.1:{port}/live/{scene}/?bench={a.seconds}"
             stdout, error = shoot(
                 [url, str(Path(tmp) / f"{scene}.png"), str(a.seconds + 5)],
@@ -100,11 +108,13 @@ def main() -> None:
                 "commit": commit,
                 "host": platform.node(),
                 "cpu_count": os.cpu_count(),
-                "load_before": load0,
+                "load_before": load_before,
                 "load_after": os.getloadavg(),
                 "bench": bench_line(stdout),
                 "error": error,
             }
+            if rec["bench"] is None and rec["error"] is None:
+                rec["error"] = "no BENCH summary (page failed to load or run)"
             with path.open("a") as f:
                 f.write(json.dumps(rec) + "\n")
             b = rec["bench"] or {}
