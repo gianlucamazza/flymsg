@@ -246,6 +246,12 @@ class CpuRuntime:
     def snapshot(self) -> dict[str, np.ndarray]:
         return {name: value.copy() for name, value in self._state.items()}
 
+    def traced_spikes(self, start: int, stop: int) -> np.ndarray:
+        """Spike bits of the traced neurons for steps [start, stop), already advanced."""
+        if not 0 <= start <= stop <= self._step:
+            raise ValueError("only steps that have run can be read")
+        return self._state["traced"][start:stop, : self._trace.size].copy()
+
     def read(self, idx: np.ndarray) -> dict[str, np.ndarray]:
         """Copies of `v`, `g`, `th` and the refractory flag of neurons `idx` at the current
         boundary; cheaper than `snapshot` when only a few neurons are watched."""
