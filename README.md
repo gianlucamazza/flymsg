@@ -186,6 +186,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `viz --sim STIM \| --path SRC DST \| --types …`                 | export a 3D scene; the page streams geometry from the public volumes                                    |
 | `trace STIM --neurons N…`                                       | record v, g, threshold, spikes and input of chosen neurons; model states, not recordings                |
 | `viz-compare A B --labels … --status …`                         | pair two replay exports; refuses mismatched datasets or time bases; no simulation                       |
+| `sensitivity [--run]`                                           | the locked w_syn × th_jump grid around the defaults: every cell, spreads, a figure; a report            |
 
 The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?detail=`,
 `?adaptive=0`,
