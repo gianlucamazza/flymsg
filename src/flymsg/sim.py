@@ -163,8 +163,7 @@ def run(
         trace_col[trace] = np.arange(trace.size, dtype=np.int32)
         traced = np.zeros((steps, trace.size), dtype=np.uint8)
         keep_trace = traced
-    em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
-    gv = p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)  # from the float64 decays
+    d, ref_steps = _delays(p)
     counts, first = _kernel(
         W.indptr.astype(np.int64),
         W.indices.astype(np.int64),
@@ -172,20 +171,14 @@ def run(
         n,
         steps,
         per_bin,
-        max(1, round(p.delay / p.dt)),
-        round(p.t_ref / p.dt),
+        d,
+        ref_steps,
         stim.astype(np.int64),
         kicks,
         is_stim,
         silent,
         jump,
-        np.float32(em),
-        np.float32(es),
-        np.float32(gv),
-        np.float32(np.exp(-p.dt / p.tau_th)),
-        np.float32(p.v_rest),
-        np.float32(p.v_th),
-        np.float32(p.poisson_scale * p.w_syn),
+        *_constants(p),
         trace_col,
         traced,
     )
@@ -195,6 +188,31 @@ def run(
         bin_ms=per_bin * p.dt,
         stim_ms=stim_steps * p.dt,
         traced=keep_trace,
+    )
+
+
+def _delays(p: Params) -> tuple[int, int]:
+    """Synaptic delay and refractory period in steps. Shared with `runtime.CpuRuntime`."""
+    return max(1, round(p.delay / p.dt)), round(p.t_ref / p.dt)
+
+
+def _constants(p: Params) -> tuple:
+    """The kernel's float32 constants: membrane and synaptic decays, the synaptic gain (from
+    the float64 decays), threshold decay, rest, threshold and Poisson kick. Shared with
+    `runtime.CpuRuntime`, so both paths round the same way."""
+    em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
+    gv = p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)
+    return tuple(
+        np.float32(x)
+        for x in (
+            em,
+            es,
+            gv,
+            np.exp(-p.dt / p.tau_th),
+            p.v_rest,
+            p.v_th,
+            p.poisson_scale * p.w_syn,
+        )
     )
 
 
@@ -223,8 +241,86 @@ def _kernel(
     touched = np.empty(n, dtype=np.int32)  # targets with delivered input this step
     hit = np.zeros(n, dtype=np.bool_)
     spiking = np.empty(n, dtype=np.int32)
+    _advance(
+        0,
+        steps,
+        indptr,
+        indices,
+        data,
+        n,
+        per_bin,
+        d,
+        ref_steps,
+        stim,
+        kicks,
+        is_stim,
+        silent,
+        jump,
+        em,
+        es,
+        gv,
+        decay_th,
+        v_rest,
+        v_th,
+        kick,
+        trace_col,
+        traced,
+        v,
+        g,
+        th,
+        ref_until,
+        ring,
+        ring_len,
+        counts,
+        first,
+        c,
+        touched,
+        hit,
+        spiking,
+    )
+    return counts, first
+
+
+@numba.njit(cache=True)
+def _advance(
+    start_step,
+    stop_step,
+    indptr,
+    indices,
+    data,
+    n,
+    per_bin,
+    d,
+    ref_steps,
+    stim,
+    kicks,
+    is_stim,
+    silent,
+    jump,
+    em,
+    es,
+    gv,
+    decay_th,
+    v_rest,
+    v_th,
+    kick,
+    trace_col,
+    traced,
+    v,
+    g,
+    th,
+    ref_until,
+    ring,
+    ring_len,
+    counts,
+    first,
+    c,
+    touched,
+    hit,
+    spiking,
+):
     stim_steps = kicks.shape[0]
-    for t in range(steps):
+    for t in range(start_step, stop_step):
         # 1. state update (refractory: v stays at v_rest, g frozen), branch-free so that
         # it vectorises; the refractory lanes compute and discard
         for i in range(n):
@@ -279,4 +375,3 @@ def _kernel(
             if col >= 0:
                 traced[t, col] = 1
         ring_len[slot] = ns
-    return counts, first

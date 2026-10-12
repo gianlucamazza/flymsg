@@ -44,6 +44,7 @@ PAGES = (
     ("data", "docs/data.md", "Data"),
     ("model", "docs/model.md", "Model"),
     ("embodiment", "docs/embodiment.md", "Embodiment M0"),
+    ("runtime", "docs/runtime.md", "Runtime"),
     ("validation", "docs/validation.md", "Validation"),
     ("benchmarks", "docs/benchmarks.md", "Benchmarks"),
     ("behavior", "docs/behavior.md", "Behavior"),
