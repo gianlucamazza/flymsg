@@ -11,7 +11,7 @@ __pycache__/
 .venv
 
 # Connectome data and outputs
-data/
+/data
 *.csv
 
 # Generated runs and 3D bundles
