@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+
+- **The run index keeps a run's kind when it fails.** `flymsg runs` has an `outcome`
+  column: a failed held-out run is listed as `held-out`, `failed` instead of only `failed`.
+  `--label failed` filters on the outcome.
+
 ## 0.8.37 — 2026-10-12
 
 ### Fixes

@@ -135,10 +135,12 @@ neuron, its rate and first spike, and how many neurons fired), the config and a 
 directory, and a second run is refused, so a result is never overwritten.
 
 `flymsg runs [ROOT …]` reads every `flymsg.run_manifest/v1` under `runs/` and `docs/live/`
-without loading the dataset and lists command, label, start, commit, dataset and seeds. A
-manifest written before labels existed gets one from its command (a command that executes a
-lock is `preregistered`; the held-out benchmark is `held-out`) and from its recorded verdict
-(FAIL or none is `failed`). A label is read, never written back, so nothing is promoted.
+without loading the dataset and lists command, label, outcome, start, commit, dataset and
+seeds. A manifest written before labels existed gets one from its command (a command that
+executes a lock is `preregistered`; the held-out benchmark is `held-out`). The outcome is
+`failed` when the recorded verdict is FAIL or none, so a failed held-out run stays
+`held-out`; `--label failed` filters on it. A label is read, never written back, so nothing
+is promoted.
 
 ## Causal explorer
 
