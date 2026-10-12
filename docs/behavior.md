@@ -290,8 +290,9 @@ section freezes the measurement that would name it. The lock is
 [`validation/silence_scan.yaml`](../validation/silence_scan.yaml) (version 1).
 The candidate rule, the screen, the draw count, the p and the verdict are code
 in `src/flymsg/silence_scan.py`, tested on synthetic graphs. `flymsg
-silence-scan` prints the protocol and does not load the connectome. No scan
-has run. Version 1 of the one-bit protocol is not edited.
+silence-scan` prints the protocol and does not load the connectome; `--run`
+executes it with `--workers` and `--checkpoint`. The runner was committed
+before the scan ran. Version 1 of the one-bit protocol is not edited.
 
 **Blind.** The 2026-10-12 listing of `TTMn_R` inputs was read before this
 lock, so it chooses nothing. No unit is named here. The runner computes the

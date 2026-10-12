@@ -371,6 +371,54 @@ def cmd_behavior(a, neurons, edges):
     print(f"report -> {out / 'report.csv'}")
 
 
+def cmd_silence_scan(a, neurons, edges):
+    """The frozen residual TTMn_R scan. No flag chooses another unit, seed, or weight."""
+    started = datetime.now(UTC)
+    doc = silence_scan.assert_matches_code()
+    print(silence_scan.summary(doc))
+    out = silence_scan.run(neurons, edges, a.workers, a.checkpoint)
+    path = Path("runs/silence-scan")
+    path.mkdir(parents=True, exist_ok=True)
+    lines = [
+        f"base arm, screen seeds: {out['base_screen']}",
+        f"base arm, confirm seeds: {out.get('base_confirm')}",
+    ]
+    for stage in ("screen", "confirm"):
+        if stage in out:
+            table = out[stage]
+            table.to_csv(path / f"{stage}.csv", index=False)
+            lines += [f"{stage}:", table.to_string(index=False)]
+    lines.append(out["verdict"])
+    text = "\n".join(lines)
+    print(text)
+    (path / "report.txt").write_text(text + "\n")
+    protocol = doc["protocol"]
+    _stamp(
+        path,
+        "silence-scan --run",
+        a,
+        neurons,
+        edges,
+        {
+            "w_syn": protocol["w_syn"],
+            "th_jump": protocol["th_jump"],
+            "scan_version": doc["version"],
+            "scan_sha256": doc["content_sha256"],
+            "rate_hz": protocol["rate_hz"],
+            "stim_ms": protocol["stim_ms"],
+            "duration_ms": protocol["duration_ms"],
+            "m": out.get("m"),
+        },
+        {
+            "screen": list(silence_scan._seeds(doc["screen"])),
+            "confirm": list(silence_scan._seeds(doc["confirm"])),
+        },
+        started,
+        extra={"verdict": out["verdict"]},
+    )
+    print(f"report -> {path / 'report.txt'}")
+
+
 def cmd_benchmarks(a, neurons, edges):
     """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
@@ -735,6 +783,7 @@ COMMANDS = {
     "nulls": cmd_nulls,
     "benchmarks": cmd_benchmarks,
     "behavior": cmd_behavior,
+    "silence-scan": cmd_silence_scan,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -748,6 +797,7 @@ MALECNS_ONLY = (
     "nulls",
     "benchmarks",
     "behavior",
+    "silence-scan",
 )
 
 
@@ -793,9 +843,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="score the two frozen sensitivity corners (does not replace --run)",
     )
-    sub.add_parser(
+    s = sub.add_parser(
         "silence-scan",
-        help="print the frozen residual TTMn_R partner scan (issue #20); not run",
+        help="print the frozen residual TTMn_R partner scan (issue #20), or run it with --run",
+    )
+    s.add_argument("--run", action="store_true", help="run the frozen scan")
+    s.add_argument("--workers", type=int, default=1, help="worker processes")
+    s.add_argument(
+        "--checkpoint",
+        type=Path,
+        help="JSON-lines file; an interrupted run resumes from it",
     )
     sub.add_parser("fetch", help="download raw tables (malecns ~1.1 GB, fafb ~135 MB)")
     sub.add_parser("build", help="compact raw tables to data/*.parquet")
@@ -1041,7 +1098,7 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
-        if a.cmd == "silence-scan":
+        if a.cmd == "silence-scan" and not a.run:
             return print(silence_scan.summary())
         if a.cmd == "behavior" and not a.run:
             return print(behavior.summary())

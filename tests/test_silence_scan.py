@@ -45,7 +45,7 @@ def test_scan_prints_the_protocol_and_does_not_load_data(monkeypatch, capsys, tm
     cli.main()
     out = capsys.readouterr().out
     assert "LC4_R -> TTMn_R with DNp01 silenced" in out
-    assert "not run" in out
+    assert "confirm seeds 10-12" in out
 
 
 def _graph():
@@ -119,3 +119,60 @@ def test_screen_draws_p_and_verdict():
     assert silence_scan.verdict(rows.iloc[:0].assign(contributes=[]), 0).startswith(
         "none"
     )
+
+
+def _toy():
+    # 0 stim -> 1 base -> 2 motor; 0 -> 3 (type A) -> 2; 0 -> 4, 5 (type B, same
+    # superclass and sign as A) -> nothing. With 1 silenced, only A still drives 2.
+    neurons = pd.DataFrame(
+        {
+            "bodyId": np.arange(10, 16),
+            "type": ["S", "G", "M", "A", "B", "B"],
+            "superclass": ["s", "g", "m", "x", "x", "x"],
+            "sign": np.ones(6, dtype=np.int8),
+        }
+    )
+    neurons["type"] = neurons["type"].astype("string")
+    edges = pd.DataFrame(
+        {
+            "pre": [0, 1, 0, 3, 0, 0],
+            "post": [1, 2, 3, 2, 4, 5],
+            "weight": [400, 400, 400, 400, 400, 400],
+        }
+    )
+    return neurons, edges
+
+
+def _small(doc, draws):
+    doc = {**doc, "confirm": {**doc["confirm"], "min_draws": draws}}
+    return doc
+
+
+def test_scan_names_the_only_remaining_route(tmp_path):
+    neurons, edges = _toy()
+    doc = _small(silence_scan.load(), 20)
+    out = silence_scan.scan(
+        neurons, edges, doc, np.array([0]), 2, np.array([1]),
+        checkpoint=tmp_path / "scan.ckpt.jsonl",
+    )  # fmt: skip
+    assert min(out["base_screen"]) > 2
+    assert out["screen"]["unit"].tolist() == ["A"]
+    assert out["m"] == 1
+    row = out["confirm"].iloc[0]
+    assert row["draws"] == 20 and row["p"] == 1 / 21
+    assert out["verdict"] == "names_partner: A"
+    # a rerun replays the checkpoint
+    again = silence_scan.scan(
+        neurons, edges, doc, np.array([0]), 2, np.array([1]),
+        checkpoint=tmp_path / "scan.ckpt.jsonl",
+    )  # fmt: skip
+    assert again["verdict"] == out["verdict"]
+
+
+def test_scan_stops_when_the_base_arm_already_holds_the_bar():
+    neurons, edges = _toy()
+    edges = edges[edges["pre"] != 3]  # A no longer reaches the motor
+    out = silence_scan.scan(
+        neurons, edges, _small(silence_scan.load(), 20), np.array([0]), 2, np.array([1])
+    )
+    assert out["verdict"] == "no_residual: screen seeds"

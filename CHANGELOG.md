@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.17 — 2026-10-12
+
+### Validation
+
+- **The scan runner, before the run.** `flymsg silence-scan --run` executes
+  version 1 of `validation/silence_scan.yaml` as written: base arms, the
+  candidate rule, the screen, then confirmation with checkpointed null draws.
+  Synthetic tests check that the only remaining route is named and that a
+  base arm under the bar stops the scan. The lock is unchanged. Nothing was
+  run on MaleCNS. `w_syn` stays 0.192.
+
 ## 0.8.16 — 2026-10-12
 
 ### Validation

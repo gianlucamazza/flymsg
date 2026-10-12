@@ -7,12 +7,14 @@ are fixed here before any scan run, so the run cannot choose them after the numb
 from __future__ import annotations
 
 import math
+import sys
+import zlib
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from flymsg import behavior, prereg, sim
+from flymsg import behavior, data, dimorphism, parallel, prereg, sim
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "silence_scan.yaml"
@@ -130,7 +132,7 @@ def summary(doc: dict | None = None) -> str:
         f"screen seeds {s['seed0']}-{s['seed0'] + s['seeds'] - 1} "
         f"(<= {s['pass_fraction_of_base']} of base); "
         f"confirm seeds {c['seed0']}-{c['seed0'] + c['seeds'] - 1}, "
-        f"{c['null']} null, alpha {c['alpha']}/m; not run"
+        f"{c['null']} null, alpha {c['alpha']}/m"
     )
 
 
@@ -220,3 +222,199 @@ def verdict(decided: pd.DataFrame, m: int) -> str:
     if named:
         return "names_partner: " + ", ".join(named)
     return "contributes: " + ", ".join(decided.loc[decided["contributes"], "unit"])
+
+
+def _seeds(stage: dict) -> range:
+    return range(stage["seed0"], stage["seed0"] + stage["seeds"])
+
+
+def _arm(
+    W, stim, motor, silence, seeds, protocol
+) -> tuple[list[int], list[sim.Result]]:
+    """TTMn_R spike count per seed during the drive, and the runs, with `silence` off."""
+    counts, results = [], []
+    for seed in seeds:
+        r = sim.run(
+            W,
+            stim,
+            protocol["rate_hz"],
+            protocol["duration_ms"],
+            protocol["stim_ms"],
+            sim.Params(),
+            seed,
+            silence=silence,
+        )
+        counts.append(int(r.counts[:, motor].sum()))
+        results.append(r)
+    return counts, results
+
+
+def _screen_job(job: tuple[str]) -> list[dict]:
+    (W, stim, motor, base, units, doc), _checkpoint, _meta = parallel.context()
+    unit = job[0]
+    silence = np.concatenate([base, units[unit]])
+    counts, _ = _arm(W, stim, motor, silence, _seeds(doc["screen"]), doc["protocol"])
+    return [{"unit": unit, "counts": counts}]
+
+
+def _confirm_job(job: tuple[str]) -> list[dict]:
+    (W, stim, motor, base, units, doc, key, active, n), checkpoint, meta = (
+        parallel.context()
+    )
+    unit = job[0]
+    tested = units[unit]
+    seeds, protocol = _seeds(doc["confirm"]), doc["protocol"]
+
+    def mean_count(extra):
+        counts, _ = _arm(W, stim, motor, np.concatenate([base, extra]), seeds, protocol)
+        return counts
+
+    counts = mean_count(tested)
+    pool = active.copy()
+    pool[tested] = False
+    row = {
+        "unit": unit,
+        "counts": counts,
+        "draws": 0,
+        "null_mean": math.nan,
+        "p": math.nan,
+    }
+    short = dimorphism.matched_pool_shortfall(key, pool, tested)
+    if short:
+        group, have, need = short[0]
+        print(
+            f"{unit}: null not defined ({group}: {have}, need {need})", file=sys.stderr
+        )
+        return [row]
+    label = f"silence-scan/v{doc['version']}/{unit}"
+    rng = np.random.default_rng(zlib.crc32(label.encode()))
+    null = dimorphism._null_rates(
+        label,
+        n,
+        lambda: dimorphism._matched_draw(rng, key, pool, tested),
+        lambda idx: [float(np.mean(mean_count(idx)))],
+        dimorphism._partial(checkpoint, job),
+        meta,
+    )[:, 0]
+    row.update(
+        draws=int(null.size),
+        null_mean=float(null.mean()),
+        p=p_lower(float(np.mean(counts)), null),
+    )
+    return [row]
+
+
+def scan(
+    neurons: pd.DataFrame,
+    edges: pd.DataFrame,
+    doc: dict,
+    stim: np.ndarray,
+    motor: int,
+    base: np.ndarray,
+    workers: int = 1,
+    checkpoint: Path | None = None,
+) -> dict:
+    """Base arms, candidates, screen and confirmation, in the order the lock fixes.
+
+    Returns the tables of each stage and the verdict. `run` resolves the frozen names
+    and checks the lock; tests call this with a small graph.
+    """
+    protocol = doc["protocol"]
+    W = sim.network(neurons, edges, sim.Params())
+    max_spikes = doc["base_arm"]["stop_if_max_spikes_at_most"]
+    meta = {"version": doc["version"], "sha256": doc["content_sha256"]}
+    out = {"version": doc["version"]}
+
+    base_counts, results = _arm(W, stim, motor, base, _seeds(doc["screen"]), protocol)
+    out["base_screen"] = base_counts
+    if no_residual(base_counts, max_spikes):
+        out["verdict"] = "no_residual: screen seeds"
+        return out
+    active = np.zeros(len(neurons), dtype=bool)
+    active[dimorphism.responders(results, stim)] = True
+    exclude = np.concatenate([stim, [motor], base])
+    cand = candidates(
+        neurons, edges, motor, active, exclude, doc["candidates"]["min_weight"]
+    )
+    units = dict(zip(cand["unit"], cand["neurons"], strict=True))
+    print(f"silence-scan: {len(units)} candidate units", file=sys.stderr)
+    screen_ckpt = (
+        checkpoint.with_name(checkpoint.name + ".screen") if checkpoint else None
+    )
+    rows = dimorphism._map_jobs(
+        _screen_job,
+        [(u,) for u in units],
+        workers,
+        (W, stim, motor, base, units, doc),
+        screen_ckpt,
+        {**meta, "stage": "screen"},
+    )
+    fraction = doc["screen"]["pass_fraction_of_base"]
+    screen = cand.drop(columns="neurons").merge(
+        pd.DataFrame(rows, columns=["unit", "counts"]), on="unit"
+    )
+    screen["mean"] = screen["counts"].map(np.mean)
+    screen["passes"] = screen["counts"].map(
+        lambda c: screen_pass(base_counts, c, fraction)
+    )
+    out["screen"] = screen
+    passed = screen.loc[screen["passes"], "unit"].tolist()
+    m = len(passed)
+    out["m"] = m
+    print(f"silence-scan: {m} units pass the screen: {passed}", file=sys.stderr)
+
+    confirm_base, results = _arm(W, stim, motor, base, _seeds(doc["confirm"]), protocol)
+    out["base_confirm"] = confirm_base
+    if no_residual(confirm_base, max_spikes):
+        out["verdict"] = "no_residual: confirm seeds"
+        return out
+    if m == 0:
+        out["confirm"] = pd.DataFrame(columns=["unit", "p", "counts", "contributes"])
+        out["verdict"] = verdict(out["confirm"], 0)
+        return out
+    pool = np.zeros(len(neurons), dtype=bool)
+    pool[dimorphism.responders(results, stim)] = True
+    pool[exclude] = False
+    key = (
+        neurons["superclass"].fillna("none").astype(str)
+        + "/"
+        + neurons["sign"].astype(str)
+    ).to_numpy()
+    c = doc["confirm"]
+    n = n_draws(m, c["min_draws"], c["draws_per_test"])
+    rows = dimorphism._map_jobs(
+        _confirm_job,
+        [(u,) for u in passed],
+        workers,
+        (W, stim, motor, base, units, doc, key, pool, n),
+        checkpoint,
+        {**meta, "stage": "confirm", "m": m, "draws": n},
+    )
+    confirm = decide(pd.DataFrame(rows), m, c["alpha"], max_spikes)
+    out["confirm"] = confirm
+    out["verdict"] = verdict(confirm, m)
+    return out
+
+
+def run(
+    neurons: pd.DataFrame,
+    edges: pd.DataFrame,
+    workers: int = 1,
+    checkpoint: Path | None = None,
+) -> dict:
+    """The frozen scan on MaleCNS at the default parameters."""
+    doc = assert_matches_code()
+    protocol = doc["protocol"]
+    if abs(sim.Params().w_syn - protocol["w_syn"]) > 1e-12:
+        raise ScanError("run refuses a parameter other than the default")
+
+    def idx(query, expect):
+        got = data.resolve(neurons, query)
+        if got.size != expect:
+            raise ScanError(f"{query} has {got.size} neurons, the lock says {expect}")
+        return got
+
+    stim = idx(protocol["stimulus"], protocol["stimulus_n"])
+    motor = int(idx(protocol["motor"], protocol["motor_n"])[0])
+    base = idx(protocol["base_silence"], protocol["base_silence_n"])
+    return scan(neurons, edges, doc, stim, motor, base, workers, checkpoint)
