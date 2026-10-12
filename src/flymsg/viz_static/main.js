@@ -981,6 +981,62 @@ const neuropilsListed = (async () => {
   }
 })();
 
+// ---------- whole CNS: every soma as a point ----------
+// docs/live/cns/somata.bin (scripts/build_somata.py): float32 x, y, z per soma in scale-0
+// voxels, then a uint8 region code each. The site serves it next to the scenes; a local
+// export has none unless ?somata=<url>. ?somata=0 hides the layer. Context only: points are
+// neither picked nor coloured by activity.
+const REGION_COLOURS = ["#4f7fd0", "#d09a4f", "#5fae66", "#b866c4", "#c45f5f", "#8a8a8a"];
+const somataQuery = query.get("somata");
+const somata = {
+  visible: somataQuery !== "0",
+  opacity: 0.12, // context: the active neurons stay in front
+  size: 1.5,
+  points: null,
+  count: 0,
+};
+const somataMaterial = new THREE.PointsMaterial({
+  size: somata.size,
+  sizeAttenuation: false, // pixels, so the cloud reads the same at every zoom
+  vertexColors: true,
+  transparent: true,
+  opacity: somata.opacity,
+  depthWrite: false,
+});
+const somataLoaded = (async () => {
+  if (!somata.visible) return;
+  const url = somataQuery && somataQuery !== "1" ? somataQuery : "../cns/somata.bin";
+  let buf;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return;
+    buf = await r.arrayBuffer();
+  } catch {
+    return; // no layer for this page
+  }
+  const n = buf.byteLength / 13;
+  if (!Number.isInteger(n)) return console.warn(`${url}: not a soma file`);
+  const vox = new Float32Array(buf, 0, 3 * n);
+  const codes = new Uint8Array(buf, 12 * n, n);
+  const pos = new Float32Array(3 * n);
+  const col = new Float32Array(3 * n);
+  const palette = REGION_COLOURS.map((c) => new THREE.Color(c));
+  for (let i = 0; i < n; i++) {
+    for (let a = 0; a < 3; a++) pos[3 * i + a] = vox[3 * i + a] * scale0.resolution[a];
+    const c = palette[Math.min(codes[i], palette.length - 1)];
+    col.set([c.r, c.g, c.b], 3 * i);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  somata.points = new THREE.Points(g, somataMaterial);
+  somata.points.renderOrder = 2;
+  somata.count = n;
+  perf.count("somata", buf.byteLength);
+  data.add(somata.points);
+  invalidate();
+})();
+
 // ---------- level-of-detail selection ----------
 // Recomputed once the camera settles (or at most every 250 ms while it keeps moving) and when
 // new manifests arrive.
@@ -1251,6 +1307,8 @@ function pickAt(x, y) {
   };
   world.background = null;
   saved.shells.forEach((o) => (o.visible = false));
+  const somataShown = somata.points?.visible ?? false;
+  if (somata.points) somata.points.visible = false; // context, not pickable
   batched.material = pickMeshMaterial;
   skeletons.material = pickLineMaterial;
   renderer.setRenderTarget(pickTarget);
@@ -1263,6 +1321,7 @@ function pickAt(x, y) {
   batched.material = meshMaterial;
   skeletons.material = skelMaterial;
   saved.shells.forEach((o) => (o.visible = true));
+  if (somata.points) somata.points.visible = somataShown;
   world.background = saved.background;
   camera.clearViewOffset();
   // nearest non-empty pixel to the centre wins
@@ -1570,6 +1629,13 @@ groups.forEach((g) =>
     refreshColours();
   }),
 );
+somataLoaded.then(() => {
+  if (!somata.points) return;
+  const f = gui.addFolder(`Whole CNS (${somata.count.toLocaleString()} somata)`).close();
+  f.add(somata.points, "visible").name("show").onChange(invalidate);
+  f.add(somataMaterial, "opacity", 0, 1).onChange(invalidate);
+  f.add(somataMaterial, "size", 0.5, 6).name("point px").onChange(invalidate);
+});
 const pFolder = gui.addFolder("Neuropils");
 pFolder
   .add(shellMaterial.uniforms.uOpacity, "value", 0, 1)

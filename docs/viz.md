@@ -16,7 +16,16 @@ local tables with the gallery commands, exporting every scene before it writes a
 manifest records a clean tree. The site build copies the page next to each scene. Geometry
 is not stored: it streams from GCS as it does locally.
 
-A scene draws the stimulus and the neurons that respond, not all 165,122. The README links
+A scene draws the stimulus and the neurons that respond, not all 165,122. On the site a
+**whole-CNS layer** adds every soma in the volume as a point, coloured by region: optic lobe
+blue, central brain orange, ventral nerve cord green, descending violet, ascending red.
+`scripts/build_somata.py` writes it once to `docs/live/cns/` from `somaLocation` in the
+MaleCNS body annotations (1.8 MB, 140,024 somata). The 25,098 neurons without a soma in the
+volume are counted in `somata.json`, not drawn: mostly sensory neurons, whose cell bodies lie
+in the periphery, and optic-lobe neurons whose soma falls outside the imaged volume. The layer
+is context: its points are not picked and do not show activity. `?somata=0` hides it; the
+panel's "Whole CNS" folder sets opacity and point size. A local `flymsg viz` export has no
+layer unless `?somata=<url>` points to a soma file. The README links
 add `?neuropils=1`, so the 114 brain and VNC shells outline the whole CNS around the
 activity; without it a replay starts with the shells hidden. The shells stream in after the
 neurons and cost GPU time while the replay plays.

@@ -28,6 +28,7 @@ export class Perf {
       fragments: 0,
       skeletons: 0,
       neuropils: 0,
+      somata: 0,
       bytes: 0,
     };
     this.marks = {};
