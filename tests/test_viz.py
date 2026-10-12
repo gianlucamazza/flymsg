@@ -115,3 +115,64 @@ def test_js_modules_against_gcs():
     """Same, including the live read of the Giant Fiber manifest from GCS."""
     run = run_node_tests(network=True)
     assert run.returncode == 0, run.stdout + run.stderr
+
+
+def _partner_graph():
+    # 0..5 typed or untyped; two types tie on synapses onto neuron 0
+    neurons = pd.DataFrame(
+        {
+            "bodyId": [100, 101, 102, 103, 104, 105],
+            "type": ["T0", "B", "A", None, "A", "C"],
+        }
+    )
+    neurons["type"] = neurons["type"].astype("string")
+    edges = pd.DataFrame(
+        {
+            "pre": [1, 2, 3, 4, 0, 0, 0, 5],
+            "post": [0, 0, 0, 0, 1, 5, 2, 1],
+            "weight": [6, 4, 9, 2, 7, 7, 1, 3],
+        }
+    )
+    return neurons, edges
+
+
+@pytest.mark.parametrize("top", [1, 2, 10])
+def test_partner_table_matches_flymsg_info(top):
+    from flymsg import graph
+
+    neurons, edges = _partner_graph()
+    idx = np.array([0, 1, 5])
+    table = graph.partner_table(neurons, edges, idx, top)
+    for i in idx:
+        entry = table[int(neurons["bodyId"][i])]
+        for up, key in ((True, "upstream"), (False, "downstream")):
+            ref = graph.partners(neurons, edges, np.array([i]), upstream=up, top=top)
+            got = entry[key]
+            assert got["types"] == [
+                [t, int(r.synapses), int(r.connections)] for t, r in ref.iterrows()
+            ]
+            full = graph.partners(neurons, edges, np.array([i]), upstream=up, top=99)
+            assert got["total_types"] == len(full)
+            assert got["total_synapses"] == int(full["synapses"].sum())
+    # neuron 0: untyped first (9), then A (2 neurons, 6) tied with B (6), A first as in info
+    assert (
+        table[100]["upstream"]["types"]
+        == [["untyped", 9, 1], ["A", 6, 2], ["B", 6, 1]][:top]
+    )
+    assert table[100]["upstream"]["total_types"] == 3
+    # partners inside the scene, as rows of idx, strongest first
+    assert table[100]["upstream"]["in_scene"] == [[1, 6]]
+    assert table[100]["downstream"]["in_scene"] == [[1, 7], [2, 7]]
+    assert table[105]["upstream"]["in_scene"] == [[0, 7]]
+
+
+def test_export_writes_partners_and_drops_a_stale_table(tmp_path):
+    neurons, edges = _partner_graph()
+    neurons = neurons.assign(
+        instance=pd.NA, nt=pd.NA, superclass=pd.NA, dimorphism=pd.NA, fruDsx=pd.NA
+    )
+    viz.export(tmp_path, neurons, np.array([0, 1]), ["a", "b"], edges=edges)
+    table = json.loads((tmp_path / "partners.json").read_text())
+    assert table["top"] == 10 and set(table["neurons"]) == {"100", "101"}
+    viz.export(tmp_path, neurons, np.array([0]), ["a"])
+    assert not (tmp_path / "partners.json").exists()

@@ -110,6 +110,59 @@ def partners(
     )
 
 
+def partner_table(
+    neurons: pd.DataFrame, edges: pd.DataFrame, idx: np.ndarray, top: int = 10
+) -> dict[int, dict]:
+    """`partners` for every neuron of `idx` on its own, plus its partners inside `idx`.
+
+    Keyed by bodyId. Each direction holds the `top` partner types as [type, synapses,
+    connections] in the order `partners` gives, the totals over every partner type, and
+    [row in idx, synapses] for each partner neuron that is itself in `idx`.
+    """
+    idx = np.asarray(idx, dtype=np.int64)
+    row = np.full(len(neurons), -1, dtype=np.int64)
+    row[idx] = np.arange(idx.size)
+    types = neurons["type"].fillna("untyped").to_numpy()
+    body = neurons["bodyId"].to_numpy()
+    out = {int(body[i]): {} for i in idx}
+    for up in (True, False):
+        here, there = ("post", "pre") if up else ("pre", "post")
+        e = edges[row[edges[here].to_numpy()] >= 0]
+        h, t, w = e[here].to_numpy(), e[there].to_numpy(), e["weight"].to_numpy()
+        by_type = (
+            pd.DataFrame({"n": h, "type": types[t], "weight": w})
+            .groupby(["n", "type"])["weight"]
+            .agg(["sum", "size"])
+            .reset_index()
+        )
+        # partners() sorts by synapses with ties in type order (nlargest keeps the first)
+        by_type = by_type.sort_values(
+            ["n", "sum", "type"], ascending=[True, False, True]
+        )
+        inside = row[t] >= 0
+        scene = pd.DataFrame({"n": h[inside], "k": row[t[inside]], "w": w[inside]})
+        scene = scene.sort_values(["n", "w", "k"], ascending=[True, False, True])
+        key = "upstream" if up else "downstream"
+        for i in idx:
+            out[int(body[i])][key] = {"types": [], "total_types": 0, "total_synapses": 0,
+                                      "in_scene": []}  # fmt: skip
+        for n, g in by_type.groupby("n", sort=False):
+            entry = out[int(body[n])][key]
+            entry["types"] = [
+                [str(ty), int(sy), int(co)]
+                for ty, sy, co in g[["type", "sum", "size"]]
+                .head(top)
+                .itertuples(index=False)
+            ]
+            entry["total_types"] = len(g)
+            entry["total_synapses"] = int(g["sum"].sum())
+        for n, g in scene.groupby("n", sort=False):
+            out[int(body[n])][key]["in_scene"] = [
+                [int(k), int(ww)] for k, ww in zip(g["k"], g["w"], strict=True)
+            ]
+    return out
+
+
 def edge_weights(edges: pd.DataFrame, path: list[int]) -> list[int]:
     """Synapse count of each hop along `path`."""
     pre, post, w = (edges[c].to_numpy() for c in ("pre", "post", "weight"))

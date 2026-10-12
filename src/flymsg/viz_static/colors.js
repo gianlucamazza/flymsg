@@ -55,14 +55,25 @@ export const NT_COLORS = {
   unknown: "#7b8494",
 };
 
+// A selected neuron and its partners in the scene; every other neuron stays drawn as context.
+export const FOCUS_COLORS = {
+  selected: "#ffffff",
+  upstream: "#ff9f1c",
+  downstream: "#2ec4b6",
+  "up and downstream": "#c77dff",
+  context: "#2a2f38",
+};
+
 /** Stable small hash of a string, so a cell type always gets the same palette entry. */
 export const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 /**
  * The colour of a neuron under the current view: by group, by transmitter, by cell type, or
- * by one of the two sex-related annotations.
+ * by one of the two sex-related annotations. A selection (`view.focus`, row -> role) overrides
+ * the mode until it is cleared.
  */
 export function colourOf(n, view, groups) {
+  if (view.focus) return FOCUS_COLORS[view.focus.get(n.k) ?? "context"];
   switch (view.colorBy) {
     case "group":
       return PALETTE[groups.indexOf(n.group) % PALETTE.length];

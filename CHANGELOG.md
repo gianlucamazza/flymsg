@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8.20 — 2026-10-12
+
+### Viz
+
+- **Select a neuron and read its partners (#21).** A click, the GUI field or
+  `?select=<bodyId>` selects a neuron in any scene. The panel gives its annotations
+  (missing ones say unknown), its simulated rate labelled as model output, and its ten
+  strongest input and output cell types with totals and the count not shown. Partners in
+  the scene are recoloured by role and the rest stays as context; Esc clears. `flymsg viz`
+  writes `partners.json` from `graph.partner_table`, tested equal to `graph.partners`
+  (`flymsg info`) per neuron. The live scenes now carry it; their `scene.json` and
+  `activity.bin` are unchanged.
+
+### Fixes
+
+- **The dataset symlink committed by #37 is removed.** The ignore rule is now `/data`, which
+  also matches a link. Pulling #37 had replaced the local `data/` with that link; the tables
+  were rebuilt and their sha256 matches the recorded manifests.
+
 ## 0.8.19 — 2026-10-12
 
 ### Embodiment

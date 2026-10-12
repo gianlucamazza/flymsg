@@ -52,6 +52,31 @@
       #clock {
         font-variant-numeric: tabular-nums;
       }
+      #selection {
+        position: fixed;
+        left: 12px;
+        top: 12px;
+        max-width: min(460px, calc(100vw - 24px));
+        max-height: calc(100vh - 220px);
+        overflow: auto;
+        padding: 10px 12px;
+        background: var(--panel);
+        border-radius: 8px;
+      }
+      #selection pre {
+        margin: 0;
+        font: inherit;
+        white-space: pre-wrap;
+      }
+      #selection button {
+        float: right;
+        margin-left: 8px;
+        background: none;
+        color: var(--fg);
+        border: 1px solid var(--muted);
+        border-radius: 4px;
+        cursor: pointer;
+      }
       #loading {
         position: fixed;
         inset: 0;
@@ -72,6 +97,10 @@
   </head>
   <body>
     <div id="loading">loading scene…</div>
+    <section id="selection" hidden aria-live="polite" aria-label="selected neuron">
+      <button type="button" aria-label="clear the selection (Esc)">clear</button>
+      <pre></pre>
+    </section>
     <div id="hud">
       <div id="clock"></div>
       <div id="stats" class="muted"></div>

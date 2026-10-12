@@ -21,6 +21,23 @@ add `?neuropils=1`, so the 114 brain and VNC shells outline the whole CNS around
 activity; without it a replay starts with the shells hidden. The shells stream in after the
 neurons and cost GPU time while the replay plays.
 
+## Selecting a neuron
+
+A click, the `select` field of the panel, or `?select=<bodyId|instance|type>` selects a
+neuron. The panel lists its identifiers and annotations, with missing ones written as
+unknown or not annotated, and its simulated rate, labelled as model output. It then lists the
+ten strongest input and output cell types by synapse count, the totals over every partner
+type, how many more types there are, and how many partner neurons are in the scene. Those
+partners are recoloured by role (input, output, both); every other neuron stays drawn in a
+dark context colour. Esc or `clear` ends the selection, and the URL keeps `?select=` so a
+selection can be shared.
+
+The counts come from `partners.json`, which `flymsg viz` writes next to `scene.json` with
+`graph.partner_table`. A test checks that table against `graph.partners`, the function behind
+`flymsg info`, neuron by neuron, ties included, so the panel and `flymsg info <bodyId>` show
+the same numbers. The page loads the table on the first selection. It is anatomy from the
+dataset, not simulation output, and it is chemical synapses only.
+
 ## Sources
 
 | data            | format                                                     | use                                                                      |

@@ -27,6 +27,7 @@ import {
 import { priorityOf, select } from "./lod.js";
 import {
   DIMORPHISM_COLORS,
+  FOCUS_COLORS,
   FRU_DSX_COLORS,
   NT_COLORS,
   PALETTE,
@@ -40,6 +41,12 @@ import {
   vertsPerTri,
 } from "./budget.js";
 import { activityAt } from "./activity.js";
+import {
+  findNeuron,
+  focusRoles,
+  panelLines,
+  selectParam,
+} from "./partners.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
 
@@ -364,6 +371,7 @@ const view = {
     : "group", // ?color=
   filter: "",
   groupsOn: Object.fromEntries(groups.map((g) => [g, true])),
+  focus: null, // row -> role while a neuron is selected
 };
 const colourOf = (n) => colourIn(n, view, groups);
 const isShown = (n) => shownIn(n, view);
@@ -1039,8 +1047,9 @@ function refreshColours() {
   }
   skelColour.needsUpdate = true;
   skeletonsDirty = true;
-  const entries =
-    view.colorBy === "group"
+  const entries = view.focus
+    ? Object.entries(FOCUS_COLORS)
+    : view.colorBy === "group"
       ? groups.map((g, i) => [g, PALETTE[i % PALETTE.length]])
       : view.colorBy === "transmitter"
         ? [...new Set(meta.neurons.map((n) => n.nt))].map((t) => [
@@ -1250,18 +1259,63 @@ renderer.domElement.addEventListener("pointerup", (e) => {
     ...new Set([...n.shown.keys()].map((key) => key.split(":")[0])),
   ].sort();
   info.classList.remove("muted");
-  info.textContent = [
-    n.instance || n.type,
-    `bodyId ${n.bodyId}`,
-    n.nt,
-    n.superclass,
-    `group ${n.group}`,
-    n.rate == null ? null : `${n.rate} Hz during stimulus`,
-    n.shown.size ? `surface, LOD ${lods.join("/")}` : "skeleton",
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  info.textContent = `${n.instance || n.type} · ${
+    n.shown.size ? `surface, LOD ${lods.join("/")}` : "skeleton"
+  } · Esc clears the selection`;
+  selectNeuron(k);
 });
+
+// ---------- selection: partners from partners.json, loaded on first use ----------
+const panel = document.getElementById("selection");
+let partnerTable = null;
+const loadPartners = () =>
+  (partnerTable ??= fetch("partners.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null));
+
+async function selectNeuron(k) {
+  const n = neurons[k];
+  const table = await loadPartners();
+  const entry = table?.neurons?.[String(n.bodyId)];
+  view.focus = focusRoles(k, entry);
+  refreshColours();
+  invalidate();
+  panel.hidden = false;
+  panel.querySelector("pre").textContent = panelLines(
+    n,
+    entry,
+    table?.source,
+  ).join("\n");
+  const url = new URL(location.href);
+  url.searchParams.set("select", String(n.bodyId));
+  history.replaceState(null, "", url);
+}
+
+function clearSelection() {
+  if (!view.focus) return;
+  view.focus = null;
+  refreshColours();
+  invalidate();
+  panel.hidden = true;
+  const url = new URL(location.href);
+  url.searchParams.delete("select");
+  history.replaceState(null, "", url);
+}
+
+function find(text) {
+  const hit = findNeuron(neurons, text);
+  if (hit) return selectNeuron(hit.k);
+  panel.hidden = false;
+  panel.querySelector("pre").textContent =
+    `no neuron in this scene matches "${text}"`;
+}
+
+panel.querySelector("button").addEventListener("click", clearSelection);
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape") clearSelection();
+});
+const initial = selectParam(location.search);
+if (initial) find(initial);
 
 // ---------- GUI ----------
 const gui = new GUI({ title: "flymsg" });
@@ -1269,6 +1323,10 @@ gui
   .add(view, "colorBy", COLOR_MODES)
   .name("colour by")
   .onChange(refreshColours);
+gui
+  .add({ find: "" }, "find")
+  .name("select (bodyId/type)")
+  .onFinishChange((v) => v.trim() && find(v));
 gui
   .add(view, "filter")
   .name("type filter")

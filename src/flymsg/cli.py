@@ -743,7 +743,7 @@ def cmd_viz(a, neurons, edges):
         result = sim.run(W, stim, a.rate, a.duration, a.stim_ms, seed=a.seed)
         idx = viz.select_from_result(result, stim, a.min_rate)
         groups = np.where(np.isin(idx, stim), "stimulus", "response").tolist()
-    scene = viz.export(a.out, neurons, idx, groups, result)
+    scene = viz.export(a.out, neurons, idx, groups, result, edges)
     print(
         f"{len(scene['neurons'])} neurons exported to {a.out}/ (geometry streams from GCS)\n"
         f"view: python -m http.server -d {a.out} 8000  ->  http://localhost:8000"

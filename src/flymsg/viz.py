@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import sim
+from flymsg import graph, sim
 
 STATIC = Path(__file__).parent / "viz_static"
 
@@ -46,8 +46,12 @@ def export(
     idx: np.ndarray,
     groups: list[str],
     result: sim.Result | None = None,
+    edges: pd.DataFrame | None = None,
+    top: int = 10,
 ) -> dict:
-    """Write scene.json, activity.bin (replays only) and the page into `out`."""
+    """Write scene.json, activity.bin (replays only), partners.json (with `edges`) and the
+    page into `out`. partners.json holds each neuron's `top` partner types, as `flymsg info`
+    lists them, its totals, and its partners inside the scene."""
     out.mkdir(parents=True, exist_ok=True)
     rates = result.rate(0, result.stim_ms) if result is not None else None
     rows = neurons.iloc[idx]
@@ -81,6 +85,19 @@ def export(
             missing_ok=True
         )  # an anatomy export must not pick up an old replay
     (out / "scene.json").write_text(json.dumps(scene))
+    table = out / "partners.json"
+    if edges is not None:
+        table.write_text(
+            json.dumps(
+                {
+                    "source": "chemical synapse counts of the exported dataset",
+                    "top": top,
+                    "neurons": graph.partner_table(neurons, edges, idx, top),
+                }
+            )
+        )
+    else:
+        table.unlink(missing_ok=True)  # never pair a scene with another scene's table
     copy_page(out)
     return scene
 
