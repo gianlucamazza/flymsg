@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from flymsg import dimorphism, sim
+from flymsg import dimorphism, draws, sim
 
 
 def test_a_short_matched_pool_is_reported_without_running_the_null(monkeypatch):
@@ -38,7 +38,7 @@ def test_a_short_matched_pool_is_reported_without_running_the_null(monkeypatch):
         raise AssertionError("null ran")
 
     monkeypatch.setattr(dimorphism, "_case_rates", lambda *a, **k: rates)
-    monkeypatch.setattr(dimorphism, "_null_rates", null_must_not_run)
+    monkeypatch.setattr(draws, "null_rates", null_must_not_run)
     parallel._init(
         (
             (np.zeros(2), None, None, 3, 1000, dimorphism.T4_SETS),
@@ -50,7 +50,7 @@ def test_a_short_matched_pool_is_reported_without_running_the_null(monkeypatch):
     assert len(rows) == 1
     assert rows[0]["drop"] == pytest.approx(0.2)
     assert np.isnan(rows[0]["p_drop"])
-    assert dimorphism.matched_pool_shortfall(key, pool, silenced) == [
+    assert draws.matched_pool_shortfall(key, pool, silenced) == [
         ("cb_intrinsic/1", 0, 2)
     ]
 
@@ -200,20 +200,20 @@ def test_map_jobs_checkpoints_resumes_and_refuses_other_parameters(tmp_path):
         return [{"job": j[0], "x": float("nan") if j[0] == "b" else 1.0}]
 
     meta = {"n_null": 5}
-    rows = dimorphism._map_jobs(job, [("a",), ("b",)], 1, None, ck, meta)
+    rows = draws.map_jobs(job, [("a",), ("b",)], 1, None, ck, meta)
     assert [r["job"] for r in rows] == ["a", "b"] and len(
         ck.read_text().splitlines()
     ) == 2
     # a rerun with one more job computes only the new one, and keeps the job order
-    rows = dimorphism._map_jobs(job, [("c",), ("a",), ("b",)], 1, None, ck, meta)
+    rows = draws.map_jobs(job, [("c",), ("a",), ("b",)], 1, None, ck, meta)
     assert calls == [("a",), ("b",), ("c",)]
     assert [r["job"] for r in rows] == ["c", "a", "b"] and np.isnan(rows[2]["x"])
-    with pytest.raises(dimorphism.CheckpointMismatch, match="written with"):
-        dimorphism._map_jobs(job, [("a",)], 1, None, ck, {"n_null": 1000})
+    with pytest.raises(draws.CheckpointMismatch, match="written with"):
+        draws.map_jobs(job, [("a",)], 1, None, ck, {"n_null": 1000})
 
 
 def test_map_jobs_in_workers_matches_serial():
-    rows = dimorphism._map_jobs(_square, [(i,) for i in range(5)], 3, None, None, {})
+    rows = draws.map_jobs(_square, [(i,) for i in range(5)], 3, None, None, {})
     assert [r["y"] for r in rows] == [0, 1, 4, 9, 16]
 
 
@@ -232,7 +232,7 @@ def test_null_draws_resume_after_an_interruption_with_the_same_result(tmp_path):
                 raise KeyboardInterrupt
             return [float(idx.sum()), 1.0]
 
-        out = dimorphism._null_rates(
+        out = draws.null_rates(
             "t", 6, lambda: rng.choice(50, 3, replace=False), rates, partial, {"m": 1}
         )
         return out, len(calls)
@@ -249,7 +249,7 @@ def test_null_draws_resume_after_an_interruption_with_the_same_result(tmp_path):
     lines = part.read_text().splitlines()
     lines[1] = lines[1].replace('"pick": ', '"pick": 1')
     part.write_text("\n".join(lines) + "\n")
-    with pytest.raises(dimorphism.CheckpointMismatch, match="draw 0"):
+    with pytest.raises(draws.CheckpointMismatch, match="draw 0"):
         run(part)
 
 
@@ -261,7 +261,7 @@ def test_map_jobs_runs_the_first_jobs_first_and_keeps_the_job_order():
         return [{"job": j[0]}]
 
     jobs = [("a",), ("b",), ("c",), ("d",)]
-    rows = dimorphism._map_jobs(job, jobs, 1, None, None, {}, first=[("c",), ("a",)])
+    rows = draws.map_jobs(job, jobs, 1, None, None, {}, first=[("c",), ("a",)])
     assert calls[:2] == [("a",), ("c",)] and set(calls[2:]) == {("b",), ("d",)}
     assert [r["job"] for r in rows] == ["a", "b", "c", "d"]
 
@@ -275,7 +275,7 @@ def test_progress_reads_finished_and_started_jobs_without_the_data(tmp_path):
     }
     job = ["pIP10 song pathway", "dMS9"]
     ck.write_text(json.dumps({"meta": meta, "job": job, "rows": []}) + "\n")
-    started = dimorphism._partial(ck, ("P1 courtship drive", "dMS9"))
+    started = draws.partial_path(ck, ("P1 courtship drive", "dMS9"))
     started.write_text(json.dumps(meta) + "\n" + '{"pick": 1, "rates": [1.0]}\n' * 2)
     table = dimorphism.progress(ck).set_index(["case", "silenced"])
     assert table.loc[tuple(job), "state"] == "done"

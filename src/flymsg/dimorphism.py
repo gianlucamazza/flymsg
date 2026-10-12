@@ -9,14 +9,13 @@ dimorphic neurons are not spread evenly across superclasses.
 
 import json
 import sys
-import time
 import zlib
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from flymsg import data, parallel, sim, validate
+from flymsg import data, draws, parallel, sim, validate
 
 # MaleCNS annotations; "potentially ..." counts, the field is a best current call
 CATEGORIES = {
@@ -208,7 +207,7 @@ def _job(job: tuple[str, str]) -> list[dict]:
         return _rows(case_name, which, 0, case.targets, base, base, np.empty((0, 0)),
                      base_seeds, base_seeds)  # fmt: skip
     obs, obs_seeds = rates(silenced, per_seed=True)
-    short = matched_pool_shortfall(key, pool, silenced)
+    short = draws.matched_pool_shortfall(key, pool, silenced)
     if short:
         group, have, need = short[0]
         print(
@@ -220,83 +219,18 @@ def _job(job: tuple[str, str]) -> list[dict]:
             np.empty((0, len(case.targets))), base_seeds, obs_seeds,
         )  # fmt: skip
     rng = np.random.default_rng(zlib.crc32(label.encode()))  # stable across runs
-    null = _null_rates(
+    null = draws.null_rates(
         f"{case_name} / {which}",
         n_null,
-        lambda: _matched_draw(rng, key, pool, silenced),
+        lambda: draws.matched_draw(rng, key, pool, silenced),
         rates,
-        _partial(checkpoint, job),
+        draws.partial_path(checkpoint, job),
         meta,
     )
     return _rows(
         case_name, which, silenced.size, case.targets, base, obs, null,
         base_seeds, obs_seeds,
     )  # fmt: skip
-
-
-def _null_rates(
-    label: str, n_null: int, pick, rates, partial: Path | None = None, meta=None
-) -> np.ndarray:
-    """`rates(pick())` n_null times, reporting progress and a measured ETA on stderr about
-    every 10 % (null runs take hours on the full CNS). With `partial`, every draw is
-    appended to that file as it finishes; a rerun replays the saved draws (`pick()` only,
-    to advance the generator, checked against the saved hash of each pick) and continues."""
-    saved = []
-    if partial and partial.exists():
-        lines = partial.read_text().splitlines()
-        try:
-            json.loads(lines[-1])
-        except (json.JSONDecodeError, IndexError):  # cut short while writing
-            lines = lines[:-1]
-            partial.write_text("".join(line + "\n" for line in lines))
-        if lines and json.loads(lines[0]) != meta:
-            raise CheckpointMismatch(f"{partial} was written with other parameters")
-        saved = [json.loads(line) for line in lines[1:]]
-    out = []
-    for i, rec in enumerate(saved[:n_null]):
-        if _pick_hash(pick()) != rec["pick"]:
-            raise CheckpointMismatch(f"{partial}: draw {i} is not the one saved")
-        out.append(rec["rates"])
-    f = None
-    if partial:
-        f = partial.open("a")
-        if not partial.stat().st_size:
-            f.write(json.dumps(meta) + "\n")
-    t0, start = time.monotonic(), len(out)
-    step = max(1, n_null // 10)
-    try:
-        for i in range(start + 1, n_null + 1):
-            idx = pick()
-            r = [float(x) for x in rates(idx)]
-            out.append(r)
-            if f:
-                f.write(json.dumps({"pick": _pick_hash(idx), "rates": r}) + "\n")
-                f.flush()
-            if i % step == 0 or i == n_null:
-                el = time.monotonic() - t0
-                eta = el / (i - start) * (n_null - i) / 60
-                print(
-                    f"  [{label}] null {i}/{n_null}, {el / 60:.0f} min, ETA {eta:.0f} min",
-                    file=sys.stderr,
-                    flush=True,
-                )
-    finally:
-        if f:
-            f.close()
-    return np.array(out)
-
-
-def _pick_hash(idx) -> int:
-    return zlib.crc32(np.sort(np.asarray(idx, dtype=np.int64)).tobytes())
-
-
-def _partial(checkpoint: Path | None, job) -> Path | None:
-    """Where a job's null draws are saved while it runs."""
-    if checkpoint is None:
-        return None
-    return checkpoint.with_name(
-        f"{checkpoint.name}.{zlib.crc32(repr(tuple(job)).encode()):08x}.partial"
-    )
 
 
 def progress(checkpoint: Path) -> pd.DataFrame:
@@ -331,19 +265,19 @@ def progress(checkpoint: Path) -> pd.DataFrame:
         }
     rows = []
     for job in jobs:
-        part = _partial(checkpoint, job)
+        part = draws.partial_path(checkpoint, job)
         if tuple(job) in done:
-            draws, state = n_null, "done"
+            made, state = n_null, "done"
         elif part.exists():
-            draws, state = max(0, len(part.read_text().splitlines()) - 1), "started"
+            made, state = max(0, len(part.read_text().splitlines()) - 1), "started"
         else:
-            draws, state = 0, "waiting"
+            made, state = 0, "waiting"
         rows.append(
             {
                 "case": job[0],
                 "silenced": job[1],
                 "confirmatory": tuple(job) in {tuple(j) for j in first},
-                "draws": draws,
+                "draws": made,
                 "of": n_null,
                 "state": state,
             }
@@ -351,86 +285,6 @@ def progress(checkpoint: Path) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values(
         ["confirmatory", "draws"], ascending=[False, False]
     )
-
-
-class CheckpointMismatch(ValueError):
-    """A checkpoint file written with other parameters than the current run."""
-
-
-def _map_jobs(
-    fn,
-    jobs: list,
-    workers: int,
-    ctx,
-    checkpoint: Path | None,
-    meta: dict,
-    first=(),
-):
-    """Run `fn` over `jobs` (each returns a list of rows) with job context `ctx`, in worker
-    processes if workers > 1, collecting results as they finish. With `checkpoint`, every
-    finished job is appended to that JSON-lines file and jobs already there are skipped, so
-    an interrupted run resumes (a running job's null draws are saved too, see `_null_rates`);
-    a checkpoint written with other parameters is refused. Jobs in `first` are submitted
-    before the others (the confirmatory tests, so that an interrupted run has them);
-    rows come back in the order of `jobs`."""
-    done: dict[tuple, list] = {}
-    if checkpoint and checkpoint.exists():
-        for line in checkpoint.read_text().splitlines():
-            rec = json.loads(line)
-            if rec["meta"] != meta:
-                raise CheckpointMismatch(
-                    f"{checkpoint} was written with {rec['meta']}, not {meta}"
-                )
-            done[tuple(rec["job"])] = rec["rows"]
-    first = {tuple(j) for j in first}
-    todo = sorted(
-        (j for j in jobs if tuple(j) not in done), key=lambda j: tuple(j) not in first
-    )
-    if done:
-        print(
-            f"resuming: {len(done)} of {len(jobs)} jobs in {checkpoint}",
-            file=sys.stderr,
-        )
-
-    def record(job, rows):
-        done[tuple(job)] = rows
-        print(f"job {len(done)}/{len(jobs)} done: {job}", file=sys.stderr, flush=True)
-        if checkpoint:
-            rec = {"meta": meta, "job": list(job), "rows": rows}
-            with checkpoint.open("a") as f:
-                f.write(json.dumps(rec, default=float) + "\n")
-            _partial(checkpoint, job).unlink(missing_ok=True)
-
-    for j, rows in parallel.imap(fn, todo, workers, (ctx, checkpoint, meta)):
-        record(j, rows)
-    return [r for j in jobs for r in done[tuple(j)]]
-
-
-def matched_pool_shortfall(key, pool, like) -> list[tuple[str, int, int]]:
-    """Groups where `pool` has fewer neurons of that key than `like` requires."""
-    groups, counts = np.unique(key[like], return_counts=True)
-    short = []
-    for g, k in zip(groups, counts, strict=True):
-        have = int(np.count_nonzero(pool & (key == g)))
-        if have < int(k):
-            short.append((str(g), have, int(k)))
-    return short
-
-
-def _matched_draw(
-    rng, key: np.ndarray, pool: np.ndarray, like: np.ndarray
-) -> np.ndarray:
-    """As many neurons from `pool` as `like` has, with the same count per `key` value."""
-    short = matched_pool_shortfall(key, pool, like)
-    if short:
-        g, have, need = short[0]
-        raise ValueError(f"null pool has {have} neurons of {g!r}, need {need}")
-    groups, counts = np.unique(key[like], return_counts=True)
-    pick = []
-    for g, k in zip(groups, counts, strict=True):
-        cand = np.flatnonzero(pool & (key == g))
-        pick.append(rng.choice(cand, size=k, replace=False))
-    return np.concatenate(pick)
 
 
 def _rows(
@@ -501,7 +355,7 @@ def silencing(
     ctx = (neurons, W, p, seeds, n_null, None)
     jobs = [(c, k) for c in cases for k in CATEGORIES]
     meta = {"kind": "silencing", "seeds": seeds, "n_null": n_null, **_param_meta(p)}
-    rows = _map_jobs(_job, jobs, workers, ctx, checkpoint, meta, T1_CONFIRMATORY)
+    rows = draws.map_jobs(_job, jobs, workers, ctx, checkpoint, meta, T1_CONFIRMATORY)
     return pd.DataFrame(rows)
 
 
@@ -568,7 +422,7 @@ def loop_silencing(
         "sets": {k: list(v) for k, v in sets.items()},
         **_param_meta(p),
     }
-    rows = _map_jobs(
+    rows = draws.map_jobs(
         _job, jobs, workers, ctx, checkpoint, meta, confirmatory_jobs(sets)
     )
     return pd.DataFrame(rows)
@@ -635,4 +489,4 @@ def type_silencing(
         "jobs": [list(j) for j in jobs],
         **_param_meta(p),
     }
-    return pd.DataFrame(_map_jobs(_type_job, jobs, workers, ctx, checkpoint, meta))
+    return pd.DataFrame(draws.map_jobs(_type_job, jobs, workers, ctx, checkpoint, meta))

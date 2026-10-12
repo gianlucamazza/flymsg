@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from flymsg import data, dimorphism, sim
+from flymsg import data, dimorphism, draws, sim
 
 UNITS = ("DNp02", "DNp06")
 CONFIRM_SEEDS = range(10, 13)  # silence-scan v1
@@ -50,7 +50,7 @@ def main() -> None:
         upool = pool.copy()
         upool[tested] = False
         rng = np.random.default_rng(zlib.crc32(f"silence-scan/v1/{unit}".encode()))
-        picks = [dimorphism._matched_draw(rng, key, upool, tested) for _ in range(1000)]
+        picks = [draws.matched_draw(rng, key, upool, tested) for _ in range(1000)]
         at_zero = round(recorded[unit]["p"] * 1001) - 1
         print(
             f"{unit}: {at_zero} of 1000 draws reached 0 spikes (p {recorded[unit]['p']:.4f})"

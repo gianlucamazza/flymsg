@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import behavior, data, dimorphism, locks, parallel, prereg, sim
+from flymsg import behavior, data, dimorphism, draws, locks, parallel, prereg, sim
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "silence_scan.yaml"
@@ -280,7 +280,7 @@ def _confirm_job(job: tuple[str]) -> list[dict]:
         "null_mean": math.nan,
         "p": math.nan,
     }
-    short = dimorphism.matched_pool_shortfall(key, pool, tested)
+    short = draws.matched_pool_shortfall(key, pool, tested)
     if short:
         group, have, need = short[0]
         print(
@@ -289,12 +289,12 @@ def _confirm_job(job: tuple[str]) -> list[dict]:
         return [row]
     label = f"silence-scan/v{doc['version']}/{unit}"
     rng = np.random.default_rng(zlib.crc32(label.encode()))
-    null = dimorphism._null_rates(
+    null = draws.null_rates(
         label,
         n,
-        lambda: dimorphism._matched_draw(rng, key, pool, tested),
+        lambda: draws.matched_draw(rng, key, pool, tested),
         lambda idx: [float(np.mean(mean_count(idx)))],
-        dimorphism._partial(checkpoint, job),
+        draws.partial_path(checkpoint, job),
         meta,
     )[:, 0]
     row.update(
@@ -342,7 +342,7 @@ def scan(
     screen_ckpt = (
         checkpoint.with_name(checkpoint.name + ".screen") if checkpoint else None
     )
-    rows = dimorphism._map_jobs(
+    rows = draws.map_jobs(
         _screen_job,
         [(u,) for u in units],
         workers,
@@ -386,7 +386,7 @@ def scan(
     ).to_numpy()
     c = doc["confirm"]
     n = n_draws(m, c["min_draws"], c["draws_per_test"])
-    rows = dimorphism._map_jobs(
+    rows = draws.map_jobs(
         _confirm_job,
         [(u,) for u in passed],
         workers,

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.29 — 2026-10-12
+
+### Architecture
+
+- **The null-draw engine is its own module (ADR step 3).** `flymsg.draws` holds matched
+  draws, checkpointed null draws and the job map that `dimorphism` kept private and
+  `silence_scan` imported by underscore name. Pick hashes and partial file names are
+  unchanged; the T4 checkpoint resumes with the same rows. No result changes.
+
 ## 0.8.28 — 2026-10-12
 
 ### Diagnostics
