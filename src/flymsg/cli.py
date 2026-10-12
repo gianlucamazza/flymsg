@@ -20,6 +20,7 @@ from flymsg import (
     nulls,
     prereg,
     quality,
+    silence_scan,
     sim,
     validate,
     viz,
@@ -792,6 +793,10 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="score the two frozen sensitivity corners (does not replace --run)",
     )
+    sub.add_parser(
+        "silence-scan",
+        help="print the frozen residual TTMn_R partner scan (issue #20); not run",
+    )
     sub.add_parser("fetch", help="download raw tables (malecns ~1.1 GB, fafb ~135 MB)")
     sub.add_parser("build", help="compact raw tables to data/*.parquet")
     s = sub.add_parser(
@@ -1036,6 +1041,8 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
+        if a.cmd == "silence-scan":
+            return print(silence_scan.summary())
         if a.cmd == "behavior" and not a.run:
             return print(behavior.summary())
         if a.cmd == "benchmarks" and a.run and a.corners:
@@ -1058,6 +1065,8 @@ def main() -> None:
     except benchmarks.BenchmarkError as err:
         sys.exit(f"flymsg: {err}")
     except behavior.BehaviorError as err:
+        sys.exit(f"flymsg: {err}")
+    except silence_scan.ScanError as err:
         sys.exit(f"flymsg: {err}")
     except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")

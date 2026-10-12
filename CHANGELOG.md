@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.16 — 2026-10-12
+
+### Validation
+
+- **Residual TTMn_R partner scan, before the run.** `validation/silence_scan.yaml`
+  version 1 freezes the measurement issue #20 asks for. Candidates are every cell
+  type with at least 5 synapses onto `TTMn_R` and an active neuron in the
+  `DNp01`-silenced arm, computed by the runner, not read from a ranking. A screen
+  on seeds 0–2 chooses what is confirmed; fresh seeds 10–12 confirm against the
+  T2/T3 matched-responder null with max(1000, 20 _m_) draws and Bonferroni over
+  the _m_ screen passes. `names_partner` also needs the behavior v1 silence bar.
+  `flymsg silence-scan` prints the protocol and does not simulate. Provenance
+  cites the authored motor map. Nothing was run. `w_syn` stays 0.192.
+
 ## 0.8.15 — 2026-10-12
 
 ### Documentation

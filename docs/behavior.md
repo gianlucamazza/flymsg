@@ -281,3 +281,67 @@ prediction.
 - FlyBody's flight physics step is ineligible under the coupling rule. Its walking steps are eligible only as a documented later option.
 - The loop took 90.5 s. The closed-loop count of neurons still firing from 400 ms to 600 ms is 0. That count does not decide.
 - A failure does not retune `w_syn` or `th_jump`, does not redraw N1, and does not edit the held-out manifest.
+
+## Residual partner scan (version 1, fixed 2026-10-12, not run)
+
+Issue [#20](https://github.com/gianlucamazza/flymsg/issues/20) leaves the
+partner that still drives `TTMn_R` with both `DNp01` silenced unnamed. This
+section freezes the measurement that would name it. The lock is
+[`validation/silence_scan.yaml`](../validation/silence_scan.yaml) (version 1).
+The candidate rule, the screen, the draw count, the p and the verdict are code
+in `src/flymsg/silence_scan.py`, tested on synthetic graphs. `flymsg
+silence-scan` prints the protocol and does not load the connectome. No scan
+has run. Version 1 of the one-bit protocol is not edited.
+
+**Blind.** The 2026-10-12 listing of `TTMn_R` inputs was read before this
+lock, so it chooses nothing. No unit is named here. The runner computes the
+set from the rule, and the set is reported before the confirmatory stage
+starts.
+
+**Arm.** The behavior v1 silence arm: `LC4_R` at 100 Hz, both `DNp01` silenced,
+`w_syn` 0.192, `th_jump` 0. The drive is not cut. The statistic is the number
+of `TTMn_R` spikes during the 300 ms drive, averaged over seeds. Runs stop at
+300 ms because nothing after the drive is read.
+
+**Candidates.** A unit is a cell type, and a neuron without a type is its own
+unit. A unit is a candidate when its neurons together make at least 5 synapses
+onto `TTMn_R` (the v4 control weight) and at least one of them fires during
+the drive in 2 of 3 screen seeds of the base arm. A silent unit cannot change
+the run, so leaving it out does not change the answer. The whole unit is
+silenced, except `LC4_R`, `TTMn_R` and `DNp01`. Inhibitory units stay in. There
+is no cap. Every route into `TTMn_R` ends on a direct chemical input, so the
+scan covers every single-type route the model has.
+
+**Screen** (seeds 0–2, no null, does not decide). A unit passes when the mean
+`TTMn_R` count with `DNp01` and the unit silenced is at or below half of the
+base-arm mean. The half is a choice made here, not a measured value. If the
+base arm already keeps `TTMn_R` at or below 2 spikes in every seed, nothing is
+named on those seeds.
+
+**Confirmation** (fresh seeds 10–12). Each of the _m_ units that pass the
+screen is tested against the T2/T3 null: as many of the base arm's responders
+on these seeds, matched on superclass and transmitter sign, never `LC4_R`,
+`TTMn_R`, `DNp01` or the tested unit. `DNp01` stays silenced in every draw.
+Draws per unit are max(1000, 20 _m_), so the smallest p, 1/(1 + draws), is
+below 0.05/_m_. p = (1 + draws whose mean count is at or below the observed
+mean) / (1 + draws). A unit whose matched pool is short is reported without a
+p and cannot pass.
+
+| Outcome         | When                                                                      |
+| --------------- | ------------------------------------------------------------------------- |
+| `contributes`   | p ≤ 0.05/_m_ (Bonferroni over the screen passes)                          |
+| `names_partner` | contributes, and `TTMn_R` emits at most 2 spikes in every confirm seed    |
+| `none`          | _m_ is 0, or no unit contributes. The residual drive is not one cell type |
+| `no_residual`   | the base arm keeps `TTMn_R` at or below 2 spikes in every seed of a stage |
+
+`names_partner` is the behavior v1 silence bar applied with the unit silenced
+as well. A unit that contributes without reaching it is a contribution, not
+the partner. `none` is a finding. Combinations of units are not searched in
+this version, and neither are gap junctions, a retune, a redraw of N1 or an
+edit of the held-out manifest. `gf_required_for_the_jump_bit` stays
+`unverified`: the scan is model-side.
+
+**Cost, measured 2026-10-12 under load 13.** A 300 ms run takes 3.8 s on one
+worker. The screen is three runs per candidate plus three base runs. Each
+confirmed unit needs 3 × max(1000, 20 _m_) runs, about 3.2 h on one worker at
+1000 draws. The run will use `--checkpoint`.
