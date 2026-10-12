@@ -1,16 +1,21 @@
-# Residual TTMn_R partner scan. Version 2, fixed 2026-10-12 after the v1 run and before any v2 run.
-# Version 1 (same file at v0.8.16) ran once: verdict none. See supersedes.
+# Residual TTMn_R partner scan. Version 3, fixed 2026-10-12 after the v2 run and before any v3 run.
+# Version 1 (v0.8.16) ran once: verdict none. Version 2 (v0.8.27) ran once: names_partner DNp02,
+# DNp06. Version 3 repeats version 2 unchanged on fresh confirm seeds. See supersedes.
 # Changing a locked field requires incrementing `version` and updating
 # `content_sha256` and flymsg.silence_scan.VERSION_HASHES.
 # `flymsg silence-scan` prints this file and does not simulate.
-version: 2
-content_sha256: 79762510dae3d4f0499b8b60906f59920973469a82b0472176d88e6bc5fd4627
+version: 3
+content_sha256: 8cb7434f86ec0a0c545cee50167f1130f6d4b832feb6e785ee923e9474f28a55
 
 issue: 20
 supersedes:
-  version: 1
-  verdict: none
-  reason: "In v1 the confirm null pool excluded only the tested unit, so draws for DNp02 could silence DNp06_R and draws for DNp06 could silence DNp02_R. The number of v1 draws that reached 0 spikes equals the number that contained that neuron (35 and 40; post-hoc, scripts/silence_scan_posthoc.py). The v1 verdict stands."
+  version: 2
+  verdict: "names_partner: DNp02, DNp06"
+  reason: "Version 2 changed the null pool after the version 1 result was seen. Its rule was fixed before its own run, but it was chosen knowing v1 had missed the threshold. Version 3 repeats version 2 with every rule unchanged on confirm seeds no version has used, so no rule can have been chosen after seeing these seeds. The v2 verdict stands until this run reports."
+replication:
+  of_version: 2
+  changed: [confirm.seed0]
+  on_failure: "If a unit that version 2 named does not reach names_partner here, the v2 naming is reported as not replicated, issue #20 is reopened with both results, and neither run is dropped. If both reach it again, the naming is reported as replicated on fresh seeds; it stays a model-side result."
 parent:
   lock: behavior
   version: 1
@@ -65,7 +70,7 @@ screen:
   decides: false
 
 confirm:
-  seed0: 20
+  seed0: 30
   seeds: 3
   null: matched_responders
   pool: "neurons firing during the drive in at least 2 of the 3 confirm seeds of the base arm, minus stimulus, motor, base_silence, the tested unit and every other unit that passed the screen"
@@ -95,6 +100,9 @@ reported:
     decides: false
   first_spike_ms:
     decides: false
+  partner_counts:
+    decides: false
+    what: "in each confirm arm, the spikes during the drive of every other screen pass, per seed (e.g. DNp06 when DNp02 is silenced); a description, no test"
 
 not_done:
   - combinations

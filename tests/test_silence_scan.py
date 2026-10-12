@@ -11,16 +11,19 @@ from flymsg import cli, silence_scan
 
 def test_scan_is_locked_to_the_behavior_silence_arm():
     doc = silence_scan.assert_matches_code()
-    assert doc["version"] == 2
-    assert silence_scan.content_hash(doc) == silence_scan.VERSION_HASHES[2]
-    assert doc["supersedes"]["version"] == 1 and doc["supersedes"]["verdict"] == "none"
+    assert doc["version"] == 3
+    assert silence_scan.content_hash(doc) == silence_scan.VERSION_HASHES[3]
+    assert doc["supersedes"]["version"] == 2
+    assert doc["replication"]["of_version"] == 2
+    assert doc["replication"]["changed"] == ["confirm.seed0"]
     assert doc["issue"] == 20
     assert doc["blind"]["ranking_used"] is False
     assert doc["protocol"]["motor"] == "TTMn_R"
     assert doc["protocol"]["base_silence"] == "DNp01"
     assert doc["screen"]["decides"] is False
-    assert doc["confirm"]["seed0"] == 20
+    assert doc["confirm"]["seed0"] == 30
     assert doc["confirm"]["pool_excludes_screen_passes"] is True
+    assert doc["reported"]["partner_counts"]["decides"] is False
 
 
 def test_an_edit_without_a_version_bump_fails():
@@ -47,7 +50,7 @@ def test_scan_prints_the_protocol_and_does_not_load_data(monkeypatch, capsys, tm
     cli.main()
     out = capsys.readouterr().out
     assert "LC4_R -> TTMn_R with DNp01 silenced" in out
-    assert "confirm seeds 20-22" in out
+    assert "confirm seeds 30-32" in out
 
 
 def _graph():
@@ -215,3 +218,50 @@ def test_the_null_pool_of_one_pass_holds_no_other_pass(monkeypatch):
     assert {like for like, _ in seen} == {(3,), (4, 5)}
     for _, pool in seen:  # no draw for one pass may silence any pass
         assert not pool[[3, 4, 5]].any()
+    # v3 reports each arm's other pass, per seed, as a description
+    counts = dict(zip(out["confirm"]["unit"], out["confirm"]["partner_counts"]))
+    assert set(counts["A"]) == {"B"} and set(counts["B"]) == {"A"}
+    assert all(len(v) == 3 for c in counts.values() for v in c.values())
+
+
+def test_v3_repeats_v2_with_only_the_confirm_seeds_changed():
+    import subprocess
+
+    old = silence_scan.prereg.load_yaml(
+        subprocess.run(
+            ["git", "show", "v0.8.27:validation/silence_scan.yaml"],
+            capture_output=True, text=True, check=True, cwd=silence_scan.ROOT,
+        ).stdout
+    )  # fmt: skip
+    new = silence_scan.load()
+    for key in ("protocol", "candidates", "base_arm", "screen", "decides", "parent"):
+        assert new[key] == old[key], key
+    assert {k: v for k, v in new["confirm"].items() if k != "seed0"} == {
+        k: v for k, v in old["confirm"].items() if k != "seed0"
+    }
+
+
+@pytest.mark.parametrize("seed0", [20, 21, 22, 10])
+def test_v3_refuses_spent_confirm_seeds(seed0):
+    doc = silence_scan.load()
+    doc["confirm"]["seed0"] = seed0
+    with pytest.raises(silence_scan.ScanError, match="must not reuse"):
+        silence_scan.assert_matches_code(doc)
+
+
+def test_v3_needs_its_failure_rule():
+    doc = silence_scan.load()
+    del doc["replication"]["on_failure"]
+    with pytest.raises(silence_scan.ScanError, match="failure rule"):
+        silence_scan.assert_matches_code(doc)
+
+
+def test_partner_counts_are_the_other_passes_spikes_per_seed():
+    class R:
+        def __init__(self, counts):
+            self.counts = np.asarray(counts)
+
+    results = [R([[0, 2, 1], [0, 1, 0]]), R([[0, 0, 3], [0, 0, 0]])]
+    units = {"A": np.array([1]), "B": np.array([2]), "C": np.array([0])}
+    got = silence_scan.partner_counts(results, units, ["A", "B"], "A")
+    assert got == {"B": [1, 3]}

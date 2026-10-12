@@ -23,9 +23,12 @@ PATH = ROOT / "validation" / "silence_scan.yaml"
 VERSION_HASHES = {
     1: "0982767d4ce972c7c9ef08b2c3491885e8bf242d7aeb54c22927eb6437a2bb1b",
     2: "79762510dae3d4f0499b8b60906f59920973469a82b0472176d88e6bc5fd4627",  # null pool excludes every screen pass; confirm seeds 20-22
+    3: "8cb7434f86ec0a0c545cee50167f1130f6d4b832feb6e785ee923e9474f28a55",  # replication of v2 on confirm seeds 30-32
 }
 
 _DECIDES = ("contributes", "names_partner", "none", "no_residual")
+# confirm seeds each earlier version spent; a later version may not reuse them
+SPENT_CONFIRM_SEEDS = {1: range(10, 13), 2: range(20, 23)}
 _EXCLUDE = ("stimulus", "motor", "base_silence")
 
 
@@ -99,6 +102,15 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         raise ScanError("confirm seeds must be fresh")
     if doc["version"] >= 2 and (confirm_seeds & set(range(10, 13))):
         raise ScanError("confirm seeds must not reuse the v1 confirmation (10-12)")
+    for v, spent in SPENT_CONFIRM_SEEDS.items():
+        if v < doc["version"] and confirm_seeds & set(spent):
+            raise ScanError(f"confirm seeds must not reuse the v{v} confirmation")
+    if doc["version"] >= 3:
+        rep = doc.get("replication") or {}
+        if rep.get("of_version") != doc["version"] - 1 or not rep.get("on_failure"):
+            raise ScanError(
+                "a replication names the version it repeats and its failure rule"
+            )
     if (
         doc["version"] >= 2
         and doc["confirm"].get("pool_excludes_screen_passes") is not True
@@ -258,8 +270,17 @@ def _screen_job(job: tuple[str]) -> list[dict]:
     return [{"unit": unit, "counts": counts}]
 
 
+def partner_counts(results, units: dict, passed: list[str], unit: str) -> dict:
+    """Spikes of every other screen pass during the drive, per seed, in `unit`'s arm."""
+    return {
+        other: [int(r.counts[:, units[other]].sum()) for r in results]
+        for other in passed
+        if other != unit
+    }
+
+
 def _confirm_job(job: tuple[str]) -> list[dict]:
-    (W, stim, motor, base, units, doc, key, active, n), checkpoint, meta = (
+    (W, stim, motor, base, units, doc, key, active, n, passed), checkpoint, meta = (
         parallel.context()
     )
     unit = job[0]
@@ -270,7 +291,9 @@ def _confirm_job(job: tuple[str]) -> list[dict]:
         counts, _ = _arm(W, stim, motor, np.concatenate([base, extra]), seeds, protocol)
         return counts
 
-    counts = mean_count(tested)
+    counts, results = _arm(
+        W, stim, motor, np.concatenate([base, tested]), seeds, protocol
+    )
     pool = active.copy()
     pool[tested] = False
     row = {
@@ -280,6 +303,8 @@ def _confirm_job(job: tuple[str]) -> list[dict]:
         "null_mean": math.nan,
         "p": math.nan,
     }
+    if "partner_counts" in doc["reported"]:  # v3: descriptive, decides nothing
+        row["partner_counts"] = partner_counts(results, units, passed, unit)
     short = draws.matched_pool_shortfall(key, pool, tested)
     if short:
         group, have, need = short[0]
@@ -390,7 +415,7 @@ def scan(
         _confirm_job,
         [(u,) for u in passed],
         workers,
-        (W, stim, motor, base, units, doc, key, pool, n),
+        (W, stim, motor, base, units, doc, key, pool, n, passed),
         checkpoint,
         {**meta, "stage": "confirm", "m": m, "draws": n},
     )
