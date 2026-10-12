@@ -160,3 +160,5 @@ reconstructions, not a sex difference: the two volumes differ in imaging, segmen
 synapse detection, the giant fiber's large dendrite may be counted differently in each, and
 one animal per sex leaves no room for individual variation. A sex claim would need those
 ruled out first.
+
+![LC4 share of each giant fiber's input, and raw LC4 → DNp01 synapses with the density-scaled value, in MaleCNS and FAFB.](img/homology-pilot.svg)

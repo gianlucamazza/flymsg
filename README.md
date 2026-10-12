@@ -55,6 +55,11 @@ with no dimorphism label. [Open live](https://gianlucamazza.github.io/flymsg/liv
 **Intervention, LC4_R with both DNp01 silenced.** The failed silence check, against the
 intact replay: `TTMn_R` still fires. [Open the comparison](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146).
 
+**Residual partner, DNp02 or DNp06 silenced as well.** With DNp01 already silenced, `TTMn_R`
+goes from 7 spikes to 0 ([DNp02](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp02/?run=difference&t=60&paused&select=800146),
+[DNp06](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp06/?run=difference&t=60&paused&select=800146)); the scan figure is
+[here](docs/img/silence-scan-v2.svg).
+
 ## What it does
 
 - **Explore the wiring**: annotations and partners of any cell type (`info`); the strongest

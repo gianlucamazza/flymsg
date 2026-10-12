@@ -2,6 +2,12 @@
   "command": "viz",
   "config": {
     "duration": 600.0,
+    "keep": [
+      "TTMn_R",
+      "DNp01",
+      "DNp02",
+      "DNp06"
+    ],
     "path": null,
     "rate": 100.0,
     "silence": [
@@ -31,14 +37,14 @@
   },
   "extra": {
     "data_dir": "data",
-    "n_exported": 1149
+    "n_exported": 1152
   },
   "git": {
-    "commit": "5f6a94873805838d1b274564adc0f6993d2c6601",
+    "commit": "b364e0d8b086963125b55f1a28604e81a0be3df3",
     "dirty": false
   },
   "packages": {
-    "flymsg": "0.8.29",
+    "flymsg": "0.8.39",
     "numba": "0.68.0",
     "numpy": "2.5.3",
     "pandas": "3.0.6",
@@ -62,7 +68,7 @@
     "seed": 0
   },
   "timestamps": {
-    "finished_at": "2026-10-12T14:40:07.131118+00:00",
-    "started_at": "2026-10-12T14:39:23.255051+00:00"
+    "finished_at": "2026-10-12T17:48:00.993619+00:00",
+    "started_at": "2026-10-12T17:47:29.520389+00:00"
   }
 }

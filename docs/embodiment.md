@@ -196,6 +196,8 @@ reproduces them; the shuffled input lifts the body at 29 ms. At these scales the
 closed in code and has no measurable effect on the model, and nothing here is a behaviour of
 the fly.
 
+![M1: body height with and without DNp01. M2: input rate, body height and cumulative TTMn_R spikes for the closed, disconnected, replay and shuffled runs; the first three coincide.](img/embodiment.svg)
+
 ### Evidence each step needs
 
 From the research plan of PR #47. A step that lacks its evidence keeps the synthetic label.

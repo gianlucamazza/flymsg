@@ -85,6 +85,8 @@ those synapses reaches the soma, so the Kenyon cells excite each other into a lo
 outlasts the input. The two APL neurons send 196,200 inhibitory synapses onto Kenyon cells,
 but here APL is a spiking point neuron.
 
+![Mean rate per neuron over time for the Kenyon cells, all other non-stimulus neurons and DM1_lPN (divided by 10), with the stimulus window shaded. Kenyon cells and DM1_lPN keep firing after 300 ms.](img/kc-persistence.svg)
+
 This points at a model limit, not a fitted fix. In the fly, Kenyon cell–Kenyon cell synapses
 are mostly axo-axonal in the lobes, and APL gives graded, non-spiking feedback inhibition
 that keeps Kenyon cell activity sparse (Lin et al., _Nat. Neurosci._ 17, 559–568, 2014,
