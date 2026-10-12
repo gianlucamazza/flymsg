@@ -163,8 +163,7 @@ def run(
         trace_col[trace] = np.arange(trace.size, dtype=np.int32)
         traced = np.zeros((steps, trace.size), dtype=np.uint8)
         keep_trace = traced
-    em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
-    gv = p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)  # from the float64 decays
+    d, ref_steps = _delays(p)
     counts, first = _kernel(
         W.indptr.astype(np.int64),
         W.indices.astype(np.int64),
@@ -172,20 +171,14 @@ def run(
         n,
         steps,
         per_bin,
-        max(1, round(p.delay / p.dt)),
-        round(p.t_ref / p.dt),
+        d,
+        ref_steps,
         stim.astype(np.int64),
         kicks,
         is_stim,
         silent,
         jump,
-        np.float32(em),
-        np.float32(es),
-        np.float32(gv),
-        np.float32(np.exp(-p.dt / p.tau_th)),
-        np.float32(p.v_rest),
-        np.float32(p.v_th),
-        np.float32(p.poisson_scale * p.w_syn),
+        *_constants(p),
         trace_col,
         traced,
     )
@@ -195,6 +188,31 @@ def run(
         bin_ms=per_bin * p.dt,
         stim_ms=stim_steps * p.dt,
         traced=keep_trace,
+    )
+
+
+def _delays(p: Params) -> tuple[int, int]:
+    """Synaptic delay and refractory period in steps. Shared with `runtime.CpuRuntime`."""
+    return max(1, round(p.delay / p.dt)), round(p.t_ref / p.dt)
+
+
+def _constants(p: Params) -> tuple:
+    """The kernel's float32 constants: membrane and synaptic decays, the synaptic gain (from
+    the float64 decays), threshold decay, rest, threshold and Poisson kick. Shared with
+    `runtime.CpuRuntime`, so both paths round the same way."""
+    em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
+    gv = p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)
+    return tuple(
+        np.float32(x)
+        for x in (
+            em,
+            es,
+            gv,
+            np.exp(-p.dt / p.tau_th),
+            p.v_rest,
+            p.v_th,
+            p.poisson_scale * p.w_syn,
+        )
     )
 
 

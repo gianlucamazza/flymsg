@@ -126,27 +126,10 @@ class CpuRuntime:
         self._trace = requested[np.sort(first_at)]
         self._trace_col = np.full(self._n, -1, dtype=np.int32)
         self._trace_col[self._trace] = np.arange(self._trace.size, dtype=np.int32)
-        self._d = max(1, round(self._p.delay / self._p.dt))
-        self._ref_steps = round(self._p.t_ref / self._p.dt)
+        self._d, self._ref_steps = sim._delays(self._p)
         if self._ref_steps + steps >= 2**31:
             raise ValueError("refractory deadlines exceed int32")
-        em, es = (
-            np.exp(-self._p.dt / self._p.tau_m),
-            np.exp(-self._p.dt / self._p.tau_syn),
-        )
-        gv = self._p.tau_syn / (self._p.tau_syn - self._p.tau_m) * (es - em)
-        self._constants = tuple(
-            np.float32(x)
-            for x in (
-                em,
-                es,
-                gv,
-                np.exp(-self._p.dt / self._p.tau_th),
-                self._p.v_rest,
-                self._p.v_th,
-                self._p.poisson_scale * self._p.w_syn,
-            )
-        )
+        self._constants = sim._constants(self._p)
         n = self._n
         self._state = {
             "v": np.full(n, self._p.v_rest, dtype=np.float32),

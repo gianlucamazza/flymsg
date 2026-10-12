@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.8.21 — 2026-10-12
+
+### Engine
+
+- **Incremental CPU runtime (PR #41).** `flymsg.runtime.CpuRuntime` advances the LIF kernel
+  to explicit step boundaries, takes explicit input-count blocks at the current boundary,
+  returns detached snapshots, and checkpoints neural state to a non-pickle NPZ with an
+  identity hash and a state checksum; a restore validates everything before it replaces
+  state. `sim.run` and the runtime share one compiled step loop (`sim._advance`), one delay
+  rule and one set of float32 constants. On MaleCNS, `sim.run` gives bit-identical counts,
+  first spikes and traces before and after the change (LC4_R, LC4_R with DNp01 silenced,
+  pIP10), and the runtime advanced in blocks through a checkpoint and restore matches
+  `sim.run` bit for bit. `docs/runtime.md` is the backend ADR; the GPU lane (#39, #40) is
+  planned, not implemented. Defaults, seeds and protocols are unchanged. `w_syn` stays
+  0.192.
+
 ## 0.8.20 — 2026-10-12
 
 ### Viz

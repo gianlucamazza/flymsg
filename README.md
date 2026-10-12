@@ -229,6 +229,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [benchmarks](docs/benchmarks.md) | held-out partition, the ORN_DM1 failure, both corners fail                    |
 | [behavior](docs/behavior.md)     | one-bit looming jump; the closed loop fails silence                           |
 | [embodiment](docs/embodiment.md) | M0 neural/body contract and multirate fixture; synthetic body, no motor map   |
+| [runtime](docs/runtime.md)       | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned           |
 | [nulls](docs/nulls.md)           | pre-registered null families, scores, draw counts, methods                    |
 | [provenance](docs/provenance.md) | date, public source and commit for each existing idea                         |
 | [comparison](docs/comparison.md) | engine check against the published model, male vs female, the LB3 split       |
@@ -270,7 +271,3 @@ If you use flymsg, cite the data and the model it builds on (see also
 Code: [MIT](LICENSE). The connectome data are not part of this repository; they are
 downloaded from their public sources under their own licences. Vendored three.js and lil-gui
 are MIT (`src/flymsg/viz_static/vendor/`). See [NOTICE](NOTICE) for what the licence does not cover.
-
-## Incremental simulation runtime
-
-The [runtime architecture and executable example](docs/runtime.md) introduce `CpuRuntime`: advance the existing LIF kernel in blocks, schedule explicit input counts, inspect detached snapshots and checkpoint/resume neural state. CPU parity is tested; the Xbox GPU execution lane remains subject to native implementation and hardware qualification.
