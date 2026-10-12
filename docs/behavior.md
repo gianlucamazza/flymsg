@@ -282,7 +282,7 @@ prediction.
 - The loop took 90.5 s. The closed-loop count of neurons still firing from 400 ms to 600 ms is 0. That count does not decide.
 - A failure does not retune `w_syn` or `th_jump`, does not redraw N1, and does not edit the held-out manifest.
 
-## Residual partner scan (version 1, fixed 2026-10-12, not run)
+## Residual partner scan
 
 Issue [#20](https://github.com/gianlucamazza/flymsg/issues/20) leaves the
 partner that still drives `TTMn_R` with both `DNp01` silenced unnamed. This
@@ -293,6 +293,41 @@ in `src/flymsg/silence_scan.py`, tested on synthetic graphs. `flymsg
 silence-scan` prints the protocol and does not load the connectome; `--run`
 executes it with `--workers` and `--checkpoint`. The runner was committed
 before the scan ran. Version 1 of the one-bit protocol is not edited.
+
+### Result of version 1 (2026-10-12)
+
+**Verdict: none.** The run started from `6709f13` (v0.8.17, clean) and took 2 h 46 min.
+Its manifest records `7d939b2`: until v0.8.27 a manifest took the git state when the run
+ended, and the checkout had moved meanwhile. The code that ran is `6709f13`.
+
+The base arm (both `DNp01` silenced) gave `TTMn_R` 7, 5 and 6 spikes on seeds 0–2 and 5, 6
+and 7 on seeds 10–12. Thirteen units met the candidate rule. Two passed the screen:
+
+| Unit  | Neurons | Synapses onto `TTMn_R` | Screen, seeds 0–2 | Confirm, seeds 10–12 | Null mean | p     |
+| ----- | ------: | ---------------------: | ----------------- | -------------------- | --------: | ----- |
+| DNp02 |       2 |                     21 | 0, 0, 0           | 0, 0, 0              |      5.22 | 0.036 |
+| DNp06 |       2 |                     35 | 0, 0, 0           | 0, 0, 0              |      5.26 | 0.041 |
+
+The other eleven stayed between 4.7 and 6.7 spikes. With _m_ = 2 the threshold is 0.025, so
+neither unit `contributes` and neither `names_partner`, although each one, silenced with
+`DNp01`, removed every `TTMn_R` spike in all six seeds. Report: `runs/silence-scan/v1/`.
+
+**Post-hoc, exploratory** (`scripts/silence_scan_posthoc.py`, after the verdict). The v1
+null pool excluded only the tested unit. Of the 1,000 draws for DNp02, 35 reached 0 spikes,
+and 35 contained DNp06_R (bodyId 10584); 48 contained DNp06_L. Of the 1,000 draws for
+DNp06, 40 reached 0 spikes, and 40 contained DNp02_R (10117); DNp02_L was not a responder.
+The counts coincide; per-draw values were not kept, so the identity of the draws is not
+shown. The reading is that the null for each unit was contaminated by the other, and that
+the right-hand neuron of each matters. It does not change the verdict.
+
+### Version 2 (fixed 2026-10-12, after the v1 verdict, before its run)
+
+Version 2 changes one rule and the seeds: the null pool also excludes every other unit that
+passed the screen, and confirmation runs on fresh seeds 20–22 (not 10–12). Candidate rule,
+screen, draw count, threshold and verdicts are those of version 1. The lock records what it
+supersedes and why. Being written after the v1 result is disclosed here; the v2 confirmation
+had not run when the lock was committed. A test checks that no null draw for one screen pass
+can silence another.
 
 **Blind.** The 2026-10-12 listing of `TTMn_R` inputs was read before this
 lock, so it chooses nothing. No unit is named here. The runner computes the

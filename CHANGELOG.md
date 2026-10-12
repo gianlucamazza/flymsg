@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.8.27 — 2026-10-12
+
+### Results
+
+- **Residual TTMn_R scan, version 1: none.** Thirteen units met the candidate rule; DNp02
+  and DNp06 passed the screen. Silenced with both `DNp01`, each removed every `TTMn_R` spike
+  on seeds 0–2 and 10–12, against 5–7 spikes in the base arm, but the matched nulls gave
+  p 0.036 and 0.041 above the corrected 0.025. Post-hoc (`scripts/silence_scan_posthoc.py`):
+  the draws that reached 0 spikes match in number those that contained the other unit's
+  right-hand neuron (35 with DNp06_R, 40 with DNp02_R). The verdict stands. `w_syn` stays
+  0.192.
+
+### Validation
+
+- **Residual TTMn_R scan, version 2, before its run.** The null pool also excludes every
+  other screen pass; confirmation moves to fresh seeds 20–22. Everything else is version 1.
+  Outputs go to `runs/silence-scan/v<version>/`, so a version never overwrites another.
+
+### Fixes
+
+- **A run manifest records git as it was when the command started.** A long run whose
+  checkout moved meanwhile recorded the later commit; the v1 scan manifest says `7d939b2`
+  for a run that started from `6709f13`.
+
 ## 0.8.26 — 2026-10-12
 
 ### Viz

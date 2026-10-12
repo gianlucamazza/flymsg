@@ -83,3 +83,23 @@ def test_sim_out_writes_a_manifest_next_to_the_csv(monkeypatch, capsys, tmp_path
     assert Path(doc["extra"]["out"]) == csv
     assert "neurons.parquet" in doc["dataset"]["files"]
     assert len(doc["dataset"]["files"]["neurons.parquet"]["sha256"]) == 64
+
+
+def test_the_manifest_records_git_as_it_was_at_the_start(tmp_path, monkeypatch):
+    from datetime import UTC, datetime
+
+    from flymsg import manifest
+
+    states = iter(
+        [{"commit": "start", "dirty": False}, {"commit": "later", "dirty": True}]
+    )
+    monkeypatch.setattr(manifest, "git_info", lambda root=None: next(states))
+    monkeypatch.setattr(manifest, "_START_GIT", None)
+    manifest.mark_start()  # the run starts on "start"
+    path = manifest.write(
+        tmp_path, command="x", config={}, seeds={}, dataset={"name": "d", "files": {}},
+        started_at=datetime.now(UTC),
+    )  # fmt: skip
+    import json
+
+    assert json.loads(path.read_text())["git"] == {"commit": "start", "dirty": False}

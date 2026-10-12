@@ -11,14 +11,16 @@ from flymsg import cli, silence_scan
 
 def test_scan_is_locked_to_the_behavior_silence_arm():
     doc = silence_scan.assert_matches_code()
-    assert doc["version"] == 1
-    assert silence_scan.content_hash(doc) == silence_scan.VERSION_HASHES[1]
+    assert doc["version"] == 2
+    assert silence_scan.content_hash(doc) == silence_scan.VERSION_HASHES[2]
+    assert doc["supersedes"]["version"] == 1 and doc["supersedes"]["verdict"] == "none"
     assert doc["issue"] == 20
     assert doc["blind"]["ranking_used"] is False
     assert doc["protocol"]["motor"] == "TTMn_R"
     assert doc["protocol"]["base_silence"] == "DNp01"
     assert doc["screen"]["decides"] is False
-    assert doc["confirm"]["seed0"] == 10
+    assert doc["confirm"]["seed0"] == 20
+    assert doc["confirm"]["pool_excludes_screen_passes"] is True
 
 
 def test_an_edit_without_a_version_bump_fails():
@@ -45,7 +47,7 @@ def test_scan_prints_the_protocol_and_does_not_load_data(monkeypatch, capsys, tm
     cli.main()
     out = capsys.readouterr().out
     assert "LC4_R -> TTMn_R with DNp01 silenced" in out
-    assert "confirm seeds 10-12" in out
+    assert "confirm seeds 20-22" in out
 
 
 def _graph():
@@ -176,3 +178,40 @@ def test_scan_stops_when_the_base_arm_already_holds_the_bar():
         neurons, edges, _small(silence_scan.load(), 20), np.array([0]), 2, np.array([1])
     )
     assert out["verdict"] == "no_residual: screen seeds"
+
+
+def test_v2_refuses_the_v1_confirm_seeds_and_a_shared_pool():
+    doc = silence_scan.load()
+    doc["confirm"]["seed0"] = 10
+    with pytest.raises(silence_scan.ScanError, match="v1 confirmation"):
+        silence_scan.assert_matches_code(doc)
+    doc = silence_scan.load()
+    doc["confirm"]["pool_excludes_screen_passes"] = False
+    with pytest.raises(silence_scan.ScanError, match="every screen pass"):
+        silence_scan.assert_matches_code(doc)
+
+
+def test_the_null_pool_of_one_pass_holds_no_other_pass(monkeypatch):
+    # A (3) and one B neuron (4) both synapse onto the motor; every unit is made to pass
+    # the screen, so the confirmation runs a null for each and must keep the other out
+    neurons, edges = _toy()
+    edges = pd.concat(
+        [edges, pd.DataFrame({"pre": [4], "post": [2], "weight": [400]})],
+        ignore_index=True,
+    )
+    monkeypatch.setattr(silence_scan, "screen_pass", lambda *_: True)
+    seen = []
+    real = silence_scan.dimorphism.matched_pool_shortfall
+
+    def spy(key, pool, like):
+        seen.append((tuple(like.tolist()), pool.copy()))
+        return real(key, pool, like)
+
+    monkeypatch.setattr(silence_scan.dimorphism, "matched_pool_shortfall", spy)
+    out = silence_scan.scan(
+        neurons, edges, _small(silence_scan.load(), 20), np.array([0]), 2, np.array([1])
+    )
+    assert out["m"] == 2
+    assert {like for like, _ in seen} == {(3,), (4, 5)}
+    for _, pool in seen:  # no draw for one pass may silence any pass
+        assert not pool[[3, 4, 5]].any()

@@ -377,7 +377,7 @@ def cmd_silence_scan(a, neurons, edges):
     doc = silence_scan.assert_matches_code()
     print(silence_scan.summary(doc))
     out = silence_scan.run(neurons, edges, a.workers, a.checkpoint)
-    path = Path("runs/silence-scan")
+    path = Path("runs/silence-scan") / f"v{doc['version']}"  # never overwrite a version
     path.mkdir(parents=True, exist_ok=True)
     lines = [
         f"base arm, screen seeds: {out['base_screen']}",
@@ -1088,6 +1088,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     p = build_parser()
     a = p.parse_args()
+    manifest.mark_start()
     if getattr(a, "progress", False) and a.checkpoint is None:
         p.error("--progress needs --checkpoint FILE")
 

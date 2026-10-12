@@ -1,11 +1,16 @@
-# Residual TTMn_R partner scan. Version 1, fixed 2026-10-12 before any scan run.
+# Residual TTMn_R partner scan. Version 2, fixed 2026-10-12 after the v1 run and before any v2 run.
+# Version 1 (same file at v0.8.16) ran once: verdict none. See supersedes.
 # Changing a locked field requires incrementing `version` and updating
 # `content_sha256` and flymsg.silence_scan.VERSION_HASHES.
 # `flymsg silence-scan` prints this file and does not simulate.
-version: 1
-content_sha256: 0982767d4ce972c7c9ef08b2c3491885e8bf242d7aeb54c22927eb6437a2bb1b
+version: 2
+content_sha256: 79762510dae3d4f0499b8b60906f59920973469a82b0472176d88e6bc5fd4627
 
 issue: 20
+supersedes:
+  version: 1
+  verdict: none
+  reason: "In v1 the confirm null pool excluded only the tested unit, so draws for DNp02 could silence DNp06_R and draws for DNp06 could silence DNp02_R. The number of v1 draws that reached 0 spikes equals the number that contained that neuron (35 and 40; post-hoc, scripts/silence_scan_posthoc.py). The v1 verdict stands."
 parent:
   lock: behavior
   version: 1
@@ -60,10 +65,11 @@ screen:
   decides: false
 
 confirm:
-  seed0: 10
+  seed0: 20
   seeds: 3
   null: matched_responders
-  pool: "neurons firing during the drive in at least 2 of the 3 confirm seeds of the base arm, minus stimulus, motor, base_silence and the tested unit"
+  pool: "neurons firing during the drive in at least 2 of the 3 confirm seeds of the base arm, minus stimulus, motor, base_silence, the tested unit and every other unit that passed the screen"
+  pool_excludes_screen_passes: true
   match: [superclass, sign]
   base_silence_in_every_draw: true
   min_draws: 1000
