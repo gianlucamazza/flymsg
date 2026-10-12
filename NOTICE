@@ -7,7 +7,9 @@ This license covers the flymsg code. It does not cover:
 - the connectome data it downloads: MaleCNS v1.0 (Janelia FlyEM + Google, CC-BY 4.0) and
   FlyWire FAFB v783 annotations and connectivity (see docs/data.md for sources and citations);
 - vendored browser libraries in src/flymsg/viz_static/vendor/ (three.js and lil-gui, MIT,
-  their own LICENSE files).
+  their own LICENSE files);
+- the UWP packaging pattern and placeholder icons in native/uwp/, adapted from the author's
+  xbox-gpu-training repository (MIT).
 
 The FlyWire FAFB v783 connectome data (used via `--dataset fafb`) is licensed CC BY-NC 4.0
 (non-commercial). flymsg does not redistribute it. Users who download it must respect its
