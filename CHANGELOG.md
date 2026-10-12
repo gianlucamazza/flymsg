@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Live scenes
+
+- **Left eye and both eyes on the site:** `looming-left` (`LC4_L`), `looming-bilateral`
+  (`LC4`) and the `right-vs-left` comparison, exported from `main`. Seed 0: `TTMn_R` 22
+  spikes with the right eye, `TTMn_L` 12 with the left, 24 and 12 with both. `docs/viz.md`
+  states the side convention. `build_live_scenes.py NAME ...` rebuilds only those scenes.
+
 ### Pre-registration
 
 - **Residual partner follow-up v1** (#76): two model-side tests of the scan v3 naming,

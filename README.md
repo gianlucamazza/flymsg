@@ -61,6 +61,11 @@ goes from 7 spikes to 0 ([DNp02](https://gianlucamazza.github.io/flymsg/live/dnp
 scan named both ([v2](docs/img/silence-scan-v2.svg)) and a replication on fresh seeds named
 them again ([v3](docs/img/silence-scan-v3.svg)).
 
+**Left eye and both eyes.** The same looming drive from the left (`LC4_L`) or from both
+sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about half as often as
+`TTMn_R`. [Right against left](https://gianlucamazza.github.io/flymsg/live/right-vs-left/?run=difference&t=60&paused&select=804642),
+[both eyes](https://gianlucamazza.github.io/flymsg/live/looming-bilateral/).
+
 ## What it does
 
 - **Explore the wiring**: annotations and partners of any cell type (`info`); the strongest

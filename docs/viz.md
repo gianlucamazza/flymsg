@@ -79,7 +79,13 @@ viewer's left. The looming scenes drive one eye (`LC4_R`, 55 neurons), so the st
 one-sided by design while the response spreads to both sides. The volume is one animal, not a
 symmetric template: the tissue is slightly tilted and pairs differ (71 `LC4_L` against 55
 `LC4_R`). `looming-left` drives `LC4_L` and `looming-bilateral` drives both, a frontal
-approach; both keep `TTMn` on both sides.
+approach; both keep `TTMn` on both sides. Seed 0, 600 ms: with `LC4_R`, `TTMn_R` fires 22
+times and `TTMn_L` not at all; with `LC4_L`, `TTMn_L` fires 12 times (first in the 30–40 ms
+bin) and `TTMn_R` 8; with both eyes, `TTMn_R` 24 and `TTMn_L` 12. The left motor neuron
+receives fewer synapses (2,424 against 3,608), and the asymmetry follows the wiring of this
+animal, not the stimulus. [Right against left](https://gianlucamazza.github.io/flymsg/live/right-vs-left/?run=difference&t=60&paused&select=804642)
+compares the two one-eyed arms; [both eyes](https://gianlucamazza.github.io/flymsg/live/looming-bilateral/)
+is a single scene. Exploratory replays, not scored runs.
 
 ## Sources
 
