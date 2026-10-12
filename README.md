@@ -20,7 +20,7 @@ Paused frames from the page `flymsg viz` writes, 1400×900, adaptive quality off
 geometry loaded. A replay colours neurons by group unless a frame says otherwise, keeps
 silent neurons desaturated, and hides the neuropil shells. An anatomy view draws the shells
 and does not replay spikes. Rebuild the scenes with `flymsg viz --sim LC4_R`, `--sim pIP10`
-and `--types pIP10 dPR1 dMS9`. The page takes `?t=`, `?paused` and `?color=`. Rendering is
+and `--types pIP10 dPR1 dMS9`. The page takes `?t=`, `?paused`, `?color=` and `?select=<bodyId>`; clicking a neuron lists its partners. Rendering is
 described in [viz](docs/viz.md).
 
 Each scene also runs live in the browser on the published site: the page streams the
