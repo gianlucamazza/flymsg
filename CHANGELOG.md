@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.13 — 2026-10-12
+
+### Dependencies
+
+- **numba 0.68.0 and actions/setup-node 7.1.0.** llvmlite is 0.50.0. Node stays 24. The unit suite matches the NumPy reference kernel. The scored runs were
+  not repeated, so their manifests stay on numba 0.67.0. Provenance cites the
+  empty-queue note. `w_syn` stays 0.192.
+
 ## 0.8.12 — 2026-10-12
 
 ### Documentation

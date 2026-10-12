@@ -54,6 +54,9 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   of `gf_required_for_the_jump_bit`, a neuromodulation table, a learning rule, or a body
   each need evidence that is not in this repository. Each would be a new issue and a new
   version. None of them is queued.
+- **Numeric lock** (2026-10-12). numba is 0.68.0 and llvmlite is 0.50.0. The unit suite
+  matches the NumPy reference kernel. The scored runs were not repeated, so their
+  manifests stay on numba 0.67.0.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency
