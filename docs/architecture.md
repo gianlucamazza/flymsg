@@ -101,8 +101,8 @@ flymsg.scene/v1` (`viz.SCENE_SCHEMA`); the page warns in the console on another 
      `flymsg.experiment/v1` config into `runs/experiments/<config hash>/`, never overwrites
      it, and accepts only the `exploratory` label; `flymsg runs` indexes every B4 manifest
      with its label. See "Experiments and the run index" below.
-   - #25 causal explorer: generalise the `silence_scan` pattern (lock → rule-chosen set →
-     screen → fresh-seed confirmation against a matched null) on top of step 3.
+   - #25 causal explorer (done in v0.8.33): `flymsg explore` and `flymsg confirm` on top
+     of step 3. See "Causal explorer" below.
    - #28 robustness (tool in v0.8.31): `flymsg.sensitivity` runs a locked grid (B3) and
      reports every cell; `sim.Params` defaults never change.
    - #31 embodiment: bodies attach through B6 only.
@@ -139,3 +139,24 @@ without loading the dataset and lists command, label, start, commit, dataset and
 manifest written before labels existed gets one from its command (a command that executes a
 lock is `preregistered`; the held-out benchmark is `held-out`) and from its recorded verdict
 (FAIL or none is `failed`). A label is read, never written back, so nothing is promoted.
+
+## Causal explorer
+
+`flymsg explore SOURCE TARGET [--silence …]` lists up to three distinct strongest routes
+(`evidence: anatomy`, synapse counts) and then silences each intermediate cell type on them
+and reports the target's change with a bootstrap interval (`evidence: simulation,
+exploratory`). It writes `explore.json` and a manifest labelled exploratory into a directory
+keyed by its configuration, and `--replay DIR` reruns a saved exploration and checks that the
+contrast reproduces. It chooses nothing, attaches no p-value, and says when the target is
+governed by an existing lock: `TTMn_R` belongs to issue #20 and
+`validation/silence_scan.yaml`, and an exploration of it may not choose a later version's sets.
+
+`flymsg confirm LOCK` runs a `flymsg.intervention/v1` lock: stimulus, target, optional base
+silencing, named sets of cell types, seeds disjoint from the `explored_seeds` it declares,
+draws, alpha and tail. A lock runs only once its hash is registered in
+`intervention.VERSION_HASHES` by a commit, so it is fixed before it runs; an edited lock
+without a new version is refused. Each set is compared with a matched null (the base arm's
+responders, same superclass and sign) that never draws from any set of the lock, with
+Bonferroni over the sets, and the result goes to `runs/interventions/<lock>/v<n>/`, which is
+never overwritten. All of this is model simulation, not evidence from animals. No lock is
+registered yet.

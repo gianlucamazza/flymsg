@@ -17,6 +17,7 @@ from flymsg import (
     dimorphism,
     draws,
     graph,
+    intervention,
     manifest,
     nulls,
     prereg,
@@ -336,6 +337,86 @@ def cmd_experiment(a, neurons, edges):
     out = workbench.run(cfg, neurons, edges, a.root, a.data)
     print(pd.read_csv(out / "metrics.csv").to_string(index=False))
     print(f"-> {out}")
+
+
+def _explore_config(a) -> dict:
+    return {
+        "source": a.source,
+        "target": a.target,
+        "paths": a.paths,
+        "seeds": a.seeds,
+        "seed0": a.seed0,
+        "base_silence": list(a.silence or []),
+    }
+
+
+def cmd_explore(a, neurons, edges):
+    """Exploratory: paths (anatomy), then silencing each intermediate type (simulation)."""
+    started = datetime.now(UTC)
+    if a.replay:
+        saved = json.loads((a.replay / "manifest.json").read_text())["config"]
+        cfg = {
+            k: saved[k]
+            for k in ("source", "target", "paths", "seeds", "seed0", "base_silence")
+        }
+    else:
+        if not (a.source and a.target):
+            sys.exit("flymsg: explore needs SOURCE and TARGET, or --replay DIR")
+        cfg = _explore_config(a)
+    result = intervention.explore(
+        neurons, edges, cfg["source"], cfg["target"], paths=cfg["paths"],
+        seeds=cfg["seeds"], seed0=cfg["seed0"], base_silence=cfg["base_silence"],
+    )  # fmt: skip
+    for row in result["anatomy"]:
+        print(
+            f"anatomy, path {row['path']}: {' -> '.join(row['types'])}  synapses {row['synapses']}"
+        )
+    for row in result["interventions"]:
+        lo, hi = row["ci95_change_hz"]
+        print(
+            f"simulation (exploratory), silence {row['silenced']} ({row['neurons']}): "
+            f"{row['mean_change_hz']:+.1f} Hz [{lo:+.1f}, {hi:+.1f}]"
+        )
+    print(result["note"])
+    if result["governed_by"]:
+        print(f"governed by {result['governed_by']}")
+    if a.replay:
+        saved = json.loads((a.replay / "explore.json").read_text())
+        same = (
+            saved["interventions"] == result["interventions"]
+            and saved["anatomy"] == result["anatomy"]
+        )
+        print(
+            "replay reproduces the saved contrast"
+            if same
+            else "replay DIFFERS from the saved contrast"
+        )
+        if not same:
+            sys.exit(1)
+        return
+    out = (
+        a.out
+        / f"{a.source}-{a.target}".replace("/", "_")
+        / workbench.config_hash(cfg)[:12]
+    )
+    if out.exists():
+        sys.exit(f"flymsg: {out} exists; use --replay {out} to check it")
+    out.mkdir(parents=True)
+    (out / "explore.json").write_text(json.dumps(result, indent=1))
+    _stamp(out, "explore", a, neurons, edges, cfg, {"seed0": cfg["seed0"], "seeds": cfg["seeds"]},
+           started, extra={"label": "exploratory"})  # fmt: skip
+    print(f"-> {out}")
+
+
+def cmd_confirm(a, neurons, edges):
+    """Run a registered intervention lock on fresh seeds against a matched null."""
+    started = datetime.now(UTC)
+    table = intervention.confirm(neurons, edges, a.lock, a.out, checkpoint=a.checkpoint)
+    print(table.to_string(index=False))
+    doc = intervention.load(a.lock)
+    out = a.out / a.lock.stem / f"v{doc['version']}"
+    _stamp(out, "confirm", a, neurons, edges, {"lock": str(a.lock), "lock_sha256": doc["content_sha256"]},
+           {"seed0": doc["seed0"], "seeds": doc["seeds"]}, started, extra={"label": "preregistered"})  # fmt: skip
 
 
 def cmd_wiring_null(a, neurons, edges):
@@ -930,6 +1011,8 @@ COMMANDS = {
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
     "experiment": cmd_experiment,
+    "explore": cmd_explore,
+    "confirm": cmd_confirm,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -947,6 +1030,8 @@ MALECNS_ONLY = (
     "trace",
     "sensitivity",
     "experiment",
+    "explore",
+    "confirm",
 )
 
 
@@ -999,6 +1084,24 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("config", type=Path)
     s.add_argument("--check", action="store_true", help="validate only")
     s.add_argument("--root", type=Path, default=Path("runs/experiments"))
+    s = sub.add_parser(
+        "explore",
+        help="paths between two populations, then silence each intermediate type (exploratory)",
+    )
+    s.add_argument("source", nargs="?")
+    s.add_argument("target", nargs="?")
+    s.add_argument("--paths", type=int, default=3)
+    s.add_argument("--seeds", type=int, default=3)
+    s.add_argument("--seed0", type=int, default=0)
+    s.add_argument("--silence", nargs="+", help="silenced in every arm (e.g. DNp01)")
+    s.add_argument("--replay", type=Path, help="rerun a saved exploration and compare")
+    s.add_argument("--out", type=Path, default=Path("runs/explore"))
+    s = sub.add_parser(
+        "confirm", help="run a registered intervention lock (flymsg.intervention/v1)"
+    )
+    s.add_argument("lock", type=Path)
+    s.add_argument("--checkpoint", type=Path)
+    s.add_argument("--out", type=Path, default=Path("runs/interventions"))
     s = sub.add_parser("runs", help="index every run manifest (no dataset needed)")
     s.add_argument(
         "roots", nargs="*", type=Path, default=[Path("runs"), Path("docs/live")]
@@ -1342,6 +1445,8 @@ def main() -> None:
     except benchmarks.BenchmarkError as err:
         sys.exit(f"flymsg: {err}")
     except behavior.BehaviorError as err:
+        sys.exit(f"flymsg: {err}")
+    except intervention.InterventionError as err:
         sys.exit(f"flymsg: {err}")
     except workbench.ConfigError as err:
         sys.exit(f"flymsg: {err}")
