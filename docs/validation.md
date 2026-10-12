@@ -69,6 +69,10 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   spike on six seeds, but each null (p 0.036, 0.041) contained the other unit; the threshold
   was 0.025. Version 2 excludes every screen pass from the null and confirms on seeds 20–22;
   fixed before its run. `w_syn` stays 0.192.
+- **Residual partner scan v2** (2026-10-12, [behavior](behavior.md#result-of-version-2-2026-10-12)).
+  Verdict: names_partner: DNp02, DNp06 (p 0.001 each against 0.025; 0 `TTMn_R` spikes on
+  seeds 20–22). Model-side, and fixed after v1 was seen; `gf_required_for_the_jump_bit` stays
+  `unverified`.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

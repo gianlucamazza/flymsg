@@ -329,6 +329,31 @@ supersedes and why. Being written after the v1 result is disclosed here; the v2 
 had not run when the lock was committed. A test checks that no null draw for one screen pass
 can silence another.
 
+### Result of version 2 (2026-10-12)
+
+**Verdict: names_partner: DNp02, DNp06.** The run started from `764af9e` (v0.8.27, clean,
+in a separate worktree) and took 2 h 33 min; its manifest records the same commit.
+
+The base arm gave `TTMn_R` 7, 5 and 6 spikes on screen seeds 0–2 and 6, 6 and 6 on confirm
+seeds 20–22. The same thirteen candidates as in version 1; the same two passed the screen:
+
+| Unit  | Screen, seeds 0–2 | Confirm, seeds 20–22 | Null mean | p     | Outcome         |
+| ----- | ----------------- | -------------------- | --------: | ----- | --------------- |
+| DNp02 | 0, 0, 0           | 0, 0, 0              |      5.28 | 0.001 | `names_partner` |
+| DNp06 | 0, 0, 0           | 0, 0, 0              |      5.28 | 0.001 | `names_partner` |
+
+With the other screen pass out of the pool, no draw reached the observed 0 spikes, so p is
+the smallest the 1,000 draws allow, below the 0.025 threshold. Report:
+`runs/silence-scan/v2/`.
+
+**Reading.** In the model, with both `DNp01` silenced, `TTMn_R` is driven through DNp02 and
+DNp06: silencing either one removes every spike on all nine seeds of both versions. Each is necessary for the
+residual drive here; neither alone is shown sufficient, and combinations were not
+searched. Three limits hold. Version 2 was written after the version 1 result was seen,
+although before its own run; a replication on further fresh seeds would remove that doubt.
+The result is about this LIF on MaleCNS, not the fly. `gf_required_for_the_jump_bit` stays
+`unverified`, and version 1 of the one-bit protocol is not edited.
+
 **Blind.** The 2026-10-12 listing of `TTMn_R` inputs was read before this
 lock, so it chooses nothing. No unit is named here. The runner computes the
 set from the rule, and the set is reported before the confirmatory stage

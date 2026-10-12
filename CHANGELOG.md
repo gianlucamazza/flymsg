@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.8.38 — 2026-10-12
+
+### Results
+
+- **Residual partner scan v2: names_partner: DNp02, DNp06** (#20). With both `DNp01`
+  silenced, silencing DNp02 or DNp06 as well leaves `TTMn_R` at 0 spikes on screen seeds
+  0–2 and confirm seeds 20–22; with every screen pass out of the null pool no draw reached
+  0, p 0.001 each against 0.025. Run from `764af9e`, clean. Version 2 was fixed after the
+  version 1 result was seen and before its own run; the result is model-side and
+  `gf_required_for_the_jump_bit` stays `unverified`.
 
 ### Changes
 
