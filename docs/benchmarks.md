@@ -100,6 +100,11 @@ no single recorded motor target in the manifest. T4/T5 need a moving bar, and th
 simulator's stimulus is a Poisson rate on a whole type. DN1pA acts over hours, outside
 a 600 ms run.
 
+In the lock, every row this table marks exploratory, excluded or not scored sits in
+`partition.exploratory`. DN1pA is the entry `clock neurons`. DNp02 and DNp11 are the
+entries `LC4 via DNp02` and `LC4 via DNp11`. Those role words say why a row is outside
+the scored held-out case. They do not add a second partition.
+
 No row in this inventory is promoted to a held-out behavior. The promotion would
 choose the test after the olfactory failure and the silence failure. A later case
 still needs a new version and a source that did not select the model. This note does

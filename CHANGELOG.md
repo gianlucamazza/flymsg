@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.11 — 2026-10-12
+
+### Documentation
+
+- **Status prose matches the closed record.** The validation heading no longer
+  carries a version. The calibration battery is six cases, and its limits note
+  the held-out failure. The silence failure does not name a partner. Issues #10
+  and #11 are closed as blocked. The inventory's exploratory, excluded and not
+  scored rows are the lock's `exploratory` list. Nothing was rerun. `w_syn`
+  stays 0.192.
+
 ## 0.8.10 — 2026-10-11
 
 ### Results

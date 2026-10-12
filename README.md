@@ -117,8 +117,10 @@ with no dimorphism label.
   `w_syn` stays 0.192.
 - **No biological extension is added.** Cell-type parameters, gap junctions,
   short-term synaptic dynamics and compartments have no value that transfers into
-  this LIF. The silence failure is not a giant-fiber gap junction. Neuromodulation
-  and associative learning stay blocked ([model](docs/model.md)).
+  this LIF. Silencing DNp01 removes that cell's output, and `TTMn_R` still fires,
+  so the silence failure is not a missing giant-fiber gap junction. The other
+  partner is not named. Neuromodulation and associative learning are closed as
+  blocked ([model](docs/model.md)).
 - **No held-out behavior is eligible.** The frozen partition has no remaining task that
   can fill the validated-behavior milestone. Exploratory rows stay exploratory
   ([validation](docs/validation.md)).

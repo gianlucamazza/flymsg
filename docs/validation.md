@@ -5,7 +5,7 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
 `src/flymsg/validate.py`; the full battery also runs as a slow test
 (`uv run pytest -m slow`).
 
-## Current status (v0.6)
+## Current status
 
 - **Criterion v4, 29/29 with the defaults** (`w_syn` 0.192, no adaptive threshold) at seeds
   0–2, at seeds 0–9 (model selection) and at fresh seeds 10–19 with fresh control draws
@@ -31,8 +31,8 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   not decide. Both sensitivity corners fail the same two checks: at `w_syn` 0.275 the
   control is 200 Hz and 7797 neurons stay active; at `th_jump` 2 the control is 105.6 Hz
   and 2669 stay active. Neither corner replaces the scored result. `w_syn` stays 0.192.
-- **One-bit looming jump** (2026-10-11, [behavior](behavior.md)). The closed-loop task is
-  frozen before any run. `LC4_R` drives the network; the third `TTMn_R` spike cuts that
+- **One-bit looming jump** (2026-10-11, [behavior](behavior.md)). The closed-loop task was
+  frozen before the run. `LC4_R` drives the network; the third `TTMn_R` spike cuts that
   drive. The claim is a calibration feasibility check on the looming case, with jump,
   feedback, DNp01 silence, and a decoder-prefix check. FlyBody is not embedded. The
   closed loop fails silence: with both DNp01 neurons silenced, TTMn_R still reaches
@@ -40,8 +40,10 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
 - **No biological extension** (2026-10-11, [model](model.md)). Cell-type parameters, gap
   junctions, short-term synaptic dynamics and compartments are not added. None has a
   parameter that transfers into this LIF without being tuned on the behaviour it would
-  explain. The silence failure is a parallel path onto TTMn_R, not a missing giant-fiber
-  gap junction. Neuromodulation and associative plasticity stay blocked on the same ground.
+  explain. The silence failure is not a missing giant-fiber gap junction. `TTMn_R` still
+  fires, so some other partner still drives it, and that partner is not named.
+  Neuromodulation and associative learning are closed as blocked: the evidence is absent,
+  and no module is added.
 - **No held-out behavior remains eligible** (2026-10-11). The frozen partition already
   assigned every mapped behavior to calibration, or listed it as exploratory and
   disqualified it in the same note. The one-bit loop is not that protocol and failed
@@ -475,8 +477,9 @@ unchanged. `w_syn` stayed 0.192. The full record is in [dimorphism](dimorphism.m
 
 ## Limits of this validation
 
-- Five cases, all short feedforward chains (1–2 hops) close to the stimulus. They say little
-  about long-range or recurrent processing.
+- Six cases in the calibration battery: five short feedforward chains and the bitter
+  negative. They say little about long-range or recurrent processing. The held-out
+  olfactory case is a separate protocol and it fails ([benchmarks](benchmarks.md)).
 - Thresholds (3 spikes, 3× + 2 Hz, 100 neurons, ≥ 5 synapses for control exclusion, one spike
   of dose tolerance) are judgement calls, not derived from data.
 - Order and dose are quantitative but coarse: no absolute latencies (the model's delay and

@@ -46,8 +46,8 @@ The v4 limit of 100 does not decide, and these rows do not rescue silence.
 The times are the model under a 100 Hz Poisson drive. They are not a takeoff
 latency.
 
-`gf_required_for_the_jump_bit` stays `unverified`. The silence arm is the
-model. It does not test the animal.
+`gf_required_for_the_jump_bit` stays `unverified`. The silence arm failed in
+the model. It does not test the animal.
 
 ## Task
 
@@ -239,9 +239,11 @@ after that result. `wiring.draw` is false.
 
 `gf_required_for_the_jump_bit` is unverified. The statement is that silencing
 both giant-fiber neurons keeps `TTMn_R` below 3 spikes while `LC4_R` is driven
-at 100 Hz for 300 ms. The silence arm tested that statement in the model and failed: `TTMn_R` still
-reaches 3 spikes. The arm does not test the animal. The animal evidence already
-cited for the circuit is von Reyn et al. 2014 and King and Wyman 1980. Until an
+at 100 Hz for 300 ms. The silence arm tested that statement in the model and
+failed: `TTMn_R` still reaches 3 spikes. The label stays `unverified` because
+the arm does not test the animal. von Reyn et al. 2014 is the behavioral
+citation already used to choose the looming case. King and Wyman 1980 describes
+the anatomy of the pathway. It is not a silencing measurement. Until an
 independent animal measurement is brought in under a new version, the prediction
 stays `unverified` and `tests_animal: false`.
 
