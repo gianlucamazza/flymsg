@@ -1,3 +1,5 @@
+import { binAt } from "./raster.js";
+
 /**
  * Replay activity: turning binned spike counts into the 0..1 glow shown at a given time.
  */
@@ -19,7 +21,7 @@ export function activityAt(
   tauMs = 15,
   historyBins = 5,
 ) {
-  const b = Math.min(Math.floor(t / binMs), bins - 1);
+  const b = binAt(t, binMs, bins); // the raster cursor uses the same bin
   for (let k = 0; k < n; k++) {
     let s = 0;
     for (let j = Math.max(0, b - historyBins + 1); j <= b; j++) {
