@@ -132,24 +132,34 @@ def run(
         if cfg.get("silence")
         else None
     )
-    rows = []
-    for seed in range(cfg["seed0"], cfg["seed0"] + cfg["seeds"]):
-        r = sim.run(
-            W, stim, cfg["rate_hz"], cfg["duration_ms"], cfg["stim_ms"], p, seed,
+    results = [
+        sim.run(
+            W,
+            stim,
+            cfg["rate_hz"],
+            cfg["duration_ms"],
+            cfg["stim_ms"],
+            p,
+            seed,
             silence=silence,
-        )  # fmt: skip
-        on = r.rate(0, cfg["stim_ms"])
-        for t in cfg["targets"]:
-            idx = data.resolve(neurons, t)
-            best = idx[np.argmax(on[idx])]
+        )
+        for seed in range(cfg["seed0"], cfg["seed0"] + cfg["seeds"])
+    ]
+    on = [r.rate(0, cfg["stim_ms"]) for r in results]
+    rows = []
+    for t in cfg["targets"]:
+        # one neuron per target, the highest mean rate over the seeds (as validate.respond)
+        idx = data.resolve(neurons, t)
+        best = idx[np.argmax(np.mean([rate[idx] for rate in on], axis=0))]
+        for k, (r, rate) in enumerate(zip(results, on, strict=True)):
             rows.append(
                 {
-                    "seed": seed,
+                    "seed": cfg["seed0"] + k,
                     "target": t,
                     "best_bodyId": int(neurons["bodyId"].iat[best]),
-                    "rate_hz": float(on[best]),
+                    "rate_hz": float(rate[best]),
                     "first_spike_ms": float(r.first_spike_ms[best]),
-                    "fired_during_stimulus": int((on > 0).sum()),
+                    "fired_during_stimulus": int((rate > 0).sum()),
                 }
             )
     out.mkdir(parents=True)
@@ -173,6 +183,8 @@ def label_of(doc: dict) -> str:
     declared = (doc.get("extra") or {}).get("label")
     if declared in LABELS:
         return declared
+    if (doc.get("config") or {}).get("exploratory") is True:  # e.g. nulls --exploratory
+        return "exploratory"
     verdict = str((doc.get("extra") or {}).get("verdict", ""))
     if "FAIL" in verdict or verdict.startswith("none"):
         return "failed"

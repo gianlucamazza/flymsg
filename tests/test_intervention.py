@@ -148,3 +148,26 @@ def test_a_set_is_never_in_the_null_of_another(relay_dir, tmp_path):
 
 def test_a_governed_target_says_so():
     assert "silence_scan" in intervention.GOVERNED["TTMn_R"]
+
+
+@pytest.fixture
+def two_target_dir(tmp_path):
+    """A drives C1 through the relay B and C2 weakly through D. Silencing B must be read on
+    C1, the target neuron the baseline picks, not on C2, which D keeps firing."""
+    from conftest import build_dataset
+
+    return build_dataset(
+        tmp_path,
+        ["A", "B", "C", "C", "D"],
+        ["sensory", "x", "y", "y", "x"],
+        [(0, 1, 400), (1, 2, 400), (0, 4, 400), (4, 3, 160)],  # C2 at ~40 Hz, C1 ~85
+    )
+
+
+def test_every_arm_reads_the_target_neuron_the_baseline_chose(two_target_dir):
+    neurons, edges = data.load(two_target_dir)
+    got = intervention.explore(neurons, edges, "A", "C", seeds=2, stim_ms=100.0)
+    assert got["target_neuron"] == 30  # C1
+    rows = {r["silenced"]: r for r in got["interventions"]}
+    # B silenced: C1 goes silent; C2 still fires through D but is not the measured neuron
+    assert max(rows["B"]["silenced_hz"]) == 0.0

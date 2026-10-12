@@ -927,6 +927,7 @@ def cmd_nulls(a, neurons, edges):
             "th_jump": params.th_jump,
             "preregistration": locked["version"],
             "full": a.full,
+            "exploratory": bool(a.exploratory),
         },
         {"seed0": a.seed0, "draws": draws},
         started,

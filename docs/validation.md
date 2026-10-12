@@ -269,6 +269,10 @@ fire during the stimulus, and how many still fire from 400 to 600 ms. `flymsg se
 2/3 of the seeds, `holds.csv`), the spreads (`spreads.csv`), a figure (`rate.svg`) and a
 manifest to `runs/sensitivity/v1/`.
 
+In every cell the measured neuron of each target type is the one with the highest mean rate
+over that cell's seeds, as in the battery, so two cells may read different neurons of one
+type; `cells.csv` does not hide this, because the rows carry the type, not a neuron.
+
 Two spreads are kept apart. The seed range at the default cell is noise from the Poisson
 input; the range of the seed medians across cells is sensitivity to the two parameters.
 Numerical implementation (CPU against the native and GPU lanes) and biological uncertainty

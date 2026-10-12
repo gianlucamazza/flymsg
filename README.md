@@ -118,6 +118,10 @@ intact replay: `TTMn_R` still fires. [Open the comparison](https://gianlucamazza
   neurons and both leave thousands of neurons firing after the stimulus. The same
   failure survives the Shiu weight and adaptation. The scored weight stays 0.192
   ([benchmarks](docs/benchmarks.md)).
+- **Why the held-out olfactory case keeps firing** (exploratory). Most of the neurons still
+  active after the stimulus are Kenyon cells, and 73% of the excitatory synapses onto Kenyon
+  cells come from other Kenyon cells; in a point LIF that loop sustains itself. A model limit,
+  not a fit ([benchmarks](docs/benchmarks.md)).
 - **The one-bit looming jump fails silence.** `TTMn_R` reaches three spikes on time
   in 3/3 seeds, and the closed loop stops there. With both DNp01 silenced it still
   reaches three spikes, later. The raster is
