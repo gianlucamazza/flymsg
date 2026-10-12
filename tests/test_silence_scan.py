@@ -157,9 +157,14 @@ def test_scan_names_the_only_remaining_route(tmp_path):
     neurons, edges = _toy()
     doc = _small(silence_scan.load(), 20)
     out = silence_scan.scan(
-        neurons, edges, doc, np.array([0]), 2, np.array([1]),
+        neurons,
+        edges,
+        doc,
+        np.array([0]),
+        2,
+        np.array([1]),
         checkpoint=tmp_path / "scan.ckpt.jsonl",
-    )  # fmt: skip
+    )
     assert min(out["base_screen"]) > 2
     assert out["screen"]["unit"].tolist() == ["A"]
     assert out["m"] == 1
@@ -168,9 +173,14 @@ def test_scan_names_the_only_remaining_route(tmp_path):
     assert out["verdict"] == "names_partner: A"
     # a rerun replays the checkpoint
     again = silence_scan.scan(
-        neurons, edges, doc, np.array([0]), 2, np.array([1]),
+        neurons,
+        edges,
+        doc,
+        np.array([0]),
+        2,
+        np.array([1]),
         checkpoint=tmp_path / "scan.ckpt.jsonl",
-    )  # fmt: skip
+    )
     assert again["verdict"] == out["verdict"]
 
 
@@ -230,9 +240,12 @@ def test_v3_repeats_v2_with_only_the_confirm_seeds_changed():
     old = silence_scan.prereg.load_yaml(
         subprocess.run(
             ["git", "show", "v0.8.27:validation/silence_scan.yaml"],
-            capture_output=True, text=True, check=True, cwd=silence_scan.ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=silence_scan.ROOT,
         ).stdout
-    )  # fmt: skip
+    )
     new = silence_scan.load()
     for key in ("protocol", "candidates", "base_arm", "screen", "decides", "parent"):
         assert new[key] == old[key], key

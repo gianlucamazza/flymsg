@@ -11,9 +11,13 @@ PROV = Provenance("synthetic", "a" * 64, "fixture", 0)
 
 def _run(steps, gain=1e-3, mass=1e-6, duration_us=500_000):
     return jump.run_jump(
-        np.asarray(steps, dtype=np.int64), body_id=7, gain_n=gain, mass_kg=mass,
-        duration_us=duration_us, provenance=PROV,
-    )  # fmt: skip
+        np.asarray(steps, dtype=np.int64),
+        body_id=7,
+        gain_n=gain,
+        mass_kg=mass,
+        duration_us=duration_us,
+        provenance=PROV,
+    )
 
 
 def test_no_spike_no_motion():

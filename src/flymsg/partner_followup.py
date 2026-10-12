@@ -39,10 +39,24 @@ VERSION_HASHES = {
 # seeds any earlier run of this question has used: the scan screen and confirm seeds, and
 # the exploratory mirror check (0-2)
 SPENT_SEEDS = frozenset({*range(3), *range(10, 13), *range(20, 23), *range(30, 33)})
-_LEFT = ("no_residual", "undetermined", "contributes", "names_partner", "replicates", "partial",
-         "not_replicated")  # fmt: skip
-_DRIVE = ("reaches", "fails", "single_sufficient", "conjunction", "pair_sufficient",
-          "not_specific", "insufficient")  # fmt: skip
+_LEFT = (
+    "no_residual",
+    "undetermined",
+    "contributes",
+    "names_partner",
+    "replicates",
+    "partial",
+    "not_replicated",
+)
+_DRIVE = (
+    "reaches",
+    "fails",
+    "single_sufficient",
+    "conjunction",
+    "pair_sufficient",
+    "not_specific",
+    "insufficient",
+)
 
 
 class FollowupError(ValueError):
@@ -212,8 +226,16 @@ def _job(job: tuple[str, str]) -> list[dict]:
 
         def counts_with(extra):
             silence = np.concatenate([c["base"], extra])
-            got, _ = _arm(W, c["stim"], c["motor"], silence, s, cfg["rate_hz"],
-                          cfg["stim_ms"], cfg["duration_ms"])  # fmt: skip
+            got, _ = _arm(
+                W,
+                c["stim"],
+                c["motor"],
+                silence,
+                s,
+                cfg["rate_hz"],
+                cfg["stim_ms"],
+                cfg["duration_ms"],
+            )
             return got
 
         observed = counts_with(tested)
@@ -223,19 +245,35 @@ def _job(job: tuple[str, str]) -> list[dict]:
         cfg = doc["drive"]
 
         def counts_with(driven):
-            got, _ = _arm(W, driven, c["motor"], c["silence"], s, cfg["rate_hz"],
-                          cfg["stim_ms"], cfg["duration_ms"])  # fmt: skip
+            got, _ = _arm(
+                W,
+                driven,
+                c["motor"],
+                c["silence"],
+                s,
+                cfg["rate_hz"],
+                cfg["stim_ms"],
+                cfg["duration_ms"],
+            )
             return got
 
         observed = counts_with(c["pair"])
         pool, like, tail = c["pool"], c["pair"], p_upper
-    row = {"part": part, "unit": name, "counts": observed, "draws": 0,
-           "null_mean": math.nan, "p": math.nan, "null": []}  # fmt: skip
+    row = {
+        "part": part,
+        "unit": name,
+        "counts": observed,
+        "draws": 0,
+        "null_mean": math.nan,
+        "p": math.nan,
+        "null": [],
+    }
     short = draws.matched_pool_shortfall(key, pool, like)
     if short:
         group, have, need = short[0]
-        print(f"{label}: null not defined ({group}: {have}, need {need})",
-              file=sys.stderr)  # fmt: skip
+        print(
+            f"{label}: null not defined ({group}: {have}, need {need})", file=sys.stderr
+        )
         return [row]
     null = draws.null_rates(
         label,
@@ -280,8 +318,9 @@ def followup(
         idx[left["base_silence"]],
     )
     units = {u: idx[u] for u in left["units"]}
-    base_counts, results = _arm(W, stim, motor, base, s, left["rate_hz"],
-                                left["stim_ms"], left["duration_ms"])  # fmt: skip
+    base_counts, results = _arm(
+        W, stim, motor, base, s, left["rate_hz"], left["stim_ms"], left["duration_ms"]
+    )
     out["left_base"] = base_counts
     pool = np.zeros(len(neurons), dtype=bool)
     pool[dimorphism.responders(results, stim)] = True
@@ -298,11 +337,20 @@ def followup(
     arms, driven_spikes = {}, {}
     for arm in drive["arms"]:
         driven = pair if arm == "pair" else singles[arm]
-        counts, res = _arm(W, driven, d_motor, d_silence, s, drive["rate_hz"],
-                           drive["stim_ms"], drive["duration_ms"])  # fmt: skip
+        counts, res = _arm(
+            W,
+            driven,
+            d_motor,
+            d_silence,
+            s,
+            drive["rate_hz"],
+            drive["stim_ms"],
+            drive["duration_ms"],
+        )
         arms[arm] = counts
-        driven_spikes[arm] = {n: [int(r.counts[:, i].sum()) for r in res]
-                              for n, i in singles.items()}  # fmt: skip
+        driven_spikes[arm] = {
+            n: [int(r.counts[:, i].sum()) for r in res] for n, i in singles.items()
+        }
     out["drive_arms"], out["driven_spikes"] = arms, driven_spikes
     d_pool = np.isin(key, np.unique(key[pair]))
     exclude = [d_motor, *d_silence, *idx["DNp02"], *idx["DNp06"]]
@@ -310,10 +358,18 @@ def followup(
     jobs.append(("drive", "pair"))
 
     ctx = {
-        "W": W, "doc": doc, "key": key,
-        "left": {"stim": stim, "motor": motor, "base": base, "units": units, "pool": pool},
+        "W": W,
+        "doc": doc,
+        "key": key,
+        "left": {
+            "stim": stim,
+            "motor": motor,
+            "base": base,
+            "units": units,
+            "pool": pool,
+        },
         "drive": {"motor": d_motor, "silence": d_silence, "pair": pair, "pool": d_pool},
-    }  # fmt: skip
+    }
     meta = {"version": doc["version"], "sha256": doc["content_sha256"]}
     rows = draws.map_jobs(_job, jobs, workers, ctx, checkpoint, meta)
     table = pd.DataFrame(rows)

@@ -204,8 +204,17 @@ def _job(job: tuple[str, str]) -> list[dict]:
     )
     base, base_seeds = rates(per_seed=True)
     if not silenced.size:  # nothing of this category outside stimulus and targets
-        return _rows(case_name, which, 0, case.targets, base, base, np.empty((0, 0)),
-                     base_seeds, base_seeds)  # fmt: skip
+        return _rows(
+            case_name,
+            which,
+            0,
+            case.targets,
+            base,
+            base,
+            np.empty((0, 0)),
+            base_seeds,
+            base_seeds,
+        )
     obs, obs_seeds = rates(silenced, per_seed=True)
     short = draws.matched_pool_shortfall(key, pool, silenced)
     if short:
@@ -215,9 +224,16 @@ def _job(job: tuple[str, str]) -> list[dict]:
             file=sys.stderr,
         )
         return _rows(
-            case_name, which, silenced.size, case.targets, base, obs,
-            np.empty((0, len(case.targets))), base_seeds, obs_seeds,
-        )  # fmt: skip
+            case_name,
+            which,
+            silenced.size,
+            case.targets,
+            base,
+            obs,
+            np.empty((0, len(case.targets))),
+            base_seeds,
+            obs_seeds,
+        )
     rng = np.random.default_rng(zlib.crc32(label.encode()))  # stable across runs
     null = draws.null_rates(
         f"{case_name} / {which}",
@@ -228,9 +244,16 @@ def _job(job: tuple[str, str]) -> list[dict]:
         meta,
     )
     return _rows(
-        case_name, which, silenced.size, case.targets, base, obs, null,
-        base_seeds, obs_seeds,
-    )  # fmt: skip
+        case_name,
+        which,
+        silenced.size,
+        case.targets,
+        base,
+        obs,
+        null,
+        base_seeds,
+        obs_seeds,
+    )
 
 
 def progress(checkpoint: Path) -> pd.DataFrame:

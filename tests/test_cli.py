@@ -145,9 +145,22 @@ def test_graph_helpers(data_dir):
 def test_trace_writes_states_and_a_manifest(monkeypatch, capsys, data_dir, tmp_path):
     out = tmp_path / "trace"
     run(
-        monkeypatch, capsys, "--data", str(data_dir), "trace", "A", "--neurons", "B", "C",
-        "--duration", "50", "--stim-ms", "30", "--out", str(out),
-    )  # fmt: skip
+        monkeypatch,
+        capsys,
+        "--data",
+        str(data_dir),
+        "trace",
+        "A",
+        "--neurons",
+        "B",
+        "C",
+        "--duration",
+        "50",
+        "--stim-ms",
+        "30",
+        "--out",
+        str(out),
+    )
     got = np.load(out / "trace.npz")
     assert got["v"].shape == (500, 2) and got["spikes"].shape == (500, 2)
     assert got["body_ids"].tolist() == [20, 30]

@@ -91,9 +91,14 @@ def run_loop(
             "replay needs the recorded input counts of a run of this length"
         )
     rt = CpuRuntime(
-        W, stim, steps=steps, kicks=np.zeros((0, stim.size), dtype=np.int64), p=p,
-        per_bin=per, trace=np.array([motor]),
-    )  # fmt: skip
+        W,
+        stim,
+        steps=steps,
+        kicks=np.zeros((0, stim.size), dtype=np.int64),
+        p=p,
+        per_bin=per,
+        trace=np.array([motor]),
+    )
     body = JumpBody(mass_kg=mass_kg)
     rng = np.random.default_rng(seed)
     dt_s = control_ms / 1000.0
@@ -143,10 +148,13 @@ def run_loop(
         )
         force = decoder_gain_n * n
         for key, value in (
-            ("t_ms", (k + 1) * control_ms), ("height_m", state.position_m),
-            ("seen_height_m", seen), ("rate_hz", rate), ("motor_spikes", n),
+            ("t_ms", (k + 1) * control_ms),
+            ("height_m", state.position_m),
+            ("seen_height_m", seen),
+            ("rate_hz", rate),
+            ("motor_spikes", n),
             ("force_n", force),
-        ):  # fmt: skip
+        ):
             rec[key].append(value)
     out = {k: np.asarray(v) for k, v in rec.items()}
     out["input_counts"] = counts_all

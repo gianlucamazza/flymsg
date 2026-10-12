@@ -183,9 +183,15 @@ def test_loop_silencing_detects_a_feedback_inhibitor_against_matched_responders(
     )
     monkeypatch.setattr(validate, "CASES", [validate.Case("c", "S", ["T"], "")])
     table = dimorphism.loop_silencing(
-        neurons, edges, sim.Params(), seeds=1, n_null=3, workers=1,
-        cases=("c",), sets={"E": ("E",)},
-    ).iloc[0]  # fmt: skip
+        neurons,
+        edges,
+        sim.Params(),
+        seeds=1,
+        n_null=3,
+        workers=1,
+        cases=("c",),
+        sets={"E": ("E",)},
+    ).iloc[0]
     # silencing E lifts the inhibition of T; silencing X (the only matched responder) does not
     assert table["drop"] < 0 and table["null_drop_min"] == 0.0
     assert table["p_rise"] == 1 / 4 and table["p_drop"] == 1.0

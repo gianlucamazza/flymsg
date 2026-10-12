@@ -144,8 +144,12 @@ def partner_table(
         scene = scene.sort_values(["n", "w", "k"], ascending=[True, False, True])
         key = "upstream" if up else "downstream"
         for i in idx:
-            out[int(body[i])][key] = {"types": [], "total_types": 0, "total_synapses": 0,
-                                      "in_scene": []}  # fmt: skip
+            out[int(body[i])][key] = {
+                "types": [],
+                "total_types": 0,
+                "total_synapses": 0,
+                "in_scene": [],
+            }
         for n, g in by_type.groupby("n", sort=False):
             entry = out[int(body[n])][key]
             entry["types"] = [

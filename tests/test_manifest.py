@@ -97,9 +97,13 @@ def test_the_manifest_records_git_as_it_was_at_the_start(tmp_path, monkeypatch):
     monkeypatch.setattr(manifest, "_START_GIT", None)
     manifest.mark_start()  # the run starts on "start"
     path = manifest.write(
-        tmp_path, command="x", config={}, seeds={}, dataset={"name": "d", "files": {}},
+        tmp_path,
+        command="x",
+        config={},
+        seeds={},
+        dataset={"name": "d", "files": {}},
         started_at=datetime.now(UTC),
-    )  # fmt: skip
+    )
     import json
 
     assert json.loads(path.read_text())["git"] == {"commit": "start", "dirty": False}

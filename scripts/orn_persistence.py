@@ -46,9 +46,16 @@ def main() -> None:
         members = persistent[types[persistent] == names[i]]
         watch.append(int(members[np.argmax(late[members])]))
     trace, _ = tracing.record(
-        W, stim, np.array(watch), rate_hz=100.0, duration_ms=600.0, stim_ms=300.0,
-        seed=SEED, p=p, every=10,
-    )  # fmt: skip
+        W,
+        stim,
+        np.array(watch),
+        rate_hz=100.0,
+        duration_ms=600.0,
+        stim_ms=300.0,
+        seed=SEED,
+        p=p,
+        every=10,
+    )
     is_late = np.zeros(len(neurons), dtype=bool)
     is_late[persistent] = True
     sign = neurons["sign"].to_numpy()

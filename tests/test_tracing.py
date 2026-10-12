@@ -22,9 +22,16 @@ def test_recording_leaves_the_run_unchanged(th_jump):
     args = (W, np.array([0]), 150.0, 300.0, 200.0, p, 5)
     ref = sim.run(*args, silence=np.array([3]))
     trace, got = tracing.record(
-        W, np.array([0]), np.array([1, 2, 3]), rate_hz=150.0, duration_ms=300.0,
-        stim_ms=200.0, seed=5, p=p, silence=np.array([3]),
-    )  # fmt: skip
+        W,
+        np.array([0]),
+        np.array([1, 2, 3]),
+        rate_hz=150.0,
+        duration_ms=300.0,
+        stim_ms=200.0,
+        seed=5,
+        p=p,
+        silence=np.array([3]),
+    )
     assert np.array_equal(got.counts, ref.counts)
     assert np.array_equal(got.first_spike_ms, ref.first_spike_ms, equal_nan=True)
     assert trace.spikes.shape == (3000, 3)
@@ -40,9 +47,15 @@ def test_states_match_the_numpy_oracle(th_jump):
         W, np.array([0]), 150.0, 200.0, 150.0, p, 9, record=watch
     )
     trace, got = tracing.record(
-        W, np.array([0]), watch, rate_hz=150.0, duration_ms=200.0, stim_ms=150.0,
-        seed=9, p=p,
-    )  # fmt: skip
+        W,
+        np.array([0]),
+        watch,
+        rate_hz=150.0,
+        duration_ms=200.0,
+        stim_ms=150.0,
+        seed=9,
+        p=p,
+    )
     assert np.array_equal(got.counts, ref.counts)
     for k in ("v", "g", "th"):
         assert np.array_equal(getattr(trace, k), states[k]), k  # bit for bit
@@ -62,9 +75,15 @@ def test_subsampling_keeps_every_nth_sample_and_full_spikes():
 def test_input_and_refractory_are_recorded():
     W, p = _net()
     trace, _ = tracing.record(
-        W, np.array([0]), np.array([0, 1]), rate_hz=500.0, duration_ms=50.0,
-        stim_ms=20.0, seed=1, p=p,
-    )  # fmt: skip
+        W,
+        np.array([0]),
+        np.array([0, 1]),
+        rate_hz=500.0,
+        duration_ms=50.0,
+        stim_ms=20.0,
+        seed=1,
+        p=p,
+    )
     assert (
         trace.input_counts[:200, 0].sum() > 0 and trace.input_counts[200:, 0].sum() == 0
     )
@@ -79,13 +98,25 @@ def test_large_requests_warn_and_huge_ones_are_refused(monkeypatch):
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         tracing.record(
-            W, np.array([0]), np.array([1]), rate_hz=1.0, duration_ms=20.0, stim_ms=None,
-            seed=0, p=p,
-        )  # fmt: skip
+            W,
+            np.array([0]),
+            np.array([1]),
+            rate_hz=1.0,
+            duration_ms=20.0,
+            stim_ms=None,
+            seed=0,
+            p=p,
+        )
     assert any("recording" in str(w.message) for w in caught)
     monkeypatch.setattr(tracing, "MAX_VALUES", 100)
     with pytest.raises(ValueError, match="limit"):
         tracing.record(
-            W, np.array([0]), np.array([1]), rate_hz=1.0, duration_ms=20.0, stim_ms=None,
-            seed=0, p=p,
-        )  # fmt: skip
+            W,
+            np.array([0]),
+            np.array([1]),
+            rate_hz=1.0,
+            duration_ms=20.0,
+            stim_ms=None,
+            seed=0,
+            p=p,
+        )

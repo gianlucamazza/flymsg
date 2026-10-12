@@ -100,11 +100,18 @@ def main(names=()) -> None:
         # every export runs before docs/live changes, so each manifest sees a clean tree
         for name, args in scenes.items():
             subprocess.run(
-                [sys.executable, "-c", "from flymsg.cli import main; main()",
-                 "viz", *args, "--out", str(Path(tmp) / name)],
+                [
+                    sys.executable,
+                    "-c",
+                    "from flymsg.cli import main; main()",
+                    "viz",
+                    *args,
+                    "--out",
+                    str(Path(tmp) / name),
+                ],
                 cwd=ROOT,
                 check=True,
-            )  # fmt: skip
+            )
         for name in scenes:
             src, dst = Path(tmp) / name, live / name
             shutil.rmtree(dst, ignore_errors=True)
@@ -120,12 +127,25 @@ def main(names=()) -> None:
             dst = live / name
             shutil.rmtree(dst, ignore_errors=True)
             subprocess.run(
-                [sys.executable, "-c", "from flymsg.cli import main; main()",
-                 "viz-compare", str(live / a), str(live / b), "--labels", *labels,
-                 "--status", *statuses, "--notes", *notes, "--out", str(dst)],
+                [
+                    sys.executable,
+                    "-c",
+                    "from flymsg.cli import main; main()",
+                    "viz-compare",
+                    str(live / a),
+                    str(live / b),
+                    "--labels",
+                    *labels,
+                    "--status",
+                    *statuses,
+                    "--notes",
+                    *notes,
+                    "--out",
+                    str(dst),
+                ],
                 cwd=ROOT,
                 check=True,
-            )  # fmt: skip
+            )
             for f in dst.iterdir():  # the page is copied by the site build
                 if f.name not in (
                     "scene.json",
