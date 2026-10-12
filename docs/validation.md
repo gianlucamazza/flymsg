@@ -49,6 +49,11 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   disqualified it in the same note. The one-bit loop is not that protocol and failed
   silence. No exploratory row is promoted, and no new run is added. The five milestone
   boxes stay empty.
+- **No scientific task is queued** (2026-10-12). The validated-behavior milestone stays
+  unmet. A later held-out case, a name for the unnamed `TTMn_R` partner, an animal test
+  of `gf_required_for_the_jump_bit`, a neuromodulation table, a learning rule, or a body
+  each need evidence that is not in this repository. Each would be a new issue and a new
+  version. None of them is queued.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

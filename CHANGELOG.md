@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.12 — 2026-10-12
+
+### Documentation
+
+- **No scientific task is queued.** Provenance cites the queue close, the
+  held-out no-go and the prose alignment. The validated-behavior milestone
+  stays unmet. Nothing was rerun. `w_syn` stays 0.192.
+
 ## 0.8.11 — 2026-10-12
 
 ### Documentation
