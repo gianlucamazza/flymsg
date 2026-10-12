@@ -90,7 +90,11 @@ The sign comes from the presynaptic neuron's predicted transmitter (`consensus_n
 `unclear`/missing ones send only 1.65% of all synapses (modulatory neurons another 0.95%), and
 the release offers no better label for them: their cell-type-level prediction is also
 unclear or modulatory, and only 107 have a neuron-level fast-transmitter prediction with
-confidence ≥ 0.65. Re-signing them is therefore not worth the added uncertainty. Motor neurons are
+confidence ≥ 0.65. A second source changes little: 1,381 of them match a FlyWire type
+(`flywireType`), 540 of those types are at least 90% one transmitter in FAFB, and 288 neurons
+would get a fast one, 0.34% of all synapses; many of the rest are dopaminergic or
+serotonergic there (`scripts/brain_coverage.py`). Re-signing them is therefore not worth the
+added uncertainty. Motor neurons are
 glutamatergic, which only matters where they synapse onto central neurons.
 
 ## Stimulus and rates
