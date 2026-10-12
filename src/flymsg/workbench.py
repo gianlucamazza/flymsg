@@ -6,10 +6,11 @@ metrics and a run manifest into `runs/experiments/<config hash>/`, which it neve
 overwrites. Its label is always `exploratory`: a pre-registered or held-out result comes
 only from a lock (`validation/*.yaml`), never from a config.
 
-`index` lists every run manifest under the given roots with its label: declared in the
-manifest, or for manifests written before labels existed, read from the command (a command
-that runs a lock is pre-registered, the held-out benchmark is held-out) and from a recorded
-verdict (FAIL or none is failed).
+`index` lists every run manifest under the given roots with its label and its outcome. The
+label is declared in the manifest, or for manifests written before labels existed, read from
+the command (a command that runs a lock is pre-registered, the held-out benchmark is
+held-out). The outcome is `failed` when a recorded verdict is FAIL or none, so a failed
+held-out run stays held-out.
 """
 
 from __future__ import annotations
@@ -24,7 +25,8 @@ import pandas as pd
 from flymsg import data, prereg, sim
 
 CONFIG_SCHEMA = "flymsg.experiment/v1"
-LABELS = ("exploratory", "preregistered", "held-out", "failed")
+LABELS = ("exploratory", "preregistered", "held-out")
+OUTCOMES = ("failed",)
 # commands that execute a lock; their outputs are never exploratory
 LOCKED = {
     "silence-scan --run": "preregistered",
@@ -179,16 +181,19 @@ def run(
 
 
 def label_of(doc: dict) -> str:
-    """A manifest's label: declared, or read from its command and verdict."""
+    """A manifest's label: declared, or read from its command."""
     declared = (doc.get("extra") or {}).get("label")
     if declared in LABELS:
         return declared
     if (doc.get("config") or {}).get("exploratory") is True:  # e.g. nulls --exploratory
         return "exploratory"
-    verdict = str((doc.get("extra") or {}).get("verdict", ""))
-    if "FAIL" in verdict or verdict.startswith("none"):
-        return "failed"
     return LOCKED.get(doc.get("command"), "exploratory")
+
+
+def outcome_of(doc: dict) -> str:
+    """`failed` when the recorded verdict is FAIL or none, else empty."""
+    verdict = str((doc.get("extra") or {}).get("verdict", ""))
+    return "failed" if "FAIL" in verdict or verdict.startswith("none") else ""
 
 
 def index(roots: list[Path]) -> pd.DataFrame:
@@ -210,6 +215,7 @@ def index(roots: list[Path]) -> pd.DataFrame:
                     "path": str(path.parent),
                     "command": doc.get("command"),
                     "label": label_of(doc),
+                    "outcome": outcome_of(doc),
                     "started_at": (doc.get("timestamps") or {}).get("started_at"),
                     "commit": (git.get("commit") or "")[:7],
                     "dirty": git.get("dirty"),

@@ -83,12 +83,10 @@ def test_labels_of_historical_manifests():
     assert workbench.label_of({"command": "viz"}) == "exploratory"
     assert workbench.label_of({"command": "nulls"}) == "preregistered"
     assert workbench.label_of({"command": "benchmarks --run"}) == "held-out"
-    assert (
-        workbench.label_of(
-            {"command": "behavior --run", "extra": {"verdict": "x FAIL: s"}}
-        )
-        == "failed"
-    )
+    failed = {"command": "benchmarks --run", "extra": {"verdict": "x FAIL: s"}}
+    assert workbench.label_of(failed) == "held-out"
+    assert workbench.outcome_of(failed) == "failed"
+    assert workbench.outcome_of({"command": "nulls"}) == ""
     assert workbench.label_of(
         {"command": "sim", "extra": {"label": "exploratory"}}
     ) == ("exploratory")

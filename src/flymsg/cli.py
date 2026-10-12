@@ -1310,7 +1310,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument(
         "roots", nargs="*", type=Path, default=[Path("runs"), Path("docs/live")]
     )
-    s.add_argument("--label", choices=workbench.LABELS)
+    s.add_argument("--label", choices=workbench.LABELS + workbench.OUTCOMES)
     s = sub.add_parser(
         "sensitivity",
         help="print the locked w_syn x th_jump grid, or run it with --run (a report)",
@@ -1614,7 +1614,8 @@ def main() -> None:
         if a.cmd == "runs":  # reads manifests only
             table = workbench.index(a.roots)
             if a.label and not table.empty:
-                table = table[table["label"] == a.label]
+                column = "outcome" if a.label in workbench.OUTCOMES else "label"
+                table = table[table[column] == a.label]
             return print(table.to_string(index=False) if not table.empty else "no runs")
         if a.cmd == "sensitivity" and not a.run:
             return print(sensitivity.summary())
