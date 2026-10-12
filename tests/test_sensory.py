@@ -1,4 +1,5 @@
 import math
+from itertools import pairwise
 
 import pytest
 
@@ -12,8 +13,8 @@ def test_looming_is_monotone_and_deterministic():
     assert len(a) == 100
     assert a[0].time_us == 0
     assert a[-1].time_us == 99_000
-    assert all(x.angular_size_rad < y.angular_size_rad for x, y in zip(a, a[1:]))
-    assert all(x.rate_hz < y.rate_hz for x, y in zip(a, a[1:]))
+    assert all(x.angular_size_rad < y.angular_size_rad for x, y in pairwise(a))
+    assert all(x.rate_hz < y.rate_hz for x, y in pairwise(a))
     assert all(math.isfinite(x.rate_hz) for x in a)
 
 
