@@ -225,7 +225,7 @@ def run_fixture(
             if (
                 sample.time_us != state.time_us
                 or sample.unit != "m"
-                or sample.frame != "world/+x"
+                or sample.frame != getattr(body, "frame", "world/+x")
                 or not math.isfinite(sample.value)
             ):
                 raise ContractError("invalid sensor timestamp, unit, frame or value")

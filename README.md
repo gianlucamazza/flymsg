@@ -189,6 +189,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `sensitivity [--run]`                                           | the locked w_syn × th_jump grid around the defaults: every cell, spreads, a figure; a report            |
 | `experiment FILE [--check]` · `runs`                            | run an exploratory config into an immutable directory; index every run manifest with its label          |
 | `explore SRC DST` · `confirm LOCK`                              | paths and exploratory silencing; run a registered intervention lock against a matched null              |
+| `jump --sim STIM --gain-n G --mass-kg M`                        | M1: a one-DOF jump body driven by a motor neuron through an engineered decoder (not a motor map)        |
 
 The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?detail=`,
 `?adaptive=0`,

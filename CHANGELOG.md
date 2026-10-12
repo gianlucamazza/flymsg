@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.34 — 2026-10-12
+
+### Embodiment
+
+- **M1 jump body (#33).** `flymsg.jump.JumpBody` (gravity, floor contact, one vertical
+  actuator) runs through the M0 contract; `flymsg jump` decodes a motor neuron's spikes with
+  an engineered gain stated by the caller, labelled as not a MaleCNS motor map, and writes
+  the trajectory with a manifest. LC4_R lifts the body at 18.0 ms; with both DNp01 silenced
+  it still lifts at 67.0 ms, the failed silence check carried into the body. The M0 contract
+  now takes the sensor frame from the body.
+
 ## 0.8.33 — 2026-10-12
 
 ### Research tooling
