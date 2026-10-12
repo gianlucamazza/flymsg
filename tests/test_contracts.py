@@ -129,8 +129,10 @@ def test_b5_viewer_bundle():
     ).read_text()
     for name in ("scene.json", "activity.bin", "partners.json"):
         assert f'"{name}"' in page  # the files the page fetches
+    assert f'SCENE_SCHEMA = "{viz.SCENE_SCHEMA}"' in page  # page and exporter agree
     for path in sorted(ROOT.glob("docs/live/*/scene.json")):
         scene = json.loads(path.read_text())
+        assert scene["schema"] == viz.SCENE_SCHEMA, path
         assert all(set(n) == NEURON_KEYS for n in scene["neurons"]), path
         if "activity" in scene:
             act = scene["activity"]

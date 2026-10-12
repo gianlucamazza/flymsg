@@ -176,7 +176,13 @@ function geometryFrom({ positions, normals, index }) {
 }
 
 // ---------- scene description and source volumes ----------
+const SCENE_SCHEMA = "flymsg.scene/v1"; // viz.SCENE_SCHEMA
 const meta = await (await fetch("scene.json")).json();
+if (meta.schema !== SCENE_SCHEMA)
+  console.warn(
+    `scene.json is ${meta.schema ?? "unversioned"}, this page reads ${SCENE_SCHEMA}; ` +
+      "re-export it with this flymsg version",
+  );
 const actBuf = meta.activity
   ? await (await fetch("activity.bin")).arrayBuffer()
   : null;
