@@ -31,7 +31,9 @@ _Drosophila_ in MuJoCo. FlyBody (TuragaLab) is the open-source model:
 
 Issue #8 compares that model with a one-bit body. The selected task is the
 looming jump in [behavior](behavior.md). FlyBody is not a dependency. The
-protocol is frozen. The closed loop fails the silence check.
+protocol is frozen. The closed loop fails the silence check. A 2026-10-12
+re-read is issue #19. FlyBody stays unselected. Issue #20 keeps the residual
+`TTMn_R` partner unnamed.
 
 ## N1 — specific checks need the measured partners
 

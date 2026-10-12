@@ -77,9 +77,11 @@ and LPLC2 drive the giant fiber, and the giant fiber drives the jump-muscle
 motor neuron (von Reyn et al., _Nat. Neurosci._ 17, 962–970, 2014,
 doi:10.1038/nn.3741; Ache et al., _Curr. Biol._ 29, 1073–1081, 2019,
 doi:10.1016/j.cub.2019.01.079). The chemical weights already reported for this
-case are LC4\*R → DNp01 2580/2580 (sum/max) and DNp01 → TTMn 90/70. The direct
-LC4_R → TTMn weight is 0 ([validation](validation.md)). Those numbers are why
-the case was calibratable. They were not looked up again to choose a target.
+case are LC4\*R → DNp01 2580/2580 (sum/max) and DNp01 → TTMn 90/70. On the
+traced graph the 90/70 pair is DNp01(GF)\_R → TTMn_R 70 and DNp01(GF)\_L → TTMn_L 20. The 70 is the maximum. It is the reported giant-fiber edge, not the residual
+partner. The direct LC4_R → TTMn weight is 0
+([validation](validation.md)). Those numbers are why the case was calibratable.
+They were not looked up again to choose a target.
 
 Walking, song, grooming, and proboscis extension need a map from motor neurons
 onto joints. This repository does not have that map. The held-out olfactory
@@ -120,6 +122,17 @@ FlyBody's published tasks are locomotion and flight. The task list has no
 looming-jump environment. Vision-guided flight observes a rendered camera. It
 does not take `LC4_R` spikes. Nothing read on that day maps `TTMn_R` onto a
 tergotrochanter actuator, or a MaleCNS motor neuron onto an action coordinate.
+
+A re-read on 2026-10-12 of FlyBody commit `d015e9b` (2025-07-30) found the same
+timesteps. The 59 walking actions in that commit's `docs/getting-started.ipynb`
+are named actuators: claw adhesion, head, abdomen, and leg joints through
+`tarsus2`. Wings and mouth are off. No name is a MaleCNS motor neuron. The
+body's sex is still unstated outside the notebooks. `pyproject.toml` there
+allows Python >=3.10 and pins `numpy==1.26.4`. Issue
+[#19](https://github.com/gianlucamazza/flymsg/issues/19) records the re-read.
+It does not select FlyBody. Issue
+[#20](https://github.com/gianlucamazza/flymsg/issues/20) keeps the residual
+`TTMn_R` partner unnamed.
 
 The documented FlyBody install is Python 3.10 plus optional TensorFlow, Acme,
 Ray, and CUDA. flymsg requires Python 3.13 and does not depend on MuJoCo.

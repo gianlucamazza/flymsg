@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.14 — 2026-10-12
+
+### Documentation
+
+- **Two documentary issues, no run.** #19 records the FlyBody re-read at
+  `d015e9b`: same timesteps, 59 named walking actuators, no MaleCNS motor map.
+  #20 keeps the residual `TTMn_R` partner unnamed. The synapse list read the
+  same day cannot choose the next silencing. Version 1 is unchanged. Provenance
+  cites the numeric-lock note. Nothing was rerun. `w_syn` stays 0.192.
+
 ## 0.8.13 — 2026-10-12
 
 ### Dependencies

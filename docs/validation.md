@@ -53,7 +53,14 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   unmet. A later held-out case, a name for the unnamed `TTMn_R` partner, an animal test
   of `gf_required_for_the_jump_bit`, a neuromodulation table, a learning rule, or a body
   each need evidence that is not in this repository. Each would be a new issue and a new
-  version. None of them is queued.
+  version. The runs stay unqueued.
+- **Two documentary issues** (2026-10-12,
+  [#19](https://github.com/gianlucamazza/flymsg/issues/19),
+  [#20](https://github.com/gianlucamazza/flymsg/issues/20)). They do not run and they do
+  not edit version 1. #19 records the FlyBody re-read at `d015e9b`: the same timesteps,
+  59 named walking actuators, and no MaleCNS motor map. #20 records that the residual
+  `TTMn_R` partner stays unnamed, and that the synapse list read the same day cannot
+  choose the next silencing. `w_syn` stays 0.192.
 - **Numeric lock** (2026-10-12). numba is 0.68.0 and llvmlite is 0.50.0. The unit suite
   matches the NumPy reference kernel. The scored runs were not repeated, so their
   manifests stay on numba 0.67.0.

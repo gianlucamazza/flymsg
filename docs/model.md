@@ -151,7 +151,8 @@ The looming silence failure is not a reason to add a giant-fiber gap junction. S
 `DNp01` removes that cell's output, chemical and electrical together. `TTMn_R` still
 reaches 3 spikes, so some other partner still drives it. A synapse that starts at `DNp01`
 cannot put those spikes back. Which partner is not named here: that would be a new
-measurement, and it is not this decision.
+measurement, and it is not this decision. Issue #20 records that limit. It does not
+name the partner and it does not run.
 
 Issue #10 is closed as blocked (v0.8.9). Dopamine, octopamine and serotonin have sign 0.
 The sugar and bitter cases are stimulus identity, not a feeding state. No
