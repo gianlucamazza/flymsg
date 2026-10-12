@@ -16,6 +16,11 @@ local tables with the gallery commands, exporting every scene before it writes a
 manifest records a clean tree. The site build copies the page next to each scene. Geometry
 is not stored: it streams from GCS as it does locally.
 
+A scene draws the stimulus and the neurons that respond, not all 165,122. The README links
+add `?neuropils=1`, so the 114 brain and VNC shells outline the whole CNS around the
+activity; without it a replay starts with the shells hidden. The shells stream in after the
+neurons and cost GPU time while the replay plays.
+
 ## Sources
 
 | data            | format                                                     | use                                                                      |

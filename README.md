@@ -31,12 +31,12 @@ in `docs/live/` (rebuild them with `scripts/build_live_scenes.py`). A desktop GP
 
 **Looming, LC4_R, 120 ms, stimulus on.** The pulse lasts 300 ms. The stimulus is the 55
 LC4_R neurons. The response fills the brain and the ventral nerve cord.
-[Open live](https://gianlucamazza.github.io/flymsg/live/looming/?t=120&paused).
+[Open live](https://gianlucamazza.github.io/flymsg/live/looming/?t=120&paused&neuropils=1).
 
 ![pIP10 song pathway at 150 ms. The two stimulus neurons are cyan, responding neurons are magenta, and silent neurons stay desaturated.](docs/img/pathway.png)
 
 **Song pathway, pIP10, 150 ms, stimulus on.** Both pIP10 neurons are the cyan stimulus.
-Recruited neurons are magenta. [Open live](https://gianlucamazza.github.io/flymsg/live/song/?t=150&paused).
+Recruited neurons are magenta. [Open live](https://gianlucamazza.github.io/flymsg/live/song/?t=150&paused&neuropils=1).
 
 ![The same pIP10 replay at 150 ms, coloured by sex annotation. Male-specific neurons are magenta, dimorphic neurons are yellow, and neurons without that label are grey.](docs/img/dimorphism.png)
 
@@ -44,7 +44,7 @@ Recruited neurons are magenta. [Open live](https://gianlucamazza.github.io/flyms
 Magenta is male-specific, and both pIP10 neurons are in it. Yellow is dimorphic, and both
 dMS9 neurons are in it. Grey has no dimorphism label; both dPR1 neurons are there, and they
 carry `fru+dsx` on the other field. Enrichment for the whole cases is in
-[dimorphism](docs/dimorphism.md). [Open live](https://gianlucamazza.github.io/flymsg/live/song/?t=150&paused&color=dimorphism).
+[dimorphism](docs/dimorphism.md). [Open live](https://gianlucamazza.github.io/flymsg/live/song/?t=150&paused&color=dimorphism&neuropils=1).
 
 ![Anatomy of pIP10, dPR1 and dMS9, one colour per type, inside the neuropil shells of the brain and the ventral nerve cord.](docs/img/anatomy.png)
 
