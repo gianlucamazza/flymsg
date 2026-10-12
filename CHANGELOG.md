@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.22 — 2026-10-12
+
+### Architecture
+
+- **Architecture ADR with contract tests (#30).** `docs/architecture.md` records the module
+  layers, the pain points (copied lock code, a draw engine private to `dimorphism`, an
+  unversioned viewer bundle, unindexed runs, spike-only recording) and six boundaries:
+  dataset tables, engine (`sim.run` and `CpuRuntime`), protocol locks, run manifest, viewer
+  bundle, embodiment contract. `tests/test_contracts.py` pins each one; the engine test runs
+  `CpuRuntime` in blocks against `sim.run` on a synthetic chain. The migration order puts
+  the lock helper and the draw engine first, then the bundle version, then #26, #27, #25,
+  #28 and #31 on those boundaries. Nothing is moved yet; no protocol, seed, default or
+  manifest changes.
+
 ## 0.8.21 — 2026-10-12
 
 ### Engine

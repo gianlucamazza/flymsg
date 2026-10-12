@@ -42,6 +42,7 @@ EXTERNAL = {
 PAGES = (
     ("index", "README.md", "Overview"),
     ("data", "docs/data.md", "Data"),
+    ("architecture", "docs/architecture.md", "Architecture"),
     ("model", "docs/model.md", "Model"),
     ("embodiment", "docs/embodiment.md", "Embodiment M0"),
     ("runtime", "docs/runtime.md", "Runtime"),
