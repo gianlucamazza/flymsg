@@ -69,15 +69,15 @@ the research workstreams. They overlap, so this table is the one map between the
 research workstreams were filed as R1–R4, which collides with runtime R1–R2 ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40));
 here they are research A–D.
 
-| Step                     | Issues                                                                                                                                                                                                                                             | Status                                                                                                                         |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Online neural stepping   | E1 [#43](https://github.com/gianlucamazza/flymsg/issues/43), runtime R0 ([runtime](runtime.md))                                                                                                                                                    | done in v0.8.21: `CpuRuntime` runs in blocks through checkpoint and restore and matches `sim.run` bit for bit, also on MaleCNS |
-| Looming stimulus and LC4 | E2 [#44](https://github.com/gianlucamazza/flymsg/issues/44), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34), research A [#49](https://github.com/gianlucamazza/flymsg/issues/49)                                                      | exploratory encoder and runtime bridge in v0.8.23 (below); no LC4 tuning data, no bodyId map                                   |
-| Closed loop on the body  | E3 [#45](https://github.com/gianlucamazza/flymsg/issues/45), E5 [#52](https://github.com/gianlucamazza/flymsg/issues/52), M1 [#33](https://github.com/gianlucamazza/flymsg/issues/33), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34) | M1 jump body with an engineered decoder in v0.8.34 (below); the loop is not closed: feedback does not reach the neural runtime |
-| Motor map                | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research B [#50](https://github.com/gianlucamazza/flymsg/issues/50), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | blocked: `validation/motor_map.yaml` has no mapped row                                                                         |
-| Physical body            | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research C [#51](https://github.com/gianlucamazza/flymsg/issues/51), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | open; FlyBody not selected ([#19](https://github.com/gianlucamazza/flymsg/issues/19))                                          |
-| Falsification            | research D [#53](https://github.com/gianlucamazza/flymsg/issues/53), M4 [#36](https://github.com/gianlucamazza/flymsg/issues/36)                                                                                                                   | blocked on the steps above; existing calibration tasks are not held-out evidence                                               |
-| Observability            | E6 [#54](https://github.com/gianlucamazza/flymsg/issues/54), workbench [#27](https://github.com/gianlucamazza/flymsg/issues/27)                                                                                                                    | open; run manifests exist (`flymsg.run_manifest/v1`)                                                                           |
+| Step                     | Issues                                                                                                                                                                                                                                             | Status                                                                                                                                                                        |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Online neural stepping   | E1 [#43](https://github.com/gianlucamazza/flymsg/issues/43), runtime R0 ([runtime](runtime.md))                                                                                                                                                    | done in v0.8.21: `CpuRuntime` runs in blocks through checkpoint and restore and matches `sim.run` bit for bit, also on MaleCNS                                                |
+| Looming stimulus and LC4 | E2 [#44](https://github.com/gianlucamazza/flymsg/issues/44), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34), research A [#49](https://github.com/gianlucamazza/flymsg/issues/49)                                                      | exploratory encoder and runtime bridge in v0.8.23 (below); no LC4 tuning data, no bodyId map                                                                                  |
+| Closed loop on the body  | E3 [#45](https://github.com/gianlucamazza/flymsg/issues/45), E5 [#52](https://github.com/gianlucamazza/flymsg/issues/52), M1 [#33](https://github.com/gianlucamazza/flymsg/issues/33), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34) | M1 jump body (v0.8.34) and M2 closed loop with its controls (v0.8.35, below); engineered transducer and decoder; on MaleCNS at realistic scales the feedback changes no input |
+| Motor map                | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research B [#50](https://github.com/gianlucamazza/flymsg/issues/50), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | blocked: `validation/motor_map.yaml` has no mapped row                                                                                                                        |
+| Physical body            | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research C [#51](https://github.com/gianlucamazza/flymsg/issues/51), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | open; FlyBody not selected ([#19](https://github.com/gianlucamazza/flymsg/issues/19))                                                                                         |
+| Falsification            | research D [#53](https://github.com/gianlucamazza/flymsg/issues/53), M4 [#36](https://github.com/gianlucamazza/flymsg/issues/36)                                                                                                                   | blocked on the steps above; existing calibration tasks are not held-out evidence                                                                                              |
+| Observability            | E6 [#54](https://github.com/gianlucamazza/flymsg/issues/54), workbench [#27](https://github.com/gianlucamazza/flymsg/issues/27)                                                                                                                    | open; run manifests exist (`flymsg.run_manifest/v1`)                                                                                                                          |
 
 ### Objective
 
@@ -167,6 +167,34 @@ replay.
 takeoff at 67.0 ms. Both jump about 10 µm with this arbitrary gain. The body inherits the
 failed silence check of the one-bit protocol ([behavior](behavior.md)): silencing the giant
 fiber does not stop the jump, and this is not a validated jump mechanism.
+
+### M2 closed loop (v0.8.35, #34)
+
+`flymsg.loop.run_loop` moves a disc of radius `r` toward the fly along −x; the fly's body
+(`JumpBody`) moves along +z. At each 1 ms control boundary the angular size is computed from
+the disc's position and the body's current height, its change over the next period becomes
+a rate through an engineered transducer (gain in Hz per rad/s, capped; no LC4 value exists
+for either), and seeded Poisson counts drive the stimulated neurons in `CpuRuntime` for that
+period. The motor neuron's spikes in the period become a force (the M1 engineered decoder)
+applied over the next one. A jump therefore changes the input that follows it. Unlike the
+one-bit protocol, which only cuts the drive, the input here is recomputed from the body.
+
+Three controls run with the same seed: `disconnected` computes the input with the body held
+at z = 0, `shuffled` uses that rate series in a seeded random order, and `replay` feeds back
+the closed loop's recorded input counts, which must reproduce its spikes exactly. Tests on a
+synthetic chain with a body that rises centimetres check that the first input after takeoff
+reads the new height, that the disconnected input ignores the body, that the replay
+reproduces the spikes, that shuffling keeps the rates, and that a loop with the pose forced
+to zero fails the first test.
+
+On MaleCNS, `flymsg loop --sim LC4_R --radius-m 0.01 --distance-m 0.2 --speed-m-s 0.5
+--transducer-gain 30 --max-rate-hz 200 --gain-n 2e-5 --mass-kg 1e-6` (300 ms, seed 0): the
+body lifts at 103 ms after 8 `TTMn_R` spikes and rises about 10 µm. A disc that is still
+centimetres away barely changes size when the body moves microns, so the closed and the
+disconnected runs draw the same input at every step and give the same spikes. The replay
+reproduces them; the shuffled input lifts the body at 29 ms. At these scales the loop is
+closed in code and has no measurable effect on the model, and nothing here is a behaviour of
+the fly.
 
 ### Evidence each step needs
 

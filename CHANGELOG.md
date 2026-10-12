@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.35 — 2026-10-12
+
+### Embodiment
+
+- **M2 closed loop (#34).** `flymsg loop` recomputes the drive of the stimulated neurons from
+  a looming disc and the body's height at every control period, through an engineered
+  transducer, and moves the body from the motor neuron's spikes; disconnected, shuffled and
+  replay controls run with the same seed. Tests show a jump changes the next input and the
+  controls hold. On MaleCNS at realistic scales (a 10 µm jump, a disc centimetres away) the
+  feedback changes no input: closed and disconnected runs are identical. Reported as is.
+  `CpuRuntime.traced_spikes` reads the traced neurons' spikes of steps already run.
+
 ## 0.8.34 — 2026-10-12
 
 ### Embodiment

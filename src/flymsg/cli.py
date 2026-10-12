@@ -19,6 +19,7 @@ from flymsg import (
     graph,
     intervention,
     jump,
+    loop,
     manifest,
     nulls,
     prereg,
@@ -465,6 +466,82 @@ def cmd_jump(a, neurons, edges):
         {"seed": a.seed}, started, extra={"label": "exploratory", "note": jump.NOTE},
     )  # fmt: skip
     print(f"-> {a.out / 'trajectory.json'}")
+
+
+def cmd_loop(a, neurons, edges):
+    """M2: closed loop with its three controls, same seed, engineered transducer and decoder."""
+    started = datetime.now(UTC)
+    stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.sim]))
+    motor = data.resolve(neurons, a.motor)
+    if motor.size != 1:
+        sys.exit(f"flymsg: {a.motor} is {motor.size} neurons; the decoder reads one")
+    p = sim.Params()
+    W = sim.network(neurons, edges, p)
+    kw = {
+        "looming": loop.Looming(a.radius_m, a.distance_m, a.speed_m_s),
+        "transducer": loop.Transducer(a.transducer_gain, a.max_rate_hz),
+        "decoder_gain_n": a.gain_n,
+        "mass_kg": a.mass_kg,
+        "duration_ms": a.duration,
+        "seed": a.seed,
+        "p": p,
+    }
+    runs = {
+        m: loop.run_loop(W, stim, int(motor[0]), mode=m, **kw)
+        for m in ("closed", "disconnected", "shuffled")
+    }
+    runs["replay"] = loop.run_loop(
+        W,
+        stim,
+        int(motor[0]),
+        mode="replay",
+        replay_counts=runs["closed"]["input_counts"],
+        **kw,
+    )
+    summary = {}
+    for mode, r in runs.items():
+        lifted = np.flatnonzero(r["height_m"] > 0)
+        summary[mode] = {
+            "motor_spikes": int(r["motor_spikes"].sum()),
+            "input_kicks": int(r["input_counts"].sum()),
+            "takeoff_ms": float(r["t_ms"][lifted[0]]) if lifted.size else None,
+            "max_height_m": float(r["height_m"].max()),
+        }
+        print(f"{mode:>12}: {summary[mode]}")
+    same = np.array_equal(
+        runs["replay"]["motor_spikes"], runs["closed"]["motor_spikes"]
+    )
+    differ = int(
+        (runs["closed"]["input_counts"] != runs["disconnected"]["input_counts"])
+        .any(axis=1)
+        .sum()
+    )
+    print(f"replay reproduces the closed loop's motor spikes: {same}")
+    print(f"neural steps whose input differs between closed and disconnected: {differ}")
+    print(jump.NOTE)
+    a.out.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(a.out / "loop.npz", **{
+        f"{m}_{k}": v for m, r in runs.items() for k, v in r.items()
+        if isinstance(v, np.ndarray) and k != "input_counts"
+    })  # fmt: skip
+    (a.out / "loop.json").write_text(
+        json.dumps(
+            {
+                "summary": summary,
+                "replay_matches": same,
+                "input_steps_differing": differ,
+            },
+            indent=1,
+        )
+    )
+    _stamp(
+        a.out, "loop", a, neurons, edges,
+        {"sim": list(a.sim), "motor": a.motor, "radius_m": a.radius_m, "distance_m": a.distance_m,
+         "speed_m_s": a.speed_m_s, "transducer_gain": a.transducer_gain, "max_rate_hz": a.max_rate_hz,
+         "gain_n": a.gain_n, "mass_kg": a.mass_kg, "duration": a.duration, "decoder": jump.ENGINEERED},
+        {"seed": a.seed}, started, extra={"label": "exploratory", "note": jump.NOTE},
+    )  # fmt: skip
+    print(f"-> {a.out}")
 
 
 def cmd_wiring_null(a, neurons, edges):
@@ -1062,6 +1139,7 @@ COMMANDS = {
     "explore": cmd_explore,
     "confirm": cmd_confirm,
     "jump": cmd_jump,
+    "loop": cmd_loop,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -1082,6 +1160,7 @@ MALECNS_ONLY = (
     "explore",
     "confirm",
     "jump",
+    "loop",
 )
 
 
@@ -1150,6 +1229,26 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--stim-ms", type=float, default=300.0)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--out", type=Path, default=Path("runs/jump"))
+    s = sub.add_parser(
+        "loop",
+        help="M2: looming closed loop with disconnected, shuffled and replay controls",
+    )
+    s.add_argument("--sim", nargs="+", required=True, metavar="STIM")
+    s.add_argument("--motor", default="TTMn_R")
+    s.add_argument("--radius-m", type=float, required=True)
+    s.add_argument("--distance-m", type=float, required=True)
+    s.add_argument("--speed-m-s", type=float, required=True)
+    s.add_argument(
+        "--transducer-gain", type=float, required=True, help="Hz per rad/s (engineered)"
+    )
+    s.add_argument("--max-rate-hz", type=float, required=True)
+    s.add_argument(
+        "--gain-n", type=float, required=True, help="newtons per spike (engineered)"
+    )
+    s.add_argument("--mass-kg", type=float, required=True)
+    s.add_argument("--duration", type=float, default=300.0)
+    s.add_argument("--seed", type=int, default=0)
+    s.add_argument("--out", type=Path, default=Path("runs/loop"))
     s = sub.add_parser(
         "explore",
         help="paths between two populations, then silence each intermediate type (exploratory)",
