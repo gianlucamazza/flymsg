@@ -102,5 +102,6 @@ flymsg.scene/v1` (`viz.SCENE_SCHEMA`); the page warns in the console on another 
      cannot be promoted.
    - #25 causal explorer: generalise the `silence_scan` pattern (lock → rule-chosen set →
      screen → fresh-seed confirmation against a matched null) on top of step 3.
-   - #28 robustness: sensitivity grids as locks (B3), never editing `sim.Params` defaults.
+   - #28 robustness (tool in v0.8.31): `flymsg.sensitivity` runs a locked grid (B3) and
+     reports every cell; `sim.Params` defaults never change.
    - #31 embodiment: bodies attach through B6 only.

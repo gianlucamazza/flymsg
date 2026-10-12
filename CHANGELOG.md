@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.31 — 2026-10-12
+
+### Analysis
+
+- **Sensitivity grid, before its run (#28).** `validation/sensitivity.yaml` fixes a
+  `w_syn` × `th_jump` grid around the defaults (10 cells, 6 cases, seeds 0–4) and its
+  metrics. `flymsg sensitivity --run` reports every cell, whether each target holds at the
+  v4 floor, the seed spread apart from the parameter spread, and an SVG figure, with a
+  manifest. A report, not a score: nothing is chosen from it and no default changes. The
+  grid has not run yet.
+
 ## 0.8.30 — 2026-10-12
 
 ### Viz

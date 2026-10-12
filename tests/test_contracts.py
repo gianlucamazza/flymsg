@@ -20,6 +20,7 @@ from flymsg import (
     manifest,
     motor_map,
     prereg,
+    sensitivity,
     silence_scan,
     sim,
     viz,
@@ -87,6 +88,7 @@ def test_b2_runtime_runs_the_same_engine():
         (benchmarks, benchmarks.PATH),
         (motor_map, motor_map.PATH),
         (silence_scan, silence_scan.PATH),
+        (sensitivity, sensitivity.PATH),
     ],
 )
 def test_b3_protocol_locks(module, path):

@@ -21,6 +21,7 @@ from flymsg import (
     nulls,
     prereg,
     quality,
+    sensitivity,
     silence_scan,
     sim,
     tracing,
@@ -275,6 +276,51 @@ def cmd_trace(a, neurons, edges):
         extra={"neurons_fired": int((result.counts.sum(axis=0) > 0).sum())},
     )
     print(f"trace -> {a.out / 'trace.npz'}")
+
+
+def cmd_sensitivity(a, neurons, edges):
+    """Run the locked sensitivity grid and write every cell, the spreads and a figure."""
+    started = datetime.now(UTC)
+    doc = sensitivity.assert_matches_code()
+    print(sensitivity.summary(doc))
+    cells = sensitivity.run(neurons, edges, a.workers, a.checkpoint)
+    out = Path("runs/sensitivity") / f"v{doc['version']}"
+    out.mkdir(parents=True, exist_ok=True)
+    cells.to_csv(out / "cells.csv", index=False)
+    held = sensitivity.holds(cells, doc)
+    held.to_csv(out / "holds.csv", index=False)
+    spread = sensitivity.spreads(cells)
+    spread.to_csv(out / "spreads.csv", index=False)
+    (out / "rate.svg").write_text(sensitivity.svg(cells, doc))
+    grid = held.pivot_table(
+        index=["case", "target"], columns=["th_jump", "w_syn_factor"], values="holds"
+    )
+    text = "\n".join(
+        [
+            sensitivity.summary(doc),
+            "holds (v4 floor) per cell:",
+            grid.replace({True: "yes", False: "no"}).to_string(),
+            "spreads (seed range at the default cell vs range of medians over cells):",
+            spread.to_string(index=False),
+        ]
+    )
+    (out / "report.txt").write_text(text + "\n")
+    print(text)
+    _stamp(
+        out,
+        "sensitivity --run",
+        a,
+        neurons,
+        edges,
+        {
+            "sensitivity_version": doc["version"],
+            "sensitivity_sha256": doc["content_sha256"],
+            "grid": doc["grid"],
+        },
+        {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
+        started,
+    )
+    print(f"report -> {out / 'report.txt'}")
 
 
 def cmd_wiring_null(a, neurons, edges):
@@ -867,6 +913,7 @@ COMMANDS = {
     "behavior": cmd_behavior,
     "silence-scan": cmd_silence_scan,
     "trace": cmd_trace,
+    "sensitivity": cmd_sensitivity,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -882,6 +929,7 @@ MALECNS_ONLY = (
     "behavior",
     "silence-scan",
     "trace",
+    "sensitivity",
 )
 
 
@@ -927,6 +975,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="score the two frozen sensitivity corners (does not replace --run)",
     )
+    s = sub.add_parser(
+        "sensitivity",
+        help="print the locked w_syn x th_jump grid, or run it with --run (a report)",
+    )
+    s.add_argument("--run", action="store_true")
+    s.add_argument("--workers", type=int, default=1)
+    s.add_argument("--checkpoint", type=Path)
     s = sub.add_parser(
         "trace",
         help="record v, g, threshold, spikes and input of chosen neurons (exploratory)",
@@ -1220,6 +1275,8 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
+        if a.cmd == "sensitivity" and not a.run:
+            return print(sensitivity.summary())
         if a.cmd == "viz-compare":  # reads two exports; loads no dataset
             scene = viz.compare_bundles(
                 a.a, a.b, a.out, tuple(a.labels), tuple(a.status), tuple(a.notes)
@@ -1251,6 +1308,8 @@ def main() -> None:
     except benchmarks.BenchmarkError as err:
         sys.exit(f"flymsg: {err}")
     except behavior.BehaviorError as err:
+        sys.exit(f"flymsg: {err}")
+    except sensitivity.SensitivityError as err:
         sys.exit(f"flymsg: {err}")
     except silence_scan.ScanError as err:
         sys.exit(f"flymsg: {err}")

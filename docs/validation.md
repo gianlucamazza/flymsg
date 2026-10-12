@@ -258,6 +258,29 @@ With the engine fixed, much less adaptation is needed (2 mV instead of 6). Stabi
 monotonic in `th_jump` (6 fails where 2, 4, 8 and 12 pass at `w_syn` 0.275), a sign that the
 runaway regime depends on the seed near its edge, as already seen with P1.
 
+## Sensitivity grid (a report, not a score)
+
+[`validation/sensitivity.yaml`](../validation/sensitivity.yaml) (version 1, issue #28) fixes a
+grid before it runs: `w_syn` at 0.8, 0.9, 1.0, 1.1 and 1.2 times the default, `th_jump` at 0
+and 2 mV, seeds 0–4, the six battery cases at the battery protocol. For every cell, case,
+target and seed it records the best target neuron's rate and first spike, how many neurons
+fire during the stimulus, and how many still fire from 400 to 600 ms. `flymsg sensitivity
+--run` writes every cell (`cells.csv`), whether each target holds at the v4 floor (3 spikes in
+2/3 of the seeds, `holds.csv`), the spreads (`spreads.csv`), a figure (`rate.svg`) and a
+manifest to `runs/sensitivity/v1/`.
+
+Two spreads are kept apart. The seed range at the default cell is noise from the Poisson
+input; the range of the seed medians across cells is sensitivity to the two parameters.
+Numerical implementation (CPU against the native and GPU lanes) and biological uncertainty
+(parameters the LIF does not have) are outside this grid.
+
+**Selection bias.** The defaults were chosen on the battery (model selection, criterion v4),
+so the grid is centred where those cases pass by construction; a region where they hold says
+how wide that optimum is, not that the model generalises. **Multiple comparisons.** Ten cells,
+six cases, several targets and four metrics are read together; no cell is tested for
+significance and no p-value is attached. Nothing is chosen from the grid, and `sim.Params`
+keeps its defaults.
+
 ## Findings log
 
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
