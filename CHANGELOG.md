@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8.28 — 2026-10-12
+
+### Diagnostics
+
+- **Record neuron states (#26).** `flymsg trace` and `flymsg.tracing.record` record `v`, `g`,
+  threshold offset, refractory state, spikes and input of chosen neurons. They drive
+  `CpuRuntime`, so the run equals `sim.run`; the recorded states equal the NumPy oracle bit
+  for bit. Large requests warn or are refused.
+- **Why the held-out ORN case keeps firing (exploratory).** 4,907 neurons outlast the
+  stimulus, most of them Kenyon cells; 73.4% of the excitatory synapses onto Kenyon cells
+  come from other Kenyon cells, and in a point LIF that loop sustains itself. A model limit,
+  not a fit: no score changes (`scripts/orn_persistence.py`, `docs/benchmarks.md`).
+
+### Viz
+
+- **Spike raster of the selection (#22).** Spikes per bin of the selected neuron and its
+  partners, the stimulus window, a cursor on the bin the 3D glow shows (shared `binAt`),
+  drag to move in time, arrow keys to step, and an export with the scene manifest.
+
 ## 0.8.27 — 2026-10-12
 
 ### Results

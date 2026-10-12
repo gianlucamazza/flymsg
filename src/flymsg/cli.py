@@ -22,6 +22,7 @@ from flymsg import (
     quality,
     silence_scan,
     sim,
+    tracing,
     validate,
     viz,
     wiring,
@@ -201,6 +202,78 @@ def cmd_sim(a, neurons, edges):
             started,
             extra={"out": os.fspath(a.out)},
         )
+
+
+def cmd_trace(a, neurons, edges):
+    """Record v, g, threshold, refractory state, spikes and input of chosen neurons."""
+    started = datetime.now(UTC)
+    stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.stim]))
+    watch = np.concatenate([data.resolve(neurons, q) for q in a.neurons])
+    silence = (
+        np.concatenate([data.resolve(neurons, q) for q in a.silence])
+        if a.silence
+        else None
+    )
+    params = sim.Params(w_syn=a.w_syn, th_jump=a.th_jump)
+    W = sim.network(neurons, edges, params)
+    trace, result = tracing.record(
+        W,
+        stim,
+        watch,
+        rate_hz=a.rate,
+        duration_ms=a.duration,
+        stim_ms=a.stim_ms,
+        seed=a.seed,
+        p=params,
+        silence=silence,
+        every=a.every,
+    )
+    names = neurons["instance"].fillna(neurons["type"]).fillna("untyped").to_numpy()
+    print(
+        f"{watch.size} neurons, {trace.v.shape[0]} samples every {trace.step_ms:g} ms"
+    )
+    for j, i in enumerate(watch):
+        print(
+            f"  {names[i]} ({neurons['bodyId'].iat[i]}): {int(trace.spikes[:, j].sum())} spikes,"
+            f" v {trace.v[:, j].min():.2f}..{trace.v[:, j].max():.2f} mV,"
+            f" g max {trace.g[:, j].max():.2f} mV"
+        )
+    a.out.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(
+        a.out / "trace.npz",
+        body_ids=neurons["bodyId"].to_numpy()[watch],
+        times_ms=trace.times_ms,
+        v=trace.v,
+        g=trace.g,
+        th=trace.th,
+        refractory=trace.refractory,
+        spikes=trace.spikes,
+        input_counts=trace.input_counts,
+        dt_ms=np.array(trace.dt_ms),
+    )
+    _stamp(
+        a.out,
+        "trace",
+        a,
+        neurons,
+        edges,
+        {
+            "stim": list(a.stim),
+            "neurons": list(a.neurons),
+            "silence": list(a.silence or []),
+            "rate": a.rate,
+            "duration": a.duration,
+            "stim_ms": a.stim_ms,
+            "every": a.every,
+            "w_syn": params.w_syn,
+            "th_jump": params.th_jump,
+            "units": "v, g, th in mV; times in ms; model states, not recordings",
+        },
+        {"seed": a.seed},
+        started,
+        extra={"neurons_fired": int((result.counts.sum(axis=0) > 0).sum())},
+    )
+    print(f"trace -> {a.out / 'trace.npz'}")
 
 
 def cmd_wiring_null(a, neurons, edges):
@@ -784,6 +857,7 @@ COMMANDS = {
     "benchmarks": cmd_benchmarks,
     "behavior": cmd_behavior,
     "silence-scan": cmd_silence_scan,
+    "trace": cmd_trace,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -798,6 +872,7 @@ MALECNS_ONLY = (
     "benchmarks",
     "behavior",
     "silence-scan",
+    "trace",
 )
 
 
@@ -843,6 +918,23 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="score the two frozen sensitivity corners (does not replace --run)",
     )
+    s = sub.add_parser(
+        "trace",
+        help="record v, g, threshold, spikes and input of chosen neurons (exploratory)",
+    )
+    s.add_argument("stim", nargs="+", help="stimulated types/instances/bodyIds")
+    s.add_argument(
+        "--neurons", nargs="+", required=True, help="neurons to record (types/bodyIds)"
+    )
+    s.add_argument("--silence", nargs="+", help="neurons that never fire")
+    s.add_argument("--rate", type=float, default=100.0)
+    s.add_argument("--duration", type=float, default=600.0, help="ms")
+    s.add_argument("--stim-ms", type=float, default=300.0)
+    s.add_argument("--seed", type=int, default=0)
+    s.add_argument("--every", type=int, default=1, help="record every N neural steps")
+    s.add_argument("--w-syn", type=float, default=sim.Params.w_syn)
+    s.add_argument("--th-jump", type=float, default=sim.Params.th_jump)
+    s.add_argument("--out", type=Path, default=Path("runs/trace"))
     s = sub.add_parser(
         "silence-scan",
         help="print the frozen residual TTMn_R partner scan (issue #20), or run it with --run",

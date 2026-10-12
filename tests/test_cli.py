@@ -1,6 +1,8 @@
 """Smoke tests: every subcommand runs on a tiny synthetic dataset, and bad arguments give a
 message instead of a traceback."""
 
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -161,3 +163,15 @@ def test_graph_helpers(data_dir):
     assert np.allclose(frac, [1.0, 1.0])  # each target has one input
     up = graph.partners(neurons, edges, np.array([1]), upstream=True)
     assert up.index.tolist() == ["A"] and up["synapses"].tolist() == [200]
+
+
+def test_trace_writes_states_and_a_manifest(monkeypatch, capsys, data_dir, tmp_path):
+    out = tmp_path / "trace"
+    run(
+        monkeypatch, capsys, "--data", str(data_dir), "trace", "A", "--neurons", "B", "C",
+        "--duration", "50", "--stim-ms", "30", "--out", str(out),
+    )  # fmt: skip
+    got = np.load(out / "trace.npz")
+    assert got["v"].shape == (500, 2) and got["spikes"].shape == (500, 2)
+    assert got["body_ids"].tolist() == [20, 30]
+    assert json.loads((out / "manifest.json").read_text())["command"] == "trace"

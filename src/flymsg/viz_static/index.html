@@ -77,6 +77,43 @@
         border-radius: 4px;
         cursor: pointer;
       }
+      #raster {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        padding: 8px 10px;
+        background: var(--panel);
+        border-radius: 8px;
+        max-width: calc(100vw - 24px);
+        max-height: 45vh;
+        overflow: auto;
+      }
+      #raster header {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 4px;
+        color: var(--muted);
+      }
+      #raster button {
+        margin-left: auto;
+        background: none;
+        color: var(--fg);
+        border: 1px solid var(--muted);
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #raster canvas {
+        display: block;
+        cursor: ew-resize;
+        touch-action: none;
+      }
+      @media (max-width: 900px) {
+        #raster {
+          left: 12px;
+          bottom: 150px;
+        }
+      }
       #loading {
         position: fixed;
         inset: 0;
@@ -97,6 +134,14 @@
   </head>
   <body>
     <div id="loading">loading scene…</div>
+    <section id="raster" hidden aria-label="spike raster of the selection">
+      <header>
+        <span>spikes per 10 ms bin (model replay) · drag to move in time · ← → step one bin</span>
+        <button type="button">export</button>
+      </header>
+      <canvas></canvas>
+      <div class="more muted"></div>
+    </section>
     <section id="selection" hidden aria-live="polite" aria-label="selected neuron">
       <button type="button" aria-label="clear the selection (Esc)">clear</button>
       <pre></pre>

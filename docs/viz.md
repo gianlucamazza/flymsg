@@ -38,6 +38,16 @@ The counts come from `partners.json`, which `flymsg viz` writes next to `scene.j
 the same numbers. The page loads the table on the first selection. It is anatomy from the
 dataset, not simulation output, and it is chemical synapses only.
 
+## Raster
+
+In a replay, a selection also opens a raster of the selected neuron and its partners in the
+scene (up to 40 rows; the rest are counted). A cell is the spike count of that neuron in one
+bin of `activity.bin`, not an exact spike time. The stimulus window is shaded, and the cursor
+marks the bin the 3D glow is showing: both take it from `raster.binAt`, and a node test checks
+they agree at every time. Dragging on the raster moves the replay time, the arrow keys step
+one bin, and a neuron with no spike is labelled so. `export` downloads the rows with the
+scene manifest's commit, seeds and configuration.
+
 ## Sources
 
 | data            | format                                                     | use                                                                      |

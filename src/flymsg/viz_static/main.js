@@ -47,6 +47,12 @@ import {
   panelLines,
   selectParam,
 } from "./partners.js";
+import {
+  binAt,
+  rasterRows,
+  selectionExport,
+  selectionRows,
+} from "./raster.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
 
@@ -1130,6 +1136,7 @@ function updateActivity(t) {
   instanceTexturesDirty = true;
   clockEl.textContent = `t = ${t.toFixed(0)} ms · stimulus ${t < A.stim_ms ? "on" : "off"}`;
   shownT = t;
+  drawRaster();
   invalidate();
 }
 
@@ -1286,6 +1293,7 @@ async function selectNeuron(k) {
   view.focus = focusRoles(k, entry);
   refreshColours();
   invalidate();
+  showRaster(k, entry);
   panel.hidden = false;
   panel.querySelector("pre").textContent = panelLines(
     n,
@@ -1303,6 +1311,7 @@ function clearSelection() {
   refreshColours();
   invalidate();
   panel.hidden = true;
+  hideRaster();
   const url = new URL(location.href);
   url.searchParams.delete("select");
   history.replaceState(null, "", url);
@@ -1317,6 +1326,137 @@ function find(text) {
 }
 
 panel.querySelector("button").addEventListener("click", clearSelection);
+
+// ---------- raster: the selection's spikes per bin, in step with the replay ----------
+const rasterEl = document.getElementById("raster");
+const rasterCanvas = rasterEl.querySelector("canvas");
+const RASTER_LABEL_PX = 120,
+  RASTER_ROW_PX = 9,
+  RASTER_AXIS_PX = 18;
+let rasterState = null;
+function showRaster(k, entry) {
+  if (!replay) return;
+  const { rows, hidden } = selectionRows(k, entry);
+  rasterState = {
+    rows: rasterRows(spikes, { n: N, bins: A.bins }, rows),
+    hidden,
+  };
+  rasterEl.querySelector("header span").textContent =
+    `spikes per ${A.bin_ms} ms bin (model replay) · drag to move in time · ← → step one bin`;
+  rasterEl.querySelector(".more").textContent = hidden
+    ? `${hidden} more partners in the scene are not shown`
+    : "";
+  rasterEl.hidden = false;
+  drawRaster();
+}
+function hideRaster() {
+  rasterState = null;
+  rasterEl.hidden = true;
+}
+const rasterSpanMs = () => A.bins * A.bin_ms;
+function rasterX(ms, width) {
+  return (
+    RASTER_LABEL_PX + (ms / rasterSpanMs()) * (width - RASTER_LABEL_PX - 4)
+  );
+}
+function drawRaster() {
+  if (!rasterState) return;
+  const { rows } = rasterState;
+  const width = Math.min(560, innerWidth - 48);
+  const height = rows.length * RASTER_ROW_PX + RASTER_AXIS_PX;
+  const ratio = devicePixelRatio || 1;
+  rasterCanvas.width = width * ratio;
+  rasterCanvas.height = height * ratio;
+  rasterCanvas.style.width = `${width}px`;
+  rasterCanvas.style.height = `${height}px`;
+  const ctx = rasterCanvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+  const plotH = rows.length * RASTER_ROW_PX;
+  ctx.fillStyle = "rgba(76, 201, 240, 0.12)"; // stimulus window
+  ctx.fillRect(rasterX(0, width), 0, rasterX(A.stim_ms, width) - rasterX(0, width), plotH);
+  ctx.font = "10px system-ui, sans-serif";
+  ctx.textBaseline = "middle";
+  const cellW = Math.max(1, rasterX(A.bin_ms, width) - rasterX(0, width) - 0.5);
+  rows.forEach(({ k, counts, total }, i) => {
+    const y = i * RASTER_ROW_PX;
+    const n = neurons[k];
+    const colour = FOCUS_COLORS[view.focus?.get(k) ?? "context"];
+    ctx.fillStyle = colour;
+    ctx.fillText((n.instance || n.type).slice(0, 18), 2, y + RASTER_ROW_PX / 2);
+    if (!total) {
+      ctx.fillStyle = "#7b8494";
+      ctx.fillText("no spikes in this replay", RASTER_LABEL_PX, y + RASTER_ROW_PX / 2);
+      return;
+    }
+    for (let b = 0; b < counts.length; b++) {
+      if (!counts[b]) continue;
+      ctx.globalAlpha = Math.min(1, 0.35 + counts[b] / 3);
+      ctx.fillStyle = colour;
+      ctx.fillRect(rasterX(b * A.bin_ms, width), y + 1, cellW, RASTER_ROW_PX - 2);
+    }
+    ctx.globalAlpha = 1;
+  });
+  // axis every 100 ms
+  ctx.fillStyle = "#7b8494";
+  ctx.textBaseline = "top";
+  for (let ms = 0; ms <= rasterSpanMs(); ms += 100)
+    ctx.fillText(`${ms}`, rasterX(ms, width) - 6, plotH + 4);
+  // cursor on the bin the glow is showing
+  const b = binAt(clock.t, A.bin_ms, A.bins);
+  ctx.strokeStyle = "#ffffff";
+  ctx.strokeRect(rasterX(b * A.bin_ms, width), 0, cellW, plotH);
+}
+function rasterTime(e) {
+  const r = rasterCanvas.getBoundingClientRect();
+  const frac = (e.clientX - r.left - RASTER_LABEL_PX) / (r.width - RASTER_LABEL_PX - 4);
+  return Math.max(0, Math.min(rasterSpanMs() - 1, frac * rasterSpanMs()));
+}
+let scrubbing = false;
+rasterCanvas.addEventListener("pointerdown", (e) => {
+  clock.playing = false;
+  clock.t = rasterTime(e);
+  scrubbing = true;
+  try {
+    rasterCanvas.setPointerCapture(e.pointerId); // keep the drag when it leaves the panel
+  } catch {
+    // a pointer that is not active (synthetic events) cannot be captured; the click still counts
+  }
+});
+rasterCanvas.addEventListener("pointermove", (e) => {
+  if (scrubbing) clock.t = rasterTime(e);
+});
+rasterCanvas.addEventListener("pointerup", () => (scrubbing = false));
+addEventListener("keydown", (e) => {
+  if (!rasterState || e.target.closest?.("input")) return;
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  clock.playing = false;
+  const step = e.key === "ArrowRight" ? 1 : -1;
+  const b = binAt(clock.t, A.bin_ms, A.bins) + step;
+  clock.t = Math.max(0, Math.min(A.bins - 1, b)) * A.bin_ms; // the start of that bin
+});
+addEventListener("resize", drawRaster);
+rasterEl.querySelector("button").addEventListener("click", async () => {
+  const manifest = await fetch("manifest.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+  const doc = selectionExport({
+    neurons,
+    rows: rasterState.rows,
+    activity: A,
+    t: clock.t,
+    manifest,
+  });
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(doc, null, 1)], { type: "application/json" }),
+  );
+  const link = Object.assign(document.createElement("a"), {
+    href: url,
+    download: `flymsg-selection-${neurons[rasterState.rows[0].k].bodyId}.json`,
+  });
+  link.click();
+  URL.revokeObjectURL(url);
+});
 addEventListener("keydown", (e) => {
   if (e.key === "Escape") clearSelection();
 });

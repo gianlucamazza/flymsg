@@ -94,9 +94,9 @@ result.
 flymsg.scene/v1` (`viz.SCENE_SCHEMA`); the page warns in the console on another or no
    version. B5 checks that exporter and page name the same version.
 5. **Extension points.**
-   - #26 state tracing: record `v`, `g` and `th` of chosen neurons, either from
-     `CpuRuntime.snapshot()` at chosen boundaries or with a recorder in the kernel; the NumPy
-     oracle and the kernel must agree on the recorded states, and spikes must not change.
+   - #26 state tracing (done in v0.8.28): `flymsg.tracing` records `v`, `g` and `th` of
+     chosen neurons through `CpuRuntime`; the oracle and the kernel agree bit for bit and the
+     spikes do not change.
    - #27 workbench: index `runs/` from B4 manifests; configs validate against a versioned
      schema before a run; exploratory, pre-registered, held-out and failed are labels that
      cannot be promoted.
