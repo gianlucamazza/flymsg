@@ -20,3 +20,12 @@ test("fru/dsx classes follow the expression annotation", () => {
   assert.equal(fruDsxClass(""), "not annotated");
   for (const v of ["fru_high", "dsx_low", "coexpress_high", ""]) assert.ok(FRU_DSX_COLORS[fruDsxClass(v)]);
 });
+
+test("a selection overrides the colour mode and keeps other neurons as context", async () => {
+  const { FOCUS_COLORS, colourOf } = await import("../../src/flymsg/viz_static/colors.js");
+  const view = { colorBy: "group", focus: new Map([[0, "selected"], [2, "upstream"]]) };
+  assert.equal(colourOf({ k: 0, group: "g" }, view, ["g"]), FOCUS_COLORS.selected);
+  assert.equal(colourOf({ k: 2, group: "g" }, view, ["g"]), FOCUS_COLORS.upstream);
+  assert.equal(colourOf({ k: 1, group: "g" }, view, ["g"]), FOCUS_COLORS.context);
+  assert.notEqual(colourOf({ k: 1, group: "g" }, { ...view, focus: null }, ["g"]), FOCUS_COLORS.context);
+});

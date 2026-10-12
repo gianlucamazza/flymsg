@@ -1,7 +1,7 @@
 """Rebuild the scenes the Pages site serves live. Usage: python scripts/build_live_scenes.py
 
 Runs the three gallery exports on the local MaleCNS tables (`flymsg fetch` and
-`flymsg build` first) and keeps scene.json, activity.bin and manifest.json in
+`flymsg build` first) and keeps scene.json, activity.bin, partners.json and manifest.json in
 docs/live/<name>/. The page itself is copied by the site build, not stored here.
 """
 
@@ -18,7 +18,7 @@ SCENES = {
     "song": ["--sim", "pIP10"],
     "anatomy": ["--types", "pIP10", "dPR1", "dMS9"],
 }
-KEEP = ("scene.json", "activity.bin", "manifest.json")
+KEEP = ("scene.json", "activity.bin", "partners.json", "manifest.json")
 
 
 def main() -> None:
