@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Tooling
+
+- **`scripts/bench_viewer.py`** (#24): builds the site, opens each scene with `?bench=` in a
+  fresh browser profile and appends the summary, the GL backend and the load average to
+  `runs/viewer-bench/`. It refuses to start above a 1-minute load of 1.0, so a baseline is
+  taken only on an idle machine, and a timed-out page no longer leaves its browser running.
+
 ### Live scenes
 
 - **Left eye and both eyes on the site:** `looming-left` (`LC4_L`), `looming-bilateral`
