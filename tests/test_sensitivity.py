@@ -88,3 +88,16 @@ def test_measure_is_deterministic_on_a_chain():
     b = sensitivity.measure(W, neurons, np.array([0]), ["B"], p, **kw)
     assert a == b and len(a) == 3
     assert all(r["rate"] > 0 and r["recruited"] == 2 for r in a)
+
+
+def test_the_report_reads_yes_or_no_per_cell(monkeypatch, capsys, data_dir, tmp_path):
+    from test_cli import run
+
+    monkeypatch.setattr(sensitivity, "run", lambda *_a, **_k: _cells())
+    monkeypatch.setattr(sensitivity, "svg", lambda *_a: "<svg/>")  # needs the full grid
+    monkeypatch.chdir(tmp_path)
+    run(monkeypatch, capsys, "--data", str(data_dir), "sensitivity", "--run")
+    report = (tmp_path / "runs/sensitivity/v1/report.txt").read_text()
+    assert (
+        "yes" in report and "no" in report and "1.0  " not in report.split("spreads")[0]
+    )

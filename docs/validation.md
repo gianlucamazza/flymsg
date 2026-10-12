@@ -289,6 +289,32 @@ six cases, several targets and four metrics are read together; no cell is tested
 significance and no p-value is attached. Nothing is chosen from the grid, and `sim.Params`
 keeps its defaults.
 
+### Result of version 1 (2026-10-12)
+
+Run from `a7a15a9` (clean), 60 jobs in 21 min. A target holds at a cell when its best neuron
+reaches the v4 floor (3 spikes in 2/3 of the seeds):
+
+| Case, target                     | `th_jump` 0: `w_syn` × 0.8 / 0.9 / 1.0 / 1.1 / 1.2 | `th_jump` 2: × 0.8 / 0.9 / 1.0 / 1.1 / 1.2 |
+| -------------------------------- | -------------------------------------------------- | ------------------------------------------ |
+| looming escape, DNp01 / TTMn     | all hold                                           | all hold                                   |
+| giant fiber output, TTMn         | all hold                                           | no / yes / yes / yes / yes                 |
+| P1 courtship drive, dPR1 / pIP10 | all hold                                           | all hold                                   |
+| pIP10 song pathway, dPR1         | all hold                                           | all hold                                   |
+| sugar feeding, MN9               | no / no / yes / yes / yes                          | no / no / no / yes / yes                   |
+| bitter feeding, MN9 (negative)   | none hold                                          | none hold                                  |
+
+Four positive cases hold across the whole grid, and the negative case has a median MN9 rate
+of 0 in every cell. Sugar → MN9 is the narrow one: its median rate goes from 0 to 57 Hz across the grid
+(30 Hz at the default, seed range 17 Hz), and with `th_jump` 2 it needs `w_syn` × 1.1. The
+default cell sits at its edge, so the sugar pass of criterion v4 is not robust to a 10 % lower
+coupling. Giant fiber → TTMn drops out only at the weakest corner. Activity after the stimulus
+(400–600 ms) appears only at the edges: looming with `th_jump` 2 from × 1.0 (26–31 neurons),
+P1 and sugar at × 1.2 with `th_jump` 0 (82 and 46). At the default cell no case persists.
+Parameter spread exceeds seed spread for most rates (looming TTMn: 17–87 Hz across cells,
+7 Hz across seeds); the giant-fiber TTMn latency is the exception, with a seed range (77 ms)
+larger than the range of its medians. Figure: [rate per cell](img/sensitivity-rate.svg); files
+in `runs/sensitivity/v1/`. Nothing is chosen from this grid.
+
 ## Findings log
 
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results

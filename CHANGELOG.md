@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.8.39 — 2026-10-12
+
+### Results
+
+- **Sensitivity grid v1** (#28; a report, not a score). Over `w_syn` × 0.8–1.2 and `th_jump`
+  0/2, looming, giant fiber, P1 and pIP10 hold in every cell but one corner, and bitter →
+  MN9 stays at a median of 0 Hz. Sugar → MN9 holds only from the default `w_syn` up
+  (`th_jump` 0) or from × 1.1 (`th_jump` 2): its v4 pass sits at the edge. Persistent activity
+  appears only at the grid's edges. Nothing is chosen from it; `sim.Params` is unchanged.
+  Report in `docs/validation.md`, figure `docs/img/sensitivity-rate.svg`.
+
+### Fixes
+
+- The `holds` table of `flymsg sensitivity --run` printed 1.0/0.0 instead of yes/no; the
+  v1 `report.txt` reads that way, `holds.csv` is unaffected.
+
 ## 0.8.38 — 2026-10-12
 
 ### Results
