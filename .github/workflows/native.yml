@@ -31,3 +31,14 @@ jobs:
       - name: Build unsigned UWP worker package
         shell: pwsh
         run: ./scripts/build-native-uwp.ps1
+      - name: Publish native build and unsigned worker artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: flymsg-native-windows
+          if-no-files-found: error
+          path: |
+            build/native/Release/flymsg_native.exe
+            build/native/acceptance.json
+            build/native/lif.cso
+            native/uwp/AppPackages/**
+            build/uwp/**
