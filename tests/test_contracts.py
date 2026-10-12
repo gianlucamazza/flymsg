@@ -133,12 +133,19 @@ def test_b5_viewer_bundle():
     for path in sorted(ROOT.glob("docs/live/*/scene.json")):
         scene = json.loads(path.read_text())
         assert scene["schema"] == viz.SCENE_SCHEMA, path
-        assert all(set(n) == NEURON_KEYS for n in scene["neurons"]), path
+        keys = NEURON_KEYS | ({"in", "rate_b"} if "comparison" in scene else set())
+        assert all(set(n) == keys for n in scene["neurons"]), path
         if "activity" in scene:
             act = scene["activity"]
             assert set(act) == {"bins", "bin_ms", "stim_ms"}
             size = (path.parent / "activity.bin").stat().st_size
             assert size == act["bins"] * len(scene["neurons"])  # uint8, bin-major
+            if "comparison" in scene:
+                size_b = (path.parent / "activity_b.bin").stat().st_size
+                assert size_b == size
+                assert {r["status"] for r in scene["comparison"]["runs"]} <= set(
+                    viz.COMPARE_STATUSES
+                )
         table = json.loads((path.parent / "partners.json").read_text())
         assert set(table) == {"source", "top", "neurons"}
         assert set(table["neurons"]) == {str(n["bodyId"]) for n in scene["neurons"]}

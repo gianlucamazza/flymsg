@@ -17,6 +17,20 @@ SCENES = {
     "looming": ["--sim", "LC4_R"],
     "song": ["--sim", "pIP10"],
     "anatomy": ["--types", "pIP10", "dPR1", "dMS9"],
+    "looming-dnp01-silenced": ["--sim", "LC4_R", "--silence", "DNp01"],
+}
+# Pairs shown by flymsg viz-compare: (A, B, labels, statuses, notes)
+COMPARISONS = {
+    "looming-vs-dnp01": (
+        "looming",
+        "looming-dnp01-silenced",
+        ("LC4_R", "LC4_R, both DNp01 silenced"),
+        ("exploratory", "failed"),
+        (
+            "seed 0 replay, not the scored battery",
+            "behavior v1 silence check fails: TTMn_R still fires with both DNp01 silenced",
+        ),
+    ),
 }
 KEEP = ("scene.json", "activity.bin", "partners.json", "manifest.json")
 
@@ -42,6 +56,27 @@ def main() -> None:
             manifest = json.loads((dst / "manifest.json").read_text())
             manifest.pop("cwd", None)  # a local path, not provenance
             (dst / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+            print(f"{name} -> {dst.relative_to(ROOT)}")
+        for name, (a, b, labels, statuses, notes) in COMPARISONS.items():
+            dst = live / name
+            shutil.rmtree(dst, ignore_errors=True)
+            subprocess.run(
+                [sys.executable, "-c", "from flymsg.cli import main; main()",
+                 "viz-compare", str(live / a), str(live / b), "--labels", *labels,
+                 "--status", *statuses, "--notes", *notes, "--out", str(dst)],
+                cwd=ROOT,
+                check=True,
+            )  # fmt: skip
+            for f in dst.iterdir():  # the page is copied by the site build
+                if f.name not in (
+                    "scene.json",
+                    "activity.bin",
+                    "activity_b.bin",
+                    "partners.json",
+                    "manifest_a.json",
+                    "manifest_b.json",
+                ):
+                    shutil.rmtree(f) if f.is_dir() else f.unlink()
             print(f"{name} -> {dst.relative_to(ROOT)}")
 
 

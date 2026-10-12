@@ -4,6 +4,7 @@
     "duration": 600.0,
     "path": null,
     "rate": 100.0,
+    "silence": [],
     "sim": [
       "LC4_R"
     ],
@@ -31,11 +32,11 @@
     "n_exported": 1127
   },
   "git": {
-    "commit": "49161a43484f5332aff6eb05a3d6b5a96d4d352c",
+    "commit": "5f6a94873805838d1b274564adc0f6993d2c6601",
     "dirty": false
   },
   "packages": {
-    "flymsg": "0.8.25",
+    "flymsg": "0.8.29",
     "numba": "0.68.0",
     "numpy": "2.5.3",
     "pandas": "3.0.6",
@@ -59,7 +60,7 @@
     "seed": 0
   },
   "timestamps": {
-    "finished_at": "2026-10-12T13:22:16.279297+00:00",
-    "started_at": "2026-10-12T13:21:38.567709+00:00"
+    "finished_at": "2026-10-12T14:38:27.643202+00:00",
+    "started_at": "2026-10-12T14:37:48.070789+00:00"
   }
 }

@@ -48,6 +48,26 @@ they agree at every time. Dragging on the raster moves the replay time, the arro
 one bin, and a neuron with no spike is labelled so. `export` downloads the rows with the
 scene manifest's commit, seeds and configuration.
 
+## Comparing two runs
+
+`flymsg viz-compare A B --labels … --status … [--notes …]` pairs two existing replay exports
+without simulating. It refuses two runs whose dataset (name, release, file hashes) or time
+base (bins, bin width, stimulus window) differ. The neuron set is the union; a neuron one
+export does not hold is "not exported" there, never silent, because an export lists only the
+neurons that fired during its stimulus. Each run carries a status, `validated`,
+`exploratory` or `failed`, and a note; the page shows both, the dataset, and every manifest
+key that differs. A failed protocol reads "failed protocol: not evidence for a mechanism".
+
+The page switches between A, B and `|A − B|` per bin (`?run=a|b|difference`). In the
+difference view, neurons are coloured by more, fewer or the same spikes in B than in A, or
+grey when one export lacks them; a selected neuron lists its spikes and first bin in each
+run. Two identical runs give zero difference in every bin (tested in Python and in node).
+
+The site serves one pair, [LC4_R against LC4_R with both DNp01 silenced](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146).
+The silenced run is the failed silence check of the one-bit protocol
+([behavior](behavior.md)): `TTMn_R` fires 22 times in A, first in the 10–20 ms bin, and still
+7 times in B, first in the 60–70 ms bin.
+
 ## Sources
 
 | data            | format                                                     | use                                                                      |

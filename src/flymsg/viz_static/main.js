@@ -42,6 +42,14 @@ import {
 } from "./budget.js";
 import { activityAt } from "./activity.js";
 import {
+  compareClass,
+  difference,
+  differenceLines,
+  neuronLines,
+  runLines,
+  totals,
+} from "./compare.js";
+import {
   findNeuron,
   focusRoles,
   panelLines,
@@ -191,6 +199,10 @@ if (meta.schema !== SCENE_SCHEMA)
   );
 const actBuf = meta.activity
   ? await (await fetch("activity.bin")).arrayBuffer()
+  : null;
+const comparison = meta.comparison ?? null; // two runs, from flymsg viz-compare
+const actBufB = comparison
+  ? await (await fetch("activity_b.bin")).arrayBuffer()
   : null;
 const [segInfo, meshInfo] = await Promise.all([
   fetchJson(`${SEG}/info`),
@@ -1111,7 +1123,44 @@ setInterval(updateStats, 500);
 
 // ---------- replay ----------
 const A = meta.activity;
-const spikes = actBuf ? new Uint8Array(actBuf) : null; // bins x N
+const runSpikes = { a: actBuf ? new Uint8Array(actBuf) : null }; // bins x N
+if (comparison) {
+  runSpikes.b = new Uint8Array(actBufB);
+  runSpikes.difference = difference(runSpikes.a, runSpikes.b);
+}
+const RUNS = ["a", "b", "difference"];
+const startRun = comparison && RUNS.includes(query.get("run")) ? query.get("run") : "a";
+let spikes = runSpikes[startRun];
+// per neuron: more / less / same spikes in B than in A, or held by one export only
+const compareClasses = comparison
+  ? (() => {
+      const shape = { n: N, bins: A.bins };
+      const ta = totals(runSpikes.a, shape),
+        tb = totals(runSpikes.b, shape);
+      return neurons.map((n) => compareClass(n.in[0], n.in[1], ta[n.k], tb[n.k]));
+    })()
+  : null;
+if (comparison) {
+  view.compare = startRun === "difference" ? compareClasses : null;
+  refreshColours();
+  const banner = document.getElementById("compare");
+  banner.hidden = false;
+  banner.querySelector("pre").textContent = [
+    ...runLines(comparison),
+    `${comparison.dataset.name} ${comparison.dataset.release} · difference view: |A − B| per bin`,
+    ...differenceLines(comparison),
+  ].join("\n");
+}
+function showRun(run) {
+  spikes = runSpikes[run];
+  view.compare = run === "difference" ? compareClasses : null;
+  refreshColours();
+  shownT = null; // re-upload the glow
+  if (selected) showRaster(selected.k, selected.entry);
+  const url = new URL(location.href);
+  url.searchParams.set("run", run);
+  history.replaceState(null, "", url);
+}
 const clock = {
   t: Number(query.get("t")) || 0,
   playing: replay && !query.has("paused"),
@@ -1281,6 +1330,7 @@ renderer.domElement.addEventListener("pointerup", (e) => {
 // ---------- selection: partners from partners.json, loaded on first use ----------
 const panel = document.getElementById("selection");
 let partnerTable = null;
+let selected = null; // {k, entry}, so a run switch can redraw the raster
 const loadPartners = () =>
   (partnerTable ??= fetch("partners.json")
     .then((r) => (r.ok ? r.json() : null))
@@ -1295,11 +1345,20 @@ async function selectNeuron(k) {
   invalidate();
   showRaster(k, entry);
   panel.hidden = false;
-  panel.querySelector("pre").textContent = panelLines(
-    n,
-    entry,
-    table?.source,
-  ).join("\n");
+  selected = { k, entry };
+  const extra = comparison
+    ? neuronLines(n, k, {
+        spikesA: runSpikes.a,
+        spikesB: runSpikes.b,
+        shape: { n: N, bins: A.bins },
+        binMs: A.bin_ms,
+        labels: comparison.runs.map((r) => r.label),
+      })
+    : [];
+  panel.querySelector("pre").textContent = [
+    ...panelLines(n, entry, table?.source),
+    ...extra,
+  ].join("\n");
   const url = new URL(location.href);
   url.searchParams.set("select", String(n.bodyId));
   history.replaceState(null, "", url);
@@ -1307,6 +1366,7 @@ async function selectNeuron(k) {
 
 function clearSelection() {
   if (!view.focus) return;
+  selected = null;
   view.focus = null;
   refreshColours();
   invalidate();
@@ -1545,6 +1605,17 @@ neuropilsListed.then(() => {
 });
 if (replay) {
   const rFolder = gui.addFolder("Replay");
+  if (comparison) {
+    const labels = comparison.runs.map((r) => r.label);
+    rFolder
+      .add({ run: startRun }, "run", {
+        [`A ${labels[0]}`]: "a",
+        [`B ${labels[1]}`]: "b",
+        "difference |A − B|": "difference",
+      })
+      .name("run")
+      .onChange(showRun);
+  }
   rFolder.add(clock, "playing");
   rFolder.add(clock, "speed", 5, 200).name("speed (sim ms / s)");
   rFolder
