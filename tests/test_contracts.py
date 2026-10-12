@@ -151,3 +151,20 @@ def test_b6_embodiment_contract():
     for row in [*doc["actuators"], *doc["neurons"]]:
         with pytest.raises(motor_map.MotorMapError):
             motor_map.command(row["name"], doc)
+
+
+@pytest.mark.parametrize(
+    ("module", "error"),
+    [
+        (behavior, behavior.BehaviorError),
+        (benchmarks, benchmarks.BenchmarkError),
+        (motor_map, motor_map.MotorMapError),
+        (silence_scan, silence_scan.ScanError),
+    ],
+)
+def test_b3_locks_share_one_check_and_keep_their_errors(module, error):
+    doc = module.load()
+    with pytest.raises(error, match="not in VERSION_HASHES"):
+        module.assert_locked({**doc, "version": 999})
+    with pytest.raises(error, match="does not match"):
+        module.assert_locked({**doc, "content_sha256": "0" * 64})

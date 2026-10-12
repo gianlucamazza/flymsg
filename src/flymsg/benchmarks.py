@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, prereg, sim, validate
+from flymsg import data, locks, prereg, sim, validate
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "benchmarks.yaml"
@@ -27,7 +27,7 @@ class BenchmarkError(ValueError):
 
 
 def load(path: Path = PATH) -> dict:
-    return prereg.load_yaml(path.read_text(encoding="utf-8"))
+    return locks.load(path)
 
 
 def content_hash(doc: dict) -> str:
@@ -37,14 +37,7 @@ def content_hash(doc: dict) -> str:
 def assert_locked(doc: dict | None = None) -> dict:
     """Refuse a manifest whose locked fields changed without a new version."""
     doc = load() if doc is None else doc
-    version = doc.get("version")
-    if version not in VERSION_HASHES:
-        raise BenchmarkError(f"benchmark version {version} is not in VERSION_HASHES")
-    digest = content_hash(doc)
-    if digest != VERSION_HASHES[version]:
-        raise BenchmarkError("benchmark manifest changed without a bump")
-    if doc.get("content_sha256") != digest:
-        raise BenchmarkError("content_sha256 does not match the manifest")
+    locks.check(doc, VERSION_HASHES, BenchmarkError, "benchmark manifest")
     return doc
 
 

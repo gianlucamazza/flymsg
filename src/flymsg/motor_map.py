@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from flymsg import prereg
+from flymsg import locks, prereg
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "motor_map.yaml"
@@ -25,7 +25,7 @@ class MotorMapError(ValueError):
 
 
 def load(path: Path = PATH) -> dict:
-    return prereg.load_yaml(path.read_text(encoding="utf-8"))
+    return locks.load(path)
 
 
 def content_hash(doc: dict) -> str:
@@ -35,14 +35,7 @@ def content_hash(doc: dict) -> str:
 def assert_locked(doc: dict | None = None) -> dict:
     """Refuse a map whose locked fields changed without a new version."""
     doc = load() if doc is None else doc
-    version = doc.get("version")
-    if version not in VERSION_HASHES:
-        raise MotorMapError(f"motor map version {version} is not in VERSION_HASHES")
-    digest = content_hash(doc)
-    if digest != VERSION_HASHES[version]:
-        raise MotorMapError("motor map changed without a bump")
-    if doc.get("content_sha256") != digest:
-        raise MotorMapError("content_sha256 does not match the motor map")
+    locks.check(doc, VERSION_HASHES, MotorMapError, "motor map")
     if doc.get("authored") != "hypothesis":
         raise MotorMapError("the map is not marked as an authored hypothesis")
     if doc.get("body_sex") != "female" or doc.get("connectome_sex") != "male":
