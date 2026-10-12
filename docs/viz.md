@@ -8,12 +8,16 @@ and what each colour means, are in the README gallery.
 
 ## Live on the site
 
-The Pages site serves three scenes with this page: the LC4_R and pIP10 replays and the
+The Pages site serves eight scenes with this page: the LC4_R and pIP10 replays and the
 pIP10/dPR1/dMS9 anatomy, at <https://gianlucamazza.github.io/flymsg/live/looming/>,
-`…/live/song/` and `…/live/anatomy/`. Their `scene.json`, `activity.bin` and run manifest
-are committed in `docs/live/`; `scripts/build_live_scenes.py` regenerates them from the
-local tables with the gallery commands, exporting every scene before it writes any, so each
-manifest records a clean tree. The site build copies the page next to each scene. Geometry
+`…/live/song/` and `…/live/anatomy/`; the LC4_R replay with DNp01, DNp01 + DNp02 and
+DNp01 + DNp06 silenced (`looming-dnp01-silenced`, `looming-dnp01-dnp02-silenced`,
+`looming-dnp01-dnp06-silenced`); and the left-eye and both-eye replays (`looming-left`,
+`looming-bilateral`). Four comparisons pair them (below), and `cns/` holds the whole-CNS
+soma layer shared by all. Their `scene.json`, `activity.bin` and run manifest are committed
+in `docs/live/`; `scripts/build_live_scenes.py [NAME ...]` regenerates them from the local
+tables, all or only the named ones, exporting every requested scene before it writes any, so
+each manifest records a clean tree. The site build copies the page next to each scene. Geometry
 is not stored: it streams from GCS as it does locally.
 
 A scene draws the stimulus and the neurons that respond, not all 165,122. On the site a
@@ -72,7 +76,7 @@ difference view, neurons are coloured by more, fewer or the same spikes in B tha
 grey when one export lacks them; a selected neuron lists its spikes and first bin in each
 run. Two identical runs give zero difference in every bin (tested in Python and in node).
 
-The site serves three pairs. [LC4_R against LC4_R with both DNp01 silenced](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146)
+The site serves four pairs; the fourth, right against left, is described under **Sides**. [LC4_R against LC4_R with both DNp01 silenced](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146)
 is the failed silence check of the one-bit protocol ([behavior](behavior.md)): `TTMn_R`
 fires 22 times in A, first in the 10–20 ms bin, and still 7 times in B, first in the
 60–70 ms bin. [DNp01 against DNp01 + DNp02](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp02/?run=difference&t=60&paused&select=800146)
