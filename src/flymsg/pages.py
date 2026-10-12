@@ -40,6 +40,7 @@ EXTERNAL = {
     "../validation/sensitivity.yaml": f"{BLOB}/validation/sensitivity.yaml",
     "../validation/silence_scan.yaml": f"{BLOB}/validation/silence_scan.yaml",
     "../validation/partner_followup.yaml": f"{BLOB}/validation/partner_followup.yaml",
+    "../results/README.md": f"{BLOB}/results/README.md",
 }
 
 # (output stem, source path, nav label). Order is the site nav.
@@ -59,6 +60,7 @@ PAGES = (
     ("dimorphism", "docs/dimorphism.md", "Dimorphism"),
     ("related", "docs/related.md", "Related"),
     ("viz", "docs/viz.md", "3D view"),
+    ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("changelog", "CHANGELOG.md", "Changelog"),
 )
 

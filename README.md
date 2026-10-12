@@ -260,7 +260,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [model](docs/model.md)               | equations, parameters, synapse signs, density scaling, extensions not adopted |
 | [validation](docs/validation.md)     | current status, protocol, cases, calibration, model selection, findings log   |
 | [benchmarks](docs/benchmarks.md)     | held-out partition, the ORN_DM1 failure, both corners fail                    |
-| [behavior](docs/behavior.md)         | one-bit looming jump; the closed loop fails silence                           |
+| [behavior](docs/behavior.md)         | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated  |
 | [architecture](docs/architecture.md) | module layers, the six contracts and their tests, migration order             |
 | [embodiment](docs/embodiment.md)     | M0 neural/body contract, synthetic body, no motor map; the E1–E4 roadmap      |
 | [runtime](docs/runtime.md)           | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned           |
@@ -269,7 +269,8 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | [comparison](docs/comparison.md)     | engine check against the published model, male vs female, the LB3 split       |
 | [dimorphism](docs/dimorphism.md)     | dimorphic neurons among responders, silencing                                 |
 | [related](docs/related.md)           | adjacent whole-CNS models, the raw 211,577 count, wiring null N1              |
-| [viz](docs/viz.md)                   | 3D pipeline, levels of detail, rendering quality, GPU measurements            |
+| [viz](docs/viz.md)                   | 3D pipeline, whole-CNS soma layer, sides, levels of detail, GPU measurements  |
+| [roadmap](docs/roadmap.md)           | brain coverage in numbers; what is blocked on evidence or hardware, and why   |
 | [CHANGELOG](CHANGELOG.md)            | what changed in each version                                                  |
 
 ## Development

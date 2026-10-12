@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Documentation
+
+- **`docs/roadmap.md`** (on the site as Roadmap): what of the brain the model uses and leaves
+  out, in numbers from `scripts/brain_coverage.py` (signs, the FlyWire cross-check of the
+  unsigned neurons, somata, photoreceptor columns), and every open item with what blocks it
+  and what would unblock it. New issues #84 (eye encoder) and #85 (electrical synapses and
+  neuromodulation, evidence audit).
+
 ### 3D view
 
 - **Whole-CNS layer:** every soma in the volume (140,024 of 165,122 neurons) drawn as a point
