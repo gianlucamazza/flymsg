@@ -181,6 +181,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `audit`                                                         | reconstruction completeness: flags bilateral neurons with one side far below the other                  |
 | `dimorphism [--silencing \| --loop \| --by-type CASE CATEGORY]` | dimorphic neurons among responders; silencing by category, by cell type, or of the predicted dMS9 loop  |
 | `viz --sim STIM \| --path SRC DST \| --types …`                 | export a 3D scene; the page streams geometry from the public volumes                                    |
+| `trace STIM --neurons N…`                                       | record v, g, threshold, spikes and input of chosen neurons; model states, not recordings                |
 
 The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?detail=`,
 `?adaptive=0`,

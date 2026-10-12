@@ -164,6 +164,20 @@ signal is specified. A network-wide STDP rule is not the task. A body is not req
 The missing piece is the evidence. #11 depends on #10 only if that modulator is the
 reinforcement signal, and #10 added none.
 
+## Recording neuron states
+
+`flymsg trace STIM --neurons ...` (module `flymsg.tracing`) records, for chosen neurons, the
+membrane potential `v`, synaptic drive `g` and threshold offset `th` (mV) at the end of every
+recorded step (`--every N` steps), whether each is refractory at the next step, its spikes at
+every step and the Poisson input it received. It writes `trace.npz` and a run manifest. These
+are model states, not recordings.
+
+It drives `CpuRuntime`, which advances the same compiled step loop as `sim.run` and matches it
+bit for bit when run in blocks, so recording cannot change a spike; `tests/test_tracing.py`
+checks the returned run against `sim.run` and the recorded `v`, `g` and `th` against the NumPy
+oracle (`tests/reference_sim.py`), bit for bit, with and without the adaptive threshold. A
+request above 10 M values per state array warns; above 100 M it is refused.
+
 ## Performance
 
 One compiled kernel (numba) on one core: about 5 s per simulated second for the whole CNS,

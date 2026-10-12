@@ -68,6 +68,29 @@ neurons still firing. Positive passes. Specific and stability fail. It does not 
 The corner run started from commit `490c32b` with this command still uncommitted, so
 its manifest records a dirty tree. The csv is `runs/benchmarks/corners/report.csv`.
 
+## Why activity outlasts the stimulus (exploratory, 2026-10-12)
+
+Not a scored result and not a retune; `scripts/orn_persistence.py` reproduces it with
+`flymsg.tracing`. The scored corner (`w_syn` 0.192, `th_jump` 0, 100 Hz for 300 ms, seed 0)
+leaves 4,907 neurons firing from 400 to 600 ms. Most are Kenyon cells of the mushroom body:
+495 KCg-m, 213 KCab-m, 152 KCab-c and 69 KCab-s (28–32 Hz late), with PAM dopaminergic
+neurons, the local neuron lLN1_bc (303 Hz), HRN_VP1d and VM5d_adPN among the rest.
+
+Recording one neuron of each leading type shows the drive does not decay after the stimulus:
+the synaptic drive `g` of a KCg-m neuron is 13.0 mV during the stimulus and 13.5 mV from 400
+to 600 ms, and 67–79% of the excitatory synapses onto the recorded Kenyon cells come from
+neurons that are themselves still firing. Across all 4,064 Kenyon cells, 73.4% of the
+excitatory synapses they receive come from other Kenyon cells. In a point neuron every one of
+those synapses reaches the soma, so the Kenyon cells excite each other into a loop that
+outlasts the input. The two APL neurons send 196,200 inhibitory synapses onto Kenyon cells,
+but here APL is a spiking point neuron.
+
+This points at a model limit, not a fitted fix. In the fly, Kenyon cell–Kenyon cell synapses
+are mostly axo-axonal in the lobes, and APL gives graded, non-spiking feedback inhibition
+that keeps Kenyon cell activity sparse (Lin et al., _Nat. Neurosci._ 17, 559–568, 2014,
+doi:10.1038/nn.3660). Neither has a parameter in this LIF. A model change would need its own
+pre-registered test on cases it was not chosen on.
+
 ## Inventory
 
 Counts are bodies with that cell type in MaleCNS v1.0 (165,122 traced neurons,
