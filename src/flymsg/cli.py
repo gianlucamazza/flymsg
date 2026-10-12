@@ -297,14 +297,17 @@ def cmd_sensitivity(a, neurons, edges):
     spread = sensitivity.spreads(cells)
     spread.to_csv(out / "spreads.csv", index=False)
     (out / "rate.svg").write_text(sensitivity.svg(cells, doc))
-    grid = held.pivot_table(
-        index=["case", "target"], columns=["th_jump", "w_syn_factor"], values="holds"
+    grid = held.assign(holds=held["holds"].map({True: "yes", False: "no"})).pivot_table(
+        index=["case", "target"],
+        columns=["th_jump", "w_syn_factor"],
+        values="holds",
+        aggfunc="first",
     )
     text = "\n".join(
         [
             sensitivity.summary(doc),
             "holds (v4 floor) per cell:",
-            grid.replace({True: "yes", False: "no"}).to_string(),
+            grid.to_string(),
             "spreads (seed range at the default cell vs range of medians over cells):",
             spread.to_string(index=False),
         ]
