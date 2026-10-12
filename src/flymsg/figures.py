@@ -272,6 +272,98 @@ def silence_scan(
     )
 
 
+def partner_followup(
+    left: pd.DataFrame,
+    left_base: Sequence[float],
+    drive: pd.DataFrame,
+    null_draws: pd.DataFrame,
+    pair_p: float,
+    bar: int,
+    verdicts: tuple[str, str],
+    seeds: str,
+) -> str:
+    """Left: TTMn_L spikes with DNp01 and each named unit silenced, against the base arm
+    and the matched null mean. Drive: TTMn_R spikes per seed with DNp02_R, DNp06_R or the
+    pair driven, against the jump bit. Null: the mean count of every matched-pair draw, with
+    the observed pair mean."""
+    counts = [c for cell in left["counts"] for c in _counts(cell)] if len(left) else []
+    top_l = max(4.0, max(left_base) + 1, *(counts or [0]), *left.get("null_mean", []))
+    a = Panel(
+        60,
+        40,
+        250,
+        220,
+        (-0.6, len(left) - 0.4 if len(left) else 0.6),
+        (0, top_l),
+        f"Left mirror (LC4_L → TTMn_L), seeds {seeds}",
+        ylabel="spikes in 300 ms",
+    )
+    a.frame(range(len(left)), [str(u) for u in left["unit"]])
+    base = float(np.mean(left_base))
+    a.hline(base, GREY, "4 3", f"base arm {base:.1f}")
+    for i, row in left.reset_index(drop=True).iterrows():
+        a.bar(i, 0.5, 0, row["null_mean"], GREY, 0.35)
+        for c in _counts(row["counts"]):
+            a.dot(i, c, RED, 2.5)
+        a.text(a.X(i), a.Y(0) - 8, f"p {row['p']:.3f}", RED, "middle")
+    a.text(a.x0, a.y0 + a.h + 30, f"verdict: {verdicts[0]}", "#222")
+
+    arm_counts = [c for cell in drive["counts"] for c in _counts(cell)]
+    top_d = max(bar + 2.0, *arm_counts)
+    b = Panel(
+        380,
+        40,
+        250,
+        220,
+        (-0.6, len(drive) - 0.4),
+        (0, top_d),
+        f"Direct drive, 200 Hz, seeds {seeds}",
+    )
+    b.frame(range(len(drive)), [str(x) for x in drive["arm"]])
+    b.hline(bar, RED, "2 3", f"jump bit {bar}")
+    for i, row in drive.reset_index(drop=True).iterrows():
+        for c in _counts(row["counts"]):
+            b.dot(i, c, BLUE, 2.5)
+    b.text(b.x0, b.y0 + b.h + 30, f"verdict: {verdicts[1]}", "#222")
+
+    pair = null_draws.loc[null_draws["part"] == "drive", "mean_count"].to_numpy()
+    observed = float(
+        np.mean(_counts(drive.loc[drive["arm"] == "pair", "counts"].iloc[0]))
+    )
+    hi = max(float(pair.max()) if pair.size else 0.0, observed) + 1
+    edges = np.linspace(0, hi, 21)
+    hist, _ = np.histogram(pair, edges)
+    c = Panel(
+        700,
+        40,
+        250,
+        220,
+        (0, hi),
+        (0, max(1, int(hist.max()))),
+        f"Null: {pair.size} matched DN pairs driven",
+        xlabel="mean TTMn_R spikes",
+    )
+    c.frame()
+    width = edges[1] - edges[0]
+    for x, h in zip(edges[:-1], hist, strict=True):
+        if h:
+            c.bar(x + width / 2, width * 0.9, 0, h, GREY, 0.6)
+    c.out.append(
+        f'<line x1="{c.X(observed):.1f}" x2="{c.X(observed):.1f}" y1="{c.y0}" '
+        f'y2="{c.y0 + c.h}" stroke="{RED}" stroke-width="2"/>'
+    )
+    c.text(
+        c.X(observed) - 4, c.y0 + 12, f"pair {observed:.1f}, p {pair_p:.3f}", RED, "end"
+    )
+    return document(
+        980,
+        340,
+        "Residual partner follow-up v1 (model): left mirror with DNp01 + unit silenced; "
+        "drive without LC4, DNp01 silenced",
+        [a, b, c],
+    )
+
+
 def embodiment(intact: dict, silenced: dict, loop: dict) -> str:
     """M1 height with and without DNp01; M2 input rate, height and motor spikes per mode."""
     m_to_um = 1e6
