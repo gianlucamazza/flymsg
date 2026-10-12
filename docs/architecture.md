@@ -97,11 +97,45 @@ flymsg.scene/v1` (`viz.SCENE_SCHEMA`); the page warns in the console on another 
    - #26 state tracing (done in v0.8.28): `flymsg.tracing` records `v`, `g` and `th` of
      chosen neurons through `CpuRuntime`; the oracle and the kernel agree bit for bit and the
      spikes do not change.
-   - #27 workbench: index `runs/` from B4 manifests; configs validate against a versioned
-     schema before a run; exploratory, pre-registered, held-out and failed are labels that
-     cannot be promoted.
+   - #27 workbench (done in v0.8.32): `flymsg experiment CONFIG` runs a versioned
+     `flymsg.experiment/v1` config into `runs/experiments/<config hash>/`, never overwrites
+     it, and accepts only the `exploratory` label; `flymsg runs` indexes every B4 manifest
+     with its label. See "Experiments and the run index" below.
    - #25 causal explorer: generalise the `silence_scan` pattern (lock → rule-chosen set →
      screen → fresh-seed confirmation against a matched null) on top of step 3.
    - #28 robustness (tool in v0.8.31): `flymsg.sensitivity` runs a locked grid (B3) and
      reports every cell; `sim.Params` defaults never change.
    - #31 embodiment: bodies attach through B6 only.
+
+## Experiments and the run index
+
+An exploratory experiment is a YAML file:
+
+```yaml
+schema: flymsg.experiment/v1
+label: exploratory # the only label a config may carry
+stimulus: [LC4_R] # types, instances or bodyIds
+targets: [DNp01, TTMn]
+silence: [DNp01] # optional
+rate_hz: 100.0
+stim_ms: 300.0
+duration_ms: 600.0
+seed0: 0
+seeds: 3
+w_syn: 0.192 # optional; default sim.Params
+note: "free text" # optional
+```
+
+`flymsg experiment FILE --check` validates it against the schema and the dataset: an unknown
+schema, a missing, mistyped or unknown field, an empty stimulus, a stimulus window outside the
+run, a name the dataset lacks, or any label but `exploratory` is refused with the reason.
+Without `--check` it simulates and writes `metrics.csv` (per seed and target: the best
+neuron, its rate and first spike, and how many neurons fired), the config and a manifest into
+`runs/experiments/<first 16 hex of the config hash>/`. The same config maps to the same
+directory, and a second run is refused, so a result is never overwritten.
+
+`flymsg runs [ROOT …]` reads every `flymsg.run_manifest/v1` under `runs/` and `docs/live/`
+without loading the dataset and lists command, label, start, commit, dataset and seeds. A
+manifest written before labels existed gets one from its command (a command that executes a
+lock is `preregistered`; the held-out benchmark is `held-out`) and from its recorded verdict
+(FAIL or none is `failed`). A label is read, never written back, so nothing is promoted.

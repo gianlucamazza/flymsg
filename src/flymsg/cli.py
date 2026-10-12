@@ -28,6 +28,7 @@ from flymsg import (
     validate,
     viz,
     wiring,
+    workbench,
 )
 
 NG = "https://neuroglancer-demo.appspot.com/#!"
@@ -321,6 +322,20 @@ def cmd_sensitivity(a, neurons, edges):
         started,
     )
     print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_experiment(a, neurons, edges):
+    """Validate an exploratory config and, unless --check, run it into an immutable dir."""
+    cfg = workbench.validate_config(workbench.load_config(a.config), neurons)
+    digest = workbench.config_hash(cfg)
+    print(
+        f"config ok: {workbench.CONFIG_SCHEMA}, sha256 {digest[:16]}, label exploratory"
+    )
+    if a.check:
+        return
+    out = workbench.run(cfg, neurons, edges, a.root, a.data)
+    print(pd.read_csv(out / "metrics.csv").to_string(index=False))
+    print(f"-> {out}")
 
 
 def cmd_wiring_null(a, neurons, edges):
@@ -914,6 +929,7 @@ COMMANDS = {
     "silence-scan": cmd_silence_scan,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
+    "experiment": cmd_experiment,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -930,6 +946,7 @@ MALECNS_ONLY = (
     "silence-scan",
     "trace",
     "sensitivity",
+    "experiment",
 )
 
 
@@ -975,6 +992,18 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="score the two frozen sensitivity corners (does not replace --run)",
     )
+    s = sub.add_parser(
+        "experiment",
+        help="validate and run an exploratory config (flymsg.experiment/v1)",
+    )
+    s.add_argument("config", type=Path)
+    s.add_argument("--check", action="store_true", help="validate only")
+    s.add_argument("--root", type=Path, default=Path("runs/experiments"))
+    s = sub.add_parser("runs", help="index every run manifest (no dataset needed)")
+    s.add_argument(
+        "roots", nargs="*", type=Path, default=[Path("runs"), Path("docs/live")]
+    )
+    s.add_argument("--label", choices=workbench.LABELS)
     s = sub.add_parser(
         "sensitivity",
         help="print the locked w_syn x th_jump grid, or run it with --run (a report)",
@@ -1275,6 +1304,11 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
+        if a.cmd == "runs":  # reads manifests only
+            table = workbench.index(a.roots)
+            if a.label and not table.empty:
+                table = table[table["label"] == a.label]
+            return print(table.to_string(index=False) if not table.empty else "no runs")
         if a.cmd == "sensitivity" and not a.run:
             return print(sensitivity.summary())
         if a.cmd == "viz-compare":  # reads two exports; loads no dataset
@@ -1308,6 +1342,8 @@ def main() -> None:
     except benchmarks.BenchmarkError as err:
         sys.exit(f"flymsg: {err}")
     except behavior.BehaviorError as err:
+        sys.exit(f"flymsg: {err}")
+    except workbench.ConfigError as err:
         sys.exit(f"flymsg: {err}")
     except sensitivity.SensitivityError as err:
         sys.exit(f"flymsg: {err}")
