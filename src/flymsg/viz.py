@@ -72,7 +72,7 @@ def export(
                 "rate": None if rates is None else round(float(rates[i]), 1),
             }
             for i, r, group in zip(idx, rows.itertuples(), groups, strict=True)
-        ]
+        ],
     }
     replay = out / "activity.bin"
     if result is not None:
