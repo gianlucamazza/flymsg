@@ -18,6 +18,7 @@ from flymsg import (
     draws,
     graph,
     intervention,
+    jump,
     manifest,
     nulls,
     prereg,
@@ -417,6 +418,53 @@ def cmd_confirm(a, neurons, edges):
     out = a.out / a.lock.stem / f"v{doc['version']}"
     _stamp(out, "confirm", a, neurons, edges, {"lock": str(a.lock), "lock_sha256": doc["content_sha256"]},
            {"seed0": doc["seed0"], "seeds": doc["seeds"]}, started, extra={"label": "preregistered"})  # fmt: skip
+
+
+def cmd_jump(a, neurons, edges):
+    """M1: simulate, decode the motor neuron's spikes with an engineered gain, move a body."""
+    from flymsg.embodiment import Provenance
+
+    started = datetime.now(UTC)
+    stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.sim]))
+    motor = data.resolve(neurons, a.motor)
+    if motor.size != 1:
+        sys.exit(f"flymsg: {a.motor} is {motor.size} neurons; the decoder reads one")
+    silence = (
+        np.concatenate([data.resolve(neurons, q) for q in a.silence])
+        if a.silence
+        else None
+    )
+    p = sim.Params()
+    W = sim.network(neurons, edges, p)
+    r = sim.run(
+        W, stim, a.rate, a.duration, a.stim_ms, p, a.seed, silence=silence, trace=motor
+    )
+    steps = np.flatnonzero(r.traced[:, 0])
+    info = manifest.dataset_info(a.dataset, a.data, neurons, edges)
+    digest = info["files"]["edges.parquet"]["sha256"]
+    git = manifest.git_info()
+    out = jump.run_jump(
+        steps, body_id=int(neurons["bodyId"].iat[motor[0]]), gain_n=a.gain_n,
+        mass_kg=a.mass_kg, duration_us=round(a.duration * 1000),
+        provenance=Provenance(f"malecns {info.get('release', '')}".strip(), digest,
+                              git.get("commit") or "unknown", a.seed),
+    )  # fmt: skip
+    print(out["note"])
+    print(
+        f"{a.motor}: {out['spikes']} spikes; takeoff "
+        f"{'none' if out['takeoff_ms'] is None else f'{out["takeoff_ms"]:.1f} ms'}; "
+        f"max height {1000 * out['max_height_m']:.2f} mm"
+    )
+    a.out.mkdir(parents=True, exist_ok=True)
+    (a.out / "trajectory.json").write_text(json.dumps(out))
+    _stamp(
+        a.out, "jump", a, neurons, edges,
+        {"sim": list(a.sim), "silence": list(a.silence or []), "motor": a.motor,
+         "gain_n": a.gain_n, "mass_kg": a.mass_kg, "rate": a.rate,
+         "duration": a.duration, "stim_ms": a.stim_ms, "decoder": jump.ENGINEERED},
+        {"seed": a.seed}, started, extra={"label": "exploratory", "note": jump.NOTE},
+    )  # fmt: skip
+    print(f"-> {a.out / 'trajectory.json'}")
 
 
 def cmd_wiring_null(a, neurons, edges):
@@ -1013,6 +1061,7 @@ COMMANDS = {
     "experiment": cmd_experiment,
     "explore": cmd_explore,
     "confirm": cmd_confirm,
+    "jump": cmd_jump,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -1032,6 +1081,7 @@ MALECNS_ONLY = (
     "experiment",
     "explore",
     "confirm",
+    "jump",
 )
 
 
@@ -1084,6 +1134,22 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("config", type=Path)
     s.add_argument("--check", action="store_true", help="validate only")
     s.add_argument("--root", type=Path, default=Path("runs/experiments"))
+    s = sub.add_parser(
+        "jump",
+        help="M1: drive a one-DOF jump body from a motor neuron through an engineered decoder",
+    )
+    s.add_argument("--sim", nargs="+", required=True, metavar="STIM")
+    s.add_argument("--silence", nargs="+")
+    s.add_argument("--motor", default="TTMn_R")
+    s.add_argument(
+        "--gain-n", type=float, required=True, help="newtons per spike (engineered)"
+    )
+    s.add_argument("--mass-kg", type=float, required=True)
+    s.add_argument("--rate", type=float, default=100.0)
+    s.add_argument("--duration", type=float, default=600.0)
+    s.add_argument("--stim-ms", type=float, default=300.0)
+    s.add_argument("--seed", type=int, default=0)
+    s.add_argument("--out", type=Path, default=Path("runs/jump"))
     s = sub.add_parser(
         "explore",
         help="paths between two populations, then silence each intermediate type (exploratory)",

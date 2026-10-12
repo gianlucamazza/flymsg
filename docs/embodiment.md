@@ -73,7 +73,7 @@ here they are research A–D.
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Online neural stepping   | E1 [#43](https://github.com/gianlucamazza/flymsg/issues/43), runtime R0 ([runtime](runtime.md))                                                                                                                                                    | done in v0.8.21: `CpuRuntime` runs in blocks through checkpoint and restore and matches `sim.run` bit for bit, also on MaleCNS |
 | Looming stimulus and LC4 | E2 [#44](https://github.com/gianlucamazza/flymsg/issues/44), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34), research A [#49](https://github.com/gianlucamazza/flymsg/issues/49)                                                      | exploratory encoder and runtime bridge in v0.8.23 (below); no LC4 tuning data, no bodyId map                                   |
-| Closed loop on the body  | E3 [#45](https://github.com/gianlucamazza/flymsg/issues/45), E5 [#52](https://github.com/gianlucamazza/flymsg/issues/52), M1 [#33](https://github.com/gianlucamazza/flymsg/issues/33), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34) | open; M0 records feedback but does not feed it to the neural runtime                                                           |
+| Closed loop on the body  | E3 [#45](https://github.com/gianlucamazza/flymsg/issues/45), E5 [#52](https://github.com/gianlucamazza/flymsg/issues/52), M1 [#33](https://github.com/gianlucamazza/flymsg/issues/33), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34) | M1 jump body with an engineered decoder in v0.8.34 (below); the loop is not closed: feedback does not reach the neural runtime |
 | Motor map                | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research B [#50](https://github.com/gianlucamazza/flymsg/issues/50), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | blocked: `validation/motor_map.yaml` has no mapped row                                                                         |
 | Physical body            | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research C [#51](https://github.com/gianlucamazza/flymsg/issues/51), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | open; FlyBody not selected ([#19](https://github.com/gianlucamazza/flymsg/issues/19))                                          |
 | Falsification            | research D [#53](https://github.com/gianlucamazza/flymsg/issues/53), M4 [#36](https://github.com/gianlucamazza/flymsg/issues/36)                                                                                                                   | blocked on the steps above; existing calibration tasks are not held-out evidence                                               |
@@ -149,6 +149,24 @@ This is not a measured LC4 tuning curve, a retinal model or a sensor-to-bodyId m
 failed held-out and silence checks are not evidence for this encoder. Before E2 can pass it
 needs LC4/LPLC2 tuning data with uncertainty, a map from samples to MaleCNS sensory bodyIds,
 and a comparison with the constant-rate Poisson drive and a time-shuffled control.
+
+### M1 jump body (v0.8.34, #33)
+
+`flymsg.jump.JumpBody` is a point mass over a rigid floor: gravity, an actuator force along
++z, contact that stops the body without penetration or bounce, semi-implicit Euler at the M0
+body step. It runs through `run_fixture`, so every M0 rule holds. The decoder is
+`engineered_decoder`: each `TTMn_R` spike adds a force the caller states (`--gain-n`, newtons
+per spike) for one control period. It is not a MaleCNS motor map, never goes through
+`motor_map.command`, which stays fail-closed, and every output says so. Spikes too late to be
+delivered before the run ends are counted, not dropped. Tests check rest without spikes, the
+peak height `v²/2g` after one impulse, landing, a force below weight that does not lift, and
+replay.
+
+`flymsg jump --sim LC4_R --gain-n 2e-5 --mass-kg 1e-6` (seed 0, the battery protocol) gives
+22 `TTMn_R` spikes and takeoff at 18.0 ms; with `--silence DNp01` it gives 7 spikes and
+takeoff at 67.0 ms. Both jump about 10 µm with this arbitrary gain. The body inherits the
+failed silence check of the one-bit protocol ([behavior](behavior.md)): silencing the giant
+fiber does not stop the jump, and this is not a validated jump mechanism.
 
 ### Evidence each step needs
 
