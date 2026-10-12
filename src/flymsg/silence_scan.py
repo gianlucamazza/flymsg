@@ -22,6 +22,7 @@ PATH = ROOT / "validation" / "silence_scan.yaml"
 # sha256 of the canonical JSON of every field except version and content_sha256.
 VERSION_HASHES = {
     1: "0982767d4ce972c7c9ef08b2c3491885e8bf242d7aeb54c22927eb6437a2bb1b",
+    2: "79762510dae3d4f0499b8b60906f59920973469a82b0472176d88e6bc5fd4627",  # null pool excludes every screen pass; confirm seeds 20-22
 }
 
 _DECIDES = ("contributes", "names_partner", "none", "no_residual")
@@ -96,6 +97,13 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     confirm_seeds = set(range(confirm["seed0"], confirm["seed0"] + confirm["seeds"]))
     if screen_seeds & confirm_seeds:
         raise ScanError("confirm seeds must be fresh")
+    if doc["version"] >= 2 and (confirm_seeds & set(range(10, 13))):
+        raise ScanError("confirm seeds must not reuse the v1 confirmation (10-12)")
+    if (
+        doc["version"] >= 2
+        and doc["confirm"].get("pool_excludes_screen_passes") is not True
+    ):
+        raise ScanError("v2 excludes every screen pass from the null pool")
     if confirm["base_silence_in_every_draw"] is not True or confirm["tail"] != "lower":
         raise ScanError("the null keeps DNp01 silenced and tests a drop")
     if confirm["draws_per_test"] * confirm["alpha"] < 1:
@@ -368,6 +376,9 @@ def scan(
     pool = np.zeros(len(neurons), dtype=bool)
     pool[dimorphism.responders(results, stim)] = True
     pool[exclude] = False
+    if doc["confirm"].get("pool_excludes_screen_passes"):
+        # v2: a draw for one pass never silences another pass (see supersedes in the lock)
+        pool[np.concatenate([units[u] for u in passed])] = False
     key = (
         neurons["superclass"].fillna("none").astype(str)
         + "/"

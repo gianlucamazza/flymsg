@@ -81,6 +81,16 @@ def dataset_info(
     return info
 
 
+# git state when the command started; a long run must not record a checkout made while it ran
+_START_GIT: dict | None = None
+
+
+def mark_start() -> None:
+    """Record the git state now; `write` uses it instead of the state at the end."""
+    global _START_GIT
+    _START_GIT = git_info()
+
+
 def write(
     out: Path,
     *,
@@ -107,7 +117,7 @@ def write(
     payload = {
         "schema": SCHEMA,
         "command": command,
-        "git": git_info(),
+        "git": _START_GIT if _START_GIT is not None else git_info(),
         "dataset": dataset,
         "config": config,
         "seeds": seeds,

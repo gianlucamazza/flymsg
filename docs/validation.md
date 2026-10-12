@@ -64,11 +64,11 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
 - **Numeric lock** (2026-10-12). numba is 0.68.0 and llvmlite is 0.50.0. The unit suite
   matches the NumPy reference kernel. The scored runs were not repeated, so their
   manifests stay on numba 0.67.0.
-- **Residual partner scan, pre-registered** (2026-10-12, [behavior](behavior.md#residual-partner-scan-version-1-fixed-2026-10-12-not-run)).
-  [`validation/silence_scan.yaml`](../validation/silence_scan.yaml) version 1 fixes the
-  candidate rule, a screen on seeds 0–2, and a confirmation on fresh seeds 10–12 against the
-  T2/T3 matched-responder null with Bonferroni over the screen passes. The 2026-10-12
-  listing of `TTMn_R` inputs chooses nothing. Not run. `w_syn` stays 0.192.
+- **Residual partner scan** (2026-10-12, [behavior](behavior.md#residual-partner-scan)).
+  Version 1 verdict: none. Silencing DNp02 or DNp06 with both `DNp01` removes every `TTMn_R`
+  spike on six seeds, but each null (p 0.036, 0.041) contained the other unit; the threshold
+  was 0.025. Version 2 excludes every screen pass from the null and confirms on seeds 20–22;
+  fixed before its run. `w_syn` stays 0.192.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

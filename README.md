@@ -120,6 +120,11 @@ with no dimorphism label. [Open live](https://gianlucamazza.github.io/flymsg/liv
   reaches three spikes, later. The raster is
   [TTMn_R](docs/img/looming-jump.png), explained in [behavior](docs/behavior.md).
   `w_syn` stays 0.192.
+- **The residual `TTMn_R` partner is not named yet.** With both DNp01 silenced, silencing
+  DNp02 or DNp06 as well removes every `TTMn_R` spike on six seeds, but the pre-registered
+  test failed its threshold (p 0.036 and 0.041 against 0.025) because each null contained
+  the other unit. Version 2 excludes it and is fixed before its run
+  ([behavior](docs/behavior.md#residual-partner-scan)).
 - **No biological extension is added.** Cell-type parameters, gap junctions,
   short-term synaptic dynamics and compartments have no value that transfers into
   this LIF. Silencing DNp01 removes that cell's output, and `TTMn_R` still fires,
