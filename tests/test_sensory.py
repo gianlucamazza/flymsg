@@ -20,17 +20,22 @@ def test_looming_is_monotone_and_deterministic():
 
 def test_rate_clamp_and_zero_gain():
     stim = LoomingStimulus(0.01, 0.5, 0.1, 10_000)
-    assert all(x.rate_hz == 5 for x in encode_looming(stim, baseline_hz=5, gain_hz_per_rad_s=0))
-    assert all(x.rate_hz <= 6 for x in encode_looming(stim, baseline_hz=5, max_rate_hz=6))
+    constant = encode_looming(stim, baseline_hz=5, gain_hz_per_rad_s=0)
+    capped = encode_looming(stim, baseline_hz=5, max_rate_hz=6)
+    assert all(x.rate_hz == 5 for x in constant)
+    assert all(x.rate_hz <= 6 for x in capped)
 
 
-@pytest.mark.parametrize("args", [
-    (0, 0.5, 0.1, 1000),
-    (0.01, 0.01, 0.1, 1000),
-    (0.01, 0.5, -1, 1000),
-    (0.01, 0.5, 1, 1_000_000),
-    (0.01, 0.5, 0.1, 1500),
-])
+@pytest.mark.parametrize(
+    "args",
+    [
+        (0, 0.5, 0.1, 1000),
+        (0.01, 0.01, 0.1, 1000),
+        (0.01, 0.5, -1, 1000),
+        (0.01, 0.5, 1, 1_000_000),
+        (0.01, 0.5, 0.1, 1500),
+    ],
+)
 def test_invalid_stimulus_rejected(args):
     with pytest.raises(ValueError):
         LoomingStimulus(*args)
