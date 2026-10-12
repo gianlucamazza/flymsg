@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.25 — 2026-10-12
+
+### Architecture
+
+- **One lock check (ADR step 2).** `flymsg.locks` holds the version, hash-table and
+  `content_sha256` check that `behavior`, `benchmarks`, `motor_map` and `silence_scan` each
+  copied; they keep their names, error classes and hash tables. A contract test checks that
+  each module still raises its own error. No lock file or hash changes.
+
 ## 0.8.24 — 2026-10-12
 
 ### Runtime

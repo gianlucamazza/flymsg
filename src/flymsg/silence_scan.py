@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import behavior, data, dimorphism, parallel, prereg, sim
+from flymsg import behavior, data, dimorphism, locks, parallel, prereg, sim
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "silence_scan.yaml"
@@ -33,7 +33,7 @@ class ScanError(ValueError):
 
 
 def load(path: Path = PATH) -> dict:
-    return prereg.load_yaml(path.read_text(encoding="utf-8"))
+    return locks.load(path)
 
 
 def content_hash(doc: dict) -> str:
@@ -43,14 +43,7 @@ def content_hash(doc: dict) -> str:
 def assert_locked(doc: dict | None = None) -> dict:
     """Refuse a protocol whose locked fields changed without a new version."""
     doc = load() if doc is None else doc
-    version = doc.get("version")
-    if version not in VERSION_HASHES:
-        raise ScanError(f"scan version {version} is not in VERSION_HASHES")
-    digest = content_hash(doc)
-    if digest != VERSION_HASHES[version]:
-        raise ScanError("scan protocol changed without a bump")
-    if doc.get("content_sha256") != digest:
-        raise ScanError("content_sha256 does not match the protocol")
+    locks.check(doc, VERSION_HASHES, ScanError, "scan protocol")
     return doc
 
 

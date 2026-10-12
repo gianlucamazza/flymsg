@@ -84,8 +84,10 @@ Each step is its own change with its tests green before and after. None reruns a
 result.
 
 1. **Contract tests** (this change).
-2. **Lock helper.** One `locks` module with `load`, `content_hash` and `assert_locked`; the
-   five modules keep their names and their `VERSION_HASHES`. B3 must stay green.
+2. **Lock helper** (done in v0.8.25). `flymsg.locks` holds `load` and the common
+   `check`; `behavior`, `benchmarks`, `motor_map` and `silence_scan` keep their names, error
+   classes and `VERSION_HASHES` and call it. `prereg` keeps its own check, which also owns
+   the parser and the canonical hash. B3 stays green.
 3. **Draw engine.** Move matched draws, checkpointed null draws and the job map from
    `dimorphism` into a public module; `dimorphism` and `silence_scan` import it. Existing
    checkpoints must replay (same pick hashes).
