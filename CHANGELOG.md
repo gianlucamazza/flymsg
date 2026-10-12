@@ -26,6 +26,9 @@
 
 ### Live scenes
 
+- **Every scene re-exported from `main`** (`8f2a076`): the manifests of the scenes made before
+  the rule pointed at branch commits that squash merges dropped; now all record a commit on
+  `main`. Activity is unchanged byte for byte.
 - **Left eye and both eyes on the site:** `looming-left` (`LC4_L`), `looming-bilateral`
   (`LC4`) and the `right-vs-left` comparison, exported from `main`. Seed 0: `TTMn_R` 22
   spikes with the right eye, `TTMn_L` 12 with the left, 24 and 12 with both. `docs/viz.md`
