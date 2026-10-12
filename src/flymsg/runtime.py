@@ -177,6 +177,16 @@ class CpuRuntime:
     def step(self) -> int:
         return self._step
 
+    @property
+    def tick_us(self) -> int:
+        """The neural step in microseconds, from `p.dt`."""
+        return round(self._p.dt * 1000)
+
+    @property
+    def n_inputs(self) -> int:
+        """Columns of an input block: the stimulated neurons, deduplicated."""
+        return int(self._stim.size)
+
     def advance_to(self, step: int) -> None:
         if type(step) is not int or not self._step <= step <= self._steps:
             raise ValueError("advance target must be monotonic and within horizon")

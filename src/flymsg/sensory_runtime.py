@@ -1,4 +1,7 @@
-"""Exploratory bridge from sensory rates to the incremental LIF runtime."""
+"""Exploratory bridge from sensory drive samples to the incremental LIF runtime.
+
+No biological tuning or sensor-to-bodyId mapping is implied.
+"""
 
 from __future__ import annotations
 
@@ -10,23 +13,19 @@ from flymsg.sensory import SensoryDrive
 
 
 def schedule_sensory_drive(
-    runtime,
-    samples: tuple[SensoryDrive, ...],
-    *,
-    neural_dt_us: int,
-    sample_period_us: int,
-    n_stim: int,
-    seed: int,
+    runtime, samples: tuple[SensoryDrive, ...], *, sample_period_us: int, seed: int
 ) -> None:
-    """Validate a time grid and schedule deterministic Poisson input counts."""
-    if type(neural_dt_us) is not int or neural_dt_us <= 0:
-        raise ValueError("neural_dt_us must be positive")
+    """Schedule reproducible time-varying Poisson input before advancing runtime.
+
+    The neural tick and the number of input columns come from the runtime, so a rate cannot
+    be scaled by the wrong step. Sample intervals must form a contiguous grid starting at
+    the runtime's current exclusive step boundary. All validation precedes input mutation.
+    """
+    neural_dt_us, n_stim = runtime.tick_us, runtime.n_inputs
     if type(sample_period_us) is not int or sample_period_us <= 0:
         raise ValueError("sample_period_us must be positive")
     if sample_period_us % neural_dt_us:
         raise ValueError("sample period must be divisible by neural timestep")
-    if type(n_stim) is not int or n_stim <= 0:
-        raise ValueError("n_stim must be positive")
     if type(seed) is not int or seed < 0:
         raise ValueError("seed must be a nonnegative integer")
     if not samples:
