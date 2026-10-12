@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Pre-registration
+
+- **Residual partner follow-up v1** (#76): two model-side tests of the scan v3 naming,
+  locked before any run on fresh seeds 40–42. Left: the scan arm mirrored (`LC4_L` →
+  `TTMn_L`), testing only DNp02 and DNp06 with the scan's null. Drive: `DNp02_R`, `DNp06_R`
+  and the pair driven directly at 200 Hz without LC4, against matched descending-neuron
+  pairs, with the verdicts `single_sufficient`, `conjunction`, `pair_sufficient`,
+  `not_specific` and `insufficient`. Every null draw is kept. `flymsg partner-followup`.
+
+### Exploratory
+
+- **Mirrored scan arms** (`scripts/silence_mirror.py`, seeds 0–2, disclosed in the lock):
+  the left side follows the right (DNp02 or DNp06 with DNp01 silenced: 0 `TTMn_L` spikes),
+  the effect follows the pair on the side of the stimulus, and the left residual is weak
+  (2, 1, 3 spikes).
+
 ## 0.8.41 — 2026-10-12
 
 ### Result

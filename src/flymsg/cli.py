@@ -23,6 +23,7 @@ from flymsg import (
     loop,
     manifest,
     nulls,
+    partner_followup,
     prereg,
     quality,
     sensitivity,
@@ -794,6 +795,56 @@ def cmd_silence_scan(a, neurons, edges):
     print(f"report -> {path / 'report.txt'}")
 
 
+def cmd_partner_followup(a, neurons, edges):
+    """The frozen residual partner follow-up (issue #76). No flag chooses a unit or seed."""
+    started = datetime.now(UTC)
+    doc = partner_followup.assert_matches_code()
+    print(partner_followup.summary(doc))
+    out = partner_followup.run(neurons, edges, a.workers, a.checkpoint)
+    path = Path("runs/partner-followup") / f"v{doc['version']}"  # never overwrite
+    path.mkdir(parents=True, exist_ok=True)
+    out["left"].to_csv(path / "left.csv", index=False)
+    drive = pd.DataFrame(
+        [{"arm": arm, "counts": counts, "driven_spikes": out["driven_spikes"][arm]}
+         for arm, counts in out["drive_arms"].items()]
+    )  # fmt: skip
+    drive.to_csv(path / "drive.csv", index=False)
+    out["null_draws"].to_csv(path / "null_draws.csv", index=False)
+    d = out["drive"]
+    lines = [
+        f"left base arm (DNp01 silenced): {out['left_base']}",
+        "left:",
+        out["left"].to_string(index=False),
+        f"left verdict: {out['left_verdict']}",
+        "drive arms:",
+        drive.to_string(index=False),
+        f"pair null: draws {d['draws']}, mean {d['null_mean']:.3f}, p {d['p']:.6f}",
+        f"drive verdict: {out['drive_verdict']}",
+    ]
+    text = "\n".join(lines)
+    print(text)
+    (path / "report.txt").write_text(text + "\n")
+    _stamp(
+        path,
+        "partner-followup --run",
+        a,
+        neurons,
+        edges,
+        {
+            "w_syn": doc["model"]["w_syn"],
+            "th_jump": doc["model"]["th_jump"],
+            "followup_version": doc["version"],
+            "followup_sha256": doc["content_sha256"],
+            "left_rate_hz": doc["left"]["rate_hz"],
+            "drive_rate_hz": doc["drive"]["rate_hz"],
+        },
+        {"all": list(partner_followup.seeds(doc))},
+        started,
+        extra={"left": out["left_verdict"], "drive": out["drive_verdict"]},
+    )
+    print(f"report -> {path / 'report.txt'}")
+
+
 def cmd_benchmarks(a, neurons, edges):
     """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
@@ -1177,6 +1228,7 @@ COMMANDS = {
     "benchmarks": cmd_benchmarks,
     "behavior": cmd_behavior,
     "silence-scan": cmd_silence_scan,
+    "partner-followup": cmd_partner_followup,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
     "experiment": cmd_experiment,
@@ -1199,6 +1251,7 @@ MALECNS_ONLY = (
     "benchmarks",
     "behavior",
     "silence-scan",
+    "partner-followup",
     "trace",
     "sensitivity",
     "experiment",
@@ -1352,6 +1405,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the frozen residual TTMn_R partner scan (issue #20), or run it with --run",
     )
     s.add_argument("--run", action="store_true", help="run the frozen scan")
+    s.add_argument("--workers", type=int, default=1, help="worker processes")
+    s.add_argument(
+        "--checkpoint",
+        type=Path,
+        help="JSON-lines file; an interrupted run resumes from it",
+    )
+    s = sub.add_parser(
+        "partner-followup",
+        help="print the frozen residual partner follow-up (issue #76), or run it with --run",
+    )
+    s.add_argument("--run", action="store_true", help="run the frozen follow-up")
     s.add_argument("--workers", type=int, default=1, help="worker processes")
     s.add_argument(
         "--checkpoint",
@@ -1645,6 +1709,8 @@ def main() -> None:
             return print(f"{len(scene['neurons'])} neurons -> {a.out}/")
         if a.cmd == "silence-scan" and not a.run:
             return print(silence_scan.summary())
+        if a.cmd == "partner-followup" and not a.run:
+            return print(partner_followup.summary())
         if a.cmd == "behavior" and not a.run:
             return print(behavior.summary())
         if a.cmd == "benchmarks" and a.run and a.corners:
@@ -1675,6 +1741,8 @@ def main() -> None:
     except sensitivity.SensitivityError as err:
         sys.exit(f"flymsg: {err}")
     except silence_scan.ScanError as err:
+        sys.exit(f"flymsg: {err}")
+    except partner_followup.FollowupError as err:
         sys.exit(f"flymsg: {err}")
     except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")

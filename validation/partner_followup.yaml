@@ -1,0 +1,114 @@
+# Residual partner follow-up (issue 76). Version 1, fixed 2026-10-12 before any run.
+# Two model-side tests of the scan v3 naming (DNp02, DNp06): the mirrored left side, and a
+# direct drive of the pair without LC4. Changing a locked field requires incrementing
+# `version` and updating `content_sha256` and flymsg.partner_followup.VERSION_HASHES.
+# `flymsg partner-followup` prints this file and does not simulate.
+version: 1
+content_sha256: 513ebd2c8237f1805c42f45b55fe0168e985ecd7e39940a7a17639e9249a4d99
+
+issue: 76
+parent:
+  lock: silence_scan
+  version: 3
+  verdict: "names_partner: DNp02, DNp06"
+
+seen_before_lock:
+  mirror: "scripts/silence_mirror.py ran on seeds 0-2 before this lock: LC4_L drives TTMn_L 11, 11, 10 spikes; with both DNp01 silenced 2, 1, 3; with DNp01 and DNp02, or DNp01 and DNp06, silenced 0, 0, 0. It also ran the right side, which reproduces the scan base arm. The left test below uses seeds no run has used."
+  drive: "No run drove DNp02 or DNp06 directly before this lock. The drive rate comes from the scan v3 partner counts, which decided nothing: DNp02_R fired 58-59 spikes and DNp06_R 45-50 spikes in 300 ms of looming drive."
+
+seeds:
+  seed0: 40
+  seeds: 3
+
+model:
+  w_syn: 0.19230769230769232
+  th_jump: 0.0
+  dt_ms: 0.1
+  bar: 3
+  bar_from: "behavior v1 min_spikes, the jump bit"
+
+left:
+  question: "With LC4_L driven and both DNp01 silenced, does silencing DNp02 or DNp06 as well remove the residual TTMn_L drive?"
+  stimulus: LC4_L
+  stimulus_n: 71
+  motor: TTMn_L
+  motor_n: 1
+  base_silence: DNp01
+  base_silence_n: 2
+  units: [DNp02, DNp06]
+  unit_n: 2
+  rate_hz: 100.0
+  stim_ms: 300.0
+  duration_ms: 300.0
+  statistic: "TTMn_L spikes during the 300 ms drive, mean over seeds"
+  null: matched_responders
+  pool: "neurons firing during the drive in at least 2 of the 3 seeds of the base arm, minus stimulus, motor, base_silence, DNp02 and DNp06"
+  match: [superclass, sign]
+  base_silence_in_every_draw: true
+  draws: 1000
+  tail: lower
+  p: "(1 + number of draws whose mean count is at or below the observed mean) / (1 + draws)"
+  alpha: 0.05
+  correction: bonferroni_over_units
+
+drive:
+  question: "Without LC4 and with both DNp01 silenced, does driving DNp02_R and DNp06_R together bring TTMn_R to the jump bit, and does either one alone?"
+  driven: [DNp02_R, DNp06_R]
+  motor: TTMn_R
+  motor_n: 1
+  silence: DNp01
+  silence_n: 2
+  rate_hz: 200.0
+  rate_from: "the scan v3 partner counts: DNp02_R near 195 Hz and DNp06_R near 160 Hz during the looming drive; one rate for both, the higher"
+  stim_ms: 300.0
+  duration_ms: 300.0
+  arms: [DNp02_R, DNp06_R, pair]
+  statistic: "TTMn_R spikes during the 300 ms drive, per seed"
+  null: matched_pairs
+  pool: "every neuron with the superclass and sign of the driven pair, minus DNp01, DNp02, DNp06 and the motor"
+  match: [superclass, sign]
+  silence_in_every_draw: true
+  draws: 1000
+  tail: upper
+  p: "(1 + number of draws whose mean count is at or above the observed pair mean) / (1 + draws)"
+  alpha: 0.05
+
+decides:
+  left:
+    no_residual: "the base arm keeps TTMn_L at or below 2 spikes in every seed; nothing is tested and the left side is undetermined"
+    undetermined: "a null is not defined (the pool lacks a matched neuron); its unit gets no p and the left side is undetermined"
+    contributes: "p at or below alpha / 2"
+    names_partner: "contributes, and TTMn_L emits at most 2 spikes in every seed"
+    replicates: "both DNp02 and DNp06 reach names_partner"
+    partial: "exactly one of them reaches names_partner"
+    not_replicated: "neither reaches names_partner while the base arm has a residual"
+  drive:
+    reaches: "an arm reaches the bar when TTMn_R emits at least 3 spikes in every seed"
+    fails: "an arm fails when TTMn_R emits at most 2 spikes in every seed"
+    single_sufficient: "DNp02_R or DNp06_R alone reaches the bar; named"
+    conjunction: "the pair reaches the bar, p at or below alpha, and both single arms fail"
+    pair_sufficient: "the pair reaches the bar and p at or below alpha, but a single arm neither reaches nor fails"
+    not_specific: "the pair reaches the bar and p above alpha"
+    insufficient: "the pair does not reach the bar and no single arm does"
+
+reported:
+  null_draws:
+    decides: false
+    what: "the mean count of every null draw, per test"
+  driven_spikes:
+    decides: false
+    what: "spikes of DNp02_R and DNp06_R in each drive arm, per seed"
+
+not_done:
+  - other_units
+  - other_rates
+  - left_drive
+  - gap_junctions
+  - retune
+  - scan_edit
+  - behavior_v1_edit
+
+prediction:
+  id: gf_required_for_the_jump_bit
+  status: unverified
+  tests_animal: false
