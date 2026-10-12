@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.26 — 2026-10-12
+
+### Viz
+
+- **The scene bundle has a version (ADR step 4).** `scene.json` carries
+  `schema: flymsg.scene/v1`; the page warns in the console when a bundle has another or no
+  version. The live scenes are re-exported from a clean tree: only the `schema` field and
+  the manifests change; `activity.bin` and `partners.json` are identical.
+
 ## 0.8.25 — 2026-10-12
 
 ### Architecture
