@@ -31,11 +31,11 @@
     "n_exported": 1127
   },
   "git": {
-    "commit": "f83c1b34ec34ec38ccebd6f71039e3146f4dadcf",
+    "commit": "49161a43484f5332aff6eb05a3d6b5a96d4d352c",
     "dirty": false
   },
   "packages": {
-    "flymsg": "0.8.19",
+    "flymsg": "0.8.25",
     "numba": "0.68.0",
     "numpy": "2.5.3",
     "pandas": "3.0.6",
@@ -59,7 +59,7 @@
     "seed": 0
   },
   "timestamps": {
-    "finished_at": "2026-10-12T12:25:45.166140+00:00",
-    "started_at": "2026-10-12T12:24:48.287363+00:00"
+    "finished_at": "2026-10-12T13:22:16.279297+00:00",
+    "started_at": "2026-10-12T13:21:38.567709+00:00"
   }
 }

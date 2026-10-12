@@ -32,8 +32,7 @@ a manifest. Long batches fan out to worker processes on one machine.
   underscore names.
 - **`cli.py` is 1,100 lines.** Each command parses, runs, prints and writes its own outputs and
   manifest.
-- **The viewer bundle has no version.** `scene.json`, `activity.bin` and `partners.json` are
-  read by the page by convention only.
+- **The viewer bundle had no version** until v0.8.26 (`flymsg.scene/v1`).
 - **Runs are not indexed.** Every output directory has a manifest, but nothing lists or
   compares them (#27).
 - **The engine records spikes only.** `sim.run(trace=...)` returns spike bits for chosen
@@ -91,8 +90,9 @@ result.
 3. **Draw engine.** Move matched draws, checkpointed null draws and the job map from
    `dimorphism` into a public module; `dimorphism` and `silence_scan` import it. Existing
    checkpoints must replay (same pick hashes).
-4. **Viewer bundle version.** Add `schema: flymsg.scene/v1` to `scene.json`; the page warns on
-   an unknown version. B5 gains that check.
+4. **Viewer bundle version** (done in v0.8.26). `scene.json` carries `schema:
+flymsg.scene/v1` (`viz.SCENE_SCHEMA`); the page warns in the console on another or no
+   version. B5 checks that exporter and page name the same version.
 5. **Extension points.**
    - #26 state tracing: record `v`, `g` and `th` of chosen neurons, either from
      `CpuRuntime.snapshot()` at chosen boundaries or with a recorder in the kernel; the NumPy

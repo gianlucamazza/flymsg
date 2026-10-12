@@ -15,6 +15,8 @@ import pandas as pd
 from flymsg import graph, sim
 
 STATIC = Path(__file__).parent / "viz_static"
+# The bundle the page reads (scene.json, activity.bin, partners.json); the page checks it.
+SCENE_SCHEMA = "flymsg.scene/v1"
 
 
 def page_files() -> list[Path]:
@@ -56,6 +58,7 @@ def export(
     rates = result.rate(0, result.stim_ms) if result is not None else None
     rows = neurons.iloc[idx]
     scene = {
+        "schema": SCENE_SCHEMA,
         "neurons": [
             {
                 "bodyId": int(r.bodyId),
@@ -69,7 +72,7 @@ def export(
                 "rate": None if rates is None else round(float(rates[i]), 1),
             }
             for i, r, group in zip(idx, rows.itertuples(), groups, strict=True)
-        ]
+        ],
     }
     replay = out / "activity.bin"
     if result is not None:
