@@ -176,3 +176,83 @@ def test_export_writes_partners_and_drops_a_stale_table(tmp_path):
     assert table["top"] == 10 and set(table["neurons"]) == {"100", "101"}
     viz.export(tmp_path, neurons, np.array([0]), ["a"])
     assert not (tmp_path / "partners.json").exists()
+
+
+def _export(path, idx, counts, seed=0, files=None, silence=()):
+    """A replay export with a minimal manifest, as flymsg viz writes it."""
+    neurons, edges = _partner_graph()
+    neurons = neurons.assign(
+        instance=pd.NA, nt=pd.NA, superclass="x", dimorphism=pd.NA, fruDsx=pd.NA
+    )
+    counts = np.zeros((4, len(neurons)), np.uint16) if counts is None else counts
+    viz.export(
+        path, neurons, np.array(idx), ["g"] * len(idx), result(counts, 20.0), edges
+    )
+    (path / "manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "flymsg.run_manifest/v1",
+                "command": "viz",
+                "config": {"sim": ["S"], "silence": list(silence)},
+                "seeds": {"seed": seed},
+                "git": {"commit": "abc", "dirty": False},
+                "dataset": {
+                    "name": "malecns",
+                    "release": "v1.0",
+                    "files": files or {"e": 1},
+                },
+            }
+        )
+    )
+    return path
+
+
+def _counts():
+    c = np.zeros((4, 6), np.uint16)
+    c[0, 0], c[1, 1], c[2, 5] = 2, 1, 3
+    return c
+
+
+def test_identical_runs_compare_to_zero_delta(tmp_path):
+    a = _export(tmp_path / "a", [0, 1, 5], _counts())
+    scene = viz.compare_bundles(a, a, tmp_path / "c", ("A", "A"), ("exploratory",) * 2)
+    out = tmp_path / "c"
+    sa = np.fromfile(out / "activity.bin", np.uint8)
+    sb = np.fromfile(out / "activity_b.bin", np.uint8)
+    assert np.array_equal(sa, sb) and sa.any()
+    assert scene["comparison"]["differences"] == []
+    assert all(n["in"] == [True, True] for n in scene["neurons"])
+
+
+def test_comparison_keeps_missing_neurons_apart_and_lists_differences(tmp_path):
+    a = _export(tmp_path / "a", [0, 1], _counts())
+    b = _export(tmp_path / "b", [0, 5], _counts(), seed=0, silence=("DNp01",))
+    scene = viz.compare_bundles(
+        a, b, tmp_path / "c", ("baseline", "silenced"), ("exploratory", "failed")
+    )
+    assert [n["bodyId"] for n in scene["neurons"]] == [100, 101, 105]
+    assert [n["in"] for n in scene["neurons"]] == [
+        [True, True],
+        [True, False],
+        [False, True],
+    ]
+    assert scene["neurons"][1]["rate_b"] is None  # not exported in b, not "silent"
+    assert scene["comparison"]["differences"] == [
+        {"key": "config.silence", "a": [], "b": ["DNp01"]}
+    ]
+    assert scene["comparison"]["runs"][1]["status"] == "failed"
+    table = json.loads((tmp_path / "c" / "partners.json").read_text())
+    # 100 -> 101 is a row of a, 100 -> 105 a row of b; both are renumbered to the union
+    assert table["neurons"]["100"]["downstream"]["in_scene"] == [[1, 7], [2, 7]]
+
+
+def test_incomparable_runs_are_refused(tmp_path):
+    a = _export(tmp_path / "a", [0, 1], _counts())
+    other = _export(tmp_path / "b", [0, 1], _counts(), files={"e": 2})
+    with pytest.raises(ValueError, match="datasets differ"):
+        viz.compare_bundles(a, other, tmp_path / "c", ("A", "B"), ("exploratory",) * 2)
+    longer = _export(tmp_path / "d", [0, 1], np.zeros((6, 6), np.uint16))
+    with pytest.raises(ValueError, match="time bases differ"):
+        viz.compare_bundles(a, longer, tmp_path / "c", ("A", "B"), ("exploratory",) * 2)
+    with pytest.raises(ValueError, match="status"):
+        viz.compare_bundles(a, a, tmp_path / "c", ("A", "B"), ("validated", "wrong"))

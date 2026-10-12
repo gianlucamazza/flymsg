@@ -814,7 +814,14 @@ def cmd_viz(a, neurons, edges):
         stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.sim]))
         W = sim.network(neurons, edges, sim.Params())
         print(f"simulating {stim.size} stimulated neurons for {a.duration} ms ...")
-        result = sim.run(W, stim, a.rate, a.duration, a.stim_ms, seed=a.seed)
+        silence = (
+            np.concatenate([data.resolve(neurons, q) for q in a.silence])
+            if a.silence
+            else None
+        )
+        result = sim.run(
+            W, stim, a.rate, a.duration, a.stim_ms, seed=a.seed, silence=silence
+        )
         idx = viz.select_from_result(result, stim, a.min_rate)
         groups = np.where(np.isin(idx, stim), "stimulus", "response").tolist()
     scene = viz.export(a.out, neurons, idx, groups, result, edges)
@@ -835,6 +842,7 @@ def cmd_viz(a, neurons, edges):
             "rate": a.rate,
             "duration": a.duration,
             "stim_ms": a.stim_ms,
+            "silence": list(a.silence or []),
         },
         {"seed": a.seed},
         started,
@@ -1174,7 +1182,27 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.0,
         help="replay: only neurons above this rate (Hz)",
     )
+    s.add_argument(
+        "--silence", nargs="+", help="replay: neurons that never fire (types/bodyIds)"
+    )
     s.add_argument("--out", type=Path, default=Path("runs/viz"))
+    s = sub.add_parser(
+        "viz-compare",
+        help="pair two replay exports for side-by-side viewing (no simulation)",
+    )
+    s.add_argument("a", type=Path, help="baseline export directory")
+    s.add_argument("b", type=Path, help="intervention export directory")
+    s.add_argument("--labels", nargs=2, required=True, metavar=("A", "B"))
+    s.add_argument(
+        "--status",
+        nargs=2,
+        required=True,
+        choices=viz.COMPARE_STATUSES,
+        metavar=("A", "B"),
+        help=f"protocol status of each run: {', '.join(viz.COMPARE_STATUSES)}",
+    )
+    s.add_argument("--notes", nargs=2, default=("", ""), metavar=("A", "B"))
+    s.add_argument("--out", type=Path, default=Path("runs/viz-compare"))
     return p
 
 
@@ -1192,6 +1220,13 @@ def main() -> None:
             return data.build(a.data, a.dataset)
         if getattr(a, "progress", False):  # reads the checkpoint files only
             return print(dimorphism.progress(a.checkpoint).to_string(index=False))
+        if a.cmd == "viz-compare":  # reads two exports; loads no dataset
+            scene = viz.compare_bundles(
+                a.a, a.b, a.out, tuple(a.labels), tuple(a.status), tuple(a.notes)
+            )
+            for d in scene["comparison"]["differences"]:
+                print(f"  differs: {d['key']}: {d['a']} -> {d['b']}")
+            return print(f"{len(scene['neurons'])} neurons -> {a.out}/")
         if a.cmd == "silence-scan" and not a.run:
             return print(silence_scan.summary())
         if a.cmd == "behavior" and not a.run:

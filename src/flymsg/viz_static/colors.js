@@ -64,6 +64,14 @@ export const FOCUS_COLORS = {
   context: "#2a2f38",
 };
 
+// Two runs compared: more or fewer spikes in B than in A, the same, or held by one export only.
+export const COMPARE_COLORS = {
+  more: "#ff4d6d",
+  less: "#4cc9f0",
+  same: "#5c6370",
+  "not exported": "#2a2f38",
+};
+
 /** Stable small hash of a string, so a cell type always gets the same palette entry. */
 export const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
@@ -74,6 +82,7 @@ export const hash = (s) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>
  */
 export function colourOf(n, view, groups) {
   if (view.focus) return FOCUS_COLORS[view.focus.get(n.k) ?? "context"];
+  if (view.compare) return COMPARE_COLORS[view.compare[n.k]];
   switch (view.colorBy) {
     case "group":
       return PALETTE[groups.indexOf(n.group) % PALETTE.length];
