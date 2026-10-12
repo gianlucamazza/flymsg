@@ -379,6 +379,36 @@ One description is added and decides nothing: in each confirm arm, the spikes of
 screen pass per seed (DNp06 when DNp02 is silenced, and the reverse). It turns the seed 0
 observation that `TTMn_R` needs both into three seeds, with no test attached.
 
+### Result of version 3 (2026-10-12)
+
+**Verdict: names_partner: DNp02, DNp06. The v2 naming replicates on fresh seeds.** The run
+started from `1bbf60e` (the lock on `main`, clean, in a separate worktree) and took 2 h 23
+min; its manifest records the same commit.
+
+The base arm gave `TTMn_R` 7, 5 and 6 spikes on screen seeds 0–2 and 5, 4 and 5 on confirm
+seeds 30–32. The screen selected the same thirteen candidates and the same two passes:
+
+| Unit  | Confirm, seeds 30–32 | Null mean | p     | Other pass, spikes per seed | Outcome         |
+| ----- | -------------------- | --------: | ----- | --------------------------- | --------------- |
+| DNp02 | 0, 0, 0              |      5.56 | 0.001 | DNp06: 45, 50, 46           | `names_partner` |
+| DNp06 | 0, 0, 0              |      5.55 | 0.001 | DNp02: 59, 59, 58           | `names_partner` |
+
+The failure rule did not apply. The descriptive column, which decides nothing, extends the
+seed 0 observation to three seeds: with either unit silenced the other keeps firing and
+`TTMn_R` stays at 0, so in this model `TTMn_R` needs both inputs together. Across versions 2
+and 3, silencing either unit with both `DNp01` removes every `TTMn_R` spike on twelve seeds.
+The runner keeps only the null mean and p, not the value of each draw, so the null
+distribution is not archived. Report: `results/silence-scan/v3/`.
+
+![Screen and confirmation of scan v3: the same screen on seeds 0–2; DNp02 and DNp06 on fresh seeds 30–32 against the matched null mean.](img/silence-scan-v3.svg)
+
+The limits of version 2 that remain: the result is about this LIF on MaleCNS, not the fly;
+`gf_required_for_the_jump_bit` stays `unverified`; version 1 of the one-bit protocol is not
+edited. What would test it on the animal is in
+[#36](https://github.com/gianlucamazza/flymsg/issues/36).
+
+### Protocol (all versions)
+
 **Blind.** The 2026-10-12 listing of `TTMn_R` inputs was read before this
 lock, so it chooses nothing. No unit is named here. The runner computes the
 set from the rule, and the set is reported before the confirmatory stage

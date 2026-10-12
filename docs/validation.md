@@ -73,6 +73,10 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   Verdict: names_partner: DNp02, DNp06 (p 0.001 each against 0.025; 0 `TTMn_R` spikes on
   seeds 20–22). Model-side, and fixed after v1 was seen; `gf_required_for_the_jump_bit` stays
   `unverified`.
+- **Residual partner scan v3** (2026-10-12, [behavior](behavior.md#result-of-version-3-2026-10-12)).
+  A replication of v2 with every rule unchanged and fresh confirm seeds 30–32, locked before
+  its run: names_partner: DNp02, DNp06 again (p 0.001 each). The v2 naming replicates;
+  model-side.
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
 - **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency

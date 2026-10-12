@@ -1,13 +1,25 @@
 # Changelog
 
-## Unreleased
+## 0.8.41 — 2026-10-12
+
+### Result
+
+- **Residual partner scan v3 replicates v2** (#20): names_partner: DNp02, DNp06 again, on
+  fresh confirm seeds 30–32 (0 `TTMn_R` spikes on every seed, p 0.001 each against 0.025).
+  The run started from `1bbf60e` on `main` and took 2 h 23 min. The descriptive output shows
+  the other pass still firing (DNp06 45–50 spikes with DNp02 silenced, DNp02 58–59 with DNp06
+  silenced) while `TTMn_R` stays at 0: in this model `TTMn_R` needs both. Figure
+  `silence-scan-v3.svg`; outputs in `results/silence-scan/v3/`. Model-side;
+  `gf_required_for_the_jump_bit` stays `unverified`.
 
 ### Pre-registration
 
 - **Residual partner scan v3, a replication of v2** (#20). Every rule of v2 unchanged,
   confirm seeds 30–32 (the runner refuses the spent 10–12 and 20–22), a failure rule fixed
   before the run, and one descriptive output: the other screen pass's spikes in each confirm
-  arm. Committed before the run; no tag until it reports.
+  arm. Committed before the run.
+- **Runs start from `main`.** A run a doc cites starts from a merged commit in a clean
+  worktree, since squash merges drop branch commits ([architecture](docs/architecture.md)).
 
 ### Reproducibility
 

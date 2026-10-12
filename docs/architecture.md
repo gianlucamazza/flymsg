@@ -142,6 +142,10 @@ executes a lock is `preregistered`; the held-out benchmark is `held-out`). The o
 `held-out`; `--label failed` filters on it. A label is read, never written back, so nothing
 is promoted.
 
+A run whose manifest a doc will cite starts from a commit on `main`, in a clean detached
+worktree, after the code or lock it needs is merged. Pull requests are squash-merged, so a
+manifest that records a branch commit points at a commit `main` never contains.
+
 ## Causal explorer
 
 `flymsg explore SOURCE TARGET [--silence …]` lists up to three distinct strongest routes

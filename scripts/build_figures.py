@@ -2,7 +2,7 @@
 
 Reads results/ (tracked; filled from runs/ by scripts/archive_results.py, manifests included):
   results/behavior/           flymsg behavior --run
-  results/silence-scan/v2/    flymsg silence-scan --run (lock v2)
+  results/silence-scan/v{2,3}/  flymsg silence-scan --run (locks v2, v3)
   results/jump/{intact,dnp01}/  flymsg jump --sim LC4_R [--silence DNp01]
   results/loop/               flymsg loop --sim LC4_R ...
   results/sensitivity/v1/     flymsg sensitivity --run
@@ -36,8 +36,8 @@ def looming_jump() -> str:
     )
 
 
-def scan() -> str:
-    d = RESULTS / "silence-scan" / "v2"
+def scan(version: int, confirm_seeds: str) -> str:
+    d = RESULTS / "silence-scan" / f"v{version}"
     report = (d / "report.txt").read_text()
     base = {
         k: ast.literal_eval(v)
@@ -48,6 +48,8 @@ def scan() -> str:
         pd.read_csv(d / "confirm.csv"),
         base["screen"],
         base["confirm"],
+        confirm_seeds,
+        version,
     )
 
 
@@ -106,7 +108,8 @@ def sens() -> str:
 
 FIGURES = {
     "looming-jump.svg": looming_jump,
-    "silence-scan-v2.svg": scan,
+    "silence-scan-v2.svg": lambda: scan(2, "20–22"),
+    "silence-scan-v3.svg": lambda: scan(3, "30–32"),
     "embodiment.svg": embodiment,
     "kc-persistence.svg": kc,
     "homology-pilot.svg": homology,
