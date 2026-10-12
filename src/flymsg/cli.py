@@ -17,6 +17,7 @@ from flymsg import (
     dimorphism,
     draws,
     graph,
+    homology,
     intervention,
     jump,
     loop,
@@ -542,6 +543,36 @@ def cmd_loop(a, neurons, edges):
         {"seed": a.seed}, started, extra={"label": "exploratory", "note": jump.NOTE},
     )  # fmt: skip
     print(f"-> {a.out}")
+
+
+def cmd_homology(a, neurons, edges):
+    """The versioned male/female type mapping and the LC4 -> DNp01 pilot."""
+    started = datetime.now(UTC)
+    female = data.load(a.data, "fafb")
+    table = homology.mapping(neurons, female[0])
+    pilot = homology.pilot((neurons, edges), female)
+    out = a.out
+    out.mkdir(parents=True, exist_ok=True)
+    table.to_csv(out / "mapping.csv", index=False)
+    pilot.to_csv(out / "pilot.csv", index=False)
+    counts = table["category"].value_counts().reindex(homology.CATEGORIES, fill_value=0)
+    print(counts.to_string())
+    print(pilot.to_string(index=False))
+    meta = {
+        "schema": homology.SCHEMA,
+        "evidence": homology.EVIDENCE,
+        "male": manifest.dataset_info("malecns", a.data, neurons, edges),
+        "female": manifest.dataset_info("fafb", a.data / "fafb", *female),
+        "categories": counts.to_dict(),
+    }
+    meta.update(
+        git=manifest.git_info(),
+        flymsg=manifest.package_versions().get("flymsg"),
+        created_at=started.isoformat(),
+        evidence_codes={"flywireType": homology.EVIDENCE},
+    )
+    (out / "mapping.meta.json").write_text(json.dumps(meta, indent=1, sort_keys=True))
+    print(f"-> {out}")
 
 
 def cmd_wiring_null(a, neurons, edges):
@@ -1140,6 +1171,7 @@ COMMANDS = {
     "confirm": cmd_confirm,
     "jump": cmd_jump,
     "loop": cmd_loop,
+    "homology": cmd_homology,
 }
 # these need the whole connectome loaded; fetch and build make it, and --progress
 # only reads checkpoint files
@@ -1161,6 +1193,7 @@ MALECNS_ONLY = (
     "confirm",
     "jump",
     "loop",
+    "homology",
 )
 
 
@@ -1229,6 +1262,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--stim-ms", type=float, default=300.0)
     s.add_argument("--seed", type=int, default=0)
     s.add_argument("--out", type=Path, default=Path("runs/jump"))
+    s = sub.add_parser(
+        "homology",
+        help="male/female type mapping (flywireType) and the LC4 -> DNp01 pilot",
+    )
+    s.add_argument("--out", type=Path, default=Path("validation/homology"))
     s = sub.add_parser(
         "loop",
         help="M2: looming closed loop with disconnected, shuffled and replay controls",
