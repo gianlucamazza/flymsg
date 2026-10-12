@@ -1,13 +1,15 @@
-"""Draw the docs figures from run outputs. Usage: uv run python scripts/build_figures.py
+"""Draw the docs figures from archived run outputs. Usage: uv run python scripts/build_figures.py
 
-Reads (ignored by git, written by the commands named in docs/provenance.md):
-  runs/silence-scan/v2/       flymsg silence-scan --run (lock v2)
-  runs/jump/{intact,dnp01}/   flymsg jump --sim LC4_R [--silence DNp01]
-  runs/loop/                  flymsg loop --sim LC4_R ...
-  runs/sensitivity/v1/        flymsg sensitivity --run
+Reads results/ (tracked; filled from runs/ by scripts/archive_results.py, manifests included):
+  results/behavior/           flymsg behavior --run
+  results/silence-scan/v2/    flymsg silence-scan --run (lock v2)
+  results/jump/{intact,dnp01}/  flymsg jump --sim LC4_R [--silence DNp01]
+  results/loop/               flymsg loop --sim LC4_R ...
+  results/sensitivity/v1/     flymsg sensitivity --run
   validation/homology/        flymsg homology
 and reruns one exploratory simulation (the scored ORN_DM1 corner, seed 0) for the Kenyon
-cell figure. Writes docs/img/*.svg. Nothing here changes a result.
+cell figure, which needs the MaleCNS tables. Writes docs/img/*.svg. Nothing here changes a
+result.
 """
 
 import ast
@@ -18,14 +20,24 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, figures, sensitivity, sim
+from flymsg import behavior, data, figures, sensitivity, sim
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNS, IMG = ROOT / "runs", ROOT / "docs" / "img"
+RESULTS, IMG = ROOT / "results", ROOT / "docs" / "img"
+
+
+def looming_jump() -> str:
+    doc = behavior.load()
+    endpoints = doc["protocol"]
+    seeds = range(endpoints["seed0"], endpoints["seed0"] + endpoints["seeds"])
+    replay = dict(np.load(RESULTS / "behavior" / "replay.npz"))
+    return figures.looming_jump(
+        replay, list(seeds), endpoints["dt_ms"], endpoints["stim_ms"]
+    )
 
 
 def scan() -> str:
-    d = RUNS / "silence-scan" / "v2"
+    d = RESULTS / "silence-scan" / "v2"
     report = (d / "report.txt").read_text()
     base = {
         k: ast.literal_eval(v)
@@ -41,10 +53,10 @@ def scan() -> str:
 
 def embodiment() -> str:
     jump = {
-        k: json.loads((RUNS / "jump" / k / "trajectory.json").read_text())
+        k: json.loads((RESULTS / "jump" / k / "trajectory.json").read_text())
         for k in ("intact", "dnp01")
     }
-    loop = dict(np.load(RUNS / "loop" / "loop.npz"))
+    loop = dict(np.load(RESULTS / "loop" / "loop.npz"))
     return figures.embodiment(jump["intact"], jump["dnp01"], loop)
 
 
@@ -88,11 +100,12 @@ def homology() -> str:
 
 
 def sens() -> str:
-    cells = pd.read_csv(RUNS / "sensitivity" / "v1" / "cells.csv")
+    cells = pd.read_csv(RESULTS / "sensitivity" / "v1" / "cells.csv")
     return sensitivity.svg(cells, sensitivity.load())
 
 
 FIGURES = {
+    "looming-jump.svg": looming_jump,
     "silence-scan-v2.svg": scan,
     "embodiment.svg": embodiment,
     "kc-persistence.svg": kc,

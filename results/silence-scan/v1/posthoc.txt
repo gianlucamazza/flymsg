@@ -1,0 +1,7 @@
+null pool: 1019 responders on seeds 10-12
+DNp02: 35 of 1000 draws reached 0 spikes (p 0.0360)
+  draws containing DNp06_L (10228): 48 (in the pool: True)
+  draws containing DNp06_R (10584): 35 (in the pool: True)
+DNp06: 40 of 1000 draws reached 0 spikes (p 0.0410)
+  draws containing DNp02_R (10117): 40 (in the pool: True)
+  draws containing DNp02_L (10197): 0 (in the pool: False)

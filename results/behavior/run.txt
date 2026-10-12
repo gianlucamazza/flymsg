@@ -1,0 +1,33 @@
+behavior v1: closed loop, w_syn=0.19230769230769232 th_jump=0.0, seeds 0-2
+              arm         check seed      value                                                                      note  passed  decides
+           closed          jump    0  43.000000                                                                   on time    True    False
+           closed      feedback    0 431.000000                                    stimulus steps 431, cut after step 430    True    False
+           closed decoder_match    0        NaN                                              3 spike steps through t_jump    True    False
+          silence       silence    0   3.000000                                                                 drive cut   False    False
+           closed       latency    0  43.000000 TTMn_R first 17.0 ms; DNp01(GF)_R first 4.8 ms; DNp01(GF)_L first 12.4 ms   False    False
+feedback_disabled         order    0   4.800000                                                 DNp01(GF)_R before TTMn_R   False    False
+           closed     stability    0   0.000000                                neurons still firing from 400 ms to 600 ms   False    False
+           closed          jump    1  50.700000                                                                   on time    True    False
+           closed      feedback    1 508.000000                                    stimulus steps 508, cut after step 507    True    False
+           closed decoder_match    1        NaN                                              3 spike steps through t_jump    True    False
+          silence       silence    1   3.000000                                                                 drive cut   False    False
+           closed       latency    1  50.700000 TTMn_R first 17.2 ms; DNp01(GF)_R first 4.9 ms; DNp01(GF)_L first 12.9 ms   False    False
+feedback_disabled         order    1   4.900000                                                 DNp01(GF)_R before TTMn_R   False    False
+           closed     stability    1   0.000000                                neurons still firing from 400 ms to 600 ms   False    False
+           closed          jump    2  47.800000                                                                   on time    True    False
+           closed      feedback    2 479.000000                                    stimulus steps 479, cut after step 478    True    False
+           closed decoder_match    2        NaN                                              3 spike steps through t_jump    True    False
+          silence       silence    2   3.000000                                                                 drive cut   False    False
+           closed       latency    2  47.800000 TTMn_R first 17.1 ms; DNp01(GF)_R first 5.1 ms; DNp01(GF)_L first 12.5 ms   False    False
+feedback_disabled         order    2   5.100000                                                 DNp01(GF)_R before TTMn_R   False    False
+           closed     stability    2   0.000000                                neurons still firing from 400 ms to 600 ms   False    False
+           closed          jump  all   3.000000                                                3/3 seeds on time; needs 2    True     True
+           closed      feedback  all        NaN                     every seed that jumps cuts the drive after that spike    True     True
+          silence       silence  all        NaN                TTMn_R stays at or below 2 spikes and the drive is not cut   False     True
+           closed decoder_match  all        NaN                     TTMn_R spike steps through t_jump match the open loop    True     True
+           closed     stability  all   0.000000       mean neurons still firing from 400 ms; v4 limit 100 does not decide   False    False
+           closed       latency  all  47.800000   median t_jump_ms of seeds that reached three spikes; not a takeoff time   False    False
+           closed     runtime_s  all  90.462674           wall time of the closed loop, the open loop and the silence arm   False    False
+calibration feasibility FAIL: silence
+reported rows do not decide and are not a retune
+report -> runs/behavior/report.csv

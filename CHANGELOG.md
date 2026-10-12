@@ -9,6 +9,15 @@
   before the run, and one descriptive output: the other screen pass's spikes in each confirm
   arm. Committed before the run; no tag until it reports.
 
+### Reproducibility
+
+- **`results/`** holds the small outputs the docs cite (184 KB), copied from `runs/` with
+  their manifests by `scripts/archive_results.py`, which drops local paths and refuses to
+  overwrite a differing directory. `scripts/build_figures.py` now reads from it, so a clone
+  can redraw every figure; only the Kenyon cell figure still needs the MaleCNS tables.
+- **`looming-jump.svg`** replaces the hand-made `looming-jump.png`: the same TTMn_R raster of
+  the behavior v1 run, now drawn by the script from `results/behavior/replay.npz`.
+
 ## 0.8.40 — 2026-10-12
 
 ### Figures and live scenes

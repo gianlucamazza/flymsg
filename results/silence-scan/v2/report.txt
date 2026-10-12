@@ -1,0 +1,22 @@
+base arm, screen seeds: [7, 5, 6]
+base arm, confirm seeds: [6, 6, 6]
+screen:
+               unit  n  weight sign    counts     mean  passes
+              DNp02  2      21    1 [0, 0, 0] 0.000000    True
+              DNp06  2      35    1 [0, 0, 0] 0.000000    True
+               GFC2 10     261    1 [6, 5, 5] 5.333333   False
+           IN00A029  4      30   -1 [5, 4, 7] 5.333333   False
+           IN06B013  4      27   -1 [6, 6, 6] 6.000000   False
+           IN07B055  9      98    1 [4, 4, 6] 4.666667   False
+           IN07B058  4      27    1 [4, 5, 5] 4.666667   False
+           IN07B080  7      16    1 [5, 5, 6] 5.333333   False
+           IN12B015  2       7   -1 [6, 5, 7] 6.000000   False
+           IN18B038 10      14    1 [4, 4, 6] 4.666667   False
+           IN21A014  6       5   -1 [6, 7, 7] 6.666667   False
+           IN21A026  3     223   -1 [6, 5, 7] 6.000000   False
+Sternotrochanter MN 14      10    0 [7, 5, 6] 6.000000   False
+confirm:
+ unit    counts  draws  null_mean        p  contributes  names_partner
+DNp02 [0, 0, 0]   1000   5.280000 0.000999         True           True
+DNp06 [0, 0, 0]   1000   5.279333 0.000999         True           True
+names_partner: DNp02, DNp06

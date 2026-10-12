@@ -1,0 +1,71 @@
+{
+  "command": "jump",
+  "config": {
+    "decoder": "engineered_decoder",
+    "duration": 600.0,
+    "gain_n": 2e-05,
+    "mass_kg": 1e-06,
+    "motor": "TTMn_R",
+    "rate": 100.0,
+    "silence": [
+      "DNp01"
+    ],
+    "sim": [
+      "LC4_R"
+    ],
+    "stim_ms": 300.0
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "data_dir": "data",
+    "label": "exploratory",
+    "note": "engineered decoder: an arbitrary gain from TTMn_R spikes to a vertical force; not an experimentally established MaleCNS motor map"
+  },
+  "git": {
+    "commit": "3b30bcae77000a74159011078e374e13e9599f5e",
+    "dirty": true
+  },
+  "packages": {
+    "flymsg": "0.8.33",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "pyarrow": "25.0.1",
+    "scipy": "1.18.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.8-arch1-2-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.8-arch1-2",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "content_sha256": "fe54f4512b024a37d3c8602c1fe9944f89f500675c1bbc01aa456bda657cafa8",
+    "version": 1
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "seed": 0
+  },
+  "timestamps": {
+    "finished_at": "2026-10-12T15:20:04.823833+00:00",
+    "started_at": "2026-10-12T15:19:18.442827+00:00"
+  }
+}

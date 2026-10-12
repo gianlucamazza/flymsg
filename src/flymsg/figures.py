@@ -52,7 +52,11 @@ class Panel:
         return self.y0 + self.h - (v - a) / (b - a) * self.h
 
     def frame(
-        self, xticks: Sequence[float] | None = None, xticklabels=None, rotate: int = 0
+        self,
+        xticks: Sequence[float] | None = None,
+        xticklabels=None,
+        rotate: int = 0,
+        yticks: Sequence[float] | None = None,
     ) -> Panel:
         x0, y0, w, h = self.x0, self.y0, self.w, self.h
         self.out.append(
@@ -62,7 +66,7 @@ class Panel:
             self.out.append(
                 f'<text x="{x0}" y="{y0 - 6}" font-size="11">{xml.escape(self.title)}</text>'
             )
-        for v in ticks(*self.ylim):
+        for v in ticks(*sorted(self.ylim)) if yticks is None else yticks:
             y = self.Y(v)
             self.out.append(
                 f'<line x1="{x0 - 3}" x2="{x0}" y1="{y:.1f}" y2="{y:.1f}" stroke="#999"/>'
@@ -324,3 +328,48 @@ def homology_pilot(pilot: pd.DataFrame) -> str:
            "a difference between reconstructions, not attributed to sex", GREY)  # fmt: skip
     return document(920, 300, "Homology pilot (#29): LC4 → DNp01 in MaleCNS and FAFB",
                     [a, b])  # fmt: skip
+
+
+def looming_jump(
+    replay: dict, seeds: Sequence[int], dt_ms: float, drive_ms: float
+) -> str:
+    """TTMn_R spike raster of the one-bit loop per seed: closed loop up to the third spike,
+    the open loop after it, and the DNp01-silenced arm. Times are neural steps × `dt_ms`."""
+    rows = len(seeds) * 2
+    a = Panel(110, 84, 760, 30 * rows + 30, (0, drive_ms * 1.07), (rows + 0.3, -0.7),
+              xlabel="time (ms)")  # fmt: skip
+    a.frame(yticks=())
+    a.out.append(
+        f'<line x1="{a.X(drive_ms):.1f}" x2="{a.X(drive_ms):.1f}" y1="{a.y0}" '
+        f'y2="{a.y0 + a.h}" stroke="{GREY}" stroke-dasharray="4 3"/>'
+    )
+    a.text(a.X(drive_ms) - 4, a.y0 + a.h - 6, "drive ends", GREY, "end")
+
+    def ticks_at(times, row, colour, width):
+        y = a.Y(row)
+        for t in times:
+            x = a.X(t)
+            a.out.append(
+                f'<line x1="{x:.1f}" x2="{x:.1f}" y1="{y - 9:.1f}" y2="{y + 9:.1f}" '
+                f'stroke="{colour}" stroke-width="{width}"/>'
+            )
+
+    for k, seed in enumerate(seeds):
+        top, low = 2 * k + 0.4, 2 * k + 1.2
+        closed = np.asarray(replay[f"seed{seed}_ttmn_closed"]) * dt_ms
+        open_ = np.asarray(replay[f"seed{seed}_ttmn_open"]) * dt_ms
+        silence = np.asarray(replay[f"seed{seed}_ttmn_silence"]) * dt_ms
+        ticks_at(closed, top, "#111827", 2.5)
+        ticks_at(open_[open_ > closed[-1]], top, "#4b5563", 1.2)
+        ticks_at(silence, low, BLUE, 2.5)
+        x = a.X(closed[-1])
+        a.out.append(
+            f'<path d="M{x - 5:.1f},{a.Y(top) - 18:.1f} h10 l-5,7 z" fill="#111827"/>'
+        )
+        a.text(a.x0 - 8, a.Y(top) + 4, f"seed {seed} open", "#222", "end")
+        a.text(a.x0 - 8, a.Y(low) + 4, f"seed {seed} silence", "#222", "end")
+    a.legend([("open loop, after the jump", "#4b5563"),
+              ("closed loop, stops at the third spike (▼ jump)", "#111827"),
+              ("both DNp01 silenced", BLUE)], x=a.x0 + 20, y=40)  # fmt: skip
+    return document(900, a.y0 + a.h + 50, "TTMn_R spikes in the one-bit looming loop "
+                    "(behavior v1, LC4_R 100 Hz)", [a])  # fmt: skip
