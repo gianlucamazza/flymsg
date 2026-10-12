@@ -3,6 +3,7 @@ from dataclasses import replace
 
 import pytest
 
+from flymsg import sim
 from flymsg.embodiment import (
     BodyState,
     Clock,
@@ -148,3 +149,27 @@ def test_exhaustive_grid_event_conservation_and_delivery_bound():
     for command in trace.commands:
         for event in command.source_events:
             assert 100 <= command.time_us - event.time_us < 1100
+
+
+def test_default_neural_tick_is_the_simulator_step():
+    assert Clock().neural_us == round(sim.Params.dt * 1000)
+
+
+def test_bad_mass_fails_at_construction():
+    with pytest.raises(ContractError, match="mass"):
+        MockBody(mass_kg=0.0)
+
+
+def test_any_adapter_exception_becomes_a_contract_error():
+    class Broken(MockBody):
+        calls = 0
+
+        def step(self, command, dt_us):
+            self.calls += 1
+            raise ZeroDivisionError("backend")
+
+    body = Broken()
+    with pytest.raises(ContractError, match="adapter") as err:
+        run(body=body)
+    assert isinstance(err.value.__cause__, ZeroDivisionError)
+    assert body.calls == 1

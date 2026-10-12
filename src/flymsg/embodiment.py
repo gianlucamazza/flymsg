@@ -102,9 +102,12 @@ class MockBody:
     position_m: float = 0.0
     velocity_m_s: float = 0.0
 
-    def step(self, command: MotorCommand, dt_us: int) -> BodyState:
+    def __post_init__(self) -> None:
+        # checked at construction, so a bad body fails before the first actuator call
         if not math.isfinite(self.mass_kg) or self.mass_kg <= 0:
             raise ContractError("mass must be finite and positive")
+
+    def step(self, command: MotorCommand, dt_us: int) -> BodyState:
         dt = dt_us / 1_000_000
         self.velocity_m_s += command.force_n / self.mass_kg * dt
         self.position_m += self.velocity_m_s * dt
@@ -128,6 +131,16 @@ class Trace:
     def to_dict(self) -> dict:
         """JSON-ready deterministic record, usable as run_manifest extra metadata."""
         return asdict(self)
+
+
+def _adapter(call, *args):
+    """A body call; any failure inside it becomes a ContractError that stops the run."""
+    try:
+        return call(*args)
+    except ContractError:
+        raise
+    except Exception as err:
+        raise ContractError(f"body adapter failed: {err!r}") from err
 
 
 def run_fixture(
@@ -198,14 +211,13 @@ def run_fixture(
                 raise ContractError("aggregated force is not finite")
             command = MotorCommand(time, force, sources)
             commands.append(command)
-        state = body.step(
-            MotorCommand(time, command.force_n, command.source_events), clock.body_us
-        )
+        held = MotorCommand(time, command.force_n, command.source_events)
+        state = _adapter(body.step, held, clock.body_us)
         if state.time_us != time + clock.body_us or not all(
             math.isfinite(v) for v in (state.position_m, state.velocity_m_s)
         ):
             raise ContractError("invalid body state")
-        samples = body.sensors(state)
+        samples = _adapter(body.sensors, state)
         names = [sample.name for sample in samples]
         if len(names) != len(set(names)) or set(names) != set(sensor_map):
             raise ContractError("missing, duplicate or unmapped sensor")
