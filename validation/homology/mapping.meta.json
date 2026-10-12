@@ -1,0 +1,44 @@
+{
+ "categories": {
+  "annotation not in FAFB table": 715,
+  "female type with no male mapping": 1511,
+  "male-specific annotation": 288,
+  "matched": 7422,
+  "not mapped": 208,
+  "outside FAFB tissue": 3118
+ },
+ "created_at": "2026-10-12T15:35:09.524867+00:00",
+ "evidence": "MaleCNS flywireType annotation (Berg et al. 2026); FAFB v783 types",
+ "evidence_codes": {
+  "flywireType": "MaleCNS flywireType annotation (Berg et al. 2026); FAFB v783 types"
+ },
+ "female": {
+  "files": {},
+  "n_edges": 15091983,
+  "n_neurons": 138639,
+  "name": "fafb",
+  "release": "fafb"
+ },
+ "flymsg": "0.8.35",
+ "git": {
+  "commit": "92583dc46edc0741368c05f7d0b98c052ace9852",
+  "dirty": false
+ },
+ "male": {
+  "files": {
+   "edges.parquet": {
+    "bytes": 98482393,
+    "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+   },
+   "neurons.parquet": {
+    "bytes": 2375250,
+    "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   }
+  },
+  "n_edges": 25563197,
+  "n_neurons": 165122,
+  "name": "malecns",
+  "release": "v1.0"
+ },
+ "schema": "flymsg.homology/v1"
+}

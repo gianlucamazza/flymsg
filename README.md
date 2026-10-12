@@ -191,6 +191,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `explore SRC DST` · `confirm LOCK`                              | paths and exploratory silencing; run a registered intervention lock against a matched null              |
 | `jump --sim STIM --gain-n G --mass-kg M`                        | M1: a one-DOF jump body driven by a motor neuron through an engineered decoder (not a motor map)        |
 | `loop --sim STIM …`                                             | M2: looming closed loop with disconnected, shuffled and replay controls; engineered parameters          |
+| `homology`                                                      | versioned male/female type mapping (flywireType) and the LC4 → DNp01 pilot                              |
 
 The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?detail=`,
 `?adaptive=0`,

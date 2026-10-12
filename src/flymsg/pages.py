@@ -36,6 +36,7 @@ EXTERNAL = {
     "../validation/motor_map.yaml": f"{BLOB}/validation/motor_map.yaml",
     "validation/silence_scan.yaml": f"{BLOB}/validation/silence_scan.yaml",
     "validation/sensitivity.yaml": f"{BLOB}/validation/sensitivity.yaml",
+    "../validation/homology/mapping.meta.json": f"{BLOB}/validation/homology/mapping.meta.json",
     "../validation/sensitivity.yaml": f"{BLOB}/validation/sensitivity.yaml",
     "../validation/silence_scan.yaml": f"{BLOB}/validation/silence_scan.yaml",
 }

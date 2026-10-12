@@ -13,6 +13,8 @@ __pycache__/
 # Connectome data and outputs
 /data
 *.csv
+# the versioned homology table is data the docs cite
+!validation/homology/*.csv
 
 # Generated runs and 3D bundles
 runs/
