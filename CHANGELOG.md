@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.33 — 2026-10-12
+
+### Research tooling
+
+- **Causal explorer (#25).** `flymsg explore SRC DST` reports distinct strongest routes
+  (anatomy) and the target's change when each intermediate type is silenced (exploratory
+  simulation, bootstrap interval), writes it with a manifest, and `--replay` checks a saved
+  exploration reproduces. `flymsg confirm LOCK` runs a `flymsg.intervention/v1` lock only
+  once it is registered by a commit, on seeds disjoint from the explored ones, against a
+  matched null that never draws from any set, and never overwrites a result. `TTMn_R` is
+  marked as governed by #20. No lock is registered.
+
 ## 0.8.32 — 2026-10-12
 
 ### Platform
