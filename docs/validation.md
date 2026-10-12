@@ -313,7 +313,7 @@ P1 and sugar at × 1.2 with `th_jump` 0 (82 and 46). At the default cell no case
 Parameter spread exceeds seed spread for most rates (looming TTMn: 17–87 Hz across cells,
 7 Hz across seeds); the giant-fiber TTMn latency is the exception, with a seed range (77 ms)
 larger than the range of its medians. Figure: [rate per cell](img/sensitivity-rate.svg); files
-in `runs/sensitivity/v1/`. Nothing is chosen from this grid.
+in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from this grid.
 
 ## Findings log
 

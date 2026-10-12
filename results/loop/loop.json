@@ -1,0 +1,30 @@
+{
+ "summary": {
+  "closed": {
+   "motor_spikes": 8,
+   "input_kicks": 496,
+   "takeoff_ms": 103.0,
+   "max_height_m": 1.0570000000000004e-05
+  },
+  "disconnected": {
+   "motor_spikes": 8,
+   "input_kicks": 496,
+   "takeoff_ms": 103.0,
+   "max_height_m": 1.0570000000000004e-05
+  },
+  "shuffled": {
+   "motor_spikes": 9,
+   "input_kicks": 488,
+   "takeoff_ms": 29.0,
+   "max_height_m": 1.0570000000000004e-05
+  },
+  "replay": {
+   "motor_spikes": 8,
+   "input_kicks": 496,
+   "takeoff_ms": 103.0,
+   "max_height_m": 1.0570000000000004e-05
+  }
+ },
+ "replay_matches": true,
+ "input_steps_differing": 0
+}

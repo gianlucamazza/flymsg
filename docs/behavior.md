@@ -20,7 +20,7 @@ The protocol file was not edited after the numbers. The run started from commit
 commit as dirty. The loop itself took 90.5 s. Same MaleCNS tables as the
 held-out run.
 
-![TTMn_R spikes, seeds 0–2. Black ticks are the closed loop and stop at the third spike. Grey ticks are the open loop after that. Blue ticks are TTMn_R with both DNp01 silenced.](img/looming-jump.png)
+![TTMn_R spikes, seeds 0–2. Black ticks are the closed loop and stop at the third spike (the jump). Grey ticks are the open loop after that. Blue ticks are TTMn_R with both DNp01 silenced.](img/looming-jump.svg)
 
 Each seed has two rows. The triangle is `t_jump`, and the closed loop has no
 spike after it. With both `DNp01` silenced, `TTMn_R` still reaches three
@@ -310,7 +310,7 @@ and 7 on seeds 10–12. Thirteen units met the candidate rule. Two passed the sc
 
 The other eleven stayed between 4.7 and 6.7 spikes. With _m_ = 2 the threshold is 0.025, so
 neither unit `contributes` and neither `names_partner`, although each one, silenced with
-`DNp01`, removed every `TTMn_R` spike in all six seeds. Report: `runs/silence-scan/v1/`.
+`DNp01`, removed every `TTMn_R` spike in all six seeds. Report: `results/silence-scan/v1/` (archived from `runs/`).
 
 **Post-hoc, exploratory** (`scripts/silence_scan_posthoc.py`, after the verdict). The v1
 null pool excluded only the tested unit. Of the 1,000 draws for DNp02, 35 reached 0 spikes,
@@ -344,7 +344,7 @@ seeds 20–22. The same thirteen candidates as in version 1; the same two passed
 
 With the other screen pass out of the pool, no draw reached the observed 0 spikes, so p is
 the smallest the 1,000 draws allow, below the 0.025 threshold. Report:
-`runs/silence-scan/v2/`.
+`results/silence-scan/v2/` (archived from `runs/`).
 
 ![Screen and confirmation of scan v2. Left: TTMn_R spikes per silenced unit on seeds 0–2, with the base arm and the half-of-base screen bar. Right: DNp02 and DNp06 on seeds 20–22 against the matched null mean.](img/silence-scan-v2.svg)
 

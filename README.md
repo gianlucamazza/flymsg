@@ -130,7 +130,7 @@ goes from 7 spikes to 0 ([DNp02](https://gianlucamazza.github.io/flymsg/live/dnp
 - **The one-bit looming jump fails silence.** `TTMn_R` reaches three spikes on time
   in 3/3 seeds, and the closed loop stops there. With both DNp01 silenced it still
   reaches three spikes, later. The raster is
-  [TTMn_R](docs/img/looming-jump.png), explained in [behavior](docs/behavior.md).
+  [TTMn_R](docs/img/looming-jump.svg), explained in [behavior](docs/behavior.md).
   `w_syn` stays 0.192.
 - **The residual `TTMn_R` drive goes through DNp02 and DNp06, in the model.** With both
   DNp01 silenced, silencing either one as well removes every `TTMn_R` spike. Version 1 of the

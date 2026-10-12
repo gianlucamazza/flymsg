@@ -1,0 +1,47 @@
+sensitivity v1 (issue #28): 10 cells (w_syn x [0.8, 0.9, 1.0, 1.1, 1.2], th_jump [0.0, 2.0]), 6 cases, seeds 0-4; a report, not a score
+holds (v4 floor) per cell:
+th_jump                    0.0                      2.0                    
+w_syn_factor               0.8  0.9  1.0  1.1  1.2  0.8  0.9  1.0  1.1  1.2
+case               target                                                  
+P1 courtship drive dPR1    1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0
+                   pIP10   1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0
+bitter feeding     MN9     0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0
+giant fiber output TTMn    1.0  1.0  1.0  1.0  1.0  0.0  1.0  1.0  1.0  1.0
+looming escape     DNp01   1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0
+                   TTMn    1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0
+pIP10 song pathway dPR1    1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0
+sugar feeding      MN9     0.0  0.0  1.0  1.0  1.0  0.0  0.0  0.0  1.0  1.0
+spreads (seed range at the default cell vs range of medians over cells):
+              case target     metric  default_median  seed_range_at_default  median_min  median_max
+P1 courtship drive   dPR1       rate      100.000000              16.666667   73.333333  106.666667
+P1 courtship drive   dPR1    latency       10.000000               2.400000    9.400000   11.100000
+P1 courtship drive   dPR1  recruited     1882.000000             122.000000 1020.000000 2841.000000
+P1 courtship drive   dPR1 persistent        0.000000               0.000000    0.000000   82.000000
+P1 courtship drive  pIP10       rate      106.666667              10.000000   73.333333  116.666667
+P1 courtship drive  pIP10    latency        7.600000               2.600000    7.100000    8.500000
+P1 courtship drive  pIP10  recruited     1882.000000             122.000000 1020.000000 2841.000000
+P1 courtship drive  pIP10 persistent        0.000000               0.000000    0.000000   82.000000
+    bitter feeding    MN9       rate        0.000000               0.000000    0.000000    0.000000
+    bitter feeding    MN9    latency             NaN                    NaN         NaN         NaN
+    bitter feeding    MN9  recruited      117.000000             157.000000   44.000000  868.000000
+    bitter feeding    MN9 persistent        0.000000               0.000000    0.000000    0.000000
+giant fiber output   TTMn       rate       16.666667              10.000000    6.666667   23.333333
+giant fiber output   TTMn    latency       35.400000              77.500000   28.800000   63.100000
+giant fiber output   TTMn  recruited        2.000000               2.000000    2.000000    4.000000
+giant fiber output   TTMn persistent        0.000000               0.000000    0.000000    0.000000
+    looming escape  DNp01       rate      210.000000               3.333333  123.333333  220.000000
+    looming escape  DNp01    latency        4.900000               0.600000    4.700000    5.300000
+    looming escape  DNp01  recruited     1081.000000              68.000000  393.000000 1804.000000
+    looming escape  DNp01 persistent        0.000000               0.000000    0.000000   31.000000
+    looming escape   TTMn       rate       70.000000               6.666667   16.666667   86.666667
+    looming escape   TTMn    latency       17.100000               1.600000   15.100000   22.900000
+    looming escape   TTMn  recruited     1081.000000              68.000000  393.000000 1804.000000
+    looming escape   TTMn persistent        0.000000               0.000000    0.000000   31.000000
+pIP10 song pathway   dPR1       rate       90.000000              26.666667   66.666667   90.000000
+pIP10 song pathway   dPR1    latency       12.900000              17.300000   12.200000   13.900000
+pIP10 song pathway   dPR1  recruited      245.000000              15.000000  173.000000  287.000000
+pIP10 song pathway   dPR1 persistent        0.000000               0.000000    0.000000    0.000000
+     sugar feeding    MN9       rate       30.000000              16.666667    0.000000   56.666667
+     sugar feeding    MN9    latency       40.500000              44.900000   34.300000  167.900000
+     sugar feeding    MN9  recruited      439.000000             340.000000   61.000000  793.000000
+     sugar feeding    MN9 persistent        0.000000               0.000000    0.000000   46.000000

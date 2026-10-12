@@ -81,3 +81,22 @@ def test_homology_pilot_labels_share_as_percent():
     )  # fmt: skip
     texts = _texts(_parse(figures.homology_pilot(pilot)))
     assert {"16.0%", "8.0%", "male R", "female L"} <= set(texts)
+
+
+def test_looming_jump_draws_closed_open_and_silence_ticks():
+    replay = {
+        "seed0_ttmn_closed": np.array([100, 200, 300]),
+        "seed0_ttmn_open": np.array([100, 200, 300, 400, 500]),
+        "seed0_ttmn_silence": np.array([600]),
+    }
+    root = _parse(figures.looming_jump(replay, [0], 0.1, 300.0))
+    ticks = [
+        e for e in root.iter() if e.tag.endswith("line") and e.get("y1") != e.get("y2")
+    ]
+    colours = [e.get("stroke") for e in ticks]
+    # vertical ticks only (legend swatches are horizontal): closed 3, open after the third
+    # spike 2, silence 1
+    assert colours.count("#111827") == 3
+    assert colours.count("#4b5563") == 2
+    assert colours.count(figures.BLUE) == 1
+    assert {"seed 0 open", "seed 0 silence"} <= set(_texts(root))

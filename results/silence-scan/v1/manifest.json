@@ -1,0 +1,74 @@
+{
+  "command": "silence-scan --run",
+  "config": {
+    "duration_ms": 300.0,
+    "m": 2,
+    "rate_hz": 100.0,
+    "scan_sha256": "0982767d4ce972c7c9ef08b2c3491885e8bf242d7aeb54c22927eb6437a2bb1b",
+    "scan_version": 1,
+    "stim_ms": 300.0,
+    "th_jump": 0.0,
+    "w_syn": 0.19230769230769232
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "data_dir": "data",
+    "verdict": "none: the residual drive is not one cell type"
+  },
+  "git": {
+    "commit": "7d939b2758181e292d0ab9bc6ead75fafc2422fd",
+    "dirty": false
+  },
+  "packages": {
+    "flymsg": "0.8.26",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "pyarrow": "25.0.1",
+    "scipy": "1.18.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.8-arch1-2-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.8-arch1-2",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "content_sha256": "fe54f4512b024a37d3c8602c1fe9944f89f500675c1bbc01aa456bda657cafa8",
+    "version": 1
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "confirm": [
+      10,
+      11,
+      12
+    ],
+    "screen": [
+      0,
+      1,
+      2
+    ]
+  },
+  "timestamps": {
+    "finished_at": "2026-10-12T13:46:47.976440+00:00",
+    "started_at": "2026-10-12T11:00:28.938070+00:00"
+  }
+}
