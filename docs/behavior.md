@@ -127,12 +127,18 @@ A re-read on 2026-10-12 of FlyBody commit `d015e9b` (2025-07-30) found the same
 timesteps. The 59 walking actions in that commit's `docs/getting-started.ipynb`
 are named actuators: claw adhesion, head, abdomen, and leg joints through
 `tarsus2`. Wings and mouth are off. No name is a MaleCNS motor neuron. The
-body's sex is still unstated outside the notebooks. `pyproject.toml` there
+Nature paper states that the reconstructed body is a female fly, and the
+supplementary masses are the mean of 52 females. The README,
+`tasks/constants.py` and the head of `fruitfly.xml` still do not state the sex.
+`pyproject.toml` there
 allows Python >=3.10 and pins `numpy==1.26.4`. Issue
 [#19](https://github.com/gianlucamazza/flymsg/issues/19) records the re-read.
 It does not select FlyBody. Issue
 [#20](https://github.com/gianlucamazza/flymsg/issues/20) keeps the residual
-`TTMn_R` partner unnamed.
+`TTMn_R` partner unnamed. The authored map is
+[`validation/motor_map.yaml`](../validation/motor_map.yaml). Every actuator and
+both `TTMn` neurons are `unmapped`. A command is refused. It does not select
+FlyBody.
 
 The documented FlyBody install is Python 3.10 plus optional TensorFlow, Acme,
 Ray, and CUDA. flymsg requires Python 3.13 and does not depend on MuJoCo.

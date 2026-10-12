@@ -1,0 +1,212 @@
+# Authored motor map. Version 1, written 2026-10-12.
+# A row can take a command only when a published source names that
+# motor neuron and that actuator together. None does. Every row is
+# unmapped. Changing a locked field requires incrementing `version`
+# and updating `content_sha256` and flymsg.motor_map.VERSION_HASHES.
+version: 1
+content_sha256: f8cde8f4f9e05d9373335ceee8e8d4b4fc62adc819af856442d894d10014c3f9
+authored: hypothesis
+body_sex: female
+connectome_sex: male
+compensation: false
+flybody_commit: d015e9b
+sources:
+  - "Vaxenburg et al. 2025, doi:10.1038/s41586-025-09029-4, MOESM1 tables 2 and 9"
+  - "Azevedo et al. 2024, doi:10.1038/s41586-024-07389-x, MOESM1 table A1 and figure A5"
+  - "Lesser et al. 2024, doi:10.1038/s41586-024-07600-z, supplementary table 1"
+  - "Marin et al., bioRxiv 2023.06.05.543407"
+  - "bioRxiv 2023.06.07.543976"
+reasons:
+  claw_adhesion: "The long tendon pulls the claw. FlyBody adhesion is a force up to one body weight, not that muscle."
+  head: "No MaleCNS motor neuron is named for the head actuators."
+  abdomen: "No MaleCNS motor neuron is named for the abdomen actuators."
+  coxa_three: "Azevedo lists promotion, remotion, abduction, adduction and rotation. That is more than three actuators. The femur reductor function is unknown."
+  femur_two: "The tibia muscles act on the femur-tibia joint, which is the tibia actuator."
+  tibia_one: "Extensor, main flexor and accessory flexor are antagonists on one actuator. No winner is chosen."
+  tarsus_two: "Levator, depressor and retro-depressor are three muscles. tarsus2 is a coupled distal link, not a muscle."
+  no_trochanter_joint: "Azevedo: the tergotrochanter extends the coxa-trochanter joint. FlyBody walking has no such joint."
+actuators:
+  - name: adhere_claw_T1_left
+    status: unmapped
+    reason: claw_adhesion
+  - name: adhere_claw_T1_right
+    status: unmapped
+    reason: claw_adhesion
+  - name: adhere_claw_T2_left
+    status: unmapped
+    reason: claw_adhesion
+  - name: adhere_claw_T2_right
+    status: unmapped
+    reason: claw_adhesion
+  - name: adhere_claw_T3_left
+    status: unmapped
+    reason: claw_adhesion
+  - name: adhere_claw_T3_right
+    status: unmapped
+    reason: claw_adhesion
+  - name: head_abduct
+    status: unmapped
+    reason: head
+  - name: head_twist
+    status: unmapped
+    reason: head
+  - name: head
+    status: unmapped
+    reason: head
+  - name: abdomen_abduct
+    status: unmapped
+    reason: abdomen
+  - name: abdomen
+    status: unmapped
+    reason: abdomen
+  - name: coxa_abduct_T1_left
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_twist_T1_left
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_T1_left
+    status: unmapped
+    reason: coxa_three
+  - name: femur_twist_T1_left
+    status: unmapped
+    reason: femur_two
+  - name: femur_T1_left
+    status: unmapped
+    reason: femur_two
+  - name: tibia_T1_left
+    status: unmapped
+    reason: tibia_one
+  - name: tarsus_T1_left
+    status: unmapped
+    reason: tarsus_two
+  - name: tarsus2_T1_left
+    status: unmapped
+    reason: tarsus_two
+  - name: coxa_abduct_T1_right
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_twist_T1_right
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_T1_right
+    status: unmapped
+    reason: coxa_three
+  - name: femur_twist_T1_right
+    status: unmapped
+    reason: femur_two
+  - name: femur_T1_right
+    status: unmapped
+    reason: femur_two
+  - name: tibia_T1_right
+    status: unmapped
+    reason: tibia_one
+  - name: tarsus_T1_right
+    status: unmapped
+    reason: tarsus_two
+  - name: tarsus2_T1_right
+    status: unmapped
+    reason: tarsus_two
+  - name: coxa_abduct_T2_left
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_twist_T2_left
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_T2_left
+    status: unmapped
+    reason: coxa_three
+  - name: femur_twist_T2_left
+    status: unmapped
+    reason: femur_two
+  - name: femur_T2_left
+    status: unmapped
+    reason: femur_two
+  - name: tibia_T2_left
+    status: unmapped
+    reason: tibia_one
+  - name: tarsus_T2_left
+    status: unmapped
+    reason: tarsus_two
+  - name: tarsus2_T2_left
+    status: unmapped
+    reason: tarsus_two
+  - name: coxa_abduct_T2_right
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_twist_T2_right
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_T2_right
+    status: unmapped
+    reason: coxa_three
+  - name: femur_twist_T2_right
+    status: unmapped
+    reason: femur_two
+  - name: femur_T2_right
+    status: unmapped
+    reason: femur_two
+  - name: tibia_T2_right
+    status: unmapped
+    reason: tibia_one
+  - name: tarsus_T2_right
+    status: unmapped
+    reason: tarsus_two
+  - name: tarsus2_T2_right
+    status: unmapped
+    reason: tarsus_two
+  - name: coxa_abduct_T3_left
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_twist_T3_left
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_T3_left
+    status: unmapped
+    reason: coxa_three
+  - name: femur_twist_T3_left
+    status: unmapped
+    reason: femur_two
+  - name: femur_T3_left
+    status: unmapped
+    reason: femur_two
+  - name: tibia_T3_left
+    status: unmapped
+    reason: tibia_one
+  - name: tarsus_T3_left
+    status: unmapped
+    reason: tarsus_two
+  - name: tarsus2_T3_left
+    status: unmapped
+    reason: tarsus_two
+  - name: coxa_abduct_T3_right
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_twist_T3_right
+    status: unmapped
+    reason: coxa_three
+  - name: coxa_T3_right
+    status: unmapped
+    reason: coxa_three
+  - name: femur_twist_T3_right
+    status: unmapped
+    reason: femur_two
+  - name: femur_T3_right
+    status: unmapped
+    reason: femur_two
+  - name: tibia_T3_right
+    status: unmapped
+    reason: tibia_one
+  - name: tarsus_T3_right
+    status: unmapped
+    reason: tarsus_two
+  - name: tarsus2_T3_right
+    status: unmapped
+    reason: tarsus_two
+neurons:
+  - name: TTMn_L
+    status: unmapped
+    reason: no_trochanter_joint
+  - name: TTMn_R
+    status: unmapped
+    reason: no_trochanter_joint

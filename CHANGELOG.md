@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.15 — 2026-10-12
+
+### Documentation
+
+- **Authored motor map, every row unmapped.** `validation/motor_map.yaml`
+  lists the 59 walking actuators and both `TTMn` neurons. A published source
+  names none of them together with an actuator, so a command is refused.
+  Vaxenburg et al. 2025 states that the body is female. Version 1 of the
+  behavior lock is unchanged. Provenance cites the documentary-issue note.
+  Nothing was rerun. `w_syn` stays 0.192.
+
 ## 0.8.14 — 2026-10-12
 
 ### Documentation

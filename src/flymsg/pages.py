@@ -30,6 +30,8 @@ EXTERNAL = {
     "../validation/benchmarks.yaml": f"{BLOB}/validation/benchmarks.yaml",
     "validation/behavior.yaml": f"{BLOB}/validation/behavior.yaml",
     "../validation/behavior.yaml": f"{BLOB}/validation/behavior.yaml",
+    "validation/motor_map.yaml": f"{BLOB}/validation/motor_map.yaml",
+    "../validation/motor_map.yaml": f"{BLOB}/validation/motor_map.yaml",
 }
 
 # (output stem, source path, nav label). Order is the site nav.
