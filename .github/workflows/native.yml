@@ -1,0 +1,48 @@
+name: native-runtime
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+
+# actions are pinned to commit SHAs (version in the comment)
+jobs:
+  linux-reference:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+      - run: uv sync --locked
+      - run: cmake -S native -B build/native && cmake --build build/native --config Release
+      - run: uv run python scripts/native_acceptance.py --exe build/native/flymsg_native --out build/native/acceptance.json
+  windows-build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+      - run: uv sync --locked
+      - run: cmake -S native -B build/native -A x64
+      - run: cmake --build build/native --config Release
+      - run: uv run python scripts/native_acceptance.py --exe build/native/Release/flymsg_native.exe --out build/native/acceptance.json
+      - name: Compile strict HLSL (compilation does not qualify GPU hardware)
+        shell: pwsh
+        run: |
+          $sdk = Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin" -Directory | Sort-Object Name -Descending | Where-Object { Test-Path "$($_.FullName)/x64/dxc.exe" } | Select-Object -First 1
+          if (-not $sdk) { throw "Windows SDK DXC compiler missing" }
+          & "$($sdk.FullName)/x64/dxc.exe" -T cs_6_0 -E CSMain -Gis -Ges -Fo build/native/lif.cso native/lif.hlsl
+          if ($LASTEXITCODE -ne 0) { throw "HLSL compilation failed" }
+      - name: Build unsigned UWP worker package
+        shell: pwsh
+        run: ./scripts/build-native-uwp.ps1
+      - name: Publish native build and unsigned worker artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: flymsg-native-windows
+          if-no-files-found: error
+          path: |
+            build/native/Release/flymsg_native.exe
+            build/native/acceptance.json
+            build/native/lif.cso
+            native/uwp/AppPackages/**
+            build/uwp/**

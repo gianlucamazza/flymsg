@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.24 — 2026-10-12
+
+### Runtime
+
+- **Native LIF fixture executor, DX12 shader and UWP worker (runtime R1 lane, PR #55).**
+  `flymsg.native` exports a bounded, versioned fixture from a fresh `CpuRuntime`; the C++
+  executor in `native/` runs the same four ordered phases and checkpoints and resumes. On 12
+  synthetic fixtures, state, spikes, counts, refractory deadlines and delayed spikes match the
+  Python oracle exactly at step 217 and after resume to step 1000. The HLSL compute shader,
+  the hardware-only DX12 host and the UWP worker compile in CI; GPU parity, console
+  installation, suspension timing and throughput are unmeasured and gate #39 and #40. No
+  scored path or default changes. `w_syn` stays 0.192.
+
 ## 0.8.23 — 2026-10-12
 
 ### Embodiment
