@@ -1,0 +1,103 @@
+import shutil
+import struct
+import subprocess
+from pathlib import Path
+
+import numpy as np
+import pytest
+from scipy import sparse
+
+from flymsg.native import export_fixture, read_output
+from flymsg.runtime import CpuRuntime
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(scope="module")
+def native_exe(tmp_path_factory):
+    compiler = shutil.which("g++")
+    if compiler is None:
+        pytest.skip(
+            "native reference tests require g++; dedicated native CI covers Windows"
+        )
+    exe = tmp_path_factory.mktemp("native") / "flymsg_native"
+    subprocess.run(
+        [
+            compiler,
+            "-std=c++20",
+            "-O2",
+            "-ffp-contract=off",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            str(ROOT / "native/main.cpp"),
+            "-o",
+            str(exe),
+        ],
+        check=True,
+    )
+    return exe
+
+
+def test_native_full_acceptance(native_exe, tmp_path):
+    subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            "scripts/native_acceptance.py",
+            "--exe",
+            str(native_exe),
+            "--out",
+            str(tmp_path / "report.json"),
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    )
+
+
+@pytest.mark.parametrize(
+    "slot,value", [(0, 0), (1, 99), (16, 1), (25, 1), (35, 0xFFFFFFFF)]
+)
+def test_native_rejects_invalid_contract_before_output(
+    native_exe, tmp_path, slot, value
+):
+    runtime = CpuRuntime(
+        sparse.eye(2, format="csc"),
+        np.array([0]),
+        steps=100,
+        kicks=np.ones((100, 1), dtype=np.int64),
+        per_bin=100,
+    )
+    fixture, output = tmp_path / "fixture.bin", tmp_path / "out.bin"
+    export_fixture(runtime, fixture)
+    raw = bytearray(fixture.read_bytes())
+    struct.pack_into("<I", raw, slot * 4, value)
+    fixture.write_bytes(raw)
+    result = subprocess.run(
+        [str(native_exe), "--fixture", str(fixture), "--output", str(output)],
+        check=False,
+        capture_output=True,
+    )
+    assert result.returncode != 0
+    assert not output.exists()
+
+
+def test_fixture_requires_fresh_state_and_valid_output(tmp_path):
+    runtime = CpuRuntime(
+        sparse.eye(2, format="csc"),
+        np.array([0]),
+        steps=100,
+        kicks=np.ones((100, 1), dtype=np.int64),
+        per_bin=100,
+    )
+    fixture = tmp_path / "fixture.bin"
+    export_fixture(runtime, fixture)
+    output = tmp_path / "bad.bin"
+    output.write_bytes(b"bad")
+    with pytest.raises(ValueError):
+        read_output(output, fixture)
+    runtime.advance_to(1)
+    with pytest.raises(ValueError, match="fresh"):
+        export_fixture(runtime, fixture)
