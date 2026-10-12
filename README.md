@@ -270,3 +270,7 @@ If you use flymsg, cite the data and the model it builds on (see also
 Code: [MIT](LICENSE). The connectome data are not part of this repository; they are
 downloaded from their public sources under their own licences. Vendored three.js and lil-gui
 are MIT (`src/flymsg/viz_static/vendor/`). See [NOTICE](NOTICE) for what the licence does not cover.
+
+## Incremental simulation runtime
+
+The [runtime architecture and executable example](docs/runtime.md) introduce `CpuRuntime`: advance the existing LIF kernel in blocks, schedule explicit input counts, inspect detached snapshots and checkpoint/resume neural state. CPU parity is tested; the Xbox GPU execution lane remains subject to native implementation and hardware qualification.

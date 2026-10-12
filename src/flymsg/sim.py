@@ -223,8 +223,86 @@ def _kernel(
     touched = np.empty(n, dtype=np.int32)  # targets with delivered input this step
     hit = np.zeros(n, dtype=np.bool_)
     spiking = np.empty(n, dtype=np.int32)
+    _advance(
+        0,
+        steps,
+        indptr,
+        indices,
+        data,
+        n,
+        per_bin,
+        d,
+        ref_steps,
+        stim,
+        kicks,
+        is_stim,
+        silent,
+        jump,
+        em,
+        es,
+        gv,
+        decay_th,
+        v_rest,
+        v_th,
+        kick,
+        trace_col,
+        traced,
+        v,
+        g,
+        th,
+        ref_until,
+        ring,
+        ring_len,
+        counts,
+        first,
+        c,
+        touched,
+        hit,
+        spiking,
+    )
+    return counts, first
+
+
+@numba.njit(cache=True)
+def _advance(
+    start_step,
+    stop_step,
+    indptr,
+    indices,
+    data,
+    n,
+    per_bin,
+    d,
+    ref_steps,
+    stim,
+    kicks,
+    is_stim,
+    silent,
+    jump,
+    em,
+    es,
+    gv,
+    decay_th,
+    v_rest,
+    v_th,
+    kick,
+    trace_col,
+    traced,
+    v,
+    g,
+    th,
+    ref_until,
+    ring,
+    ring_len,
+    counts,
+    first,
+    c,
+    touched,
+    hit,
+    spiking,
+):
     stim_steps = kicks.shape[0]
-    for t in range(steps):
+    for t in range(start_step, stop_step):
         # 1. state update (refractory: v stays at v_rest, g frozen), branch-free so that
         # it vectorises; the refractory lanes compute and discard
         for i in range(n):
@@ -279,4 +357,3 @@ def _kernel(
             if col >= 0:
                 traced[t, col] = 1
         ring_len[slot] = ns
-    return counts, first
