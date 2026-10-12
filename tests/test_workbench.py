@@ -106,3 +106,19 @@ def test_runs_lists_manifests_without_the_dataset(monkeypatch, capsys, tmp_path)
     monkeypatch.setattr(cli.data, "load", boom)
     out = run(monkeypatch, capsys, "runs", str(tmp_path))
     assert "preregistered" in out and "nulls" in out
+
+
+def test_the_best_neuron_is_chosen_once_over_seeds(tmp_path, twin_dir):
+    # seed 1 favours one C neuron, seed 2 the other: one choice over the three seeds
+    neurons, edges = data.load(twin_dir)
+    cfg = workbench.load_config(
+        _write(tmp_path, CONFIG.replace("seeds: 2", "seeds: 3"))
+    )
+    out = workbench.run(cfg, neurons, edges, tmp_path / "e")
+    metrics = pd.read_csv(out / "metrics.csv")
+    assert metrics.groupby("target")["best_bodyId"].nunique().eq(1).all()
+
+
+def test_an_exploratory_nulls_run_is_not_indexed_as_preregistered():
+    doc = {"command": "nulls", "config": {"exploratory": True}}
+    assert workbench.label_of(doc) == "exploratory"

@@ -40,15 +40,20 @@ class InterventionError(ValueError):
     """A lock that is not registered, was edited, or would overwrite a result."""
 
 
-def _rates(W, stim, target_idx, p, seeds, seed0, rate_hz, stim_ms, silence=None):
-    """The best target neuron's rate during the stimulus, per seed, and that neuron."""
+def _rates(
+    W, stim, target_idx, p, seeds, seed0, rate_hz, stim_ms, silence=None, best=None
+):
+    """A target neuron's rate during the stimulus, per seed, and that neuron. Without `best`
+    it is the neuron with the highest mean rate over the seeds (the baseline arm picks it);
+    every other arm passes the baseline's `best`, so all arms read the same neuron."""
     on = [
         sim.run(W, stim, rate_hz, stim_ms, stim_ms, p, s, silence=silence).rate(
             0, stim_ms
         )
         for s in range(seed0, seed0 + seeds)
     ]
-    best = target_idx[np.argmax(np.mean([r[target_idx] for r in on], axis=0))]
+    if best is None:
+        best = target_idx[np.argmax(np.mean([r[target_idx] for r in on], axis=0))]
     return np.array([r[best] for r in on]), int(best)
 
 
@@ -96,7 +101,9 @@ def explore(
     rows = []
     for t in candidates:
         silenced = np.setdiff1d(data.resolve(neurons, t), np.concatenate([src, dst]))
-        got, _ = _rates(W, src, dst, p, silence=np.concatenate([base, silenced]), **kw)
+        got, _ = _rates(
+            W, src, dst, p, silence=np.concatenate([base, silenced]), best=best, **kw
+        )
         delta = got - ref
         lo, hi = validate.bootstrap_ci(delta) if seeds > 1 else (np.nan, np.nan)
         rows.append(
@@ -190,7 +197,7 @@ def confirm(
     p = sim.Params()
     W = sim.network(neurons, edges, p)
     kw = {k: doc[k] for k in ("seeds", "seed0", "rate_hz", "stim_ms")}
-    ref, _ = _rates(W, stim, target, p, silence=base if base.size else None, **kw)
+    ref, best = _rates(W, stim, target, p, silence=base if base.size else None, **kw)
     runs = [
         sim.run(W, stim, doc["rate_hz"], doc["stim_ms"], doc["stim_ms"], p, s,
                 silence=base if base.size else None)
@@ -207,7 +214,9 @@ def confirm(
     alpha = doc["alpha"] / len(sets)
     rows = []
     for name, idx in sets.items():
-        got, _ = _rates(W, stim, target, p, silence=np.concatenate([base, idx]), **kw)
+        got, _ = _rates(
+            W, stim, target, p, silence=np.concatenate([base, idx]), best=best, **kw
+        )
         observed = float(got.mean())
         row = {
             "evidence": "simulation, confirmatory",
@@ -234,6 +243,7 @@ def confirm(
                             target,
                             p,
                             silence=np.concatenate([base, pick]),
+                            best=best,
                             **kw,
                         )[0].mean()
                     )

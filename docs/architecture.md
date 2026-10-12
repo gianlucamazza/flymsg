@@ -145,7 +145,10 @@ lock is `preregistered`; the held-out benchmark is `held-out`) and from its reco
 `flymsg explore SOURCE TARGET [--silence …]` lists up to three distinct strongest routes
 (`evidence: anatomy`, synapse counts) and then silences each intermediate cell type on them
 and reports the target's change with a bootstrap interval (`evidence: simulation,
-exploratory`). It writes `explore.json` and a manifest labelled exploratory into a directory
+exploratory`). Every arm reads one target neuron, the one the baseline arm fires most (`target_neuron`);
+the pre-registered T1–T4 tests instead read the type's most active neuron in each condition,
+by their own definition, and stay so. It writes `explore.json` and a manifest labelled
+exploratory into a directory
 keyed by its configuration, and `--replay DIR` reruns a saved exploration and checks that the
 contrast reproduces. It chooses nothing, attaches no p-value, and says when the target is
 governed by an existing lock: `TTMn_R` belongs to issue #20 and

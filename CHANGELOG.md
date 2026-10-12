@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.37 — 2026-10-12
+
+### Fixes
+
+- **Every arm reads the same target neuron.** `explore` and `confirm` report a
+  `target_neuron` but picked the best target neuron again in each arm and in each null draw,
+  so with a multi-neuron target a silenced arm could be read on another neuron; the
+  baseline's choice is now used in every arm. The pre-registered T1–T4 tests read the type's
+  most active neuron in each condition by their own definition and are unchanged.
+  `experiment` picked it per seed; it is now chosen once over the seeds, as the battery
+  does. No published result used either path. Tests with two target neurons fail on the old
+  code.
+- **An exploratory `nulls` run is indexed as exploratory.** The `--exploratory` flag is now
+  in the run manifest, and `flymsg runs` reads it.
+
+### Documentation
+
+- The sensitivity grid states that each cell picks its own best neuron per target type. The
+  README lists the Kenyon cell loop behind the held-out olfactory failure.
+
 ## 0.8.36 — 2026-10-12
 
 ### Comparison
