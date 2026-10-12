@@ -1,8 +1,11 @@
-"""Rebuild the scenes the Pages site serves live. Usage: python scripts/build_live_scenes.py
+"""Rebuild the scenes the Pages site serves live.
+
+Usage: python scripts/build_live_scenes.py [NAME ...]
 
 Runs the gallery exports on the local MaleCNS tables (`flymsg fetch` and
 `flymsg build` first) and keeps scene.json, activity.bin, partners.json and manifest.json in
-docs/live/<name>/. The page itself is copied by the site build, not stored here.
+docs/live/<name>/. The page itself is copied by the site build, not stored here. With
+names, only those scenes and comparisons are rebuilt, so the others keep their manifests.
 """
 
 import json
@@ -15,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 # exported even when silent, so a comparison shows them at zero, not "not exported"
 KEEP_LOOMING = ["--keep", "TTMn_R", "DNp01", "DNp02", "DNp06"]
+KEEP_SIDES = ["--keep", "TTMn", "DNp01", "DNp02", "DNp06"]
 SCENES = {
     "looming": ["--sim", "LC4_R", *KEEP_LOOMING],
     "song": ["--sim", "pIP10"],
@@ -36,6 +40,8 @@ SCENES = {
         "DNp06",
         *KEEP_LOOMING,
     ],
+    "looming-left": ["--sim", "LC4_L", *KEEP_SIDES],
+    "looming-bilateral": ["--sim", "LC4", *KEEP_SIDES],
 }
 # Pairs shown by flymsg viz-compare: (A, B, labels, statuses, notes)
 COMPARISONS = {
@@ -69,22 +75,37 @@ COMPARISONS = {
             "residual scan v2 names DNp02 and DNp06 (seeds 0-2, 20-22); this is the seed 0 replay",
         ),
     ),
+    "right-vs-left": (
+        "looming",
+        "looming-left",
+        ("LC4_R (looming from the right)", "LC4_L (looming from the left)"),
+        ("exploratory", "exploratory"),
+        (
+            "seed 0 replay",
+            "seed 0 replay of the mirrored arm; MaleCNS is not left-right symmetric",
+        ),
+    ),
 }
 KEEP = ("scene.json", "activity.bin", "partners.json", "manifest.json")
 
 
-def main() -> None:
+def main(names=()) -> None:
     live = ROOT / "docs" / "live"
+    unknown = set(names) - set(SCENES) - set(COMPARISONS)
+    if unknown:
+        sys.exit(f"unknown scene: {', '.join(sorted(unknown))}")
+    scenes = {k: v for k, v in SCENES.items() if not names or k in names}
+    comparisons = {k: v for k, v in COMPARISONS.items() if not names or k in names}
     with tempfile.TemporaryDirectory() as tmp:
         # every export runs before docs/live changes, so each manifest sees a clean tree
-        for name, args in SCENES.items():
+        for name, args in scenes.items():
             subprocess.run(
                 [sys.executable, "-c", "from flymsg.cli import main; main()",
                  "viz", *args, "--out", str(Path(tmp) / name)],
                 cwd=ROOT,
                 check=True,
             )  # fmt: skip
-        for name in SCENES:
+        for name in scenes:
             src, dst = Path(tmp) / name, live / name
             shutil.rmtree(dst, ignore_errors=True)
             dst.mkdir(parents=True)
@@ -95,7 +116,7 @@ def main() -> None:
             manifest.pop("cwd", None)  # a local path, not provenance
             (dst / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
             print(f"{name} -> {dst.relative_to(ROOT)}")
-        for name, (a, b, labels, statuses, notes) in COMPARISONS.items():
+        for name, (a, b, labels, statuses, notes) in comparisons.items():
             dst = live / name
             shutil.rmtree(dst, ignore_errors=True)
             subprocess.run(
@@ -119,4 +140,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

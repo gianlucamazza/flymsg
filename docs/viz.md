@@ -74,6 +74,13 @@ replay the arms of the residual partner scan on seed 0: `TTMn_R` goes from 7 spi
 `kept`, so a comparison shows them at zero spikes instead of "not exported". The looming
 scenes keep `TTMn_R`, DNp01, DNp02 and DNp06.
 
+**Sides.** `_R` and `_L` are the fly's right and left: seen from the front, `_R` is on the
+viewer's left. The looming scenes drive one eye (`LC4_R`, 55 neurons), so the stimulus is
+one-sided by design while the response spreads to both sides. The volume is one animal, not a
+symmetric template: the tissue is slightly tilted and pairs differ (71 `LC4_L` against 55
+`LC4_R`). `looming-left` drives `LC4_L` and `looming-bilateral` drives both, a frontal
+approach; both keep `TTMn` on both sides.
+
 ## Sources
 
 | data            | format                                                     | use                                                                      |
