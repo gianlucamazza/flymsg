@@ -8,13 +8,12 @@ spread (at one cell) and parameter spread (across cells) are reported apart.
 from __future__ import annotations
 
 import math
-import xml.sax.saxutils as xml
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from flymsg import draws, locks, parallel, sim, validate
+from flymsg import draws, figures, locks, parallel, sim, validate
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "sensitivity.yaml"
@@ -209,47 +208,27 @@ def spreads(cells: pd.DataFrame) -> pd.DataFrame:
 
 def svg(cells: pd.DataFrame, doc: dict) -> str:
     """Small multiples: one panel per case and target, target rate (median and seed range)
-    against the w_syn factor, one line per th_jump. No dependency beyond the standard
-    library, so the figure is reproducible wherever the grid runs."""
+    against the w_syn factor, one line per th_jump, and the v4 floor as a dashed line. No
+    dependency beyond the standard library, so the figure is reproducible wherever the
+    grid runs."""
+
     panels = list(cells.groupby(["case", "target"], sort=False))
     factors = doc["grid"]["w_syn_factors"]
     ths = doc["grid"]["th_jump"]
-    colours = ["#2b6cb0", "#d1495b", "#3d9970", "#b8860b"]
-    pw, ph, pad = 220, 140, 36
-    cols = 4
+    colours = [figures.BLUE, figures.RED, figures.GREEN, figures.GOLD]
+    r = doc["report"]
+    floor = r["holds_min_spikes"] / (doc["grid"]["stim_ms"] / 1000.0)
+    pw, ph, cols = 200, 130, 4
     rows_n = math.ceil(len(panels) / cols)
-    width, height = cols * (pw + pad) + pad, rows_n * (ph + pad + 18) + pad + 20
-    out = [
-        (
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-            'font-family="system-ui, sans-serif" font-size="10">'
-        ),
-        f'<rect width="{width}" height="{height}" fill="#ffffff"/>',
-        (
-            f'<text x="{pad}" y="16" font-size="12">Target rate (Hz) against the w_syn '
-            "factor; median over seeds, band = seed range. A report, not a score.</text>"
-        ),
-    ]
+    drawn = []
     for n, ((case, target), g) in enumerate(panels):
-        x0 = pad + (n % cols) * (pw + pad)
-        y0 = 30 + (n // cols) * (ph + pad + 18)
-        top = max(1.0, float(g["rate"].max()))
-
-        def X(f, x0=x0):
-            return x0 + (factors.index(f) / max(1, len(factors) - 1)) * pw
-
-        def Y(v, y0=y0, top=top):
-            return y0 + ph - (v / top) * ph
-
-        out.append(
-            f'<rect x="{x0}" y="{y0}" width="{pw}" height="{ph}" fill="none" stroke="#999"/>'
-        )
-        out.append(
-            f'<text x="{x0}" y="{y0 - 4}">{xml.escape(case)} → {xml.escape(target)}'
-            f" (max {top:.0f} Hz)</text>"
-        )
-        for f in factors:
-            out.append(f'<text x="{X(f) - 8}" y="{y0 + ph + 12}">{f:g}</text>')
+        x0 = 60 + (n % cols) * (pw + 60)
+        y0 = 100 + (n // cols) * (ph + 60)
+        top = max(floor * 1.5, float(g["rate"].max()) * 1.1)
+        a = figures.Panel(x0, y0, pw, ph, (factors[0], factors[-1]), (0, top),
+                          f"{case} → {target}")  # fmt: skip
+        a.frame(factors, [f"{f:g}" for f in factors])
+        a.hline(floor, figures.GREY, "4 3")
         for c, th in enumerate(ths):
             part = g[g["th_jump"] == th]
             if part.empty:  # a partial grid draws the series it has
@@ -257,20 +236,23 @@ def svg(cells: pd.DataFrame, doc: dict) -> str:
             sel = part.groupby("w_syn_factor")["rate"]
             med, lo, hi = sel.median(), sel.min(), sel.max()
             col = colours[c % len(colours)]
-            band = [f"{X(f):.1f},{Y(hi[f]):.1f}" for f in factors] + [
-                f"{X(f):.1f},{Y(lo[f]):.1f}" for f in reversed(factors)
-            ]
-            out.append(
-                f'<polygon points="{" ".join(band)}" fill="{col}" fill-opacity="0.15"/>'
-            )
-            line = " ".join(f"{X(f):.1f},{Y(med[f]):.1f}" for f in factors)
-            out.append(
-                f'<polyline points="{line}" fill="none" stroke="{col}" stroke-width="1.5"/>'
-            )
-            if n == 0:
-                out.append(
-                    f'<text x="{x0 + pw - 60}" y="{y0 + 12 + 12 * c}" fill="{col}">'
-                    f"th_jump {th:g}</text>"
-                )
-    out.append("</svg>")
-    return "\n".join(out)
+            a.band(factors, [lo[f] for f in factors], [hi[f] for f in factors], col)
+            a.line(factors, [med[f] for f in factors], col)
+        drawn.append(a)
+    key = figures.Panel(60, 30, 10, 10, (0, 1), (0, 1))
+    key.legend(
+        [(f"th_jump {th:g} mV", colours[c % len(colours)]) for c, th in enumerate(ths)]
+        + [(f"v4 floor ({r['holds_min_spikes']} spikes = {floor:g} Hz)", figures.GREY)],
+        x=60,
+        y=40,
+    )
+    drawn.append(key)
+    width = 60 + cols * (pw + 60)
+    height = 100 + rows_n * (ph + 60)
+    return figures.document(
+        width,
+        height,
+        "Target rate (Hz) against the w_syn factor; line = median over seeds, band = "
+        "seed range. A report, not a score.",
+        drawn,
+    )

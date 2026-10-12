@@ -1,6 +1,6 @@
 """Rebuild the scenes the Pages site serves live. Usage: python scripts/build_live_scenes.py
 
-Runs the three gallery exports on the local MaleCNS tables (`flymsg fetch` and
+Runs the gallery exports on the local MaleCNS tables (`flymsg fetch` and
 `flymsg build` first) and keeps scene.json, activity.bin, partners.json and manifest.json in
 docs/live/<name>/. The page itself is copied by the site build, not stored here.
 """
@@ -18,6 +18,8 @@ SCENES = {
     "song": ["--sim", "pIP10"],
     "anatomy": ["--types", "pIP10", "dPR1", "dMS9"],
     "looming-dnp01-silenced": ["--sim", "LC4_R", "--silence", "DNp01"],
+    "looming-dnp01-dnp02-silenced": ["--sim", "LC4_R", "--silence", "DNp01", "DNp02"],
+    "looming-dnp01-dnp06-silenced": ["--sim", "LC4_R", "--silence", "DNp01", "DNp06"],
 }
 # Pairs shown by flymsg viz-compare: (A, B, labels, statuses, notes)
 COMPARISONS = {
@@ -29,6 +31,26 @@ COMPARISONS = {
         (
             "seed 0 replay, not the scored battery",
             "behavior v1 silence check fails: TTMn_R still fires with both DNp01 silenced",
+        ),
+    ),
+    "dnp01-vs-dnp02": (
+        "looming-dnp01-silenced",
+        "looming-dnp01-dnp02-silenced",
+        ("LC4_R, both DNp01 silenced", "LC4_R, DNp01 and DNp02 silenced"),
+        ("failed", "exploratory"),
+        (
+            "behavior v1 silence check fails: TTMn_R still fires with both DNp01 silenced",
+            "residual scan v2 names DNp02 and DNp06 (seeds 0-2, 20-22); this is the seed 0 replay",
+        ),
+    ),
+    "dnp01-vs-dnp06": (
+        "looming-dnp01-silenced",
+        "looming-dnp01-dnp06-silenced",
+        ("LC4_R, both DNp01 silenced", "LC4_R, DNp01 and DNp06 silenced"),
+        ("failed", "exploratory"),
+        (
+            "behavior v1 silence check fails: TTMn_R still fires with both DNp01 silenced",
+            "residual scan v2 names DNp02 and DNp06 (seeds 0-2, 20-22); this is the seed 0 replay",
         ),
     ),
 }

@@ -1,0 +1,111 @@
+"""Draw the docs figures from run outputs. Usage: uv run python scripts/build_figures.py
+
+Reads (ignored by git, written by the commands named in docs/provenance.md):
+  runs/silence-scan/v2/       flymsg silence-scan --run (lock v2)
+  runs/jump/{intact,dnp01}/   flymsg jump --sim LC4_R [--silence DNp01]
+  runs/loop/                  flymsg loop --sim LC4_R ...
+  runs/sensitivity/v1/        flymsg sensitivity --run
+  validation/homology/        flymsg homology
+and reruns one exploratory simulation (the scored ORN_DM1 corner, seed 0) for the Kenyon
+cell figure. Writes docs/img/*.svg. Nothing here changes a result.
+"""
+
+import ast
+import json
+import re
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from flymsg import data, figures, sensitivity, sim
+
+ROOT = Path(__file__).resolve().parents[1]
+RUNS, IMG = ROOT / "runs", ROOT / "docs" / "img"
+
+
+def scan() -> str:
+    d = RUNS / "silence-scan" / "v2"
+    report = (d / "report.txt").read_text()
+    base = {
+        k: ast.literal_eval(v)
+        for k, v in re.findall(r"base arm, (screen|confirm) seeds: (\[.*\])", report)
+    }
+    return figures.silence_scan(
+        pd.read_csv(d / "screen.csv"),
+        pd.read_csv(d / "confirm.csv"),
+        base["screen"],
+        base["confirm"],
+    )
+
+
+def embodiment() -> str:
+    jump = {
+        k: json.loads((RUNS / "jump" / k / "trajectory.json").read_text())
+        for k in ("intact", "dnp01")
+    }
+    loop = dict(np.load(RUNS / "loop" / "loop.npz"))
+    return figures.embodiment(jump["intact"], jump["dnp01"], loop)
+
+
+def kc() -> str:
+    neurons, edges = data.load(ROOT / "data")
+    p = sim.Params()
+    W = sim.network(neurons, edges, p)
+    stim = data.resolve(neurons, "ORN_DM1")
+    r = sim.run(W, stim, 100.0, 600.0, 300.0, p, 0)
+    types = neurons["type"].fillna("").astype(str).to_numpy()
+    is_kc = np.char.startswith(types.astype(str), "KC")
+    rest = ~is_kc
+    rest[stim] = False
+    target = data.resolve(neurons, "DM1_lPN")
+    hz = r.counts / (r.bin_ms / 1000.0)
+    groups = {
+        f"Kenyon cells ({int(is_kc.sum()):,})": hz[:, is_kc].mean(axis=1),
+        f"all other non-stimulus neurons ({int(rest.sum()):,})": hz[:, rest].mean(
+            axis=1
+        ),
+        "DM1_lPN (target), rate / 10": hz[:, target].mean(axis=1) / 10,
+    }
+    # share of excitatory synapses onto Kenyon cells that come from Kenyon cells
+    sign = neurons["sign"].to_numpy()
+    pre, post, w = (edges[c].to_numpy() for c in ("pre", "post", "weight"))
+    onto = is_kc[post] & (sign[pre] > 0)
+    share = w[onto & is_kc[pre]].sum() / w[onto].sum()
+    t = np.arange(1, hz.shape[0] + 1) * r.bin_ms
+    return figures.kc_persistence(
+        t,
+        groups,
+        300.0,
+        f"{100 * share:.1f}% of the excitatory synapses onto Kenyon cells come from "
+        "Kenyon cells; in a point neuron each reaches the soma.\nScored corner: w_syn "
+        "0.192, th_jump 0, ORN_DM1 at 100 Hz for 300 ms, seed 0. Exploratory.",
+    )
+
+
+def homology() -> str:
+    return figures.homology_pilot(pd.read_csv(ROOT / "validation/homology/pilot.csv"))
+
+
+def sens() -> str:
+    cells = pd.read_csv(RUNS / "sensitivity" / "v1" / "cells.csv")
+    return sensitivity.svg(cells, sensitivity.load())
+
+
+FIGURES = {
+    "silence-scan-v2.svg": scan,
+    "embodiment.svg": embodiment,
+    "kc-persistence.svg": kc,
+    "homology-pilot.svg": homology,
+    "sensitivity-rate.svg": sens,
+}
+
+
+def main() -> None:
+    for name, draw in FIGURES.items():
+        (IMG / name).write_text(draw() + "\n")
+        print(f"docs/img/{name}")
+
+
+if __name__ == "__main__":
+    main()

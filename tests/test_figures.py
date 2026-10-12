@@ -1,0 +1,83 @@
+"""Doc figures are valid SVG drawn from the numbers they are given."""
+
+import xml.etree.ElementTree as ET
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from flymsg import figures
+
+
+def _parse(svg: str) -> ET.Element:
+    root = ET.fromstring(svg)
+    assert root.tag.endswith("svg")
+    return root
+
+
+def _texts(root: ET.Element) -> list[str]:
+    return [e.text or "" for e in root.iter() if e.tag.endswith("text")]
+
+
+@pytest.mark.parametrize(
+    ("lo", "hi", "expected"),
+    [
+        (0, 8, [0, 2, 4, 6, 8]),
+        (0, 1.1, [0, 0.5, 1]),
+        (0.8, 1.2, [0.8, 0.9, 1, 1.1, 1.2]),
+    ],
+)
+def test_ticks_are_round_and_inside_the_range(lo, hi, expected):
+    assert figures.ticks(lo, hi) == pytest.approx(expected)
+
+
+def test_panel_maps_limits_to_its_box():
+    p = figures.Panel(10, 20, 100, 50, (0, 10), (0, 5))
+    assert (p.X(0), p.X(10), p.Y(0), p.Y(5)) == (10, 110, 70, 20)
+
+
+def test_silence_scan_marks_passes_and_reports_p():
+    screen = pd.DataFrame(
+        {"unit": ["A", "B"], "counts": ["[0, 0, 0]", "[5, 6, 7]"],
+         "mean": [0.0, 6.0], "passes": [True, False]}
+    )  # fmt: skip
+    confirm = pd.DataFrame(
+        {"unit": ["A"], "counts": ["[0, 0, 0]"], "null_mean": [5.0], "p": [0.001]}
+    )
+    root = _parse(figures.silence_scan(screen, confirm, [6, 6, 6], [6, 6, 6]))
+    texts = _texts(root)
+    assert "p 0.001" in texts and "null mean 5.00" in texts
+    reds = [e for e in root.iter() if e.get("fill") == figures.RED]
+    assert len(reds) >= 6  # the passing unit's bar and seeds, and the confirm seeds
+
+
+def test_embodiment_draws_every_mode():
+    t = np.arange(1.0, 11.0)
+    loop = {}
+    for m in ("closed", "disconnected", "shuffled", "replay"):
+        loop |= {f"{m}_t_ms": t, f"{m}_height_m": np.zeros(10),
+                 f"{m}_rate_hz": np.ones(10), f"{m}_motor_spikes": np.ones(10)}  # fmt: skip
+    body = {"time_ms": list(t), "height_m": [0.0] * 10, "takeoff_ms": 3.0}
+    root = _parse(figures.embodiment(body, body, loop))
+    lines = [e for e in root.iter() if e.tag.endswith("polyline")]
+    assert len(lines) == 2 + 3 * 4
+    assert {"closed", "disconnected", "shuffled", "replay"} <= set(_texts(root))
+
+
+def test_kc_persistence_one_line_per_group_and_the_note():
+    t = np.arange(10.0, 610.0, 10.0)
+    groups = {"a": np.ones(t.size), "b": np.zeros(t.size)}
+    root = _parse(figures.kc_persistence(t, groups, 300.0, "first\nsecond"))
+    assert sum(1 for e in root.iter() if e.tag.endswith("polyline")) == 2
+    assert {"first", "second"} <= set(_texts(root))
+
+
+def test_homology_pilot_labels_share_as_percent():
+    pilot = pd.DataFrame(
+        {"dataset": ["male", "female"], "DNp01": ["DNp01(GF)_R", "DNp01_L"],
+         "LC4_synapses": [100, 50], "density_scaled": [50.0, 50.0],
+         "share_of_input": [0.16, 0.08], "density_ratio": [2.0, 2.0],
+         "ratio_types": [10, 10]}
+    )  # fmt: skip
+    texts = _texts(_parse(figures.homology_pilot(pilot)))
+    assert {"16.0%", "8.0%", "male R", "female L"} <= set(texts)
