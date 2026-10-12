@@ -26,16 +26,23 @@ def page_files() -> list[Path]:
 
 
 def select_from_result(
-    result: sim.Result, stim: np.ndarray, min_rate: float = 0.0
+    result: sim.Result,
+    stim: np.ndarray,
+    min_rate: float = 0.0,
+    keep: np.ndarray | None = None,
 ) -> np.ndarray:
     """Stimulated neurons, then every neuron firing above `min_rate` Hz during the stimulus,
-    most active first."""
+    most active first, then any `keep` neuron not already listed, even if silent, so that
+    a comparison can show it at zero rather than "not exported"."""
     rates = result.rate(0, result.stim_ms)
     stim = np.unique(stim)
     rates[stim] = -np.inf  # listed first, separately
     order = np.argsort(-rates, kind="stable")
     responders = order[rates[order] > min_rate]
-    return np.concatenate([stim, responders])
+    idx = np.concatenate([stim, responders])
+    if keep is not None:
+        idx = np.concatenate([idx, np.setdiff1d(np.unique(keep), idx)])
+    return idx
 
 
 def _text(value, missing: str) -> str:

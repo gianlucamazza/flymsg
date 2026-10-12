@@ -2,6 +2,7 @@
   "command": "viz",
   "config": {
     "duration": 600.0,
+    "keep": [],
     "path": null,
     "rate": 100.0,
     "silence": [],
@@ -34,11 +35,11 @@
     "n_exported": 6
   },
   "git": {
-    "commit": "5f6a94873805838d1b274564adc0f6993d2c6601",
+    "commit": "b364e0d8b086963125b55f1a28604e81a0be3df3",
     "dirty": false
   },
   "packages": {
-    "flymsg": "0.8.29",
+    "flymsg": "0.8.39",
     "numba": "0.68.0",
     "numpy": "2.5.3",
     "pandas": "3.0.6",
@@ -62,7 +63,7 @@
     "seed": 0
   },
   "timestamps": {
-    "finished_at": "2026-10-12T14:39:15.663862+00:00",
-    "started_at": "2026-10-12T14:39:13.039057+00:00"
+    "finished_at": "2026-10-12T17:47:24.309517+00:00",
+    "started_at": "2026-10-12T17:47:20.202871+00:00"
   }
 }

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.8.40 — 2026-10-12
+
+### Figures and live scenes
+
+- **Every result of 2026-10-12 has a figure.** `scripts/build_figures.py` draws SVG from the
+  run outputs with `flymsg.figures` (standard library only, deterministic): the scan v2
+  screen and confirmation (`silence-scan-v2.svg`), M1/M2 embodiment (`embodiment.svg`), the
+  Kenyon cell persistence of the held-out ORN_DM1 case (`kc-persistence.svg`, one
+  exploratory rerun of the scored corner) and the homology pilot (`homology-pilot.svg`).
+  Nothing is recomputed into a result.
+- **Sensitivity figure** redrawn with y ticks, the v4 floor (10 Hz) and a legend that no
+  longer covers a curve.
+- **Two new comparisons on the site:** DNp01 silenced against DNp01 + DNp02 and against
+  DNp01 + DNp06 (seed 0 replays of the scan arms). `TTMn_R` goes from 7 spikes to 0; DNp06
+  and DNp02 still fire when the other is silenced, so in the model `TTMn_R` needs both.
+- **`viz --keep NAMES`** exports chosen neurons even when silent (group `kept`), so a
+  comparison shows them at zero instead of "not exported". All scenes were re-exported.
+
 ## 0.8.39 — 2026-10-12
 
 ### Results

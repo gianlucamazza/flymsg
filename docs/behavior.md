@@ -346,10 +346,18 @@ With the other screen pass out of the pool, no draw reached the observed 0 spike
 the smallest the 1,000 draws allow, below the 0.025 threshold. Report:
 `runs/silence-scan/v2/`.
 
+![Screen and confirmation of scan v2. Left: TTMn_R spikes per silenced unit on seeds 0–2, with the base arm and the half-of-base screen bar. Right: DNp02 and DNp06 on seeds 20–22 against the matched null mean.](img/silence-scan-v2.svg)
+
 **Reading.** In the model, with both `DNp01` silenced, `TTMn_R` is driven through DNp02 and
-DNp06: silencing either one removes every spike on all nine seeds of both versions. Each is necessary for the
-residual drive here; neither alone is shown sufficient, and combinations were not
-searched. Three limits hold. Version 2 was written after the version 1 result was seen,
+DNp06: silencing either one removes every spike on all nine seeds of both versions. Each is
+necessary for the residual drive here; neither alone is shown sufficient, and combinations
+were not searched. The seed 0 replays on the site add one exploratory observation: with
+DNp02 silenced as well, DNp06_R still fires 27 times and `TTMn_R` none; with DNp06 silenced,
+DNp02_R still fires 59 times and `TTMn_R` none. In this model `TTMn_R` needs both inputs
+together, not either one alone. Compare
+[DNp01 against DNp01 + DNp02](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp02/?run=difference&t=60&paused&select=800146)
+and [DNp01 against DNp01 + DNp06](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp06/?run=difference&t=60&paused&select=800146).
+Three limits hold. Version 2 was written after the version 1 result was seen,
 although before its own run; a replication on further fresh seeds would remove that doubt.
 The result is about this LIF on MaleCNS, not the fly. `gf_required_for_the_jump_bit` stays
 `unverified`, and version 1 of the one-bit protocol is not edited.

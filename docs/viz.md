@@ -63,10 +63,16 @@ difference view, neurons are coloured by more, fewer or the same spikes in B tha
 grey when one export lacks them; a selected neuron lists its spikes and first bin in each
 run. Two identical runs give zero difference in every bin (tested in Python and in node).
 
-The site serves one pair, [LC4_R against LC4_R with both DNp01 silenced](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146).
-The silenced run is the failed silence check of the one-bit protocol
-([behavior](behavior.md)): `TTMn_R` fires 22 times in A, first in the 10–20 ms bin, and still
-7 times in B, first in the 60–70 ms bin.
+The site serves three pairs. [LC4_R against LC4_R with both DNp01 silenced](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146)
+is the failed silence check of the one-bit protocol ([behavior](behavior.md)): `TTMn_R`
+fires 22 times in A, first in the 10–20 ms bin, and still 7 times in B, first in the
+60–70 ms bin. [DNp01 against DNp01 + DNp02](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp02/?run=difference&t=60&paused&select=800146)
+and [DNp01 against DNp01 + DNp06](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp06/?run=difference&t=60&paused&select=800146)
+replay the arms of the residual partner scan on seed 0: `TTMn_R` goes from 7 spikes to 0.
+
+`viz --sim … --keep NAMES` exports the named neurons even when they stay silent, in a group
+`kept`, so a comparison shows them at zero spikes instead of "not exported". The looming
+scenes keep `TTMn_R`, DNp01, DNp02 and DNp06.
 
 ## Sources
 
