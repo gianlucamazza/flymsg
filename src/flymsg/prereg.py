@@ -126,7 +126,7 @@ def load_yaml(text: str) -> dict:
     Subset 1 cuts ` #` even inside quotes and reads a quoted list item holding `:` as a
     one-key map (#159); registered locks keep it, since their hashes were taken on it. A
     file with the top-level key `yaml_subset: 2` gets quote-aware comments and quoted
-    list items as plain strings.
+    list items as plain strings, and refuses a repeated key.
     """
     subset = _subset(text)
     lines = []
@@ -173,6 +173,8 @@ def load_yaml(text: str) -> dict:
             key, _, rest = body.partition(":")
             rest = rest.strip()
             index += 1
+            if subset == 2 and key in mapping:
+                raise PreregistrationError(f"duplicate key {key!r}")
             if rest:
                 mapping[key] = _parse_scalar(rest)
             else:
