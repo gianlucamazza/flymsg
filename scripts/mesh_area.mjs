@@ -2,7 +2,7 @@
 // Surface area of MaleCNS neurons from their published meshes at full resolution (LOD 0),
 // with the viewer's own readers: the sharded multilod manifest (precomputed.js), the Draco
 // decoder the page vendors, and the fragment transform the page draws with. One JSON line
-// per body: bodyId, area in µm², fragments and triangles; a body without a mesh gets
+// per body: bodyId, area in µm², non-empty fragments and triangles; a body without a mesh gets
 // "missing". Areas sum the fragments' triangles; fragments partition a neuron's mesh, so seams
 // add nothing and holes in the published mesh are not closed.
 //
@@ -59,7 +59,10 @@ async function area(draco, reader, info, bodyId) {
   if (!got) return { bodyId, missing: true };
   const manifest = parseMultilodManifest(got.data, got.start);
   const lod = 0;
-  const ranges = manifest.lods[lod].map((f) => ({ start: f.start, end: f.start + f.size, f }));
+  // empty fragments hold no geometry; the viewer skips them too (lod.js)
+  const ranges = manifest.lods[lod]
+    .filter((f) => f.size > 0)
+    .map((f) => ({ start: f.start, end: f.start + f.size, f }));
   let total = 0, triangles = 0;
   for (const req of mergeRanges(ranges)) {
     const buf = await fetchBytes(got.path, req.start, req.end);
