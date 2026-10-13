@@ -17,11 +17,15 @@ The same pages are published at <https://gianlucamazza.github.io/flymsg/>.
 ## Gallery
 
 Paused frames from the page `flymsg viz` writes, 1400×900, adaptive quality off, with the
-geometry loaded. A replay colours neurons by group unless a frame says otherwise, keeps
-silent neurons desaturated, and hides the neuropil shells. An anatomy view draws the shells
-and does not replay spikes. Rebuild the scenes with `flymsg viz --sim LC4_R`, `--sim pIP10`
-and `--types pIP10 dPR1 dMS9`. The page takes `?t=`, `?paused`, `?color=` and `?select=<bodyId>`; clicking a neuron lists its partners. Rendering is
-described in [viz](docs/viz.md).
+geometry loaded. Shot with `scripts/shoot.mjs` on desktop OpenGL (`GL=gl`). `?chrome=0`
+does not build the control panel and hides the performance readout; the colour legend
+stays. A replay
+colours neurons by group unless a frame says otherwise, keeps silent neurons desaturated,
+and draws the neuropil shells around the somata in `docs/live/cns/`. An anatomy view draws
+the shells and does not replay spikes. Rebuild the scenes with `flymsg viz --sim LC4_R`,
+`--sim pIP10` and `--types pIP10 dPR1 dMS9`. The page takes `?t=`, `?paused`, `?color=`,
+`?chrome=`, `?neuropils=`, `?somata=` and `?select=<bodyId>`; clicking a neuron lists its
+partners. Rendering is described in [viz](docs/viz.md).
 
 Each scene also runs live in the browser on the published site: the page streams the
 neuron surfaces from the public MaleCNS volumes, and the scenes are the committed exports
@@ -29,18 +33,18 @@ in `docs/live/` (rebuild them with `scripts/build_live_scenes.py`). Around every
 site draws all 140,024 somata of the volume as faint points coloured by region, so the whole
 CNS is visible. A desktop GPU helps.
 
-![Looming stimulus LC4_R at 120 ms. Responding neurons fill the brain and the ventral nerve cord, and silent neurons stay desaturated.](docs/img/replay.png)
+![Looming stimulus LC4_R at 120 ms. Neuropil shells outline the brain and the ventral nerve cord, responding neurons are coloured against desaturated silent neurons, and somata mark the rest of the CNS.](docs/img/replay.png)
 
 **Looming, LC4_R, 120 ms, stimulus on.** The pulse lasts 300 ms. The stimulus is the 55
 LC4_R neurons. The response fills the brain and the ventral nerve cord.
 [Open live](https://gianlucamazza.github.io/flymsg/live/looming/?t=120&paused&neuropils=1).
 
-![pIP10 song pathway at 150 ms. The two stimulus neurons are cyan, responding neurons are magenta, and silent neurons stay desaturated.](docs/img/pathway.png)
+![pIP10 song pathway at 150 ms. Neuropil shells outline the brain and the ventral nerve cord. The two stimulus neurons are cyan, responding neurons are magenta, silent neurons stay desaturated, and somata mark the rest of the CNS.](docs/img/pathway.png)
 
 **Song pathway, pIP10, 150 ms, stimulus on.** Both pIP10 neurons are the cyan stimulus.
 Recruited neurons are magenta. [Open live](https://gianlucamazza.github.io/flymsg/live/song/?t=150&paused&neuropils=1).
 
-![The same pIP10 replay at 150 ms, coloured by sex annotation. Male-specific neurons are magenta, dimorphic neurons are yellow, and neurons without that label are grey.](docs/img/dimorphism.png)
+![The same pIP10 replay at 150 ms, coloured by sex annotation, inside the neuropil shells. Male-specific neurons are magenta, dimorphic neurons are yellow, and neurons without that label are grey. Somata mark the rest of the CNS.](docs/img/dimorphism.png)
 
 **Same replay, coloured by the sex annotation.** "Potentially …" calls join their class.
 Magenta is male-specific, and both pIP10 neurons are in it. Yellow is dimorphic, and both
@@ -48,11 +52,13 @@ dMS9 neurons are in it. Grey has no dimorphism label; both dPR1 neurons are ther
 carry `fru+dsx` on the other field. Enrichment for the whole cases is in
 [dimorphism](docs/dimorphism.md). [Open live](https://gianlucamazza.github.io/flymsg/live/song/?t=150&paused&color=dimorphism&neuropils=1).
 
-![Anatomy of pIP10, dPR1 and dMS9, one colour per type, inside the neuropil shells of the brain and the ventral nerve cord.](docs/img/anatomy.png)
+![Anatomy of pIP10, dPR1 and dMS9, one colour per type, inside the neuropil shells of the brain and the ventral nerve cord, with the soma layer around them.](docs/img/anatomy.png)
 
 **Anatomy, no replay.** One colour per type for the six neurons, drawn inside all 114
 neuropil shells. pIP10 is male-specific, dMS9 is sexually dimorphic, and dPR1 is `fru+dsx`
 with no dimorphism label. [Open live](https://gianlucamazza.github.io/flymsg/live/anatomy/).
+
+![Looming at 60 ms, intact against both DNp01 silenced, with TTMn_R selected. The selected neuron is still active.](docs/img/looming-vs-dnp01.png)
 
 **Intervention, LC4_R with both DNp01 silenced.** The failed silence check, against the
 intact replay: `TTMn_R` still fires. [Open the comparison](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146).

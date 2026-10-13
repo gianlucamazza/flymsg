@@ -332,7 +332,7 @@ In the fly the eLN → PN lateral excitation is driven by eLN spikes, which cros
 as spikelets (Yaksi & Wilson 2010). This run's junctions pass only subthreshold potentials:
 the lock sets no spike term, and a LIF reset draws none. So v4 says that coupling without
 spikelets cannot be the missing excitation, not that the coupling is absent. Outputs:
-`results/kc-sparseness/v4/`.
+`results/kc-sparseness/v4/`. Figure: [v1–v4, dense or silent](img/kc-sparseness.svg).
 
 **Version 5 (lock, 2026-10-13, #85).** The coupling is no longer scanned: Yaksi & Wilson
 2010 (Fig. 4C/4F, 37 pairs) give eLN → PN 0.0021 and PN → eLN 0.0039 for hyperpolarizing

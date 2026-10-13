@@ -1,12 +1,16 @@
 """Doc figures are valid SVG drawn from the numbers they are given."""
 
+import json
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from flymsg import figures
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _parse(svg: str) -> ET.Element:
@@ -162,3 +166,30 @@ def test_partner_followup_draws_left_drive_and_null():
     assert "Null: 4 matched DN pairs driven" in texts
     assert "pair 5.0, p 0.200" in texts
     assert sum(1 for e in root.iter() if e.get("stroke") == figures.RED) >= 1
+
+
+def test_kc_sparseness_labels_an_archived_arm():
+    table = pd.read_csv(ROOT / "results/kc-sparseness/v1/arms.csv")
+    row = table.loc[table["arm"] == "A"].iloc[0]
+    drawn = pd.DataFrame(
+        [
+            {
+                "version": "v1",
+                "arm": "A",
+                "fraction_1": float(row["fraction_1"]),
+                "shared_of_1": float(row["shared_of_1"]),
+            }
+        ]
+    )
+    texts = _texts(_parse(figures.kc_sparseness(drawn, 0.01)))
+    assert "v1 A" in texts
+    assert f"{100 * float(row['fraction_1']):.1f}%" in texts
+
+
+def test_jump_range_labels_an_archived_seed_and_says_whose_clock():
+    seeds = json.loads((ROOT / "results/jump3d/v1/seeds.json").read_text())
+    one = next(s for s in seeds if s["seed"] == 110)
+    texts = _texts(_parse(figures.jump_range([one], 28.6, 37.75)))
+    assert "110" in texts
+    assert f"{one['range_mm']:.2f}" in texts
+    assert any("not a measured takeoff latency." in t for t in texts)

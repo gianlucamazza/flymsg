@@ -7,10 +7,12 @@ Reads results/ (tracked; filled from runs/ by scripts/archive_results.py, manife
   results/jump/{intact,dnp01}/  flymsg jump --sim LC4_R [--silence DNp01]
   results/loop/               flymsg loop --sim LC4_R ...
   results/sensitivity/v1/     flymsg sensitivity --run
+  results/kc-sparseness/v1/ … v4/  flymsg kc-sparseness --run
+  results/jump3d/v1/          flymsg jump3d --run
   validation/homology/        flymsg homology
 and reruns one exploratory simulation (the scored ORN_DM1 corner, seed 0) for the Kenyon
-cell figure, which needs the MaleCNS tables. Writes docs/img/*.svg. Nothing here changes a
-result.
+cell persistence figure, which needs the MaleCNS tables. The sparseness and jump figures
+read the archives only. Writes docs/img/*.svg. Nothing here changes a result.
 """
 
 import ast
@@ -21,7 +23,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import behavior, data, figures, partner_followup, sensitivity, sim
+from flymsg import behavior, data, figures, locks, partner_followup, sensitivity, sim
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS, IMG = ROOT / "results", ROOT / "docs" / "img"
@@ -130,6 +132,49 @@ def sens() -> str:
     return sensitivity.svg(cells, sensitivity.load())
 
 
+# Arms named by each version's result: the default, v1's recurrence-off arm, the
+# silent cholinergic-local-neuron arm, and the two ends of the v4 coupling scan
+# (0.2% down to 0%). Not a new comparison.
+KC_ARMS = (
+    (1, "A"),
+    (1, "B"),
+    (2, "A"),
+    (2, "E"),
+    (3, "A"),
+    (3, "E"),
+    (4, "A"),
+    (4, "E+gap0"),
+    (4, "E+gap1"),
+)
+
+
+def sparseness() -> str:
+    frames = []
+    for version, arm in KC_ARMS:
+        table = pd.read_csv(RESULTS / "kc-sparseness" / f"v{version}" / "arms.csv")
+        row = table.loc[table["arm"] == arm].iloc[0]
+        frames.append(
+            {
+                "version": f"v{version}",
+                "arm": arm,
+                "fraction_1": float(row["fraction_1"]),
+                "shared_of_1": float(row["shared_of_1"]),
+            }
+        )
+    floor = locks.load(ROOT / "validation" / "kc_sparseness.yaml")["decides"][
+        "sparse_min"
+    ]
+    return figures.kc_sparseness(pd.DataFrame(frames), float(floor))
+
+
+def jump_range() -> str:
+    seeds = json.loads((RESULTS / "jump3d" / "v1" / "seeds.json").read_text())
+    bounds = locks.load(ROOT / "validation" / "jump3d.yaml")["decides"]
+    return figures.jump_range(
+        seeds, float(bounds["range_min_mm"]), float(bounds["range_max_mm"])
+    )
+
+
 FIGURES = {
     "looming-jump.svg": looming_jump,
     "silence-scan-v2.svg": lambda: scan(2, "20–22"),
@@ -137,6 +182,8 @@ FIGURES = {
     "partner-followup.svg": followup,
     "embodiment.svg": embodiment,
     "kc-persistence.svg": kc,
+    "kc-sparseness.svg": sparseness,
+    "jump-range.svg": jump_range,
     "homology-pilot.svg": homology,
     "sensitivity-rate.svg": sens,
 }

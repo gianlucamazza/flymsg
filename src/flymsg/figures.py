@@ -147,6 +147,15 @@ class Panel:
         )
         return self
 
+    def hbar(self, y, height, x0, x1, colour, opacity=1.0) -> Panel:
+        left, right = sorted((self.X(x0), self.X(x1)))
+        top, bottom = sorted((self.Y(y - height / 2), self.Y(y + height / 2)))
+        self.out.append(
+            f'<rect x="{left:.1f}" y="{top:.1f}" width="{right - left:.1f}" '
+            f'height="{bottom - top:.1f}" fill="{colour}" fill-opacity="{opacity}"/>'
+        )
+        return self
+
     def dot(self, x, y, colour, r=2.5) -> Panel:
         self.out.append(
             f'<circle cx="{self.X(x):.1f}" cy="{self.Y(y):.1f}" r="{r}" fill="{colour}"/>'
@@ -617,5 +626,134 @@ def looming_jump(
         900,
         a.y0 + a.h + 50,
         "TTMn_R spikes in the one-bit looming loop (behavior v1, LC4_R 100 Hz)",
+        [a],
+    )
+
+
+def _pct(fraction: float) -> str:
+    return f"{100 * float(fraction):.1f}%"
+
+
+def kc_sparseness(rows: pd.DataFrame, silent_below: float) -> str:
+    """Responding share and shared share for arms the results already name.
+
+    `rows` is in display order and has version, arm, fraction_1 and shared_of_1.
+    Both panels draw those columns for odor 1. The two odors are not averaged.
+    A bar is grey when fraction_1 is below `silent_below` (the lock's sparse
+    floor) and blue otherwise: the dense-or-silent split the text already states.
+    """
+    rows = rows.reset_index(drop=True)
+    n = len(rows)
+    labels = [f"{r.version} {r.arm}" for r in rows.itertuples()]
+    height = 22 * n
+    ylim = (n - 0.45, -0.55)
+    a = Panel(
+        108,
+        36,
+        280,
+        height,
+        (0, 118),
+        ylim,
+        "Responding, odor 1",
+        xlabel="% of Kenyon cells",
+    )
+    b = Panel(
+        468,
+        36,
+        280,
+        height,
+        (0, 118),
+        ylim,
+        "Shared by both odors, of odor 1",
+        xlabel="% of odor-1 responders",
+    )
+    a.frame(xticks=[0, 25, 50, 75, 100], yticks=())
+    b.frame(xticks=[0, 25, 50, 75, 100], yticks=())
+    for i, r in rows.iterrows():
+        respond = 100 * float(r["fraction_1"])
+        shared = 100 * float(r["shared_of_1"])
+        colour = GREY if float(r["fraction_1"]) < silent_below else BLUE
+        a.hbar(i, 0.62, 0, respond, colour, 0.85)
+        b.hbar(i, 0.62, 0, shared, colour, 0.85)
+        a.text(a.X(respond) + 4, a.Y(i) + 3, _pct(r["fraction_1"]), colour)
+        b.text(b.X(shared) + 4, b.Y(i) + 3, _pct(r["shared_of_1"]), colour)
+        a.text(a.x0 - 8, a.Y(i) + 3, labels[i], "#222", "end")
+    floor = f"{100 * silent_below:.0f}"
+    a.text(
+        a.x0,
+        a.y0 + a.h + 48,
+        f"Grey is below {floor}% of Kenyon cells, the lock's sparse floor: silent. "
+        "Blue is dense.",
+        GREY,
+    )
+    a.text(
+        a.x0,
+        a.y0 + a.h + 62,
+        "Shared is the share of odor 1's responders. On a silent arm that is a "
+        "handful of cells. Odor 2 is not averaged in.",
+        GREY,
+    )
+    return document(
+        780,
+        a.y0 + a.h + 80,
+        "Kenyon cell sparseness: dense, or silent",
+        [a, b],
+    )
+
+
+def jump_range(seeds: Sequence[dict], lo_mm: float, hi_mm: float) -> str:
+    """Drag-free range of each seed, on the axis of the published interval.
+
+    `lo_mm` and `hi_mm` are the bounds the lock names (Zumstein et al.), not a
+    number computed from the seeds. A short jump stays short on that axis, and
+    each bar is labelled with its archived range. The times in the caption are
+    the model's clock from stimulus onset, not a measured takeoff latency.
+    """
+    seeds = list(seeds)
+    n = len(seeds)
+    a = Panel(
+        58,
+        40,
+        400,
+        210,
+        (-0.55, n - 0.45),
+        (0, hi_mm * 1.08),
+        "Drag-free range at takeoff",
+        xlabel="seed",
+        ylabel="mm",
+    )
+    band_top, band_bottom = sorted((a.Y(lo_mm), a.Y(hi_mm)))
+    a.out.append(
+        f'<rect x="{a.x0}" y="{band_top:.1f}" width="{a.w}" height="{band_bottom - band_top:.1f}" '
+        f'fill="{GOLD}" fill-opacity="0.18"/>'
+    )
+    a.frame(range(n), [str(int(s["seed"])) for s in seeds])
+    a.hline(lo_mm, GOLD, "4 3")
+    a.hline(hi_mm, GOLD, "4 3")
+    a.text(
+        a.x0 + a.w - 4,
+        a.Y((lo_mm + hi_mm) / 2) + 3,
+        f"Zumstein et al. {lo_mm:g}-{hi_mm:g} mm",
+        GOLD,
+        "end",
+    )
+    for i, s in enumerate(seeds):
+        mm = float(s["range_mm"])
+        a.bar(i, 0.5, 0, mm, BLUE, 0.9)
+        a.text(a.X(i), a.Y(mm) - 10, f"{mm:.2f}", BLUE, "middle")
+    times = ", ".join(
+        f"{int(s['seed'])} at {float(s['takeoff_ms']):.1f} ms" for s in seeds
+    )
+    a.text(
+        a.x0,
+        a.y0 + a.h + 46,
+        "Model clock from stimulus onset, not a measured takeoff latency.",
+        GREY,
+    )
+    a.text(a.x0, a.y0 + a.h + 60, f"{times}.", GREY)
+    return document(
+        520,
+        a.y0 + a.h + 78,
+        "NeuroMechFly jump v1: the drag-free range is short",
         [a],
     )
