@@ -235,6 +235,16 @@ range at takeoff with Zumstein et al.'s wingless jumps: 28.6 mm (measured, with 
 mm (30.2 mm without the 20% of energy they attribute to air). Six compensations are named;
 the TLM and the other legs do not push, so a short jump is the expected failure.
 
+**Result of version 1 (2026-10-13): short.** Run from `c05878d`. The body leaves the ground
+28–32 ms after the stimulus starts, at 0.044–0.059 m/s upward, and the drag-free range is
+0.3–0.5 mm against 28.6–37.75 mm: about ten times too slow. Descriptive columns: before
+takeoff only `TTMn_R` has fired (1–2 spikes; `TTMn_L` first fires about 14 ms later), so one
+leg pushes and the body leaves sideways; one twitch of 101 µN is below the 137 µN per leg,
+on both legs together, that Zumstein et al. compute a jump needs, and the femur-tibia
+extensor is not modelled. The body bridge and the measured actuator work; the jump needs
+both legs together and the TLM, which the model's motor side does not yet have. Outputs:
+`results/jump3d/v1/`.
+
 ### M1 jump body (v0.8.34, #33)
 
 `flymsg.jump.JumpBody` is a point mass over a rigid floor: gravity, an actuator force along

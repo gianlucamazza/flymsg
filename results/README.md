@@ -14,5 +14,6 @@ is a new version. `scripts/build_figures.py` draws `docs/img/*.svg` from these f
 | `sensitivity/v1/`             | `flymsg sensitivity --run` (#28)                         |
 | `mb-plasticity/v1/`           | `flymsg mb-plasticity --run` (#85)                       |
 | `kc-sparseness/v1/` … `v3/`   | `flymsg kc-sparseness --run` (#95)                       |
+| `jump3d/v1/`                  | `flymsg jump3d --run` (#90, #94)                         |
 | `t4t5/v1/`                    | `flymsg t4t5 --run` (#84)                                |
 | `partner-followup/v1/`        | `flymsg partner-followup --run` (#76), every null draw   |

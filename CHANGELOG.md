@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Result
+
+- **NeuroMechFly jump v1: short** (#90, #94). LC4 on both sides drives `TTMn_R` before
+  `TTMn_L`; the body takes off at 28–32 ms but at 0.05 m/s, a range of 0.3–0.5 mm against
+  Zumstein et al.'s 28.6–37.75 mm. One leg, one twitch and no TLM are not a jump.
+
 ### Body
 
 - **TTM actuator and a NeuroMechFly jump** (#90, #94): `flymsg.ttm` (measured twitch: 101 µN,

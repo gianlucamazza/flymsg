@@ -1,0 +1,66 @@
+{
+  "command": "jump3d --run",
+  "config": {
+    "body": "flygym 2.1.0 NeuroMechFly",
+    "jump3d_sha256": "c93eeebd796df1913769f3625ec033745a0ff29ae188bcced938d0b9bab9e8d2",
+    "jump3d_version": 1,
+    "rate_hz": 100.0,
+    "stim_ms": 300.0
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "data_dir": "data",
+    "verdict": "short"
+  },
+  "git": {
+    "commit": "c05878d9e12331d0abf45477561abaa9c84ba1b6",
+    "dirty": false
+  },
+  "packages": {
+    "flymsg": "0.8.43",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "pyarrow": "25.0.1",
+    "scipy": "1.18.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.8-arch1-2-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.8-arch1-2",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "content_sha256": "fe54f4512b024a37d3c8602c1fe9944f89f500675c1bbc01aa456bda657cafa8",
+    "version": 1
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "all": [
+      110,
+      111,
+      112
+    ]
+  },
+  "timestamps": {
+    "finished_at": "2026-10-13T02:54:46.825628+00:00",
+    "started_at": "2026-10-13T02:54:29.135803+00:00"
+  }
+}
