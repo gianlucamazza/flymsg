@@ -1,0 +1,209 @@
+{
+  "schema": "flymsg.engine-parity/v1",
+  "baseline": {
+    "source": {
+      "commit": "00aff9cb11573686ffcf0ea6dea90639c30093d7",
+      "dirty": false
+    },
+    "dataset": {
+      "name": "malecns",
+      "release": "v1.0",
+      "n_neurons": 165122,
+      "n_edges": 25563197,
+      "files": {
+        "neurons.parquet": {
+          "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c",
+          "bytes": 2375250
+        },
+        "edges.parquet": {
+          "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+          "bytes": 98482393
+        }
+      }
+    },
+    "packages": {
+      "flymsg": "0.8.44",
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "numba": "0.68.0",
+      "scipy": "1.18.1",
+      "pyarrow": "25.0.1"
+    },
+    "params": {
+      "v_rest": -52.0,
+      "v_th": -45.0,
+      "tau_m": 20.0,
+      "tau_syn": 5.0,
+      "t_ref": 2.2,
+      "delay": 1.8,
+      "w_syn": 0.19230769230769232,
+      "poisson_scale": 250.0,
+      "th_jump": 0.0,
+      "tau_th": 100.0,
+      "dt": 0.1
+    },
+    "mode": "flymsg.gap/boundary-reset-v1",
+    "lock_sha256": "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",
+    "steps": 500,
+    "stimulus": "ORN_DM1",
+    "seed": 1357,
+    "input_steps": 300,
+    "rate_hz": 100,
+    "spike_ms": 0.5,
+    "chemical_contacts": "intact",
+    "kicks_sha256": "d223c144555685e67a2332bf6b9f17c779376184d45c5078e8fc8dcec0a916e1",
+    "coupled_spikes": 2344,
+    "scope": "short engineering compatibility trial; not a scored biological run"
+  },
+  "current": {
+    "source": {
+      "commit": "e09c016864a7cdc15ba4d29d7f5e4dc0d514c87c",
+      "dirty": false
+    },
+    "dataset": {
+      "name": "malecns",
+      "release": "v1.0",
+      "n_neurons": 165122,
+      "n_edges": 25563197,
+      "files": {
+        "neurons.parquet": {
+          "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c",
+          "bytes": 2375250
+        },
+        "edges.parquet": {
+          "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+          "bytes": 98482393
+        }
+      }
+    },
+    "packages": {
+      "flymsg": "0.8.44",
+      "numpy": "2.5.3",
+      "pandas": "3.0.6",
+      "numba": "0.68.0",
+      "scipy": "1.18.1",
+      "pyarrow": "25.0.1"
+    },
+    "params": {
+      "v_rest": -52.0,
+      "v_th": -45.0,
+      "tau_m": 20.0,
+      "tau_syn": 5.0,
+      "t_ref": 2.2,
+      "delay": 1.8,
+      "w_syn": 0.19230769230769232,
+      "poisson_scale": 250.0,
+      "th_jump": 0.0,
+      "tau_th": 100.0,
+      "dt": 0.1
+    },
+    "mode": "flymsg.gap/boundary-reset-v1",
+    "lock_sha256": "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",
+    "steps": 500,
+    "stimulus": "ORN_DM1",
+    "seed": 1357,
+    "input_steps": 300,
+    "rate_hz": 100,
+    "spike_ms": 0.5,
+    "chemical_contacts": "intact",
+    "kicks_sha256": "d223c144555685e67a2332bf6b9f17c779376184d45c5078e8fc8dcec0a916e1",
+    "coupled_spikes": 2344,
+    "scope": "short engineering compatibility trial; not a scored biological run"
+  },
+  "arrays": [
+    {
+      "name": "counts",
+      "shape": [
+        5,
+        165122
+      ],
+      "dtype": "<u2",
+      "sha256": "4a8087ec6e26c4788db84b0b9583dbff49df11be8be5324d2b9f6f286b955df9"
+    },
+    {
+      "name": "first",
+      "shape": [
+        165122
+      ],
+      "dtype": "<i8",
+      "sha256": "65c18c3ee0f1f607cc6dd79015d5eb774af89fff5aec9f8895a979651d3715e5"
+    },
+    {
+      "name": "g",
+      "shape": [
+        165122
+      ],
+      "dtype": "<f4",
+      "sha256": "6b643df918856f92f58d0d81ee7fa435071677b8c5fcdcdfd2eed979ea5fd6d2"
+    },
+    {
+      "name": "gap_pulse",
+      "shape": [
+        823
+      ],
+      "dtype": "<i4",
+      "sha256": "4f7b3535e1c3b30dc7ec6fb4fe50418d7fe5adff06bab1c8b7821274935fd60e"
+    },
+    {
+      "name": "input_counts",
+      "shape": [
+        500,
+        74
+      ],
+      "dtype": "<i8",
+      "sha256": "efaa8e3478e8a431df7b3abeb02d4f8df6b16b1f0d3b0679ee2f71801299fead"
+    },
+    {
+      "name": "ref_until",
+      "shape": [
+        165122
+      ],
+      "dtype": "<i4",
+      "sha256": "182d7d5d94554ac32f03dfcdc817486c1c73c4ffacff7ee3af0fd49c1176c9ae"
+    },
+    {
+      "name": "ring",
+      "shape": [
+        18,
+        165122
+      ],
+      "dtype": "<i4",
+      "sha256": "de0c67cb48c454920cea3233a3a2233569e25ee6fe43d29a08e78d4769cee7e0"
+    },
+    {
+      "name": "ring_len",
+      "shape": [
+        18
+      ],
+      "dtype": "<i8",
+      "sha256": "e2b6996eccec103a5807ed3eabc5eb7374eedfd3d0148d1a4c66a42efa7c2e13"
+    },
+    {
+      "name": "th",
+      "shape": [
+        165122
+      ],
+      "dtype": "<f4",
+      "sha256": "1d9ce6684db831191dfa4fc95f6d044749edd96403f849fb941747e0b07929cd"
+    },
+    {
+      "name": "traced",
+      "shape": [
+        500,
+        1
+      ],
+      "dtype": "|u1",
+      "sha256": "e6304a473c65ecd0ccffbd2f5925a8f51c44b11f59b66cfcc055e4bb911b8fa0"
+    },
+    {
+      "name": "v",
+      "shape": [
+        165122
+      ],
+      "dtype": "<f4",
+      "sha256": "b4316594d2c371c06946293a70162e6f4e932fd683372155e6730a11db37cefe"
+    }
+  ],
+  "byte_identical": true,
+  "verified_at": "2026-10-13T09:57:52.306085+00:00"
+}
