@@ -315,6 +315,16 @@ v3's bounds; the smallest coupling whose arm is within is reported as the model'
 of the coupling the fly would need. It is a calibration of a free parameter against
 sparseness, not a test: what would test it is a measured eLN → PN coupling.
 
+**Result of version 4 (2026-10-13): none.** Run from `b1116af` (coupling as an explicit
+first-order step, a compensation named in the lock). No coupled arm is within, so the model
+predicts no coupling: E and F stay silent (0.2% of Kenyon cells) and coupling makes them
+quieter, down to 0% at 1, while the share of spiking PNs falls from 11% / 8% to 5% / 1%.
+Symmetric subthreshold coupling ties active PNs to local neurons at rest and drains them.
+In the fly the eLN → PN lateral excitation is driven by eLN spikes, which cross the junction
+as spikelets (Yaksi & Wilson 2010); the model's junctions pass only subthreshold potentials,
+because a LIF spike is a reset. So v4 says that coupling without spikelets cannot be the
+missing excitation, not that the coupling is absent. Outputs: `results/kc-sparseness/v4/`.
+
 ## Electrical synapses (optional, 2026-10-13)
 
 `sim.Gap` (#85) couples pairs of neurons through their potentials. A coupled neuron follows
