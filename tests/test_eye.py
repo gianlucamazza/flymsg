@@ -101,3 +101,33 @@ def test_check_reports_coverage_and_the_dorsal_rim():
     c = eye.check(cols, receptors)
     assert c["columns"]["R"] == 2 and c["with_direction"]["R"] == 1
     assert c["dorsal_rim_elevation_deg"] == 70.0
+
+
+def _cols(az, el):
+    return pd.DataFrame({"azimuth_deg": az, "elevation_deg": el})
+
+
+def test_angular_distance():
+    assert eye.angular_distance_deg(0, 0, 90, 0) == pytest.approx(90)
+    assert eye.angular_distance_deg(10, 89.999, 190, 89.999) == pytest.approx(
+        0, abs=1e-2
+    )
+
+
+def test_disk_coverage_runs_from_none_to_all():
+    cols = _cols([0.0, 0.0, 40.0, np.nan], [0.0, 0.0, 0.0, 0.0])
+    big = eye.disk_coverage(cols, 0, 0, 30, 5)
+    assert big[0] == pytest.approx(1, abs=1e-5) and big[2] == pytest.approx(0, abs=1e-5)
+    assert np.isnan(big[3])
+    edge = eye.disk_coverage(_cols([10.0], [0.0]), 0, 0, 10, 5)
+    assert 0.4 < edge[0] < 0.6  # a column on the rim sees about half its profile
+    assert eye.disk_coverage(cols, 0, 0, 0, 5)[0] == 0
+
+
+def test_looming_radius_grows_to_collision():
+    r = eye.looming_radius_deg(
+        [0, 400, 490, 500, 600], collision_ms=500, l_over_v_ms=40
+    )
+    assert r[0] < r[1] < r[2] < 90
+    assert r[0] == pytest.approx(np.degrees(np.arctan(40 / 500)))
+    assert r[3] == r[4] == 90
