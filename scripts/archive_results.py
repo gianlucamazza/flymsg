@@ -24,6 +24,7 @@ DIRS = (
     "mb-plasticity/v1",
     "kc-sparseness/v1",
     "kc-sparseness/v2",
+    "partner-followup/v1",
     "jump/intact",
     "jump/dnp01",
     "loop",

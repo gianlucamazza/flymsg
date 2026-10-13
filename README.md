@@ -160,6 +160,9 @@ sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about hal
   (p 0.001 each against 0.025) ([behavior](docs/behavior.md#result-of-version-2-2026-10-12)).
   Version 3 repeats version 2 on fresh seeds 30–32 and names both again
   ([behavior](docs/behavior.md#result-of-version-3-2026-10-12)): the naming replicates.
+  A follow-up, locked before its run, finds the same on the left side, and shows that DNp06
+  driven at 200 Hz reaches the jump bit alone while DNp02 alone does not; together they are
+  far above random descending pairs ([behavior](docs/behavior.md#result-of-version-1-2026-10-13)).
 - **Extensions only where a measurement transfers.** Cell-type parameters, gap junctions,
   short-term synaptic dynamics and compartments have no value that transfers into
   this LIF, and none is added. Silencing DNp01 removes that cell's output, and `TTMn_R` still fires,

@@ -127,3 +127,38 @@ def test_looming_jump_draws_closed_open_and_silence_ticks():
     assert colours.count("#4b5563") == 2
     assert colours.count(figures.BLUE) == 1
     assert {"seed 0 open", "seed 0 silence"} <= set(_texts(root))
+
+
+def test_partner_followup_draws_left_drive_and_null():
+    left = pd.DataFrame(
+        {
+            "unit": ["DNp02", "DNp06"],
+            "counts": ["[0, 0, 0]", "[1, 0, 0]"],
+            "null_mean": [2.5, 2.4],
+            "p": [0.001, 0.01],
+        }
+    )
+    drive = pd.DataFrame(
+        {
+            "arm": ["DNp02_R", "DNp06_R", "pair"],
+            "counts": ["[0, 0, 0]", "[1, 0, 1]", "[5, 4, 6]"],
+        }
+    )
+    null = pd.DataFrame(
+        {
+            "part": ["drive"] * 4 + ["left"],
+            "unit": ["pair"] * 4 + ["DNp02"],
+            "draw": [0, 1, 2, 3, 0],
+            "mean_count": [0.0, 0.3, 1.0, 0.0, 2.0],
+        }
+    )
+    root = _parse(
+        figures.partner_followup(
+            left, [3, 2, 4], drive, null, 0.2, 3, ("replicates", "conjunction"), "40–42"
+        )
+    )
+    texts = _texts(root)
+    assert "verdict: replicates" in texts and "verdict: conjunction" in texts
+    assert "Null: 4 matched DN pairs driven" in texts
+    assert "pair 5.0, p 0.200" in texts
+    assert sum(1 for e in root.iter() if e.get("stroke") == figures.RED) >= 1

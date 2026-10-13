@@ -3,6 +3,7 @@
 Reads results/ (tracked; filled from runs/ by scripts/archive_results.py, manifests included):
   results/behavior/           flymsg behavior --run
   results/silence-scan/v{2,3}/  flymsg silence-scan --run (locks v2, v3)
+  results/partner-followup/v1/  flymsg partner-followup --run
   results/jump/{intact,dnp01}/  flymsg jump --sim LC4_R [--silence DNp01]
   results/loop/               flymsg loop --sim LC4_R ...
   results/sensitivity/v1/     flymsg sensitivity --run
@@ -20,7 +21,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import behavior, data, figures, sensitivity, sim
+from flymsg import behavior, data, figures, partner_followup, sensitivity, sim
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS, IMG = ROOT / "results", ROOT / "docs" / "img"
@@ -50,6 +51,29 @@ def scan(version: int, confirm_seeds: str) -> str:
         base["confirm"],
         confirm_seeds,
         version,
+    )
+
+
+def followup() -> str:
+    d = RESULTS / "partner-followup" / "v1"
+    report = (d / "report.txt").read_text()
+    base = ast.literal_eval(
+        re.search(r"left base arm \(DNp01 silenced\): (\[.*\])", report)[1]
+    )
+    left_v = re.search(r"left verdict: (.*)", report)[1]
+    drive_v = re.search(r"drive verdict: (.*)", report)[1]
+    pair_p = float(re.search(r"pair null: .* p ([0-9.]+)", report)[1])
+    doc = partner_followup.load()
+    s = partner_followup.seeds(doc)
+    return figures.partner_followup(
+        pd.read_csv(d / "left.csv"),
+        base,
+        pd.read_csv(d / "drive.csv"),
+        pd.read_csv(d / "null_draws.csv"),
+        pair_p,
+        doc["model"]["bar"],
+        (left_v, drive_v),
+        f"{s.start}–{s.stop - 1}",
     )
 
 
@@ -110,6 +134,7 @@ FIGURES = {
     "looming-jump.svg": looming_jump,
     "silence-scan-v2.svg": lambda: scan(2, "20–22"),
     "silence-scan-v3.svg": lambda: scan(3, "30–32"),
+    "partner-followup.svg": followup,
     "embodiment.svg": embodiment,
     "kc-persistence.svg": kc,
     "homology-pilot.svg": homology,

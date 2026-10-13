@@ -1,0 +1,13 @@
+left base arm (DNp01 silenced): [3, 1, 1]
+left:
+ unit    counts  draws  null_mean        p  contributes  names_partner
+DNp02 [0, 0, 0]   1000   2.213000 0.000999         True           True
+DNp06 [0, 0, 0]   1000   2.151333 0.002997         True           True
+left verdict: replicates
+drive arms:
+    arm     counts                                      driven_spikes
+DNp02_R  [0, 0, 0]    {'DNp02_R': [54, 61, 69], 'DNp06_R': [0, 0, 0]}
+DNp06_R  [3, 4, 6]    {'DNp02_R': [0, 0, 0], 'DNp06_R': [54, 61, 69]}
+   pair [9, 8, 11] {'DNp02_R': [45, 61, 63], 'DNp06_R': [63, 50, 57]}
+pair null: draws 1000, mean 0.013, p 0.000999
+drive verdict: single_sufficient: DNp06_R

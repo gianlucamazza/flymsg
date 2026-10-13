@@ -325,6 +325,11 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: partner follow-up v1.** Seeds 40–42, locked before the run. Left mirror:
+`replicates` (DNp02 p 0.001, DNp06 p 0.003). Direct drive at 200 Hz without LC4:
+`single_sufficient: DNp06_R` (0 / 3–6 / 8–11 `TTMn_R` spikes for DNp02, DNp06, pair; matched
+null mean 0.013, p 0.001). Report: `results/partner-followup/v1/`.
+
 **2026-10-13: Kenyon cell sparseness v2, within E and F by undershoot.** Seeds 70–72.
 Removing the chemical contacts of cholinergic local neurons onto projection neurons
 (electrical in the fly) cuts the PNs driven by one ORN type from 73% to 4.5%, and the
