@@ -10,11 +10,19 @@ from flymsg import cli, kc_sparseness
 
 def test_locked_to_the_measured_bounds_and_the_plasticity_odors():
     doc = kc_sparseness.assert_matches_code()
-    assert doc["version"] == 5
-    assert kc_sparseness.content_hash(doc) == kc_sparseness.VERSION_HASHES[5]
+    assert doc["version"] == 6
+    assert kc_sparseness.content_hash(doc) == kc_sparseness.VERSION_HASHES[6]
     assert list(doc["arms"]) == ["A", "E", "F"]
     assert doc["supersedes"]["verdict"] == "none"
-    assert len(kc_sparseness.coupled_arms(doc)) == 8
+    assert [a[0] for a in kc_sparseness.plain_arms(doc)] == [
+        "A",
+        "E/lLN2T",
+        "F/lLN2T",
+        "E/lLN2T+lLN1_bc",
+        "F/lLN2T+lLN1_bc",
+    ]
+    assert len(kc_sparseness.coupled_arms(doc)) == 16
+    assert kc_sparseness.n_runs(doc) == 126
     assert doc["protocol"]["odors"] == ["3-octanol", "4-methylcyclohexanol"]
     assert doc["decides"]["sparse_min"] == 0.01
     assert doc["defaults_changed"] is False
@@ -45,12 +53,19 @@ def test_prints_the_protocol_without_data(monkeypatch, capsys, tmp_path):
     )
     cli.main()
     out = capsys.readouterr().out
-    assert "E ach_ln_pn" in out and "DoOR" in out and "8 coupled arms" in out
+    assert "E ach_ln_pn" in out and "DoOR" in out and "16 coupled arms" in out
+    assert "lLN2T (13), lLN2T+lLN1_bc (43)" in out
 
 
 @pytest.mark.parametrize(
     ("seeds", "spent"),
-    [([60, 61, 62], 1), ([70, 71, 72], 2), ([80, 81, 82], 3), ([83, 84, 85], 4)],
+    [
+        ([60, 61, 62], 1),
+        ([70, 71, 72], 2),
+        ([80, 81, 82], 3),
+        ([83, 84, 85], 4),
+        ([86, 87, 88], 5),
+    ],
 )
 def test_v3_refuses_spent_seeds(seeds, spent):
     doc = kc_sparseness.load()
@@ -87,6 +102,23 @@ def test_spikelet_durations_start_at_none():
     doc["coupling"]["spike_ms"] = [0.5, 1.0]
     with pytest.raises(kc_sparseness.SparsenessError, match="start at 0"):
         kc_sparseness.assert_matches_code(doc)
+
+
+def test_the_eln_sets_are_eckstein_types_and_name_the_current_integrator():
+    doc = kc_sparseness.load()
+    doc["protocol"]["eln_sets"]["lLN2T"]["types"] = ["lLN2T_a", "lLN2T_e"]
+    with pytest.raises(kc_sparseness.SparsenessError, match="Eckstein"):
+        kc_sparseness.assert_matches_code(doc)
+    doc = kc_sparseness.load()
+    doc["electrical_semantics"] = "flymsg.gap/boundary-reset-v1"
+    with pytest.raises(kc_sparseness.SparsenessError, match="current integrator"):
+        kc_sparseness.assert_matches_code(doc)
+
+
+def whole_class(doc: dict) -> dict:
+    """The lock as v1-v5 read it: every cholinergic ALLN is an eLN."""
+    proto = {k: v for k, v in doc["protocol"].items() if k != "eln_sets"}
+    return {**doc, "protocol": proto}
 
 
 def _antennal_lobe():
@@ -186,7 +218,7 @@ def test_kc_recurrence_spreads_an_odor_and_arm_b_removes_it():
         "PN": np.array([], dtype=int),
         "ACH_LN": np.array([], dtype=int),
     }
-    doc = kc_sparseness.load()
+    doc = whole_class(kc_sparseness.load())
     arms = {a: "" for a in ("A", "B", "E", "F")}
     base = {k: v for k, v in doc.items() if k != "coupling"}
     base = {**base, "arms": arms, "decides": {**doc["decides"], "sparse_max": 0.3}}
@@ -224,7 +256,9 @@ def test_an_interrupted_run_resumes_to_the_same_table(tmp_path):
         "PN": np.array([], dtype=int),
         "ACH_LN": np.array([], dtype=int),
     }
-    doc = {k: v for k, v in kc_sparseness.load().items() if k != "coupling"}
+    doc = {
+        k: v for k, v in whole_class(kc_sparseness.load()).items() if k != "coupling"
+    }
     whole = kc_sparseness.protocol(W, idx, doc)["table"]
     steps = progress.Steps(
         tmp_path, {"lock": doc["content_sha256"], "source": "fixture"}
@@ -252,8 +286,45 @@ def test_historical_electrical_lock_is_not_rescored_with_new_semantics(monkeypat
 def test_v5_keeps_the_boundary_model_that_was_locked_before_its_run():
     from flymsg import electrical, sim
 
+    v5 = {"version": 5, "coupling": {}, "electrical_semantics": electrical.SEMANTICS}
+    assert kc_sparseness.electrical_semantics(v5) == electrical.BOUNDARY_SEMANTICS
     assert (
-        kc_sparseness.electrical_semantics(kc_sparseness.load())
-        == electrical.BOUNDARY_SEMANTICS
+        kc_sparseness.electrical_semantics(kc_sparseness.load()) == electrical.SEMANTICS
     )
     assert sim.Gap.__dataclass_fields__["refractory_mode"].default == "continuous"
+
+
+def test_each_eln_set_removes_and_couples_only_its_own_neurons():
+    # 0: ORN -> 1 and 2, two cholinergic LNs; both excite PN 3, which drives KC 4. Removing
+    # only LN 1 (set "one") keeps LN 2's synapse, so the KC still fires; removing both
+    # (set "both") silences it
+    n = 5
+    W = sparse.csc_matrix(
+        (
+            np.array([60.0, 60.0, 30.0, 30.0, 60.0], dtype=np.float32),
+            ([1, 2, 3, 3, 4], [0, 0, 1, 2, 3]),
+        ),
+        shape=(n, n),
+    )
+    idx = {
+        "stimuli": {
+            "3-octanol": (np.array([0]), np.array([100.0])),
+            "4-methylcyclohexanol": (np.array([0]), np.array([100.0])),
+        },
+        "APL": np.array([], dtype=int),
+        "KC": np.array([4]),
+        "PN": np.array([3]),
+        "ACH_LN": np.array([1, 2]),
+        "sets": {
+            "one": {"ACH_LN": np.array([1])},
+            "both": {"ACH_LN": np.array([1, 2])},
+        },
+    }
+    doc = kc_sparseness.load()
+    proto = {**doc["protocol"], "eln_sets": {"one": {}, "both": {}}}
+    doc = {k: v for k, v in doc.items() if k != "coupling"}
+    doc = {**doc, "protocol": proto, "arms": {"A": "", "E": ""}}
+    t = kc_sparseness.protocol(W, idx, doc)["table"].set_index("arm")
+    assert list(t.index) == ["A", "E/one", "E/both"]
+    assert t.loc["A", "responders_1"] == t.loc["E/one", "responders_1"] == 1
+    assert t.loc["E/both", "responders_1"] == 0

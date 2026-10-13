@@ -8,7 +8,10 @@ the odors, and the projection neurons that spike. The default model is not chang
 result. Version 1 (arms A-D) ran from b096b4a; version 2 runs arms A, B, E, F; version 4
 (b1116af) scanned a symmetric eLN-PN coupling without spikelets. Version 5 (issue #85) gives
 arms E and F the measured, asymmetric eLN-PN and sister-PN coupling (`sim.Gap`), with eLN
-spikes crossing as spikelets of the measured amplitude and a scanned duration.
+spikes crossing as spikelets of the measured amplitude and a scanned duration. Version 6
+restricts the eLNs to the types Eckstein et al. 2024 liken to them (`protocol.eln_sets`), one
+pass of arms E and F and of the coupled arms per set; the other cholinergic local neurons stay
+chemical.
 """
 
 from __future__ import annotations
@@ -41,6 +44,7 @@ VERSION_HASHES = {
     3: "0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2",  # Hige odors from DoOR, lower bound, seeds 80-82
     4: "72059246ade98ec69b49ce32bac587e0f6f52d39b2cb747c962fb4177694af67",  # E and F with electrical eLN-PN coupling 0-1 and sister PNs at 0.013, seeds 83-85
     5: "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",  # measured asymmetric eLN-PN coupling, eLN spikelets 0-2 ms, seeds 86-88
+    6: "96b63c553e399847dfc297570fc7dd3700321b1d1d651ae9647db31551e4c2e7",  # eLNs restricted to lLN2T (and lLN2T + lLN1_bc), seeds 89-91
 }
 # synapse classes without fast effect in each arm
 ARM_CLASSES = {
@@ -51,7 +55,19 @@ ARM_CLASSES = {
     "E": ("ach_ln_pn",),
     "F": ("kc_kc", "ach_ln_pn"),
 }
-SPENT_SEEDS = {1: (60, 61, 62), 2: (70, 71, 72), 3: (80, 81, 82), 4: (83, 84, 85)}
+SPENT_SEEDS = {
+    1: (60, 61, 62),
+    2: (70, 71, 72),
+    3: (80, 81, 82),
+    4: (83, 84, 85),
+    5: (86, 87, 88),
+}
+# MaleCNS types Eckstein et al. 2024 (STAR Methods, Fig S5F) liken to the cholinergic eLNs by
+# soma position and morphology (lLN2T_abc), and the neighbouring lLN1_bc
+ELN_SETS = {
+    "lLN2T": ["lLN2T_a", "lLN2T_b", "lLN2T_c"],
+    "lLN2T+lLN1_bc": ["lLN2T_a", "lLN2T_b", "lLN2T_c", "lLN1_bc"],
+}
 # Coupling coefficients for hyperpolarizing steps, which pass the electrical component only,
 # measured from the bar heights: homotypic PN pairs, Kazama & Wilson 2009 Fig 7d; eLN -> PN
 # and PN -> eLN, Yaksi & Wilson 2010 Fig 4C and 4F (control pairs of the shakB2 comparison)
@@ -117,6 +133,11 @@ def assert_matches_code(doc: dict | None = None) -> dict:
             raise SparsenessError("the coupling is not the sourced one")
         if c["spike_ms"] != sorted(set(c["spike_ms"])) or min(c["spike_ms"]) != 0.0:
             raise SparsenessError("the spike durations must start at 0 and increase")
+    if "eln_sets" in proto:
+        if {k: v["types"] for k, v in proto["eln_sets"].items()} != ELN_SETS:
+            raise SparsenessError("the eLN sets are not Eckstein et al.'s types")
+        if doc.get("electrical_semantics") != electrical.SEMANTICS:
+            raise SparsenessError("a new electrical lock names the current integrator")
     for v, spent in SPENT_SEEDS.items():
         if v < doc["version"] and set(proto["seeds"]) & set(spent):
             raise SparsenessError(f"seeds must not reuse version {v}'s")
@@ -160,6 +181,12 @@ def summary(doc: dict | None = None) -> str:
             if "coupling" in doc
             else ""
         )
+        + (
+            "; eLN sets "
+            + ", ".join(f"{k} ({v['n']})" for k, v in p["eln_sets"].items())
+            if "eln_sets" in p
+            else ""
+        )
     )
 
 
@@ -181,12 +208,41 @@ def arms(W, idx: dict, names) -> dict:
     return out
 
 
+def eln_sets(doc: dict) -> list[str | None]:
+    """The eLN sets of the lock, or [None]: the whole cholinergic ALLN class (v1-v5)."""
+    return list(doc["protocol"].get("eln_sets", {})) or [None]
+
+
+def set_arm(arm: str, eln_set: str | None) -> str:
+    """An arm's name for an eLN set: arms that touch eLN synapses carry the set."""
+    if eln_set is None or "ach_ln_pn" not in ARM_CLASSES[arm]:
+        return arm
+    return f"{arm}/{eln_set}"
+
+
+def plain_arms(doc: dict) -> list[tuple[str, str, str | None]]:
+    """(name, arm, eLN set) of every uncoupled arm, in lock order, each name once."""
+    out, seen = [], set()
+    for s in eln_sets(doc):
+        for arm in doc["arms"]:
+            name = set_arm(arm, s)
+            if name not in seen:
+                seen.add(name)
+                out.append((name, arm, s))
+    return out
+
+
 def coupled_arms(doc: dict) -> list[tuple[str, str, float]]:
-    """(name, base arm, spikelet duration in ms) of every coupled arm, in lock order."""
+    """(name, base arm name, spikelet duration in ms) of every coupled arm, in lock order."""
     c = doc.get("coupling")
     if not c:
         return []
-    return [(f"{b}+spike{w:g}ms", b, w) for b in c["bases"] for w in c["spike_ms"]]
+    return [
+        (f"{set_arm(b, s)}+spike{w:g}ms", set_arm(b, s), w)
+        for s in eln_sets(doc)
+        for b in c["bases"]
+        for w in c["spike_ms"]
+    ]
 
 
 def gap_pairs(
@@ -310,11 +366,17 @@ def protocol(
     kcs, pns = idx["KC"], idx["PN"]
     bins = round(proto["odor_ms"] / 10.0)
     rows = []
-    weights = arms(W, idx, list(doc["arms"]))
+    # per eLN set: its own ACH_LN and eLN-PN pairs (idx["sets"]), or the whole class
+    sets = idx.get("sets") or {None: idx}
+    weights, owner = {}, {}
+    for name, arm, s in plain_arms(doc):
+        weights[name] = arms(W, {**idx, **sets[s]}, [arm])[arm]
+        owner[name] = s
     runs = [(arm, Wx, None) for arm, Wx in weights.items()]
     n = W.shape[0]
     for name, base, width in coupled_arms(doc):
-        gap = measured_gap(idx["eln"], idx["sisters"], n, idx["ACH_LN"], width)
+        own = sets[owner[base]]
+        gap = measured_gap(own["eln"], idx["sisters"], n, own["ACH_LN"], width)
         mode = (
             "boundary"
             if electrical_semantics(doc) == electrical.BOUNDARY_SEMANTICS
@@ -365,7 +427,9 @@ def protocol(
 
     for arm, Wx, gap in runs:
         got, fresh = steps.get(
-            f"arm-{arm}", lambda a=arm, w=Wx, g=gap: one_arm(a, w, g)
+            # a step name has no "/": E/lLN2T is stored as arm-E.lLN2T
+            f"arm-{arm.replace('/', '.')}",
+            lambda a=arm, w=Wx, g=gap: one_arm(a, w, g),
         )
         if not fresh and report is not None:
             report.step(per_arm, note=f"{arm} resumed", resumed=True)
@@ -402,7 +466,7 @@ def stimuli(neurons: pd.DataFrame, proto: dict, data_dir: Path | None) -> dict:
 def n_runs(doc: dict) -> int:
     """Simulations of the locked protocol: arms x odors x seeds."""
     proto = doc["protocol"]
-    arms_n = len(doc["arms"]) + len(coupled_arms(doc))
+    arms_n = len(plain_arms(doc)) + len(coupled_arms(doc))
     return arms_n * len(proto["odors"]) * len(proto["seeds"])
 
 
@@ -444,6 +508,17 @@ def run(
             (cls == proto["ln_class"]) & (neurons["nt"] == proto["ln_transmitter"])
         ).to_numpy()
     )
+    if "eln_sets" in proto:
+        idx["sets"] = {}
+        for name, spec in proto["eln_sets"].items():
+            members = np.flatnonzero(neurons["type"].isin(spec["types"]).to_numpy())
+            if members.size != spec["n"] or not np.isin(members, idx["ACH_LN"]).all():
+                raise SparsenessError(
+                    f"eLN set {name} has {members.size} neurons, the lock says "
+                    f"{spec['n']}, all cholinergic ALLN"
+                )
+            idx["sets"][name] = {"ACH_LN": members}
     if "coupling" in doc:
-        idx["eln"], idx["sisters"] = gap_pairs(neurons, edges, idx)
+        for own in (idx.get("sets") or {None: idx}).values():
+            own["eln"], idx["sisters"] = gap_pairs(neurons, edges, {**idx, **own})
     return protocol(sim.network(neurons, edges, sim.Params()), idx, doc, steps, report)
