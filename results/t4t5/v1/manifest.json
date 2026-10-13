@@ -1,0 +1,66 @@
+{
+  "command": "t4t5 --run",
+  "config": {
+    "acceptance_deg": 8.23,
+    "gain": 0.01,
+    "speed_deg_s": 30.0,
+    "t4t5_sha256": "bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8",
+    "t4t5_version": 1
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "data_dir": "data",
+    "verdict": "neither"
+  },
+  "git": {
+    "commit": "0c574f5549380d36e8d97731b2742fb290763468",
+    "dirty": false
+  },
+  "packages": {
+    "flymsg": "0.8.42",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "pyarrow": "25.0.1",
+    "scipy": "1.18.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.8-arch1-2-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.8-arch1-2",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "content_sha256": "fe54f4512b024a37d3c8602c1fe9944f89f500675c1bbc01aa456bda657cafa8",
+    "version": 1
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "all": [
+      90,
+      91,
+      92
+    ]
+  },
+  "timestamps": {
+    "finished_at": "2026-10-13T02:26:21.455546+00:00",
+    "started_at": "2026-10-13T02:13:42.994125+00:00"
+  }
+}

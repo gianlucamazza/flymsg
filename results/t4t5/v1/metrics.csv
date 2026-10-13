@@ -1,0 +1,9 @@
+subtype,preferred_polarity_spikes,other_polarity_spikes,polarity_ok,vector_angle_deg,measured_angle_deg,angle_error_deg,direction_ok,dsi
+T4a,0,0,False,,0.0,,False,
+T4b,0,0,False,,180.0,,False,
+T4c,0,0,False,,90.0,,False,
+T4d,0,0,False,,270.0,,False,
+T5a,0,0,False,,0.0,,False,
+T5b,0,0,False,,180.0,,False,
+T5c,0,0,False,,90.0,,False,
+T5d,0,0,False,,270.0,,False,

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Result
+
+- **T4/T5 v1: neither** (#84). Photoreceptors fire through the measured eye, but L1–L3 and
+  everything downstream stay silent: inhibitory photoreceptor synapses cannot move silent
+  spiking lamina neurons, where the fly's are graded with a resting tone. The concrete case
+  for graded neurons (#97).
+
 ### Pre-registration
 
 - **T4/T5 direction selectivity v1** (#84): moving ON/OFF edges in four directions through
