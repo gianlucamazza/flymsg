@@ -34,7 +34,16 @@ import {
   colourOf as colourIn,
   isShown as shownIn,
 } from "./colors.js";
-import { applyChrome, showChrome } from "./chrome.js";
+import {
+  applyChrome,
+  autoplay,
+  clearHint,
+  COARSE,
+  hint,
+  isTap,
+  NARROW,
+  showChrome,
+} from "./chrome.js";
 import {
   effectiveBudget,
   scaledRatio,
@@ -89,6 +98,7 @@ const SKEL_LEVELS = 10;
 const SKEL_ERROR_PX = 0.5;
 
 const query = new URLSearchParams(location.search);
+const coarse = matchMedia(COARSE).matches;
 const settings = {
   detailPx: Number(query.get("detail")) || 256, // refine a fragment when its chunk exceeds this on screen
   budgetM: Number(query.get("budget")) || 8, // million triangles held on the GPU
@@ -1220,7 +1230,9 @@ function showRun(run) {
 }
 const clock = {
   t: Number(query.get("t")) || 0,
-  playing: replay && !query.has("paused"),
+  playing:
+    replay &&
+    autoplay(location.search, matchMedia("(prefers-reduced-motion: reduce)").matches),
   speed: 40,
 };
 const clockEl = document.getElementById("clock");
@@ -1361,13 +1373,14 @@ if (query.has("check")) {
   };
 }
 const info = document.getElementById("info");
+info.textContent = hint(coarse);
 let downAt = null;
 renderer.domElement.addEventListener(
   "pointerdown",
   (e) => (downAt = [e.clientX, e.clientY]),
 );
 renderer.domElement.addEventListener("pointerup", (e) => {
-  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4)
+  if (!downAt || !isTap(e.pointerType, e.clientX - downAt[0], e.clientY - downAt[1]))
     return; // a drag
   const rect = renderer.domElement.getBoundingClientRect();
   const k = pickAt(e.clientX - rect.left, e.clientY - rect.top);
@@ -1383,7 +1396,7 @@ renderer.domElement.addEventListener("pointerup", (e) => {
   info.classList.remove("muted");
   info.textContent = `${n.instance || n.type} · ${
     n.shown.size ? `surface, LOD ${lods.join("/")}` : "skeleton"
-  } · Esc clears the selection`;
+  } · ${clearHint(coarse)}`;
   selectNeuron(k);
 });
 
@@ -1462,7 +1475,9 @@ function showRaster(k, entry) {
     hidden,
   };
   rasterEl.querySelector("header span").textContent =
-    `spikes per ${A.bin_ms} ms bin (model replay) · drag to move in time · ← → step one bin`;
+    `spikes per ${A.bin_ms} ms bin (model replay) · drag to move in time${
+      coarse ? "" : " · ← → step one bin"
+    }`;
   rasterEl.querySelector(".more").textContent = hidden
     ? `${hidden} more partners in the scene are not shown`
     : "";
@@ -1595,6 +1610,7 @@ applyChrome(
 );
 if (showChrome(location.search)) {
   const gui = new GUI({ title: "flymsg" });
+  if (matchMedia(NARROW).matches) gui.close(); // the open panel would cover the scene
   gui
     .add(view, "colorBy", COLOR_MODES)
     .name("colour by")
@@ -1817,7 +1833,25 @@ if (query.has("bench")) {
   );
 }
 
+// Mobile browsers drop the WebGL context under memory pressure or in a background tab.
+// preventDefault asks for it back; three.js re-uploads every resource on restore.
+const lostEl = document.getElementById("lost");
+renderer.domElement.addEventListener("webglcontextlost", (e) => {
+  e.preventDefault();
+  lostEl.hidden = false;
+});
+renderer.domElement.addEventListener("webglcontextrestored", () => {
+  lostEl.hidden = true;
+  selectionDirty = true;
+  invalidate();
+});
+
+// A hidden tab pauses requestAnimationFrame. The time away is not replay time: restart the
+// frame clock when the tab is shown, so the first frame back does not jump.
 const timer = new THREE.Clock();
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) timer.getDelta();
+});
 renderer.setAnimationLoop(() => {
   const dt = timer.getDelta();
   const moved = controls.update(); // damping keeps moving after the pointer is released

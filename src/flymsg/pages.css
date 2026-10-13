@@ -4,6 +4,8 @@
   font-family: "Iowan Old Style", Palatino, Georgia, serif;
   font-size: 1.05rem;
   line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -91,4 +93,29 @@ td {
   padding: 0.3rem 0.7rem 0.3rem 0;
   text-align: left;
   vertical-align: top;
+}
+
+/* A phone: the twenty page links scroll in one row instead of filling the first screen. */
+@media (max-width: 600px) {
+  header {
+    padding: 0.6rem 1rem;
+  }
+
+  nav {
+    order: 3;
+    flex: 1 0 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0.4rem 0;
+    scrollbar-width: none;
+  }
+
+  nav a {
+    white-space: nowrap;
+    padding: 0.35rem 0;
+  }
+
+  main {
+    padding: 1rem 1rem 3rem;
+  }
 }
