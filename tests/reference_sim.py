@@ -51,7 +51,8 @@ def run_reference(
     if silence is not None:
         silent[silence] = True
     gi, g_lo, g_span, g_scale, is_graded = graded_arrays(graded, n, p.dt)
-    gap_i, gap_j, gap_k = gap_arrays(gap, n, p)
+    gap_nodes, gap_off, gap_mat, gap_moff = gap_arrays(gap, n, p)
+    rest64 = np.float64(np.float32(p.v_rest))
     g_flight = [np.zeros(gi.size, dtype=np.float32)] * d  # release in flight
     g_vsum = np.zeros((-(-steps // per_bin), gi.size))
     recent: list[np.ndarray] = [np.empty(0, dtype=np.int64)] * max(ref_steps - 1, 0)
@@ -75,16 +76,26 @@ def run_reference(
         ref = np.concatenate(recent) if recent else np.empty(0, dtype=np.int64)
         # state update, skipped while refractory (v stays at v_rest, g is frozen)
         g_ref = g[ref]
-        coupled = gap_k * (v[gap_j] - v[gap_i])
-        inc = np.zeros(n, dtype=np.float32)
-        np.add.at(inc, gap_i, coupled)
-        np.add.at(inc, gap_j, -coupled)
+        # exact step of each coupled component, summed sequentially (cumsum) in float64
+        frozen = np.zeros(n, dtype=bool)
+        frozen[ref] = True
+        exact = []
+        for c in range(gap_off.size - 1):
+            nodes = gap_nodes[gap_off[c] : gap_off[c + 1]]
+            m = nodes.size
+            M = gap_mat[gap_moff[c] : gap_moff[c + 1]].reshape(m, 2 * m)
+            x = np.r_[
+                v[nodes].astype(np.float64) - rest64,
+                np.where(frozen[nodes], 0.0, g[nodes].astype(np.float64)),
+            ]
+            exact.append((M * x).cumsum(axis=1)[:, -1])
         v -= p.v_rest
         v *= em
         v += g * gv
         v += p.v_rest
-        if gap_i.size:
-            v += inc
+        if gap_nodes.size:
+            buf = (rest64 + np.concatenate(exact)).astype(np.float32)
+            v[gap_nodes] = buf
         g *= es
         v[ref] = p.v_rest
         g[ref] = g_ref

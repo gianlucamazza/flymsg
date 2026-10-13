@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 
-from flymsg import data, eye, locks, prereg, sim
+from flymsg import data, eye, locks, prereg, progress, sim
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "t4t5.yaml"
@@ -274,9 +274,20 @@ def decide(table: pd.DataFrame, preferred: dict) -> dict:
     return {"metrics": pd.DataFrame(rows), "verdict": verdict}
 
 
-def protocol(W, neurons: pd.DataFrame, cols, receptors, doc: dict) -> dict:
+def protocol(
+    W,
+    neurons: pd.DataFrame,
+    cols,
+    receptors,
+    doc: dict,
+    steps: progress.Steps | None = None,
+    report: progress.Progress | None = None,
+) -> dict:
+    """Every configuration of the envelope; `steps` stores each finished configuration so
+    an interrupted run resumes, `report` counts simulations."""
     proto = doc["protocol"]
     p = sim.Params()
+    steps = steps or progress.Steps(None, doc["content_sha256"])
     win = window(cols, proto["window_deg"])
     types = neurons["type"].fillna("").to_numpy()
     pattern = "|".join(f"(?:{x})" for x in eye.RECEPTORS.values())
@@ -292,19 +303,18 @@ def protocol(W, neurons: pd.DataFrame, cols, receptors, doc: dict) -> dict:
         for polarity in proto["polarities"]
     }
     lit_neurons = np.unique(np.concatenate([v[0] for v in stimuli.values()]))
-    rows, path_rows, lmc_rows, metrics, verdicts = [], [], [], [], []
-    for cfg in configurations(doc):
+
+    def configuration(cfg: dict) -> dict[str, pd.DataFrame]:
         rate_r, receiving = photoreceptor_rate(W, lit_neurons, lmc, cfg["lmc_mv"], p)
         graded = graded_spec(receptors_all, lmc, cfg, rate_r, p)
-        order = np.sort(graded.idx)
-        watch = np.searchsorted(order, receiving)
+        watch = np.searchsorted(np.sort(graded.idx), receiving)
         gain = photoreceptor_gain(cfg["photoreceptor_mv"], p)
-        cfg_rows = []
-        for (direction, polarity), (stim, lit, steps, settle) in stimuli.items():
+        spikes, path_rows, lmc_rows = [], [], []
+        for (direction, polarity), (stim, lit, n_steps, settle) in stimuli.items():
             r = sim.run(
                 W,
                 stim,
-                duration_ms=steps * p.dt,
+                duration_ms=n_steps * p.dt,
                 p=p,
                 seed=proto["seed"],
                 kicks=(gain * lit).astype(np.float32),
@@ -318,9 +328,7 @@ def protocol(W, neurons: pd.DataFrame, cols, receptors, doc: dict) -> dict:
                 "polarity": polarity,
             }
             for sub, idx in groups.items():
-                cfg_rows.append(
-                    {**key, "subtype": sub, "spikes": int(total[idx].sum())}
-                )
+                spikes.append({**key, "subtype": sub, "spikes": int(total[idx].sum())})
             path_rows.append(
                 {**key, **{t: int(total[i].sum()) for t, i in path_groups.items()}}
             )
@@ -334,23 +342,49 @@ def protocol(W, neurons: pd.DataFrame, cols, receptors, doc: dict) -> dict:
                     "highest_mv": float(moving.max()),
                 }
             )
-        table = pd.DataFrame(cfg_rows)
-        out = decide(table, proto["preferred"])
+            if report is not None:
+                report.step(note=f"config {cfg['config']} {direction} {polarity}")
+        return {
+            "spikes": pd.DataFrame(spikes),
+            "pathway": pd.DataFrame(path_rows),
+            "lmc": pd.DataFrame(lmc_rows),
+            "rate": pd.DataFrame([{"photoreceptor_rate_hz": rate_r}]),
+        }
+
+    rows, path_rows, lmc_rows, metrics, verdicts = [], [], [], [], []
+    for cfg in configurations(doc):
+        got, fresh = steps.get(
+            f"config{cfg['config']:02d}", lambda c=cfg: configuration(c)
+        )
+        if not fresh and report is not None:
+            report.step(len(stimuli), note=f"config {cfg['config']} resumed")
+        out = decide(got["spikes"], proto["preferred"])
         metrics.append(out["metrics"].assign(config=cfg["config"]))
+        rate_r = float(got["rate"]["photoreceptor_rate_hz"].iloc[0])
         verdicts.append(
             {**cfg, "photoreceptor_rate_hz": rate_r, "verdict": out["verdict"]}
         )
-        rows.extend(cfg_rows)
+        rows.append(got["spikes"])
+        path_rows.append(got["pathway"])
+        lmc_rows.append(got["lmc"])
     verdict_table = pd.DataFrame(verdicts)
     return {
-        "table": pd.DataFrame(rows),
+        "table": pd.concat(rows, ignore_index=True),
         "metrics": pd.concat(metrics, ignore_index=True),
-        "pathway": pd.DataFrame(path_rows),
-        "lmc": pd.DataFrame(lmc_rows),
+        "pathway": pd.concat(path_rows, ignore_index=True),
+        "lmc": pd.concat(lmc_rows, ignore_index=True),
         "configurations": verdict_table,
         "verdict": envelope_verdict(verdict_table["verdict"]),
         "window_columns": len(win),
     }
+
+
+def n_runs(doc: dict) -> int:
+    """Simulations of the locked protocol: configurations x directions x polarities."""
+    proto = doc["protocol"]
+    return (
+        len(configurations(doc)) * len(proto["directions"]) * len(proto["polarities"])
+    )
 
 
 def envelope_verdict(verdicts: pd.Series) -> str:
@@ -361,7 +395,13 @@ def envelope_verdict(verdicts: pd.Series) -> str:
     return "depends: " + ", ".join(f"{v} {n}" for v, n in counts.items())
 
 
-def run(neurons: pd.DataFrame, edges: pd.DataFrame, data_dir: Path) -> dict:
+def run(
+    neurons: pd.DataFrame,
+    edges: pd.DataFrame,
+    data_dir: Path,
+    steps: progress.Steps | None = None,
+    report: progress.Progress | None = None,
+) -> dict:
     doc = assert_matches_code()
     eye.fetch(data_dir)
     ann = pd.read_feather(
@@ -371,5 +411,11 @@ def run(neurons: pd.DataFrame, edges: pd.DataFrame, data_dir: Path) -> dict:
     cols = eye.columns(ann, eye.lenses(data_dir))
     receptors = eye.photoreceptors(neurons, edges, ann)
     return protocol(
-        sim.network(neurons, edges, sim.Params()), neurons, cols, receptors, doc
+        sim.network(neurons, edges, sim.Params()),
+        neurons,
+        cols,
+        receptors,
+        doc,
+        steps,
+        report,
     )

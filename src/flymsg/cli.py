@@ -30,6 +30,7 @@ from flymsg import (
     partner_followup,
     plasticity,
     prereg,
+    progress,
     quality,
     sensitivity,
     silence_scan,
@@ -991,9 +992,16 @@ def cmd_kc_sparseness(a, neurons, edges):
     started = datetime.now(UTC)
     doc = kc_sparseness.assert_matches_code()
     print(kc_sparseness.summary(doc))
-    out = kc_sparseness.run(neurons, edges, a.data)
     path = Path("runs/kc-sparseness") / f"v{doc['version']}"  # never overwrite
     path.mkdir(parents=True, exist_ok=True)
+    steps = progress.Steps(path / "steps", doc["content_sha256"])
+    out = kc_sparseness.run(
+        neurons,
+        edges,
+        a.data,
+        steps,
+        progress.Progress(kc_sparseness.n_runs(doc), "kc-sparseness"),
+    )
     out["table"].to_csv(path / "arms.csv", index=False)
     text = out["table"].to_string(index=False) + f"\nverdict: {out['verdict']}"
     if "prediction" in out:
@@ -1016,7 +1024,11 @@ def cmd_kc_sparseness(a, neurons, edges):
         },
         {"all": list(proto["seeds"])},
         started,
-        extra={"verdict": out["verdict"], "prediction": out.get("prediction")},
+        extra={
+            "verdict": out["verdict"],
+            "prediction": out.get("prediction"),
+            "resumed_steps": steps.resumed,
+        },
     )
     print(f"report -> {path / 'report.txt'}")
 
@@ -1043,9 +1055,12 @@ def cmd_t4t5(a, neurons, edges):
     started = datetime.now(UTC)
     doc = t4t5.assert_matches_code()
     print(t4t5.summary(doc))
-    out = t4t5.run(neurons, edges, a.data)
     path = Path("runs/t4t5") / f"v{doc['version']}"  # never overwrite
     path.mkdir(parents=True, exist_ok=True)
+    steps = progress.Steps(path / "steps", doc["content_sha256"])
+    out = t4t5.run(
+        neurons, edges, a.data, steps, progress.Progress(t4t5.n_runs(doc), "t4t5")
+    )
     for name in ("table", "metrics", "pathway", "lmc", "configurations"):
         out[name].to_csv(
             path / f"{'spikes' if name == 'table' else name}.csv", index=False
@@ -1081,7 +1096,7 @@ def cmd_t4t5(a, neurons, edges):
         },
         {"all": [proto["seed"]]},
         started,
-        extra={"verdict": out["verdict"]},
+        extra={"verdict": out["verdict"], "resumed_steps": steps.resumed},
     )
     print(f"report -> {path / 'report.txt'}")
 
