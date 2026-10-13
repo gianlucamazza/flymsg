@@ -236,6 +236,30 @@ the fly.
 
 ![M1: body height with and without DNp01. M2: input rate, body height and cumulative TTMn_R spikes for the closed, disconnected, replay and shuffled runs; the first three coincide.](img/embodiment.svg)
 
+### Muscles from MANC (Phase C)
+
+`flymsg muscles` gives each MaleCNS `vnc_motor` neuron the target muscle and match certainty
+that MANC published for its type: Cheong, Eichler, Stürner et al. 2024 (eLife 13:RP96084,
+doi:10.7554/eLife.96084), Supplementary file 3 (see
+[data](data.md#manc-muscles-flymsg-muscles)).
+The join key is the MaleCNS `mancType` annotation, which equals `type` except for `ADNM1 MN`
+and `ADNM2 MN` (MANC `ADNM1`, `ADNM2`). A target that names a body part (`abdomen`,
+`hind leg`, `neck`, `wing`, `haltere` …) is kept as the target but not as a muscle.
+
+| Status          | Neurons | Types | What MANC gives                                                                         |
+| --------------- | ------: | ----: | --------------------------------------------------------------------------------------- |
+| `muscle`        |     406 |    49 | one named muscle; a certainty (1–5) for 76; none for the 328 leg MNs and `ps2 MN`       |
+| `region`        |     270 |    87 | a body part only: abdomen (`MNad`, 201), legs (`MNhl`, `MNml`, 45), neck 14 …           |
+| `compound_type` |      17 |     3 | none: MaleCNS merged two MANC types (`MNad04,MNad48`, `MNad18,MNad27`, `MNnm07,MNnm12`) |
+| `no_target`     |       6 |     3 | no target (`MNxm01`–`MNxm03`, "muscle target not characterized")                        |
+| `untyped`       |       9 |     0 | the neuron has no type                                                                  |
+
+The table lives in `data/motor/` and is regenerated from the pinned file; it is not part of
+the motor map lock. `validation/motor_map.yaml` is unchanged: it maps body actuators, and no
+source maps a muscle to a FlyBody or NeuroMechFly actuator, so every row stays `unmapped` and
+`motor_map.command` still refuses (contract B6). MANC is a different male than MaleCNS, and
+the muscle is a property of the type, not of the individual neuron.
+
 ### Evidence each step needs
 
 From the research plan of PR #47. A step that lacks its evidence keeps the synthetic label.
@@ -273,8 +297,9 @@ From the research plan of PR #47. A step that lacks its evidence keeps the synth
 - M0 records synthetic sensory events. M2 and `jump3d.closed_loop` feed a stated stimulus
   back into `CpuRuntime`. The path from body pose through the eye waits on the T4/T5 v2 run
   ([eye](eye.md)).
-- `validation/motor_map.yaml`: every real actuator is `unmapped`. NeuroMechFly jump v1 ran
-  and was short. FlyBody stays unselected.
+- `validation/motor_map.yaml`: every real actuator is `unmapped`. 406 of 708 motor neurons
+  have a MANC muscle (`flymsg muscles`), but no source maps a muscle to an actuator.
+  NeuroMechFly jump v1 ran and was short. FlyBody stays unselected.
 - [behavior](behavior.md): the one-bit looming loop cuts the drive and fails the DNp01
   silence check.
 - [benchmarks](benchmarks.md): held-out olfactory specificity and stability fail.

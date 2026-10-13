@@ -175,6 +175,7 @@ the final path. A clean committed worktree is required. See
 | `jump3d [--run]`                                                | the locked TTM-driven jump: TTMn spikes → measured twitch → NeuroMechFly in MuJoCo (#90, #94)           |
 | `t4t5 [--run]`                                                  | the locked T4/T5 test: ON/OFF edges moving through the measured eye; polarity and direction (#84)       |
 | `odor NAME`                                                     | a DoOR odorant as a response per MaleCNS ORN type (fetched, CC BY-SA)                                   |
+| `muscles`                                                       | MANC's muscle per MaleCNS motor neuron (Cheong 2024, fetched, CC BY); never an actuator                 |
 | `eye`                                                           | optic-lobe column → viewing direction (Zhao 2025 eye map, fetched) and photoreceptor → column           |
 | `experiment FILE [--check]` · `runs`                            | run an exploratory config into an immutable directory; index every run manifest with its label          |
 | `explore SRC DST` · `confirm LOCK`                              | paths and exploratory silencing; run a registered intervention lock against a matched null              |

@@ -64,6 +64,12 @@
 
 ### Body
 
+- **Neuron → muscle from MANC** (motor map Phase C): `flymsg muscles` fetches MANC's
+  Supplementary file 3 (Cheong et al. 2024, eLife 13:RP96084, CC BY 4.0, sha256 pinned) and
+  gives 406 of 708 MaleCNS motor neurons (49 types) the muscle MANC published, with its match
+  certainty where one exists (76 neurons). 270 neurons get a body part only, 17 sit in merged
+  types, 6 have no target and 9 no type. The table is derived data under `data/motor/`; the
+  motor map lock is unchanged and `motor_map.command` still refuses.
 - **Closed loop** (#90): `jump3d.closed_loop` runs the connectome (incremental runtime) and
   NeuroMechFly in 1 ms blocks at the 0.1 ms neural step and cuts the looming input at the
   first boundary after takeoff; before the cut the spikes equal the open-loop run (tested).

@@ -1,4 +1,5 @@
-"""Embodiment commands: the decoded jump, the closed loop and their frozen locks."""
+"""Embodiment commands: the decoded jump, the closed loop, their frozen locks, and the
+MANC muscle of each motor neuron."""
 
 import json
 import os
@@ -7,8 +8,19 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
-from flymsg import behavior, data, jump, jump3d_lock, loop, managed, manifest, sim
+from flymsg import (
+    behavior,
+    data,
+    jump,
+    jump3d_lock,
+    loop,
+    managed,
+    manc_muscles,
+    manifest,
+    sim,
+)
 from flymsg.cli.common import stamp
 
 
@@ -253,3 +265,34 @@ def cmd_jump3d(a, neurons, edges):
         extra={"verdict": out["verdict"]},
     )
     print(f"report -> {path / 'report.txt'}")
+
+
+def cmd_muscles(a, neurons, edges):
+    """MANC's muscle per MaleCNS motor neuron (Cheong et al. 2024, Supplementary file 3,
+    CC BY 4.0, fetched into data/raw/manc on first use). No row reaches a body actuator."""
+    supp3 = pd.read_csv(manc_muscles.fetch(a.data))
+    ann = pd.read_feather(
+        a.data / "raw" / data.RAW["annotations"], columns=["bodyId", "mancType"]
+    )
+    motor = neurons.loc[neurons["superclass"] == "vnc_motor", ["bodyId", "type"]]
+    table = manc_muscles.by_type(supp3)
+    joined = manc_muscles.join(motor.merge(ann, on="bodyId", how="left"), table)
+    out = a.data / "motor"
+    out.mkdir(exist_ok=True)
+    table.to_parquet(out / "manc_types.parquet")
+    joined.to_parquet(out / "muscles.parquet")
+    print(manc_muscles.summary(joined).to_string())
+    muscle = joined[joined["status"] == "muscle"]
+    print(
+        f"{muscle['certainty_max'].notna().sum()} of {len(muscle)} neurons with a muscle "
+        "have a published match certainty"
+    )
+    region = joined[joined["status"] == "region"]
+    print(region.groupby("target").size().to_string())
+    for status, g in joined[~joined["status"].isin(["muscle", "region"])].groupby(
+        "status"
+    ):
+        names = ", ".join(sorted(g["mancType"].dropna().unique()))
+        print(f"{status}: {len(g)} neurons" + (f" ({names})" if names else ""))
+    print(f"source: {manc_muscles.SOURCE} ({manc_muscles.LICENSE})")
+    print(f"-> {out / 'manc_types.parquet'}, {out / 'muscles.parquet'}")

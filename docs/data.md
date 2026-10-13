@@ -126,6 +126,21 @@ Sci Rep 6:21841, doi:10.1038/srep21841), repository `ropensci/DoOR.data` at `db3
 They are CC BY-SA 4.0. `flymsg odor` downloads them into `data/raw/door/` on first use;
 flymsg does not redistribute them or anything derived from them.
 
+## MANC muscles (`flymsg muscles`)
+
+The muscle of each motor neuron type comes from MANC: Cheong, Eichler, Stürner et al.,
+"Organization of circuits linking descending input to motor output in the _Drosophila_ Male
+Adult Nerve Cord connectome", eLife 13:RP96084 (2024), doi:10.7554/eLife.96084, CC BY 4.0.
+`flymsg muscles` downloads its Supplementary file 3 ("MN and efferent light-level matching
+in MANC", 834 rows) from
+<https://cdn.elifesciences.org/articles/96084/elife-96084-supp3-v1.csv> into
+`data/raw/manc/` and refuses a file whose sha256 is not
+`c46e3cec1a5114b8d981d5f0383012c8e7fcdebd6c4e3eaffe4ac3ba1def2e94`. It writes
+`data/motor/manc_types.parquet` (one row per MANC type: targets, muscle, certainty range,
+publications, source) and `data/motor/muscles.parquet` (one row per MaleCNS `vnc_motor`
+neuron, joined on the `mancType` annotation of the raw body annotations). See
+[embodiment](embodiment.md#muscles-from-manc-phase-c) for the match counts.
+
 ## Female brain: FlyWire FAFB v783 (`--dataset fafb`)
 
 `flymsg --dataset fafb fetch` and `build` write the female brain to `data/fafb/` in the same
