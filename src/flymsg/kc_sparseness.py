@@ -45,6 +45,7 @@ VERSION_HASHES = {
     4: "72059246ade98ec69b49ce32bac587e0f6f52d39b2cb747c962fb4177694af67",  # E and F with electrical eLN-PN coupling 0-1 and sister PNs at 0.013, seeds 83-85
     5: "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",  # measured asymmetric eLN-PN coupling, eLN spikelets 0-2 ms, seeds 86-88
     6: "bf1ae62f9b563e52df8523eefccbc7f3253c0ab457621969cf3e8ee77c1f6b9b",  # eLNs restricted to lLN2T (and lLN2T + lLN1_bc), seeds 89-91
+    7: "de4274eb0bd689aefe8c9bcc9318eb40fbcdb688b9da61980a559f6c040896ef",  # v6 with the boundary reset of v5, qualified against the continuous clamp, seeds 92-94
 }
 # synapse classes without fast effect in each arm
 ARM_CLASSES = {
@@ -61,6 +62,7 @@ SPENT_SEEDS = {
     3: (80, 81, 82),
     4: (83, 84, 85),
     5: (86, 87, 88),
+    6: (89, 90, 91),
 }
 # MaleCNS types Eckstein et al. 2024 (STAR Methods, Fig S5F) liken to the cholinergic eLNs by
 # soma position and morphology (lLN2T_abc), and the neighbouring lLN1_bc
@@ -90,6 +92,7 @@ def electrical_semantics(doc: dict) -> str | None:
     historical = {
         4: "flymsg.gap/explicit-first-order-v1",
         5: electrical.BOUNDARY_SEMANTICS,
+        6: electrical.SEMANTICS,
     }
     return historical.get(doc["version"], doc.get("electrical_semantics"))
 
@@ -136,9 +139,21 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     sets = {k: v["types"] for k, v in proto.get("eln_sets", {}).items()}
     if sets and sets != ELN_SETS:
         raise SparsenessError("the eLN sets are not Eckstein et al.'s types")
+    # a new electrical lock names its integrator; the boundary reset only with the
+    # qualification against the continuous clamp it rests on (docs/adr-gap-refractory.md)
     new_electrical = "coupling" in doc and doc["version"] >= 6
-    if new_electrical and doc.get("electrical_semantics") != electrical.SEMANTICS:
+    named = doc.get("electrical_semantics")
+    if new_electrical and named not in {
+        electrical.SEMANTICS,
+        electrical.BOUNDARY_SEMANTICS,
+    }:
         raise SparsenessError("a new electrical lock names the current integrator")
+    if (
+        new_electrical
+        and named == electrical.BOUNDARY_SEMANTICS
+        and not doc.get("boundary_qualification")
+    ):
+        raise SparsenessError("the boundary reset needs its qualification")
     for v, spent in SPENT_SEEDS.items():
         if v < doc["version"] and set(proto["seeds"]) & set(spent):
             raise SparsenessError(f"seeds must not reuse version {v}'s")

@@ -1,0 +1,57 @@
+{
+ "what": "Boundary reset (flymsg.gap/boundary-reset-v1) against the continuous clamp (flymsg.gap/continuous-clamp-v1) on the KC v6/v7 lLN2T coupling: arm E/lLN2T, 3-octanol at the lock's DoOR rates, 50 ms, seed 0 (used by no lock), spikelets 0 and 1 ms. Engineering qualification, not a scored run.",
+ "source_commit": "dbbfcf2",
+ "component_cells": 688,
+ "clamp_cost_10ms": {
+  "continuous_s": 51.7,
+  "boundary_s": 1.2,
+  "maps": 46,
+  "seconds_per_map": 1.08,
+  "cache_hits": 0
+ },
+ "script": "scripts/qualify_boundary_reset.py",
+ "runs": [
+  {
+   "spike_ms": 0.0,
+   "seconds": {
+    "boundary": 2.4,
+    "continuous": 695.9
+   },
+   "spikes": {
+    "boundary": 9798,
+    "continuous": 9798
+   },
+   "neurons_differing": 0,
+   "kc_spikes": {
+    "boundary": 700,
+    "continuous": 700
+   },
+   "pn_spikes": {
+    "boundary": 1680,
+    "continuous": 1680
+   },
+   "first_spike_equal": true
+  },
+  {
+   "spike_ms": 1.0,
+   "seconds": {
+    "boundary": 5.3,
+    "continuous": 670.8
+   },
+   "spikes": {
+    "boundary": 9634,
+    "continuous": 9634
+   },
+   "neurons_differing": 0,
+   "kc_spikes": {
+    "boundary": 608,
+    "continuous": 608
+   },
+   "pn_spikes": {
+    "boundary": 1677,
+    "continuous": 1677
+   },
+   "first_spike_equal": true
+  }
+ ]
+}
