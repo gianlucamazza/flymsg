@@ -100,8 +100,10 @@ def test_gap_runtime_chunks_and_checkpoints_match_the_run(tmp_path):
     plain = CpuRuntime(W, np.arange(30), steps=steps, kicks=kicks, p=p, per_bin=100)
     with pytest.raises(ValueError, match="incompatible"):
         plain.restore(tmp_path / "c.npz")
-    with pytest.raises(ValueError, match="electrical"):
-        native.export_fixture(rt.__class__(W, np.arange(30), **kw), tmp_path / "f.bin")
+    exported = native.export_fixture(
+        CpuRuntime(W, np.arange(30), **kw), tmp_path / "f.bin"
+    )
+    assert exported["schema"].endswith("/v2")
 
 
 @pytest.mark.parametrize(
