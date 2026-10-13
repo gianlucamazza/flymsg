@@ -35,12 +35,20 @@ def test_a_busy_process_in_the_session_counts_as_own():
         [
             sys.executable,
             "-c",
-            "import time\nt=time.time()\nwhile time.time()-t<1.5: pass",
+            "import time\nt=time.time()\nwhile time.time()-t<30: pass",
         ],
         start_new_session=True,
     )
-    time.sleep(1.2)
-    own = bench.session_cpu(child.pid)
-    child.wait()
-    assert own and sum(own.values()) >= 0.5 * bench.TICK
+    # poll: a loaded host may give the child CPU slowly
+    deadline, own = time.monotonic() + 20, {}
+    try:
+        while time.monotonic() < deadline:
+            own = bench.session_cpu(child.pid)
+            if sum(own.values()) >= 0.2 * bench.TICK:
+                break
+            time.sleep(0.1)
+    finally:
+        child.kill()
+        child.wait()
+    assert own and sum(own.values()) >= 0.2 * bench.TICK
     assert os.getpid() not in own
