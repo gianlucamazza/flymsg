@@ -45,6 +45,7 @@ def fetch(data_dir: Path) -> None:
             print(f"fetch   groschner2022/{dest.name}")
             data.download(f"{EDMOND}/{file_id}", dest)
         if sha256(dest) != digest:
+            dest.unlink()  # the next fetch downloads it again
             raise ValueError(f"{dest} is not the deposited file (sha256)")
 
 

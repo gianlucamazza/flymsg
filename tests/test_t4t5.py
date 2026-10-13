@@ -245,3 +245,15 @@ def test_medulla_ranges_of_a_trace():
     traces[1, 1, 5000] = -80.0
     got = medulla.ranges_of(traces)
     assert got == {"n": 2, "dark_mv": -65.0, "lowest_mv": -70.0, "highest_mv": -50.0}
+
+
+def test_a_file_that_is_not_the_deposited_one_is_removed(monkeypatch, tmp_path):
+    from flymsg import medulla
+
+    monkeypatch.setattr(medulla, "FILES", {"Mi1": (1, "0" * 64)})
+    bad = medulla.raw_dir(tmp_path) / "fig3_Mi1.npy"
+    bad.parent.mkdir(parents=True)
+    bad.write_bytes(b"truncated")
+    with pytest.raises(ValueError, match="sha256"):
+        medulla.fetch(tmp_path)
+    assert not bad.exists()
