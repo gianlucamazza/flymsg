@@ -143,3 +143,45 @@ def test_coupled_potentials_follow_the_exact_solution():
         diff = 20.0 * np.exp(-t * (1 + 2 * c) / p.tau_m)
         assert np.allclose(d[:, 0], mean + diff / 2, atol=1e-4)
         assert np.allclose(d[:, 1], mean - diff / 2, atol=1e-4)
+
+
+def test_step_matrices_match_quadrature_of_the_coupled_equation():
+    # independent of the block form: P = expm(A dt), Q = (1/tau_m) int_0^dt
+    # expm(A (dt - s)) exp(-s / tau_syn) ds by Gauss-Legendre quadrature
+    from scipy.linalg import expm
+
+    p = sim.Params()
+    rng = np.random.default_rng(1)
+    i, j = np.array([0, 0, 1, 2]), np.array([1, 2, 3, 3])
+    c = rng.uniform(0.1, 3.0, 4)
+    nodes, off, mat, _ = sim.gap_arrays(sim.Gap(i=i, j=j, coupling=c), 4, p)
+    assert nodes.tolist() == [0, 1, 2, 3] and off.tolist() == [0, 4]
+    M = mat.reshape(4, 8)
+    K = np.zeros((4, 4))
+    K[i, j] = K[j, i] = c
+    A = (K - np.diag(1.0 + K.sum(axis=1))) / p.tau_m
+    x, w = np.polynomial.legendre.leggauss(40)
+    s = (x + 1) * p.dt / 2
+    Q = (
+        sum(
+            wk * p.dt / 2 * expm(A * (p.dt - sk)) * np.exp(-sk / p.tau_syn)
+            for sk, wk in zip(s, w, strict=True)
+        )
+        / p.tau_m
+    )
+    assert np.allclose(M[:, :4], expm(A * p.dt), rtol=0, atol=1e-15)
+    assert np.allclose(M[:, 4:], Q, rtol=0, atol=1e-15)
+
+
+def test_an_oversized_or_overflowing_coupling_is_refused(monkeypatch):
+    monkeypatch.setattr(sim, "MAX_GAP_COMPONENT", 2)
+    with pytest.raises(ValueError, match="exceeds 2"):
+        sim.gap_arrays(
+            sim.Gap(i=np.array([0, 1]), j=np.array([1, 2]), coupling=1.0),
+            3,
+            sim.Params(),
+        )
+    with pytest.raises(ValueError, match="nonfinite"):
+        sim.gap_arrays(
+            sim.Gap(i=np.array([0]), j=np.array([1]), coupling=1e308), 2, sim.Params()
+        )

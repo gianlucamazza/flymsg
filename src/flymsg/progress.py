@@ -1,6 +1,7 @@
 """Progress and resumable steps for long locked runs.
 
-`Progress` prints the measured rate and the remaining time after each unit of work, so a
+Floats are written as their shortest repr and read back with the round-trip parser, so
+a resumed table equals the computed one bit for bit. `Progress` prints the measured rate and the remaining time after each unit of work, so a
 run's ETA is measured, not guessed. `Steps` stores each finished step's tables under the
 run's directory, bound to the lock's content hash, so an interrupted run resumes with the
 steps it already finished and never mixes steps of two different locks. The simulations
@@ -64,7 +65,10 @@ class Steps:
         if self.done(step):
             d = self.root / step
             self.resumed.append(step)
-            return {f.stem: pd.read_csv(f) for f in sorted(d.glob("*.csv"))}, False
+            return {
+                f.stem: pd.read_csv(f, float_precision="round_trip")
+                for f in sorted(d.glob("*.csv"))
+            }, False
         tables = compute()
         if self.root is not None:
             d = self.root / step

@@ -152,8 +152,46 @@ def test_native_refuses_graded_neurons(tmp_path):
         {"idx": np.array([1]), "v_lo": 0.0, "span": 1.0, "rate_hz": -1.0},
         {"idx": np.array([1]), "v_lo": np.nan, "span": 1.0, "rate_hz": 1.0},
         {"idx": np.array([1.0]), "v_lo": 0.0, "span": 1.0, "rate_hz": 1.0},
+        {"idx": np.array([1]), "v_lo": 0.0, "span": 1e-50, "rate_hz": 1.0},
+        {"idx": np.array([1]), "v_lo": 1e50, "span": 1.0, "rate_hz": 1.0},
+        {"idx": np.array([1]), "v_lo": 0.0, "span": 1.0, "rate_hz": 1e50},
     ],
 )
 def test_graded_parameters_are_checked(bad):
     with pytest.raises(ValueError):
         sim.graded_arrays(sim.Graded(**bad), 5, 0.1)
+
+
+def test_every_state_bit_matches_the_reference_with_graded_and_gap():
+    # potentials, conductances and thresholds of every neuron after every step, not only
+    # spikes: kernel (through the runtime) against the NumPy reference
+    from test_gap import _gap
+
+    W = _network(400, 12000)
+    p = sim.Params(th_jump=2.0)
+    idx = np.r_[0:10, 50:90]
+    steps = 1500
+    kicks = sim.poisson_kicks(9, 150.0, p.dt, steps, 30)
+    g, gap = _graded(idx, p), _gap(n=400, m=150)
+    _, rec = run_reference(
+        W,
+        np.arange(30),
+        150,
+        steps * p.dt,
+        None,
+        p,
+        9,
+        record=np.arange(400),
+        graded=g,
+        gap=gap,
+    )
+    rt = CpuRuntime(
+        W, np.arange(30), steps=steps, kicks=kicks, p=p, per_bin=100, graded=g, gap=gap
+    )
+    for stop in (1, 7, 500, steps):
+        rt.advance_to(stop)
+        s = rt.snapshot()
+        for name in ("v", "g", "th"):
+            assert np.array_equal(
+                s[name].view(np.uint32), rec[name][stop - 1].view(np.uint32)
+            ), (name, stop)
