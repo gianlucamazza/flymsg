@@ -25,6 +25,8 @@ import numpy as np
 import pandas as pd
 from scipy import sparse
 
+from flymsg import electrical
+
 SHIU_W_SYN = 0.275  # mV per synapse, Shiu et al. 2024, tuned on FlyWire FAFB
 
 
@@ -118,12 +120,11 @@ class Gap:
     linear between spikes, so each connected group is integrated exactly over a step by a
     precomputed matrix exponential (Van Loan's block form for the decaying synaptic input).
 
-    Refractoriness keeps the uncoupled model's convention at step boundaries: a refractory
-    neuron starts and ends every step at rest, and its frozen conductance does not act.
-    Within a step it follows the coupled equation like its partners (it is not clamped
-    there), so partners feel it relax from rest; clamping it inside the step would need a
-    new matrix exponential for every pattern of refractory neurons. Spikes do not cross: a
-    LIF spike is a reset, not a waveform, so spikelets are absent."""
+    Refractory membranes are continuously clamped at rest; their frozen chemical
+    conductance does not act. Free partners retain the sink from contacts to clamped
+    cells. The reduced linear system is integrated exactly for each refractory mask,
+    with a bounded cache of step maps. Spikes do not cross: a LIF spike is a reset,
+    not a waveform, so spikelets are absent."""
 
     i: np.ndarray
     j: np.ndarray
@@ -326,6 +327,7 @@ def run(
     d, ref_steps = _delays(p)
     g_idx, g_lo, g_span, g_scale, is_graded = graded_arrays(graded, n, p.dt)
     gap_nodes, gap_off, gap_mat, gap_moff = gap_arrays(gap, n, p)
+    gap_gen, gap_keys, gap_clock = electrical.generators(gap, gap_nodes, gap_off, p)
     counts, first, g_vsum = _kernel(
         W.indptr.astype(np.int64),
         W.indices.astype(np.int64),
@@ -352,6 +354,9 @@ def run(
         gap_off,
         gap_mat,
         gap_moff,
+        gap_gen,
+        gap_keys,
+        gap_clock,
     )
     return Result(
         counts=counts,
@@ -427,6 +432,9 @@ def _kernel(
     gap_off,
     gap_mat,
     gap_moff,
+    gap_gen,
+    gap_keys,
+    gap_clock,
 ):
     """One simulation. Same operations, order and float32/float64 rounding as the NumPy
     reference (tests/reference_sim.py), so the spikes are identical:
@@ -457,6 +465,8 @@ def _kernel(
     g_new = np.zeros(g_idx.size, dtype=np.float32)
     g_vsum = np.zeros((counts.shape[0], g_idx.size), dtype=np.float64)
     gap_buf = np.zeros(gap_nodes.size, dtype=np.float32)
+    gap_current = gap_mat.copy()
+    gap_mask = np.zeros(gap_nodes.size, dtype=np.bool_)
     _advance(
         0,
         steps,
@@ -506,6 +516,11 @@ def _kernel(
         gap_mat,
         gap_moff,
         gap_buf,
+        gap_gen,
+        gap_keys,
+        gap_clock,
+        gap_current,
+        gap_mask,
     )
     return counts, first, g_vsum
 
@@ -560,23 +575,47 @@ def _advance(
     gap_mat,
     gap_moff,
     gap_buf,
+    gap_gen,
+    gap_keys,
+    gap_clock,
+    gap_current,
+    gap_mask,
 ):
     stim_steps = kicks.shape[0]
     rest64 = np.float64(v_rest)
     zero, one = np.float32(0.0), np.float32(1.0)
     for t in range(start_step, stop_step):
-        # exact step of each electrically coupled component, from the state before 1
+        # A refractory mask is fixed for this entire step (integer deadlines).
         for comp in range(gap_off.size - 1):
             a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
+            frozen_mask = np.empty(m, dtype=np.bool_)
+            any_frozen = False
+            changed = False
+            for q in range(m):
+                frozen_mask[q] = ref_until[gap_nodes[a + q]] > t
+                any_frozen = any_frozen or frozen_mask[q]
+                changed = changed or frozen_mask[q] != gap_mask[a + q]
+            lo, hi = gap_moff[comp], gap_moff[comp + 1]
+            if changed:
+                if any_frozen:
+                    start = lo // 2
+                    A = gap_gen[start : start + m * m].reshape(m, m)
+                    digest = gap_keys[comp]
+                    with numba.objmode(reduced="float64[:,:]"):
+                        reduced = electrical.clamped_map(
+                            A, frozen_mask, gap_clock, digest
+                        )
+                    gap_current[lo:hi] = reduced.ravel()
+                else:
+                    gap_current[lo:hi] = gap_mat[lo:hi]
+                gap_mask[a : a + m] = frozen_mask
+            M = gap_current[lo:hi].reshape(m, 2 * m)
             for r in range(m):
-                row = gap_moff[comp] + r * 2 * m
                 acc = 0.0
                 for q in range(m):
-                    acc += gap_mat[row + q] * (np.float64(v[gap_nodes[a + q]]) - rest64)
+                    acc += M[r, q] * (np.float64(v[gap_nodes[a + q]]) - rest64)
                 for q in range(m):
-                    j = gap_nodes[a + q]
-                    if ref_until[j] <= t:
-                        acc += gap_mat[row + m + q] * np.float64(g[j])
+                    acc += M[r, m + q] * np.float64(g[gap_nodes[a + q]])
                 gap_buf[a + r] = np.float32(rest64 + acc)
         # 1. state update (refractory: v stays at v_rest, g frozen), branch-free so that
         # it vectorises; the refractory lanes compute and discard

@@ -228,8 +228,8 @@ def _square(j):
 
 
 def test_null_draws_resume_after_an_interruption_with_the_same_result(tmp_path):
-    def run(partial, fail_at=None):
-        rng = np.random.default_rng(7)
+    def run(partial, fail_at=None, seed=7):
+        rng = np.random.default_rng(seed)
         calls = []
 
         def rates(idx):
@@ -252,10 +252,12 @@ def test_null_draws_resume_after_an_interruption_with_the_same_result(tmp_path):
     resumed, simulated = run(part)
     assert simulated == 3 and np.array_equal(resumed, full)
     # a saved draw that the generator no longer reproduces is refused
+    with pytest.raises(draws.CheckpointMismatch, match="draw 0"):
+        run(part, seed=8)
     lines = part.read_text().splitlines()
     lines[1] = lines[1].replace('"pick": ', '"pick": 1')
     part.write_text("\n".join(lines) + "\n")
-    with pytest.raises(draws.CheckpointMismatch, match="draw 0"):
+    with pytest.raises(draws.CheckpointMismatch, match="integrity"):
         run(part)
 
 

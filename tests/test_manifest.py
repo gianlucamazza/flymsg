@@ -77,10 +77,11 @@ def test_sim_out_writes_a_manifest_next_to_the_csv(monkeypatch, capsys, tmp_path
     )
     cli.main()
     capsys.readouterr()
-    doc = json.loads((tmp_path / "manifest.json").read_text())
+    (result,) = tmp_path.glob("rates.executions/*/output")
+    doc = json.loads((result / "manifest.json").read_text())
     assert doc["command"] == "sim"
     assert manifest.required_keys(doc) == []
-    assert Path(doc["extra"]["out"]) == csv
+    assert Path(doc["extra"]["out"]) == result / "rates.csv"
     assert "neurons.parquet" in doc["dataset"]["files"]
     assert len(doc["dataset"]["files"]["neurons.parquet"]["sha256"]) == 64
 

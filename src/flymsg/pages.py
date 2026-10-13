@@ -65,6 +65,10 @@ PAGES = (
     ("related", "docs/related.md", "Related"),
     ("viz", "docs/viz.md", "3D view"),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
+    ("integrity-audit", "docs/integrity-audit-2026-10-13.md", "Integrity audit"),
+    ("adr-gap-refractory", "docs/adr-gap-refractory.md", "Electrical ADR"),
+    ("adr-run-integrity", "docs/adr-run-integrity.md", "Run integrity ADR"),
+    ("run-integrity", "docs/run-integrity.md", "Run integrity"),
     ("changelog", "CHANGELOG.md", "Changelog"),
 )
 

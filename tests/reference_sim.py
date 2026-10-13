@@ -6,7 +6,7 @@ flymsg.tracing (tests/test_tracing.py)."""
 import numpy as np
 from scipy import sparse
 
-from flymsg.sim import Gap, Graded, Params, Result, gap_arrays, graded_arrays
+from flymsg.sim import Gap, Graded, Params, Result, graded_arrays
 
 
 def run_reference(
@@ -51,7 +51,27 @@ def run_reference(
     if silence is not None:
         silent[silence] = True
     gi, g_lo, g_span, g_scale, is_graded = graded_arrays(graded, n, p.dt)
-    gap_nodes, gap_off, gap_mat, gap_moff = gap_arrays(gap, n, p)
+    from scipy.linalg import expm
+    from scipy.sparse.csgraph import connected_components
+
+    coupled, operators = [], {}
+    if gap is not None:
+        C = sparse.coo_matrix(
+            (
+                np.r_[gap.coupling, gap.coupling]
+                if np.ndim(gap.coupling)
+                else np.full(2 * len(gap.i), gap.coupling),
+                (np.r_[gap.i, gap.j], np.r_[gap.j, gap.i]),
+            ),
+            shape=(n, n),
+        ).tocsr()
+        active = np.flatnonzero(np.asarray(C.sum(axis=1)).ravel() > 0)
+        _, labels = connected_components(C[active][:, active], directed=False)
+        for label in np.unique(labels):
+            nodes = active[labels == label]
+            K = C[nodes][:, nodes].toarray()
+            generator = (K - np.diag(1 + K.sum(axis=1))) / p.tau_m
+            coupled.append((nodes, generator))
     rest64 = np.float64(np.float32(p.v_rest))
     g_flight = [np.zeros(gi.size, dtype=np.float32)] * d  # release in flight
     g_vsum = np.zeros((-(-steps // per_bin), gi.size))
@@ -76,26 +96,34 @@ def run_reference(
         ref = np.concatenate(recent) if recent else np.empty(0, dtype=np.int64)
         # state update, skipped while refractory (v stays at v_rest, g is frozen)
         g_ref = g[ref]
-        # exact step of each coupled component, summed sequentially (cumsum) in float64
         frozen = np.zeros(n, dtype=bool)
         frozen[ref] = True
         exact = []
-        for c in range(gap_off.size - 1):
-            nodes = gap_nodes[gap_off[c] : gap_off[c + 1]]
-            m = nodes.size
-            M = gap_mat[gap_moff[c] : gap_moff[c + 1]].reshape(m, 2 * m)
-            x = np.r_[
-                v[nodes].astype(np.float64) - rest64,
-                np.where(frozen[nodes], 0.0, g[nodes].astype(np.float64)),
-            ]
-            exact.append((M * x).cumsum(axis=1)[:, -1])
+        for comp, (nodes, generator) in enumerate(coupled):
+            mask = frozen[nodes]
+            key = (comp, mask.tobytes())
+            m = len(nodes)
+            if key not in operators:
+                free = np.flatnonzero(~mask)
+                f = len(free)
+                block = np.zeros((2 * f, 2 * f))
+                block[:f, :f] = generator[np.ix_(free, free)]
+                block[:f, f:] = np.eye(f) / p.tau_m
+                block[f:, f:] = -np.eye(f) / p.tau_syn
+                M = np.zeros((m, 2 * m))
+                if f:
+                    E = expm(block * p.dt)
+                    M[np.ix_(free, free)] = E[:f, :f]
+                    M[np.ix_(free, m + free)] = E[:f, f:]
+                operators[key] = M
+            x = np.r_[v[nodes].astype(np.float64) - rest64, g[nodes].astype(np.float64)]
+            exact.append((nodes, (operators[key] * x).cumsum(axis=1)[:, -1]))
         v -= p.v_rest
         v *= em
         v += g * gv
         v += p.v_rest
-        if gap_nodes.size:
-            buf = (rest64 + np.concatenate(exact)).astype(np.float32)
-            v[gap_nodes] = buf
+        for nodes, values in exact:
+            v[nodes] = (rest64 + values).astype(np.float32)
         g *= es
         v[ref] = p.v_rest
         g[ref] = g_ref

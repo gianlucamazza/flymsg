@@ -205,6 +205,10 @@ uv run flymsg viz --sim LC4_R && python -m http.server -d runs/viz 8000   # open
 Neurons are addressed by cell type (`LC4`), instance (`LC4_R`) or bodyId (`10001`). The data
 directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 
+Scientific outputs use execution-bound directories and automatic resume; the CLI prints
+the final path. A clean committed worktree is required. See
+[run integrity](docs/run-integrity.md) for output paths, checkpoints and historical locks.
+
 ## Commands
 
 | Command                                                         | What it does                                                                                            |

@@ -66,3 +66,22 @@ def test_no_archived_file_is_ignored_by_git():
         check=False,
     )
     assert out.stdout == ""
+
+
+def test_managed_archive_requires_verified_completion(tmp_path, monkeypatch):
+    from flymsg import runstore
+
+    archive = _load("archive_results")
+    monkeypatch.setattr(archive, "RUNS", tmp_path / "runs")
+    monkeypatch.setattr(archive, "RESULTS", tmp_path / "results")
+    with runstore.Run(tmp_path / "runs" / "v1", {"fixture": True}) as run:
+        (run.output / "manifest.json").write_text(
+            json.dumps({"schema": "flymsg.run_manifest/v1"})
+        )
+        (run.output / "t.csv").write_text("a\n1\n")
+        run.finalize()
+        rel = str(run.output.relative_to(tmp_path / "runs"))
+        archive.archive(rel)
+        (run.output / "t.csv").write_text("a\n2\n")
+        with pytest.raises(SystemExit, match="integrity"):
+            archive.archive(rel)

@@ -316,14 +316,16 @@ of the coupling the fly would need. It is a calibration of a free parameter agai
 sparseness, not a test: what would test it is a measured eLN → PN coupling.
 
 **Result of version 4 (2026-10-13): none.** Run from `b1116af` (coupling as an explicit
-first-order step, a compensation named in the lock). No coupled arm is within, so the model
-predicts no coupling: E and F stay silent (0.2% of Kenyon cells) and coupling makes them
+first-order step, a compensation named in the lock). No scanned coupled arm meets the
+locked bounds: E and F stay nearly silent (0.2% of Kenyon cells) and coupling makes them
 quieter, down to 0% at 1, while the share of spiking PNs falls from 11% / 8% to 5% / 1%.
 Symmetric subthreshold coupling ties active PNs to local neurons at rest and drains them.
 In the fly the eLN → PN lateral excitation is driven by eLN spikes, which cross the junction
 as spikelets (Yaksi & Wilson 2010); the model's junctions pass only subthreshold potentials,
-because a LIF spike is a reset. So v4 says that coupling without spikelets cannot be the
-missing excitation, not that the coupling is absent. Outputs: `results/kc-sparseness/v4/`.
+because a LIF spike is a reset. Missing spikelets are a candidate explanation, not a
+mechanism isolated by this scan: v4 establishes failure of its specified finite grid and
+implementation. It does not test the later exponential integrator or exclude other
+couplings. Outputs: `results/kc-sparseness/v4/`.
 
 ## Electrical synapses (optional, 2026-10-13)
 
@@ -335,7 +337,11 @@ each connected group of coupled neurons is integrated exactly over a step: the m
 exponential of the group's membrane and coupling matrix, with the decaying synaptic input
 in Van Loan's block form, is computed once per run, and each step applies it in float64. A
 refractory neuron is held at rest with its conductance frozen, as without coupling, and its
-partners see it at rest. Junctions are symmetric and non-rectifying, and spikes do not cross
+partners see the continuous clamp throughout the step. The reduced operator retains the
+sink from contacts to clamped cells. This implements the accepted
+[electrical ADR](adr-gap-refractory.md); [run integrity](run-integrity.md) records numerical
+semantics, checkpoint compatibility and validation. Junctions are symmetric and
+non-rectifying, and spikes do not cross
 them: a LIF spike is a reset, not a waveform.
 
 EM does not show gap junctions and few are measured (#85), so no electrical synapse is in

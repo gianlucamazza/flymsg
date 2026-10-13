@@ -17,7 +17,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, eye, locks, odors, plasticity, prereg, progress, sim
+from flymsg import (
+    data,
+    electrical,
+    eye,
+    locks,
+    odors,
+    plasticity,
+    prereg,
+    progress,
+    sim,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "kc_sparseness.yaml"
@@ -311,7 +321,7 @@ def protocol(
             f"arm-{arm}", lambda a=arm, w=Wx, g=gap: one_arm(a, w, g)
         )
         if not fresh and report is not None:
-            report.step(per_arm, note=f"{arm} resumed")
+            report.step(per_arm, note=f"{arm} resumed", resumed=True)
         rows.append(got["arm"])
     table = pd.concat(rows, ignore_index=True)
     d = doc["decides"]
@@ -374,6 +384,13 @@ def run(
     report: progress.Progress | None = None,
 ) -> dict:
     doc = assert_matches_code()
+    # v4 explicitly locks the first-order integrator; it cannot be silently rescored
+    # with the continuous-clamp model. A new registered lock must name the new semantics.
+    if "coupling" in doc and doc.get("electrical_semantics") != electrical.SEMANTICS:
+        raise SparsenessError(
+            "this electrical lock names an older integrator; preserve its results and "
+            "register a new lock with electrical_semantics=" + electrical.SEMANTICS
+        )
     proto = doc["protocol"]
     idx = {}
     apl = data.resolve(neurons, proto["apl"])

@@ -14,6 +14,8 @@ import shutil
 import sys
 from pathlib import Path
 
+from flymsg import runstore
+
 ROOT = Path(__file__).resolve().parents[1]
 RUNS, RESULTS = ROOT / "runs", ROOT / "results"
 DIRS = (
@@ -51,6 +53,12 @@ def clean_manifest(doc: dict) -> dict:
 
 def archive(rel: str) -> Path:
     src, dst = RUNS / rel, RESULTS / rel
+    complete = None
+    if src.name == "output" and src.parent.parent.name.endswith(".executions"):
+        try:
+            complete = runstore.verify_completed(src.parent)
+        except ValueError as exc:
+            sys.exit(str(exc))
     if not (src / "manifest.json").is_file():
         sys.exit(f"{src} has no manifest.json")
     files = sorted(p for p in src.iterdir() if p.is_file() and ".ckpt" not in p.name)
@@ -62,11 +70,16 @@ def archive(rel: str) -> Path:
     staged.mkdir(parents=True)
     for f in files:
         shutil.copy2(f, staged / f.name)
+    if complete is not None:
+        runstore.verify_inventory(staged, complete["artifacts"])
     m = staged / "manifest.json"
     m.write_text(json.dumps(clean_manifest(json.loads(m.read_text())), indent=2) + "\n")
     if dst.exists():
         cmp = filecmp.dircmp(staged, dst)
-        if cmp.left_only or cmp.right_only or cmp.diff_files:
+        different, errors = filecmp.cmpfiles(
+            staged, dst, cmp.common_files, shallow=False
+        )[1:]
+        if cmp.left_only or cmp.right_only or different or errors:
             sys.exit(f"{dst} exists and differs; a rerun needs a new version")
         shutil.rmtree(staged)
         return dst

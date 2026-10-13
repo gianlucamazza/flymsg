@@ -235,10 +235,21 @@ def test_an_interrupted_run_resumes_to_the_same_table(tmp_path):
     }
     doc = {k: v for k, v in kc_sparseness.load().items() if k != "coupling"}
     whole = kc_sparseness.protocol(W, idx, doc)["table"]
-    steps = progress.Steps(tmp_path, doc["content_sha256"])
+    steps = progress.Steps(
+        tmp_path, {"lock": doc["content_sha256"], "source": "fixture"}
+    )
     kc_sparseness.protocol(W, idx, doc, steps)
-    (tmp_path / "arm-E" / "done").unlink()  # E did not finish
-    again = progress.Steps(tmp_path, doc["content_sha256"])
+    (tmp_path / "arm-E").rename(
+        tmp_path / ".arm-E.interrupted.tmp"
+    )  # E was not published
+    again = progress.Steps(
+        tmp_path, {"lock": doc["content_sha256"], "source": "fixture"}
+    )
     resumed = kc_sparseness.protocol(W, idx, doc, again)["table"]
     assert again.resumed == ["arm-A", "arm-F"]
     pd.testing.assert_frame_equal(resumed, whole)
+
+
+def test_historical_electrical_lock_is_not_rescored_with_new_semantics():
+    with pytest.raises(kc_sparseness.SparsenessError, match="older integrator"):
+        kc_sparseness.run(pd.DataFrame(), pd.DataFrame())
