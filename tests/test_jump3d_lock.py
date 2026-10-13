@@ -26,6 +26,7 @@ def test_bounds_other_than_the_measured_ones_are_refused():
         ([5.0, 6.0, 4.0], [10, 11, 9], "short"),
         ([50.0, 60.0, 55.0], [10, 11, 9], "long"),
         ([30.0, 0.0, 31.0], [10, None, 9], "no_takeoff"),
+        ([30.0, 0.0, 31.0], [10.0, float("nan"), 9.0], "no_takeoff"),
     ],
 )
 def test_decide(ranges, takeoffs, expected):

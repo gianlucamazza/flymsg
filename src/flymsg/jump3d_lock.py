@@ -65,7 +65,7 @@ def summary(doc: dict | None = None) -> str:
 
 
 def decide(ranges, takeoffs, lo: float, hi: float) -> str:
-    if any(t is None for t in takeoffs):
+    if any(t is None or not np.isfinite(t) for t in takeoffs):
         return "no_takeoff"
     mean = float(np.mean(ranges))
     if mean < lo:
@@ -122,8 +122,8 @@ def run(neurons: pd.DataFrame, edges: pd.DataFrame) -> dict:
         )
     table = pd.DataFrame(rows)
     verdict = decide(
-        table["range_mm"],
-        table["takeoff_ms"].tolist(),
+        [r["range_mm"] for r in rows],
+        [r["takeoff_ms"] for r in rows],
         d["range_min_mm"],
         d["range_max_mm"],
     )
