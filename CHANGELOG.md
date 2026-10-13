@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.45 — 2026-10-13
 
 ### Result
 
@@ -97,6 +97,11 @@
 
 ### Documentation
 
+- **Approximations and leads.** `docs/approximations.md` lists every simplification of the
+  model with its status (measured, scanned, selected, compensation, blocked) and what would
+  remove it; `docs/leads.md` collects the 2026-10-13 literature and data search by the
+  approximation each source could lift, each row marked as checked on data, in full text or
+  from the abstract.
 - **One status index.** The roadmap holds the verdict table, and the README points at it.
   Validation's dated notes moved under a status log. The eye and the T4/T5 locks moved out
   of the embodiment note into `docs/eye.md`. Provenance records the mechanisms added on
