@@ -35,6 +35,9 @@
 
 ### Validation
 
+- **Kenyon cell sparseness v5 lock** (#95, #85): measured, asymmetric eLN ↔ PN coupling
+  (Yaksi & Wilson 2010 Fig. 4C/4F) and sister-PN coupling (Kazama & Wilson 2009), with eLN
+  spikes crossing as 40 mV spikelets of 0, 0.5, 1 or 2 ms (unmeasured, scanned).
 - **Kenyon cell sparseness v4 lock** (#95, #85): the cholinergic local neuron → PN contacts
   as electrical synapses, scanned from 0 to 1, with sister PNs at the measured coefficient
   (Kazama & Wilson 2009); the least coupling that makes the code sparse is reported as a
