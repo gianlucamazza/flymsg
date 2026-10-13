@@ -61,6 +61,7 @@ class CpuRuntime:
         silence: np.ndarray | None = None,
         trace: np.ndarray | None = None,
         graded: sim.Graded | None = None,
+        gap: sim.Gap | None = None,
     ):
         if type(steps) is not int or steps <= 0 or steps >= 2**31:
             raise ValueError("steps must be a positive int below 2**31")
@@ -133,6 +134,7 @@ class CpuRuntime:
         self._constants = sim._constants(self._p)
         n = self._n
         self._graded = sim.graded_arrays(graded, n, self._p.dt)
+        self._gap = sim.gap_arrays(gap, n, self._p)
         self._state = {
             "v": np.full(n, self._p.v_rest, dtype=np.float32),
             "g": np.zeros(n, dtype=np.float32),
@@ -171,6 +173,7 @@ class CpuRuntime:
             self._silent,
             self._trace,
             *(self._graded if ng else ()),
+            *(self._gap if self._gap[0].size else ()),
         ):
             digest.update(str((array.shape, array.dtype.str)).encode())
             digest.update(array.tobytes())
@@ -184,6 +187,7 @@ class CpuRuntime:
             np.empty(n, dtype=np.int32),
         )
         self._graded_new = np.zeros(ng, dtype=np.float32)
+        self._gap_inc = np.zeros(n, dtype=np.float32)
 
     @property
     def step(self) -> int:
@@ -241,6 +245,8 @@ class CpuRuntime:
             g_ring,
             self._graded_new,
             g_vsum,
+            *self._gap,
+            self._gap_inc,
         )
         self._step = step
 

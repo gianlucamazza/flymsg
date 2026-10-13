@@ -54,6 +54,7 @@ def test_b2_engine_entry_point():
         "kicks",
         "trace",
         "graded",
+        "gap",
     ]
     fields = {f for f in sim.Result.__dataclass_fields__}
     assert fields == {
