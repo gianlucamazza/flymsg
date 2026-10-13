@@ -102,6 +102,17 @@ animal, not the stimulus. [Right against left](https://gianlucamazza.github.io/f
 compares the two one-eyed arms; [both eyes](https://gianlucamazza.github.io/flymsg/live/looming-bilateral/)
 is a single scene. Exploratory replays, not scored runs.
 
+## Phones and tablets
+
+On a screen up to 600 px wide the control panel starts closed and the performance readout
+is hidden; the clock, legend and hints stay. A touch screen gets touch hints (tap, drag,
+pinch), a 12 px tap slop instead of 4 px, the panel's clear button instead of Esc, and
+44 px buttons. Panels keep clear of notches through the safe-area insets. With
+`prefers-reduced-motion` a replay opens paused, as with `?paused`. A dropped WebGL context,
+common in a background tab on a phone, shows a notice and is restored; the first frame back
+advances the replay by at most 0.1 s. These are layout and input checks in an emulated
+390×844 viewport; frame rates on a real phone are not measured yet (#24).
+
 ## Sources
 
 | data            | format                                                     | use                                                                      |

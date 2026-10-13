@@ -2,7 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#05070a" />
+    <meta name="color-scheme" content="dark" />
     <title>flymsg 3D</title>
     <style>
       :root {
@@ -10,6 +12,11 @@
         --fg: #d8dee9;
         --muted: #7b8494;
         --panel: rgba(12, 16, 22, 0.82);
+        /* panels keep clear of notches and the home indicator (viewport-fit=cover) */
+        --top: calc(12px + env(safe-area-inset-top));
+        --right: calc(12px + env(safe-area-inset-right));
+        --bottom: calc(12px + env(safe-area-inset-bottom));
+        --left: calc(12px + env(safe-area-inset-left));
       }
       html,
       body {
@@ -19,14 +26,19 @@
         color: var(--fg);
         font: 13px/1.4 system-ui, sans-serif;
         overflow: hidden;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
       }
       canvas {
         display: block;
       }
+      button {
+        font: inherit;
+      }
       #hud {
         position: fixed;
-        left: 12px;
-        bottom: 12px;
+        left: var(--left);
+        bottom: var(--bottom);
         max-width: min(420px, calc(100vw - 24px));
         padding: 10px 12px;
         background: var(--panel);
@@ -54,10 +66,10 @@
       }
       #selection {
         position: fixed;
-        left: 12px;
-        top: 12px;
+        left: var(--left);
+        top: var(--top);
         max-width: min(460px, calc(100vw - 24px));
-        max-height: calc(100vh - 220px);
+        max-height: calc(100dvh - 220px);
         overflow: auto;
         padding: 10px 12px;
         background: var(--panel);
@@ -79,13 +91,13 @@
       }
       #raster {
         position: fixed;
-        right: 12px;
-        bottom: 12px;
+        right: var(--right);
+        bottom: var(--bottom);
         padding: 8px 10px;
         background: var(--panel);
         border-radius: 8px;
         max-width: calc(100vw - 24px);
-        max-height: 45vh;
+        max-height: 45dvh;
         overflow: auto;
       }
       #raster header {
@@ -110,14 +122,14 @@
       }
       @media (max-width: 900px) {
         #raster {
-          left: 12px;
-          bottom: 150px;
+          left: var(--left);
+          bottom: calc(150px + env(safe-area-inset-bottom));
         }
       }
       #compare {
         position: fixed;
         left: 50%;
-        top: 12px;
+        top: var(--top);
         transform: translateX(-50%);
         max-width: min(560px, calc(100vw - 24px));
         padding: 8px 12px;
@@ -129,6 +141,64 @@
         margin: 0;
         font: inherit;
         white-space: pre-wrap;
+      }
+      .lil-gui.autoPlace {
+        top: env(safe-area-inset-top);
+        right: env(safe-area-inset-right);
+        max-height: calc(100dvh - env(safe-area-inset-top));
+      }
+      /* a phone: the performance readout is a diagnostic and goes; the selection and the
+         comparison sit under the closed lil-gui title, the raster above the clock and legend */
+      @media (max-width: 600px) {
+        #stats,
+        #perf {
+          display: none;
+        }
+        #hud {
+          right: var(--right);
+          max-width: none;
+        }
+        #selection,
+        #compare {
+          top: calc(var(--top) + 32px);
+          right: var(--right);
+          max-width: none;
+        }
+        #selection {
+          max-height: 36dvh;
+        }
+        #compare {
+          left: var(--left);
+          transform: none;
+        }
+        /* the selection panel repeats the comparison for the selected neuron */
+        body:has(#selection:not([hidden])) #compare {
+          display: none;
+        }
+        #raster {
+          right: var(--right);
+          bottom: calc(110px + env(safe-area-inset-bottom));
+          max-height: 30dvh;
+        }
+      }
+      /* fingers need 44 px targets */
+      @media (pointer: coarse) {
+        #selection button,
+        #raster button {
+          min-width: 44px;
+          min-height: 44px;
+        }
+      }
+      #lost {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(5, 7, 10, 0.7);
+        color: var(--muted);
+      }
+      #lost[hidden] {
+        display: none;
       }
       #loading {
         position: fixed;
@@ -150,6 +220,7 @@
   </head>
   <body>
     <div id="loading">loading scene…</div>
+    <div id="lost" hidden role="status">graphics context lost · restoring… (reload if this stays)</div>
     <section id="compare" hidden aria-label="the two runs compared"><pre></pre></section>
     <section id="raster" hidden aria-label="spike raster of the selection">
       <header>

@@ -53,6 +53,16 @@
   NeuroMechFly in 1 ms blocks at the 0.1 ms neural step and cuts the looming input at the
   first boundary after takeoff; before the cut the spikes equal the open-loop run (tested).
 
+### Viewer
+
+- **Phones and tablets.** Up to 600 px wide the control panel starts closed and the
+  performance readout is hidden; the site's page links scroll in one row. Touch screens get
+  touch hints, a 12 px tap slop, the clear button instead of Esc and 44 px buttons; panels
+  respect safe-area insets. `prefers-reduced-motion` opens a replay paused. A lost WebGL
+  context is restored behind a notice, and a frame after a background tab advances the
+  replay by at most 0.1 s. Checked in an emulated 390×844 viewport; real-phone frame rates
+  remain #24.
+
 ### Documentation
 
 - **One status index.** The roadmap holds the verdict table, and the README points at it.

@@ -141,6 +141,7 @@ def _page(stem: str, body: str, title: str) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1c1916">
 <title>{html.escape(title)}</title>
 <link rel="stylesheet" href="style.css">
 </head>
