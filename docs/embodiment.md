@@ -219,6 +219,22 @@ is the case for graded, tonically active neurons
 ([#97](https://github.com/gianlucamazza/flymsg/issues/97)), now with a concrete failure.
 Outputs: `results/t4t5/v1/`.
 
+### A TTM-driven jump of NeuroMechFly (lock, 2026-10-13, #90, #94)
+
+`flymsg.ttm` turns TTMn spikes into the measured muscle force: a twitch rising to 101 µN in
+8.2 ms (Zumstein et al. 2004, wild-type females) after at most 0.85 ms (Allen & Murphey
+2007), summed linearly. `flymsg.jump3d` replays those forces into FlyGym's NeuroMechFly
+(v2.1.0, MuJoCo, a female body; now a flymsg dependency): every active leg joint is held at
+the neutral pose by FlyGym's position actuators except the two mesothoracic coxa-trochanter
+pitch hinges, which the TTMs drive with a torque equal to the twitch force times a moment
+arm fixed at the stance posture (from the Jacobian at the distal active tarsal segment). The
+body steps at 0.1 ms, the neural step, and the run is open loop.
+[`validation/jump3d.yaml`](../validation/jump3d.yaml), locked before its run, drives LC4 on
+both sides, records `TTMn_L` and `TTMn_R`, replays them, and compares the drag-free ballistic
+range at takeoff with Zumstein et al.'s wingless jumps: 28.6 mm (measured, with air) to 37.75
+mm (30.2 mm without the 20% of energy they attribute to air). Six compensations are named;
+the TLM and the other legs do not push, so a short jump is the expected failure.
+
 ### M1 jump body (v0.8.34, #33)
 
 `flymsg.jump.JumpBody` is a point mass over a rigid floor: gravity, an actuator force along

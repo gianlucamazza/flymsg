@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Body
+
+- **TTM actuator and a NeuroMechFly jump** (#90, #94): `flymsg.ttm` (measured twitch: 101 µN,
+  8.2 ms, 0.85 ms delay) and `flymsg.jump3d` (FlyGym v2.1.0, now a dependency: TTM torque on
+  the mesothoracic coxa-trochanter hinges, posture held, 0.1 ms steps). Lock
+  `validation/jump3d.yaml`: LC4 on both sides → TTMn spikes → jump range against Zumstein et
+  al.'s wingless 28.6–37.75 mm; `flymsg jump3d`.
+
 ## 0.8.43 — 2026-10-13
 
 ### Result
