@@ -62,6 +62,11 @@
 
 ### Pre-registration
 
+- **Kenyon cell sparseness diagnostic v1** (#95): four weight matrices (default; KC → KC
+  without fast effect, since these synapses act through the metabotropic mAChR-B, Manoim et
+  al. 2022; APL → KC removed; both) compared on the share of Kenyon cells responding to an
+  odor (measured 6 ± 5%, ≤ 17%) and the share shared between two odors (≤ 64.6%). Locked
+  before any run; `flymsg kc-sparseness`.
 - **Dopamine-gated depression at KC → MBON11, v1** (#85): the one plasticity measured on an
   identified synapse (Hige et al. 2015: −90% charge, forward pairing only, ≥ 40 min) as an
   optional rule applied between trials to the weight matrix; the kernel and the defaults are

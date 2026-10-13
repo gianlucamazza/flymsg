@@ -203,6 +203,21 @@ the held-out ORN_DM1 failure: excitatory Kenyon cell to Kenyon cell synapses, wh
 LIF turns into a self-sustaining loop ([benchmarks](benchmarks.md)). Nothing is retuned.
 Outputs: `results/mb-plasticity/v1/`.
 
+## Kenyon cell sparseness: the KC → KC synapses (diagnostic, 2026-10-13)
+
+73.4% of the excitatory synapses onto Kenyon cells come from other Kenyon cells (1,153,845
+of 1,572,610), and the model makes each of them a fast excitatory input. The only functional
+measurement of these connections disagrees: they are axo-axonic, act through the metabotropic
+receptor mAChR-B, and suppress the odor responses of neighbouring Kenyon cells (Manoim et al.
+2022, doi:10.1016/j.cub.2022.09.007). The model already gives metabotropic transmission no
+fast effect. [`validation/kc_sparseness.yaml`](../validation/kc_sparseness.yaml), locked
+before its run ([#95](https://github.com/gianlucamazza/flymsg/issues/95)), compares four
+weight matrices — default, KC → KC without fast effect, APL → KC removed, both — on the share
+of Kenyon cells that respond to an odor and the share shared between two odors, against the
+measured 6 ± 5% (Turner et al. 2008), at most 17% in single flies (Honegger et al. 2011),
+and 64.6% shared for similar odors (Campbell et al. 2013). It diagnoses; the default model
+does not change with its result.
+
 ## Recording neuron states
 
 `flymsg trace STIM --neurons ...` (module `flymsg.tracing`) records, for chosen neurons, the

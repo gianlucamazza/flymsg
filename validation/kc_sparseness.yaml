@@ -1,0 +1,58 @@
+# Kenyon cell sparseness diagnostic (issue 95). Version 1, fixed 2026-10-13 before any run.
+# A diagnosis, not a fix: the default model is not changed by the result. Changing a locked
+# field requires incrementing `version` and updating `content_sha256` and
+# flymsg.kc_sparseness.VERSION_HASHES. `flymsg kc-sparseness` prints this file.
+version: 1
+content_sha256: d5343b238f61e3bd9cb51ed8fc21981da7a418ad5fdfe7133fe201899c33caba
+
+issue: 95
+question: "Why does one ORN type recruit about 25% of Kenyon cells, with 95% overlap between two odors, where the fly uses 5-10% and little overlap?"
+
+seen_before_lock: "The KC -> MBON11 run (results/mb-plasticity/v1, seeds 50-52) recorded 1,004-1,067 responding Kenyon cells per odor and 965-998 shared, with these two odors. No arm below was run before this lock."
+
+sources:
+  sparseness: "Turner, Bazhenov & Laurent 2008, J Neurophysiol 99:734, doi:10.1152/jn.01283.2007, Fig 2A: an odor evokes spikes in 6 +/- 5% of KCs (n = 71)"
+  sparseness_imaging: "Honegger, Campbell & Turner 2011, J Neurosci 31:11772, doi:10.1523/JNEUROSCI.1099-11.2011, Fig 5A: about 5% of KCs per odor (933 KCs, 8 flies); single flies up to 17%"
+  overlap: "Campbell et al. 2013, J Neurosci 33:10568, doi:10.1523/JNEUROSCI.0682-12.2013, Fig 4B-C: 64.6% of responders shared between similar odors, 21.8% between dissimilar ones"
+  kc_kc: "Manoim et al. 2022, Curr Biol, doi:10.1016/j.cub.2022.09.007: axo-axonic KC -> KC connections act through the metabotropic mAChR-B and suppress odor responses of neighbouring KCs"
+  apl: "Lin et al. 2014, Nat Neurosci 17:559, doi:10.1038/nn.3660: blocking APL output makes KC responses denser and more correlated across odors"
+  model_rule: "flymsg gives metabotropic transmitters no fast effect (sign 0, docs/model.md)"
+
+protocol:
+  odors: [ORN_VA1d, ORN_DL3]
+  odor_n: [132, 103]
+  odor_rule: "the odors of the KC -> MBON11 lock (validation/mb_plasticity.yaml v1)"
+  rate_hz: 100.0
+  odor_ms: 1000.0
+  duration_ms: 1000.0
+  seeds: [60, 61, 62]
+  kc: "^KC"
+  apl: APL
+  apl_n: 2
+  responder: "a Kenyon cell that spikes during the odor in at least 2 of the 3 seeds"
+  responder_note: "the model has no spontaneous KC activity, so the measured criteria (a rise above baseline SD) reduce to any spike; reliability across seeds stands in for repeated presentations"
+
+arms:
+  A: "the default model"
+  B: "KC -> KC synapses without fast effect, as the model treats metabotropic transmission"
+  C: "APL -> KC synapses removed (positive control: denser, more overlapping)"
+  D: "B and C together"
+
+decides:
+  sparse_max: 0.17
+  overlap_max: 0.646
+  within: "both odors recruit at most sparse_max of the Kenyon cells and the shared responders are at most overlap_max of each odor's responders"
+  recurrence: "arm B is within and arm A is not: the fast excitatory KC -> KC synapses are the main cause"
+  not_recurrence: "arm A and arm B are both outside"
+  already_within: "arm A is within"
+
+reported:
+  arm_c:
+    decides: false
+    what: "the APL control; Lin et al. 2014 predict denser and more overlapping responses than A"
+  arm_d:
+    decides: false
+  per_seed:
+    decides: false
+
+defaults_changed: false
