@@ -304,6 +304,32 @@ measured electrical coupling of excitatory local neurons to projection neurons, 
 [#85](https://github.com/gianlucamazza/flymsg/issues/85) already asks for. The default model
 is unchanged. Outputs: `results/kc-sparseness/v3/`.
 
+**Version 4 (lock, 2026-10-13, #85).** Arms E and F remove the chemical contacts; version 4
+puts them back as [electrical synapses](#electrical-synapses-optional-2026-10-13). Each
+cholinergic local neuron and PN joined by chemical synapses gets a junction proportional to
+their synapse count, scaled so that the median PN's total coupling equals a grid value of
+0, 0.01, 0.03, 0.1, 0.3 or 1 (junction over leak conductance; unmeasured). Same-type PNs on
+one side are coupled at the coefficient Kazama & Wilson 2009 measured between homotypic PNs
+(0.013, Fig. 7d). The 12 coupled arms run with fresh seeds (83–85) beside A, E and F under
+v3's bounds; the smallest coupling whose arm is within is reported as the model's prediction
+of the coupling the fly would need. It is a calibration of a free parameter against
+sparseness, not a test: what would test it is a measured eLN → PN coupling.
+
+## Electrical synapses (optional, 2026-10-13)
+
+`sim.Gap` (#85) couples pairs of neurons through their potentials: each step adds
+coupling · (v_j − v_i) · dt / τ_m to neuron i and the opposite to j, from the potentials
+before the membrane update. The coupling is the junction's conductance over the leak
+conductance, so a coupling coefficient c measured between two equal cells gives c / (1 − c)
+without a conductance in nS. Junctions are symmetric and non-rectifying, and spikes do not
+cross them: a LIF spike is a reset, not a waveform. Couplings whose sum on one neuron would
+move more than half the potential difference in one step are refused.
+
+EM does not show gap junctions and few are measured (#85), so no electrical synapse is in
+the default model. Without them the engine is unchanged, bit for bit; with them `sim.run`,
+the NumPy reference and `CpuRuntime` agree exactly (`tests/test_gap.py`), two coupled cells
+reproduce c / (1 + c), and the native executor refuses them.
+
 ## Graded (non-spiking) neurons (optional, 2026-10-13)
 
 Photoreceptors, the lamina monopolar cells L1–L3 and other fly neurons do not spike; they

@@ -6,7 +6,7 @@ flymsg.tracing (tests/test_tracing.py)."""
 import numpy as np
 from scipy import sparse
 
-from flymsg.sim import Graded, Params, Result, graded_arrays
+from flymsg.sim import Gap, Graded, Params, Result, gap_arrays, graded_arrays
 
 
 def run_reference(
@@ -21,6 +21,7 @@ def run_reference(
     silence: np.ndarray | None = None,
     record: np.ndarray | None = None,
     graded: Graded | None = None,
+    gap: Gap | None = None,
 ):
     """Simulate; stimulation lasts `stim_ms` (default: the whole run). Neurons in `silence`
     never fire, so they transmit nothing: for the rest of the network this equals zeroing
@@ -50,6 +51,7 @@ def run_reference(
     if silence is not None:
         silent[silence] = True
     gi, g_lo, g_span, g_scale, is_graded = graded_arrays(graded, n, p.dt)
+    gap_i, gap_j, gap_k = gap_arrays(gap, n, p)
     g_flight = [np.zeros(gi.size, dtype=np.float32)] * d  # release in flight
     g_vsum = np.zeros((-(-steps // per_bin), gi.size))
     recent: list[np.ndarray] = [np.empty(0, dtype=np.int64)] * max(ref_steps - 1, 0)
@@ -73,10 +75,16 @@ def run_reference(
         ref = np.concatenate(recent) if recent else np.empty(0, dtype=np.int64)
         # state update, skipped while refractory (v stays at v_rest, g is frozen)
         g_ref = g[ref]
+        coupled = gap_k * (v[gap_j] - v[gap_i])
+        inc = np.zeros(n, dtype=np.float32)
+        np.add.at(inc, gap_i, coupled)
+        np.add.at(inc, gap_j, -coupled)
         v -= p.v_rest
         v *= em
         v += g * gv
         v += p.v_rest
+        if gap_i.size:
+            v += inc
         g *= es
         v[ref] = p.v_rest
         g[ref] = g_ref

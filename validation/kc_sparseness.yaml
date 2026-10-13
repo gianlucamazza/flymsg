@@ -1,19 +1,19 @@
-# Kenyon cell sparseness diagnostic (issues 95, 96). Version 3, fixed 2026-10-13 after the v2
-# run and before any v3 run. Version 1 is the file at b096b4a, version 2 at 374309e.
-# A diagnosis, not a fix: the default model is not changed by the result. Changing a locked
-# field requires incrementing `version` and updating `content_sha256` and
+# Kenyon cell sparseness diagnostic (issues 95, 85). Version 4, fixed 2026-10-13 after the v3
+# run and before any v4 run. Version 1 is the file at b096b4a, version 2 at 374309e, version 3
+# at c1cf896. A diagnosis, not a fix: the default model is not changed by the result.
+# Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.kc_sparseness.VERSION_HASHES. `flymsg kc-sparseness` prints this file.
-version: 3
-content_sha256: 0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2
+version: 4
+content_sha256: 72059246ade98ec69b49ce32bac587e0f6f52d39b2cb747c962fb4177694af67
 
 issue: 95
 supersedes:
-  version: 2
-  verdict: "within: E, F"
-  reason: "v2 met its upper bounds only by undershoot: without the chemical cholinergic local neuron -> PN contacts one ORN type drives 0.2% of Kenyon cells, because a single receptor type is not an odor. Version 3 uses the two odors of Hige et al. 2015 as measured receptor vectors (DoOR), adds the lower bound v2 lacked, and keeps the arms."
-question: "With the two odors of Hige et al. 2015 as measured receptor vectors, how many Kenyon cells respond and how many are shared, with and without the fast KC -> KC and cholinergic local neuron -> PN synapses?"
+  version: 3
+  verdict: none
+  reason: "v3: with Hige et al. 2015's odors the model is dense (default, 36% / 30% of Kenyon cells) or silent (0.2% without the chemical cholinergic local neuron -> PN contacts, arms E and F). In the fly that coupling is electrical (Yaksi & Wilson 2010). Version 4 puts it back as electrical synapses (sim.Gap). No conductance is measured for eLN -> PN (audit 2026-10-13, issue 85), so the coupling is scanned; sister-PN coupling, which is measured, enters at its value."
+question: "With the cholinergic local neuron -> PN contacts electrical instead of chemical, scanned in strength, and sister PNs coupled as measured, is there a coupling at which Hige et al. 2015's two odors recruit a sparse, distinct set of Kenyon cells, and what is the least such coupling?"
 
-seen_before_lock: "Versions 1 and 2 (results/kc-sparseness/v1, v2; seeds 60-62, 70-72) with single ORN types, an exploratory PN count (seed 0), and the KC -> MBON11 run (seeds 50-52). No run has used 3-octanol or 4-methylcyclohexanol before this lock."
+seen_before_lock: "Versions 1-3 (results/kc-sparseness/v1-v3; seeds 60-62, 70-72, 80-82) and the KC -> MBON11 run (seeds 50-52). No run with electrical synapses has been made before this lock; the coupling grid and the pair rules were written from the v3 result and the pair counts (137 cholinergic ALLN, 686 ALPN, 21,985 LN -> PN contacts; 1,489 same-type PN pairs over all sides), not from any coupled run. An engineering check before the lock: 24,056 eLN-PN and 579 ipsilateral sister pairs on the data, the largest per-step coupling factor 0.29 at coupling 1, and a 100 ms run without input for timing; no neuron was inspected."
 
 sources:
   sparseness: "Turner, Bazhenov & Laurent 2008, J Neurophysiol 99:734, doi:10.1152/jn.01283.2007, Fig 2A: an odor evokes spikes in 6 +/- 5% of KCs (n = 71)"
@@ -27,6 +27,8 @@ sources:
   overlap_oct_mch: "Hige et al. 2015, Neuron 88:985, doi:10.1016/j.neuron.2015.11.003: 33% of MCH-responding and 30% of OCT-responding KCs respond to both"
   apl: "Lin et al. 2014, Nat Neurosci 17:559, doi:10.1038/nn.3660: blocking APL output makes KC responses denser and more correlated across odors"
   model_rule: "flymsg gives metabotropic transmitters no fast effect (sign 0, docs/model.md)"
+  sister_pn_coupling: "Kazama & Wilson 2009, Nat Neurosci 12:1136, doi:10.1038/nn.2376, Fig 7d: coupling coefficient 0.013 between ipsilateral homotypic (DM6) PNs for hyperpolarizing steps, which reveal the electrical component only (0.011 in Cd2+); value read from the bar height"
+  eln_pn_unmeasured: "Yaksi & Wilson 2010 and Huang et al. 2010 show eLN -> PN electrical coupling (shakB2 abolishes it) without a coupling coefficient or conductance in the text; the krasavietz eLNs have no published MaleCNS type (audit 2026-10-13)"
 
 protocol:
   odor_source: door
@@ -37,7 +39,7 @@ protocol:
   unmeasured: "ORN types without a DoOR response for the odorant get no input"
   odor_ms: 1000.0
   duration_ms: 1000.0
-  seeds: [80, 81, 82]
+  seeds: [83, 84, 85]
   kc: "^KC"
   apl: APL
   apl_n: 2
@@ -49,9 +51,24 @@ protocol:
 
 arms:
   A: "the default model"
-  B: "KC -> KC synapses without fast effect, as the model treats metabotropic transmission"
-  E: "chemical synapses from cholinergic antennal-lobe local neurons (class ALLN) onto projection neurons (class ALPN) removed: in the fly that coupling is electrical, and the model has no gap junctions"
-  F: "B and E together"
+  E: "chemical synapses from cholinergic antennal-lobe local neurons (class ALLN) onto projection neurons (class ALPN) removed: in the fly that coupling is electrical"
+  F: "E, and KC -> KC synapses without fast effect, as the model treats metabotropic transmission"
+
+coupling:
+  bases: [E, F]
+  eln_pn: [0.0, 0.01, 0.03, 0.1, 0.3, 1.0]
+  eln_pn_rule: "each cholinergic ALLN and ALPN joined by chemical synapses (either direction) gets an electrical synapse proportional to their synapse count, scaled so that the median PN's total eLN coupling equals the grid value; coupling is the junction conductance over the leak conductance"
+  eln_pn_from: "unmeasured: from none to a junction as strong as the PN's leak (coupling coefficient 0.5), in roughly half-decade steps; 0 keeps the sister coupling only"
+  sister_cc: 0.013
+  sister_rule: "every pair of ALPN of the same type on the same side, coupling c / (1 - c) = 0.0132 (two equal cells)"
+  arm_names: "<base>+gap<eln_pn>, e.g. E+gap0.1; 12 coupled arms"
+
+compensations:
+  - "Chemical contacts stand in for the unseen electrical ones: EM does not show gap junctions."
+  - "Junctions are symmetric and non-rectifying; the fly's pass depolarization better than hyperpolarization (Yaksi & Wilson 2010)."
+  - "Spikes do not cross a junction: a LIF spike is a reset, so spikelets are absent and only subthreshold potentials couple."
+  - "The sister coefficient is from DM6 pairs and applied to every same-type pair; somatic coefficients underestimate coupling at the junction (Kazama & Wilson 2009)."
+  - "The coupling is added by an explicit step on top of the exact membrane update (first order in dt)."
 
 decides:
   sparse_min: 0.01
@@ -70,5 +87,8 @@ reported:
     what: "the share of ALPN neurons that spike during each odor, per arm"
   per_seed:
     decides: false
+  least_coupling:
+    decides: false
+    what: "per base arm, the smallest eLN -> PN coupling of the grid whose arm is within, or none: the model's prediction of the coupling the fly would need, to be compared with a measurement it was not built from"
 
 defaults_changed: false
