@@ -325,6 +325,13 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: Kenyon cell sparseness v2, within E and F by undershoot.** Seeds 70–72.
+Removing the chemical contacts of cholinergic local neurons onto projection neurons
+(electrical in the fly) cuts the PNs driven by one ORN type from 73% to 4.5%, and the
+responding Kenyon cells from 25% to 0.2%; the verdict counts that as within because the lock
+had only upper bounds. The odor overlap is an antennal-lobe artefact of modelling an electrical
+coupling as a chemical one. Report: `results/kc-sparseness/v2/`.
+
 **2026-10-13: Kenyon cell sparseness v1, not_recurrence.** `flymsg kc-sparseness --run`,
 seeds 60–62. Making KC → KC synapses metabotropic (no fast effect) lowers the share of
 responding Kenyon cells from 25% to 17.4% (bound 17%), but the two odors still share 95%; APL

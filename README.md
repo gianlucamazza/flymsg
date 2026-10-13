@@ -139,7 +139,9 @@ sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about hal
   cells come from other Kenyon cells; in a point LIF that loop sustains itself. A model limit,
   not a fit ([benchmarks](docs/benchmarks.md)). Those synapses are metabotropic in the fly
   (Manoim et al. 2022); a locked diagnostic shows that treating them so lowers an odor's share
-  of Kenyon cells from 25% to 17%, but two odors still share 95%: the overlap starts upstream
+  of Kenyon cells from 25% to 17%, but two odors still share 95%. The overlap is made in the
+  antennal lobe, where the model turns the electrical coupling of excitatory local neurons into
+  fast chemical excitation: without it one ORN type drives 4.5% of the projection neurons, not 73%
   ([model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)).
 - **The measured dopamine-gated depression is not odor-specific in the model.** Applying the
   Kenyon cell → MBON11 depression of Hige et al. 2015 after pairing silences MBON11 for the

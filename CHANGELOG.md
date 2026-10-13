@@ -4,6 +4,11 @@
 
 ### Result
 
+- **Kenyon cell sparseness v2: within E, F, by undershoot** (#95). Without the cholinergic
+  local neuron → PN chemical contacts (electrical in the fly) one ORN type drives 4.5% of the
+  PNs instead of 73%, and the Kenyon cells fall to 0.2% (measured 6 ± 5%): the overlap was an
+  antennal-lobe artefact, and single-receptor stimuli no longer reach the Kenyon cells. The
+  lock had no lower bound; stated. Next: odors as receptor vectors (#96).
 - **Kenyon cell sparseness v1: not_recurrence** (#95). KC → KC without fast effect lowers
   the responding Kenyon cells from 25% to 17.4% (bound 17%), but the two odors still share
   95%; APL removal recruits all. The overlap is upstream of the Kenyon cells.
