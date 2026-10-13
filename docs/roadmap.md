@@ -20,7 +20,7 @@ and what would remove it.
 | Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                                         | [comparison](comparison.md#engine-check)                                                          |
 | Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not               | [dimorphism](dimorphism.md)                                                                       |
 | Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                            | [benchmarks](benchmarks.md)                                                                       |
-| Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                           |
+| Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                           | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
 | Kenyon cell sparseness v7                  | within only with the variant eLN set; coupling changes nothing          | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
 | KC → MBON11 depression v1                  | inconsistent: both odors go silent                                      | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
 | One-bit looming jump                       | silence fails                                                           | [behavior](behavior.md#result-2026-10-11)                                                         |
