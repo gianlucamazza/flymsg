@@ -137,7 +137,10 @@ sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about hal
 - **Why the held-out olfactory case keeps firing** (exploratory). Most of the neurons still
   active after the stimulus are Kenyon cells, and 73% of the excitatory synapses onto Kenyon
   cells come from other Kenyon cells; in a point LIF that loop sustains itself. A model limit,
-  not a fit ([benchmarks](docs/benchmarks.md)).
+  not a fit ([benchmarks](docs/benchmarks.md)). Those synapses are metabotropic in the fly
+  (Manoim et al. 2022); a locked diagnostic shows that treating them so lowers an odor's share
+  of Kenyon cells from 25% to 17%, but two odors still share 95%: the overlap starts upstream
+  ([model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)).
 - **The measured dopamine-gated depression is not odor-specific in the model.** Applying the
   Kenyon cell → MBON11 depression of Hige et al. 2015 after pairing silences MBON11 for the
   paired and the unpaired odor alike: the two odors share 95% of their ~1,000 Kenyon cells,

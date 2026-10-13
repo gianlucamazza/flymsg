@@ -325,6 +325,12 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: Kenyon cell sparseness v1, not_recurrence.** `flymsg kc-sparseness --run`,
+seeds 60–62. Making KC → KC synapses metabotropic (no fast effect) lowers the share of
+responding Kenyon cells from 25% to 17.4% (bound 17%), but the two odors still share 95%; APL
+removal recruits all of them. The odor overlap originates upstream of the Kenyon cells.
+Report: `results/kc-sparseness/v1/`.
+
 **2026-10-13: KC → MBON11 depression v1, inconsistent.** `flymsg mb-plasticity --run`,
 seeds 50–52, locked before the run. The measured rule (×0.10 on eligible Kenyon cell
 synapses) silences MBON11 for both odors (272–286 → 0 spikes): ORN_VA1d and ORN_DL3 each

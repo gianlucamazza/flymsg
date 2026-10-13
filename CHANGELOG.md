@@ -4,6 +4,9 @@
 
 ### Result
 
+- **Kenyon cell sparseness v1: not_recurrence** (#95). KC → KC without fast effect lowers
+  the responding Kenyon cells from 25% to 17.4% (bound 17%), but the two odors still share
+  95%; APL removal recruits all. The overlap is upstream of the Kenyon cells.
 - **KC → MBON11 depression v1: inconsistent** (#85). The measured rule silences MBON11 for
   both odors (272–286 → 0 spikes, seeds 50–52): each odor recruits about 1,000 Kenyon cells
   and the two share 95%, against 30–33% in the fly. The model's Kenyon cell code is not
