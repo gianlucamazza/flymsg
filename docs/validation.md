@@ -335,6 +335,11 @@ spike: photoreceptors fire, but their inhibitory (histaminergic) synapses cannot
 spiking lamina neurons; the fly's lamina is graded and tonically active. Report:
 `results/t4t5/v1/`.
 
+**2026-10-13: Kenyon cell sparseness v4, none.** Seeds 83–85. The cholinergic local neuron →
+PN contacts as electrical synapses, coupling 0–1, sister PNs at 0.013: every coupled arm is
+silent (≤ 0.3% of Kenyon cells), quieter as coupling grows; subthreshold coupling without
+spikelets drains active PNs. Report: `results/kc-sparseness/v4/`.
+
 **2026-10-13: Kenyon cell sparseness v3, none.** Hige et al. 2015's odors from DoOR, seeds
 80–82, bounds 1–17% and ≤ 64.6% shared. Default: 36% / 30% of Kenyon cells, 82–99% shared;
 without fast KC → KC: 22.5% / 19.6%; without the cholinergic local neuron → PN chemical
