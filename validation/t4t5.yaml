@@ -4,7 +4,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.t4t5.VERSION_HASHES. `flymsg t4t5` prints this file.
 version: 3
-content_sha256: 84b3c1edfad1417b7cc78ad14d1e07310d3fdfec4b6c72d5e6fe130fc03e8f54
+content_sha256: f19a2d7b82a0be9a3efb175813b165746161483b71b978115999816d00bc40b2
 
 issue: 140
 supersedes:
@@ -93,6 +93,7 @@ compensations:
   - "The release curve is threshold-linear with endpoints at the measured voltage ranges; its shape is not measured in Drosophila."
   - "LMC release is symmetric about rest; the depolarizing range above rest is not measured separately."
   - "The LMC release rate at saturation (lmc_rate_hz) is not measured; it is scanned, not chosen."
+  - "The medulla release rate at saturation (medulla_rate_hz) is not measured; it is scanned, not chosen."
   - "Photoreceptor depolarization is linear in light, without adaptation or the log compression of real photoreceptors; rest is darkness."
   - "Only photoreceptors assigned to a column with a viewing direction are driven; about a third of cartridges receive light."
   - "Point neurons with one time constant: direction selectivity in the fly relies on delay differences between inputs (Mi1/Tm3 against Mi4/Mi9; Behnia et al. 2014 measure 18 ms between Mi1 and Tm3) that the model does not set per type."
@@ -114,13 +115,13 @@ reported:
     what: "DSI = (R_PD - R_ND) / (R_PD + R_ND) per subtype and configuration, next to the 0.8 measured in calcium"
   pathway:
     decides: false
-    what: "spikes per type of the lamina-to-T4/T5 pathway (Mi1, Tm3, Mi4, Mi9, Tm1, Tm2, Tm4, Tm9, T4, T5) per configuration and stimulus, to locate where the signal stops"
+    what: "spikes per type of the lamina-to-T4/T5 pathway (Mi1, Tm3, Mi4, Mi9, Tm1, Tm2, Tm4, Tm9, T4, T5) per configuration and stimulus, to locate where the signal stops; the graded types (Mi1, Tm3, Mi4, Mi9) never spike and are read from medulla_voltage"
   t5:
     decides: false
     what: "the version 2 polarity and direction checks for the four T5 subtypes, whose inputs are unchanged"
   medulla_voltage:
     decides: false
-    what: "potential of each graded medulla type relative to rest: median at the end of the settle period, lowest and highest bin mean of the type median during motion, next to the measured range below and above the dark level"
+    what: "potential of each graded medulla type relative to rest: median at the end of the settle period, lowest and highest bin mean of the type median during motion, in rows that also carry the measured range below and above the dark level (measured_low_mv, measured_high_mv)"
   lmc_voltage:
     decides: false
     what: "potential of the L1-L3 receiving synapses from window photoreceptors: median at the end of the settle period, lowest and highest bin mean during motion, next to the measured 20-45 mV"

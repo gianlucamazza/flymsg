@@ -26,7 +26,7 @@ PATH = ROOT / "validation" / "t4t5.yaml"
 VERSION_HASHES = {
     1: "bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8",  # ON/OFF edges, 4 directions, 30 deg/s, acceptance 8.23 deg, seeds 90-92
     2: "d25bcbd7ecd6e01f383c00703995164d29cc57fc11192be15234b19314b0e390",  # graded photoreceptors and L1-L3, 17-configuration envelope, settle 200 ms, seed 93
-    3: "84b3c1edfad1417b7cc78ad14d1e07310d3fdfec4b6c72d5e6fe130fc03e8f54",  # T4's medulla inputs graded over Groschner et al.'s voltages, 25 configurations, seed 94
+    3: "f19a2d7b82a0be9a3efb175813b165746161483b71b978115999816d00bc40b2",  # T4's medulla inputs graded over Groschner et al.'s voltages, 25 configurations, seed 94
 }
 SPENT_SEEDS = (90, 91, 92, 93)
 # measured Drosophila ranges and their midpoints (Juusola et al. 2016), and the unmeasured
@@ -416,6 +416,7 @@ def protocol(
             )
             for t, cols_t in watch_medulla.items():
                 type_median = np.median(r.graded_v[:, cols_t] - p.v_rest, axis=1)
+                mv = proto["medulla_mv"][t]
                 medulla_rows.append(
                     {
                         **key,
@@ -423,6 +424,8 @@ def protocol(
                         "settled_mv": float(type_median[first_bin - 1]),
                         "lowest_mv": float(type_median[first_bin:].min()),
                         "highest_mv": float(type_median[first_bin:].max()),
+                        "measured_low_mv": round(mv["lowest"] - mv["dark"], 1),
+                        "measured_high_mv": round(mv["highest"] - mv["dark"], 1),
                     }
                 )
             if report is not None:

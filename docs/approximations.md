@@ -74,7 +74,7 @@ Each lock lists its own; the file is the authority.
 | ----------------------------------------------------------- | ----: | -------------------------------------------------------------------------------------------------------------------------- |
 | [`kc_sparseness.yaml`](../validation/kc_sparseness.yaml) v6 |     5 | eLNs by morphology (lLN2T, lLN1_bc variant); somatic coefficients; no rectification; rectangular spikelet; step boundaries |
 | [`mb_plasticity.yaml`](../validation/mb_plasticity.yaml) v1 |     7 | Eligibility window shape, all-or-none pulses, both sides, no recovery, odors as ORN types                                  |
-| [`t4t5.yaml`](../validation/t4t5.yaml) v3                   |    10 | Threshold-linear release, medulla anchored at rest, scanned LMC and medulla rates, T5 inputs spiking, one time constant    |
+| [`t4t5.yaml`](../validation/t4t5.yaml) v3                   |    11 | Threshold-linear release, medulla anchored at rest, scanned LMC and medulla rates, T5 inputs spiking, one time constant    |
 | [`jump3d.yaml`](../validation/jump3d.yaml) v1               |     6 | Open loop, held posture, fixed moment arm, twitch shape, TTM only, female body                                             |
 
 ## What this means for the results

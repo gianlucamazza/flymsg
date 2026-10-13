@@ -117,4 +117,6 @@ over 25–400 Hz (25 configurations, seed 94) at the middle photoreceptor and LM
 inputs Tm1, Tm2, Tm4 and Tm9 have no voltage in mV in any source found (Behnia et al. 2014,
 Kohn et al. 2021, Yang et al. 2016), so they stay spiking and v3 decides on the four T4
 subtypes; T5 is reported. Per-type timing (Mi1 71 ms against Tm3 53 ms, Behnia et al. 2014)
-is not set: the model has one membrane time constant.
+is not set: the model has one membrane time constant. Graded types never spike, so the
+pathway table counts 0 for Mi1, Tm3, Mi4 and Mi9; their potentials are in `medulla.csv`,
+next to the measured range.

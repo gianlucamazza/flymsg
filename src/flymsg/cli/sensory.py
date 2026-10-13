@@ -103,7 +103,13 @@ def cmd_t4t5(a, neurons, edges):
                 [
                     out["medulla"]
                     .groupby(["config", "type"])[
-                        ["settled_mv", "lowest_mv", "highest_mv"]
+                        [
+                            "settled_mv",
+                            "lowest_mv",
+                            "highest_mv",
+                            "measured_low_mv",
+                            "measured_high_mv",
+                        ]
                     ]
                     .median()
                     .round(2)
