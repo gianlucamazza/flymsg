@@ -91,13 +91,22 @@ def graded_arrays(graded: Graded | None, n: int, dt: float) -> tuple:
         raise ValueError("graded span must be positive and rate nonnegative")
     order = np.argsort(idx)
     mask[idx] = True
-    return (
-        idx[order],
+    top = np.finfo(np.float32).max
+    if any(np.any(np.abs(x) > top) for x in (cols[0], cols[1], cols[2] * dt / 1000.0)):
+        raise ValueError("graded parameters exceed float32")
+    lo, span, scale = (
         cols[0][order].astype(np.float32),
         cols[1][order].astype(np.float32),
         (cols[2][order] * dt / 1000.0).astype(np.float32),
-        mask,
     )
+    # the kernel computes in float32: check the values it will see
+    if not (
+        np.isfinite(lo).all() and np.isfinite(span).all() and np.isfinite(scale).all()
+    ):
+        raise ValueError("graded parameters exceed float32")
+    if np.any(span <= 0) or np.any(scale < 0):
+        raise ValueError("graded span must stay positive in float32")
+    return idx[order], lo, span, scale, mask
 
 
 @dataclass(frozen=True)
@@ -108,13 +117,22 @@ class Gap:
     Coupled neurons follow tau_m dv/dt = v_rest - v + g + sum_j coupling (v_j - v), which is
     linear between spikes, so each connected group is integrated exactly over a step by a
     precomputed matrix exponential (Van Loan's block form for the decaying synaptic input).
-    A refractory neuron is held at rest and its frozen conductance does not act, as in the
-    uncoupled model; it enters its partners' step at rest. Spikes do not cross: a LIF spike
-    is a reset, not a waveform, so spikelets are absent."""
+
+    Refractoriness keeps the uncoupled model's convention at step boundaries: a refractory
+    neuron starts and ends every step at rest, and its frozen conductance does not act.
+    Within a step it follows the coupled equation like its partners (it is not clamped
+    there), so partners feel it relax from rest; clamping it inside the step would need a
+    new matrix exponential for every pattern of refractory neurons. Spikes do not cross: a
+    LIF spike is a reset, not a waveform, so spikelets are absent."""
 
     i: np.ndarray
     j: np.ndarray
     coupling: np.ndarray
+
+
+# largest coupled group: its dense step matrix is m x 2m float64 and its exponential needs a
+# 2m x 2m block (4000 neurons: 256 MB for the block)
+MAX_GAP_COMPONENT = 4000
 
 
 def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
@@ -160,6 +178,10 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
     nodes, label = nodes[order], label[order]
     off = np.r_[0, np.cumsum(np.bincount(label))].astype(np.int64)
     mats, moff = [], [0]
+    if np.diff(off).max() > MAX_GAP_COMPONENT:
+        raise ValueError(
+            f"an electrically coupled group exceeds {MAX_GAP_COMPONENT} neurons"
+        )
     for a, b in pairwise(off):
         members = nodes[a:b]
         m = members.size
@@ -170,6 +192,8 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
         block[:m, m:] = np.eye(m) / p.tau_m
         block[m:, m:] = -np.eye(m) / p.tau_syn
         E = expm(block * p.dt)
+        if not np.isfinite(E).all():
+            raise ValueError("gap couplings give a nonfinite step matrix")
         mats.append(np.hstack([E[:m, :m], E[:m, m:]]).ravel())
         moff.append(moff[-1] + 2 * m * m)
     return nodes, off, np.concatenate(mats), np.asarray(moff, dtype=np.int64)
