@@ -325,6 +325,11 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: T4/T5 through the eye v1, neither.** Seeds 90–92, edges at 30°/s. No T4/T5
+spike: photoreceptors fire, but their inhibitory (histaminergic) synapses cannot move silent
+spiking lamina neurons; the fly's lamina is graded and tonically active. Report:
+`results/t4t5/v1/`.
+
 **2026-10-13: Kenyon cell sparseness v3, none.** Hige et al. 2015's odors from DoOR, seeds
 80–82, bounds 1–17% and ≤ 64.6% shared. Default: 36% / 30% of Kenyon cells, 82–99% shared;
 without fast KC → KC: 22.5% / 19.6%; without the cholinergic local neuron → PN chemical

@@ -206,6 +206,19 @@ preferred direction: a front-to-back, b back-to-front, c up, d down). The prior 
 the lock: Lappalainen et al. 2024 found untrained connectome models get polarity right and
 direction wrong. DSI is reported next to the 0.8 measured in calcium.
 
+**Result of version 1 (2026-10-13): neither.** Run from `0c574f5`. No T4 or T5 neuron spikes
+for any edge, direction or polarity, so neither level passes. An exploratory count after the
+verdict (seed 0, one sweep each polarity) shows where the signal stops: the 640
+photoreceptors fire about 370,000 spikes per sweep, and L1, L2, L3, Mi1, Tm3, Mi4, Mi9, Tm1,
+Tm2 and Tm9 fire none. Photoreceptor synapses are histaminergic, inhibitory; in the fly the
+lamina monopolar cells are graded neurons with a resting tone that light hyperpolarises and
+darkness depolarises, which is where ON and OFF begin. A spiking point neuron at rest that
+receives only inhibition stays silent in light and in darkness, so contrast cannot cross the
+first synapse. The eye and its geometry work; the model's neurons do not, at this stage. This
+is the case for graded, tonically active neurons
+([#97](https://github.com/gianlucamazza/flymsg/issues/97)), now with a concrete failure.
+Outputs: `results/t4t5/v1/`.
+
 ### M1 jump body (v0.8.34, #33)
 
 `flymsg.jump.JumpBody` is a point mass over a rigid floor: gravity, an actuator force along

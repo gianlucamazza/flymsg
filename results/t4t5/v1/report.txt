@@ -1,0 +1,11 @@
+window columns: 336
+subtype  preferred_polarity_spikes  other_polarity_spikes  polarity_ok  vector_angle_deg  measured_angle_deg  angle_error_deg  direction_ok  dsi
+    T4a                          0                      0        False               NaN                 0.0              NaN         False  NaN
+    T4b                          0                      0        False               NaN               180.0              NaN         False  NaN
+    T4c                          0                      0        False               NaN                90.0              NaN         False  NaN
+    T4d                          0                      0        False               NaN               270.0              NaN         False  NaN
+    T5a                          0                      0        False               NaN                 0.0              NaN         False  NaN
+    T5b                          0                      0        False               NaN               180.0              NaN         False  NaN
+    T5c                          0                      0        False               NaN                90.0              NaN         False  NaN
+    T5d                          0                      0        False               NaN               270.0              NaN         False  NaN
+verdict: neither
