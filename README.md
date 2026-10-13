@@ -141,7 +141,9 @@ sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about hal
   (Manoim et al. 2022); a locked diagnostic shows that treating them so lowers an odor's share
   of Kenyon cells from 25% to 17%, but two odors still share 95%. The overlap is made in the
   antennal lobe, where the model turns the electrical coupling of excitatory local neurons into
-  fast chemical excitation: without it one ORN type drives 4.5% of the projection neurons, not 73%
+  fast chemical excitation: without it one ORN type drives 4.5% of the projection neurons, not 73%. With
+  real odors (DoOR) the code is either dense or silent, never sparse: the measured electrical
+  coupling is what the model lacks
   ([model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)).
 - **The measured dopamine-gated depression is not odor-specific in the model.** Applying the
   Kenyon cell → MBON11 depression of Hige et al. 2015 after pairing silences MBON11 for the

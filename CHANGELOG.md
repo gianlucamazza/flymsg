@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Result
+
+- **Kenyon cell sparseness v3: none** (#95, #96). With Hige et al. 2015's odors as DoOR
+  vectors the model is either dense (default 36% / 30% of Kenyon cells, 82–99% shared, against
+  30–33% measured) or silent (0.2% without the chemical local neuron → PN contacts). The
+  sparse regime needs the measured electrical coupling the model lacks (#85).
+
 ### Pre-registration
 
 - **Kenyon cell sparseness diagnostic v3** (#95, #96): Hige et al. 2015's odors (3-octanol,
