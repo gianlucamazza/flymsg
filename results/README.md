@@ -12,3 +12,4 @@ is a new version. `scripts/build_figures.py` draws `docs/img/*.svg` from these f
 | `jump/intact/`, `jump/dnp01/` | `flymsg jump --sim LC4_R [--silence DNp01]` (M1)         |
 | `loop/`                       | `flymsg loop --sim LC4_R …` (M2)                         |
 | `sensitivity/v1/`             | `flymsg sensitivity --run` (#28)                         |
+| `mb-plasticity/v1/`           | `flymsg mb-plasticity --run` (#85)                       |

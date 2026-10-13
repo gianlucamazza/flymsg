@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Result
+
+- **KC → MBON11 depression v1: inconsistent** (#85). The measured rule silences MBON11 for
+  both odors (272–286 → 0 spikes, seeds 50–52): each odor recruits about 1,000 Kenyon cells
+  and the two share 95%, against 30–33% in the fly. The model's Kenyon cell code is not
+  sparse, the same limit as the held-out ORN_DM1 failure. Nothing is retuned.
+
 ### Documentation
 
 - **`docs/roadmap.md`** (on the site as Roadmap): what of the brain the model uses and leaves

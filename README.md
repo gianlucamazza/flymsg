@@ -25,7 +25,9 @@ described in [viz](docs/viz.md).
 
 Each scene also runs live in the browser on the published site: the page streams the
 neuron surfaces from the public MaleCNS volumes, and the scenes are the committed exports
-in `docs/live/` (rebuild them with `scripts/build_live_scenes.py`). A desktop GPU helps.
+in `docs/live/` (rebuild them with `scripts/build_live_scenes.py`). Around every scene the
+site draws all 140,024 somata of the volume as faint points coloured by region, so the whole
+CNS is visible. A desktop GPU helps.
 
 ![Looming stimulus LC4_R at 120 ms. Responding neurons fill the brain and the ventral nerve cord, and silent neurons stay desaturated.](docs/img/replay.png)
 
@@ -83,6 +85,9 @@ sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about hal
 - **Ask questions about sex differences**: how much simulated responses run through
   dimorphic neurons, and what silencing them does (`dimorphism`); the same model on the
   female FlyWire brain (`--dataset fafb`).
+- **Test causal claims**: silencing scans and follow-ups locked before they run, each with a
+  matched null and a stated failure rule (`silence-scan`, `partner-followup`), and one
+  measured plasticity rule (`mb-plasticity`).
 - **See it**: a three.js page streams source-resolution neuron surfaces, skeletons and
   neuropils from the public data, and replays the simulated activity (`viz`). The frames are
   in the gallery.
@@ -133,6 +138,11 @@ sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about hal
   active after the stimulus are Kenyon cells, and 73% of the excitatory synapses onto Kenyon
   cells come from other Kenyon cells; in a point LIF that loop sustains itself. A model limit,
   not a fit ([benchmarks](docs/benchmarks.md)).
+- **The measured dopamine-gated depression is not odor-specific in the model.** Applying the
+  Kenyon cell → MBON11 depression of Hige et al. 2015 after pairing silences MBON11 for the
+  paired and the unpaired odor alike: the two odors share 95% of their ~1,000 Kenyon cells,
+  against 30–33% in the fly. The same Kenyon cell limit, seen from learning
+  ([model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13)).
 - **The one-bit looming jump fails silence.** `TTMn_R` reaches three spikes on time
   in 3/3 seeds, and the closed loop stops there. With both DNp01 silenced it still
   reaches three spikes, later. The raster is
@@ -145,9 +155,9 @@ sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about hal
   (p 0.001 each against 0.025) ([behavior](docs/behavior.md#result-of-version-2-2026-10-12)).
   Version 3 repeats version 2 on fresh seeds 30–32 and names both again
   ([behavior](docs/behavior.md#result-of-version-3-2026-10-12)): the naming replicates.
-- **No biological extension is added.** Cell-type parameters, gap junctions,
+- **Extensions only where a measurement transfers.** Cell-type parameters, gap junctions,
   short-term synaptic dynamics and compartments have no value that transfers into
-  this LIF. Silencing DNp01 removes that cell's output, and `TTMn_R` still fires,
+  this LIF, and none is added. Silencing DNp01 removes that cell's output, and `TTMn_R` still fires,
   so the silence failure is not a missing giant-fiber gap junction; the residual
   drive goes through DNp02 and DNp06. Neuromodulation stays out; associative learning has
   one optional rule, the measured dopamine-gated depression at Kenyon cell → MBON11,
@@ -205,6 +215,10 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `trace STIM --neurons N…`                                       | record v, g, threshold, spikes and input of chosen neurons; model states, not recordings                |
 | `viz-compare A B --labels … --status …`                         | pair two replay exports; refuses mismatched datasets or time bases; no simulation                       |
 | `sensitivity [--run]`                                           | the locked w_syn × th_jump grid around the defaults: every cell, spreads, a figure; a report            |
+| `benchmarks [--run \| --corners]`                               | the frozen held-out manifest, scored with `--run`                                                       |
+| `silence-scan [--run]`                                          | the locked residual `TTMn_R` partner scan (#20); prints the protocol without `--run`                    |
+| `partner-followup [--run]`                                      | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                          |
+| `mb-plasticity [--run]`                                         | the locked dopamine-gated KC → MBON11 depression (#85), applied between trials                          |
 | `experiment FILE [--check]` · `runs`                            | run an exploratory config into an immutable directory; index every run manifest with its label          |
 | `explore SRC DST` · `confirm LOCK`                              | paths and exploratory silencing; run a registered intervention lock against a matched null              |
 | `jump --sim STIM --gain-n G --mass-kg M`                        | M1: a one-DOF jump body driven by a motor neuron through an engineered decoder (not a motor map)        |
@@ -213,7 +227,8 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 
 The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?detail=`,
 `?adaptive=0`,
-`?neuropils=0|1`, `?budget=<M triangles>` and `?bench=<s>` ([viz](docs/viz.md)).
+`?neuropils=0|1`, `?somata=0` (hide the whole-CNS soma layer), `?budget=<M triangles>` and
+`?bench=<s>` ([viz](docs/viz.md)).
 
 ## How it works
 
@@ -233,10 +248,10 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
    - it responds more to stronger input;
    - successive stages fire in order;
    - activity dies out after the stimulus.
-4. **Rules before results.** Criteria, calibrations and model selections are written down in
-   [validation](docs/validation.md) and
-   [`validation/preregistration.yaml`](validation/preregistration.yaml) before they run, and
-   a failure is recorded rather than tuned away.
+4. **Rules before results.** Criteria, calibrations, model selections and every confirmatory
+   experiment are written down in [validation](docs/validation.md) and a versioned, hashed
+   lock in `validation/*.yaml` before they run; the runner refuses a lock edited without a new
+   version, and a failure is recorded rather than tuned away.
 5. **3D view.** The export holds only metadata and activity. The page reads the public
    multi-resolution meshes and skeletons directly from Google Cloud Storage, refining detail
    near the camera within a triangle budget ([viz](docs/viz.md)).
@@ -246,8 +261,10 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 - **One animal per dataset.** There is no measure of individual variability, and sex
   differences cannot be separated from reconstruction differences. `flymsg audit` flags
   incompletely reconstructed bilateral neurons (3.2 % of types, including MN9_R).
-- **Wiring only.** No gap junctions, neuromodulation, plasticity or cell-specific properties;
-  transmitters are machine predictions. The Giant Fiber, for example, behaves like a
+- **Wiring only, by default.** No gap junctions, neuromodulation or cell-specific
+  properties; one optional, locked plasticity rule (KC → MBON11) changes nothing unless
+  called; transmitters are machine predictions, and 2.6% of synapses carry no sign. What of the
+  brain is in the model is counted in [roadmap](docs/roadmap.md#brain-coverage). The Giant Fiber, for example, behaves like a
   `shak-B²` mutant lacking its electrical synapse.
 - **Qualitative rates.** Use the model to rank which circuits a stimulus recruits and in what
   order, not to predict exact firing.
@@ -258,7 +275,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 | Document                             | Content                                                                       |
 | ------------------------------------ | ----------------------------------------------------------------------------- |
 | [data](docs/data.md)                 | sources, files, filtering, schema, the female FAFB dataset, citations         |
-| [model](docs/model.md)               | equations, parameters, synapse signs, density scaling, extensions not adopted |
+| [model](docs/model.md)               | equations, parameters, signs, density scaling, extensions, optional KC→MBON11 |
 | [validation](docs/validation.md)     | current status, protocol, cases, calibration, model selection, findings log   |
 | [benchmarks](docs/benchmarks.md)     | held-out partition, the ORN_DM1 failure, both corners fail                    |
 | [behavior](docs/behavior.md)         | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated  |
@@ -288,6 +305,12 @@ uv run ruff check && uv run ruff format --check src tests scripts
   brian2 in its own environment.
 - `scripts/shoot.mjs` screenshots the 3D view headless (`GL=gl` for the real GPU).
 - `scripts/vendor-js.sh` refreshes the vendored three.js and lil-gui.
+- `scripts/bench_viewer.py` measures the 3D view on every scene and refuses a loaded machine;
+  `scripts/brain_coverage.py` prints what of MaleCNS the model uses;
+  `scripts/archive_results.py` copies cited run outputs into `results/`;
+  `scripts/build_figures.py` redraws `docs/img/*.svg` from them.
+- The code carries no lint or formatter suppressions (`noqa`, `fmt: skip`, …); a test fails if
+  one appears. A run a doc cites starts from a commit on `main` ([architecture](docs/architecture.md)).
 
 ## Citation
 

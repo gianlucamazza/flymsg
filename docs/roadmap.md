@@ -15,24 +15,25 @@ Numbers from `scripts/brain_coverage.py`, which reads `data/` and changes nothin
 | Chemical synapses       | 124,025,046, signed by the presynaptic transmitter: 59.24% excitatory, 38.16% inhibitory                                                                                                  | 2.61% leave neurons with sign 0 ([model](model.md#synapse-sign)): 3,602 neurons whose transmitter is unclear or missing (1.65%) and 541 modulatory ones (0.95%)                                                                                                              |
 | Unsigned, cross-checked | —                                                                                                                                                                                         | Of the 3,602, 1,381 match a FlyWire type; 540 of those types are at least 90% one transmitter, and 288 neurons would get a fast one (0.34% of synapses). Not applied: the gain is small and the FlyWire label is a second prediction, from a female brain, not a measurement |
 | Electrical synapses     | None                                                                                                                                                                                      | Not visible in EM at this resolution; identified pairs have no conductance a LIF can use ([#85](https://github.com/gianlucamazza/flymsg/issues/85))                                                                                                                          |
-| Neuromodulation         | None as a fast sign; one optional, locked rule: dopamine-gated depression at KC → MBON11 (Hige et al. 2015)                                                                               | No per-type gain or time constant measured outside a few synapses ([#85](https://github.com/gianlucamazza/flymsg/issues/85))                                                                                                                                                 |
+| Neuromodulation         | None as a fast sign; one optional, locked rule: dopamine-gated depression at KC → MBON11 (Hige et al. 2015); v1 inconsistent, because the model's Kenyon cell code is not sparse          | No per-type gain or time constant measured outside a few synapses ([#85](https://github.com/gianlucamazza/flymsg/issues/85))                                                                                                                                                 |
 | Eyes                    | Photoreceptor terminals and the column grid are in the volume: 875 (L) and 892 (R) columns; R7 and R8 map to 533–698 columns per side; R1–R6 to 182 (L) and 380 (R), many being fragments | No eye encoder: stimuli enter as Poisson spikes into a named cell type such as LC4 ([#84](https://github.com/gianlucamazza/flymsg/issues/84))                                                                                                                                |
 | Other sense organs      | Sensory axons enter as neurons (2,635 ORN, 672 Johnston's organ, VNC sensory)                                                                                                             | Their cell bodies and transduction are in the periphery, outside the volume                                                                                                                                                                                                  |
 | 3D view                 | The scene's neurons at source resolution; 114 neuropil shells; every soma in the volume as a point (140,024)                                                                              | 25,098 neurons without a soma in the volume, mostly sensory                                                                                                                                                                                                                  |
 
 ## Done model-side
 
-| Item                                                           | Where                                                    |
-| -------------------------------------------------------------- | -------------------------------------------------------- |
-| Engine parity with Shiu et al. 2024 (brian2)                   | [model](model.md)                                        |
-| Calibration battery 29/29; held-out ORN_DM1 fails              | [validation](validation.md), [benchmarks](benchmarks.md) |
-| Sensitivity grid (#28)                                         | [validation](validation.md)                              |
-| One-bit looming loop; DNp01 silence check fails                | [behavior](behavior.md)                                  |
-| Residual `TTMn_R` drive: DNp02 and DNp06, replicated (#20)     | [behavior](behavior.md#result-of-version-3-2026-10-12)   |
-| Left mirror and direct drive of the pair, locked (#76)         | [behavior](behavior.md#residual-partner-follow-up)       |
-| M0 interface, M1 jump body, M2 closed loop (engineering)       | [embodiment](embodiment.md)                              |
-| R0 incremental CPU runtime; native executor matches the oracle | [runtime](runtime.md)                                    |
-| Archived outputs; figures redraw from a clone                  | [`results/`](../results/README.md)                       |
+| Item                                                           | Where                                                                                             |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Engine parity with Shiu et al. 2024 (brian2)                   | [model](model.md)                                                                                 |
+| Calibration battery 29/29; held-out ORN_DM1 fails              | [validation](validation.md), [benchmarks](benchmarks.md)                                          |
+| Sensitivity grid (#28)                                         | [validation](validation.md)                                                                       |
+| One-bit looming loop; DNp01 silence check fails                | [behavior](behavior.md)                                                                           |
+| Residual `TTMn_R` drive: DNp02 and DNp06, replicated (#20)     | [behavior](behavior.md#result-of-version-3-2026-10-12)                                            |
+| KC → MBON11 depression v1 run: inconsistent (#85)              | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
+| Left mirror and direct drive of the pair, locked (#76)         | [behavior](behavior.md#residual-partner-follow-up)                                                |
+| M0 interface, M1 jump body, M2 closed loop (engineering)       | [embodiment](embodiment.md)                                                                       |
+| R0 incremental CPU runtime; native executor matches the oracle | [runtime](runtime.md)                                                                             |
+| Archived outputs; figures redraw from a clone                  | [`results/`](../results/README.md)                                                                |
 
 ## Blocked on evidence
 
