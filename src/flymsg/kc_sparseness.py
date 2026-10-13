@@ -5,9 +5,10 @@ classes (KC -> KC, metabotropic in the fly, Manoim et al. 2022; APL -> KC; choli
 antennal-lobe local neuron -> projection neuron, electrical in the fly, Yaksi & Wilson 2010).
 Each arm drives two ORN types and counts the responding Kenyon cells, those shared between
 the odors, and the projection neurons that spike. The default model is not changed by the
-result. Version 1 (arms A-D) ran from b096b4a; version 2 runs arms A, B, E, F. Version 4
-(issue #85) adds electrical synapses (`sim.Gap`) to arms E and F: excitatory local neuron to
-PN coupling scanned over a grid, sister-PN coupling at its measured value.
+result. Version 1 (arms A-D) ran from b096b4a; version 2 runs arms A, B, E, F; version 4
+(b1116af) scanned a symmetric eLN-PN coupling without spikelets. Version 5 (issue #85) gives
+arms E and F the measured, asymmetric eLN-PN and sister-PN coupling (`sim.Gap`), with eLN
+spikes crossing as spikelets of the measured amplitude and a scanned duration.
 """
 
 from __future__ import annotations
@@ -38,6 +39,7 @@ VERSION_HASHES = {
     2: "bcfef9af52861dfd0a903c8b01aded5f8f504b645cdf6933d91b01ae47350322",  # arms A, B, E, F (cholinergic LN -> PN), seeds 70-72
     3: "0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2",  # Hige odors from DoOR, lower bound, seeds 80-82
     4: "72059246ade98ec69b49ce32bac587e0f6f52d39b2cb747c962fb4177694af67",  # E and F with electrical eLN-PN coupling 0-1 and sister PNs at 0.013, seeds 83-85
+    5: "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",  # measured asymmetric eLN-PN coupling, eLN spikelets 0-2 ms, seeds 86-88
 }
 # synapse classes without fast effect in each arm
 ARM_CLASSES = {
@@ -48,10 +50,15 @@ ARM_CLASSES = {
     "E": ("ach_ln_pn",),
     "F": ("kc_kc", "ach_ln_pn"),
 }
-SPENT_SEEDS = {1: (60, 61, 62), 2: (70, 71, 72), 3: (80, 81, 82)}
-# Kazama & Wilson 2009 Fig 7d: coupling coefficient of homotypic PN pairs for
-# hyperpolarizing steps (electrical only), read from the bar height
+SPENT_SEEDS = {1: (60, 61, 62), 2: (70, 71, 72), 3: (80, 81, 82), 4: (83, 84, 85)}
+# Coupling coefficients for hyperpolarizing steps, which pass the electrical component only,
+# measured from the bar heights: homotypic PN pairs, Kazama & Wilson 2009 Fig 7d; eLN -> PN
+# and PN -> eLN, Yaksi & Wilson 2010 Fig 4C and 4F (control pairs of the shakB2 comparison)
 SISTER_PN_CC = 0.013
+ELN_TO_PN_CC = 0.0021
+PN_TO_ELN_CC = 0.0039
+# full-sized eLN spikes, Yaksi & Wilson 2010 (text, Fig 2D)
+ELN_SPIKE_MV = 40.0
 HIGE_ODORS = ["3-octanol", "4-methylcyclohexanol"]
 
 
@@ -87,10 +94,17 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         raise SparsenessError("the arms changed")
     if "coupling" in doc:
         c = doc["coupling"]
-        if c["sister_cc"] != SISTER_PN_CC or not set(c["bases"]) <= set(doc["arms"]):
+        sourced = (SISTER_PN_CC, ELN_TO_PN_CC, PN_TO_ELN_CC, ELN_SPIKE_MV)
+        locked = (
+            c["sister_cc"],
+            c["eln_to_pn_cc"],
+            c["pn_to_eln_cc"],
+            c["eln_spike_mv"],
+        )
+        if locked != sourced or not set(c["bases"]) <= set(doc["arms"]):
             raise SparsenessError("the coupling is not the sourced one")
-        if c["eln_pn"] != sorted(set(c["eln_pn"])) or min(c["eln_pn"]) != 0.0:
-            raise SparsenessError("the coupling grid must start at 0 and increase")
+        if c["spike_ms"] != sorted(set(c["spike_ms"])) or min(c["spike_ms"]) != 0.0:
+            raise SparsenessError("the spike durations must start at 0 and increase")
     for v, spent in SPENT_SEEDS.items():
         if v < doc["version"] and set(proto["seeds"]) & set(spent):
             raise SparsenessError(f"seeds must not reuse version {v}'s")
@@ -129,9 +143,8 @@ def summary(doc: dict | None = None) -> str:
         f"and <= {d['overlap_max']} of responders are shared"
         + (
             f"; {len(coupled_arms(doc))} coupled arms ({'/'.join(doc['coupling']['bases'])} "
-            f"+ eLN-PN coupling {min(doc['coupling']['eln_pn']):g}-"
-            f"{max(doc['coupling']['eln_pn']):g}, sister PNs at coefficient "
-            f"{doc['coupling']['sister_cc']:g})"
+            f"+ measured coupling, eLN spikelets of "
+            f"{', '.join(f'{w:g}' for w in doc['coupling']['spike_ms'])} ms)"
             if "coupling" in doc
             else ""
         )
@@ -157,11 +170,11 @@ def arms(W, idx: dict, names) -> dict:
 
 
 def coupled_arms(doc: dict) -> list[tuple[str, str, float]]:
-    """(name, base arm, eLN-PN coupling) of every coupled arm, in lock order."""
+    """(name, base arm, spikelet duration in ms) of every coupled arm, in lock order."""
     c = doc.get("coupling")
     if not c:
         return []
-    return [(f"{b}+gap{k:g}", b, k) for b in c["bases"] for k in c["eln_pn"]]
+    return [(f"{b}+spike{w:g}ms", b, w) for b in c["bases"] for w in c["spike_ms"]]
 
 
 def gap_pairs(
@@ -197,21 +210,36 @@ def gap_pairs(
     return eln, sisters
 
 
-def gap_for(
-    eln: pd.DataFrame, sisters: pd.DataFrame, k: float, sister_cc: float
+def measured_gap(
+    eln: pd.DataFrame,
+    sisters: pd.DataFrame,
+    n: int,
+    ach_ln: np.ndarray,
+    spike_ms: float,
 ) -> sim.Gap:
-    """eLN-PN pairs share `k` in proportion to synapses, scaled so that the median PN's total
-    eLN coupling is `k`; sister PNs at c / (1 - c) of the measured coupling coefficient."""
-    per_pn = eln.groupby("pn")["weight"].sum()
-    scale = k / float(per_pn.median()) if k > 0 else 0.0
-    keep = eln[eln["weight"] > 0] if k > 0 else eln.iloc[:0]
+    """Each eLN-PN pair coupled as measured on each side (c / (1 - c) of the coupling
+    coefficient towards that cell), sister PNs symmetric at Kazama & Wilson's coefficient,
+    and, for a positive `spike_ms`, eLN spikes crossing as spikelets of the measured
+    amplitude (PN spikes do not cross: their amplitude at the junction is not measured)."""
+
+    def k(c: float) -> float:
+        return c / (1.0 - c)
+
+    spike = None
+    if spike_ms > 0:
+        spike = np.zeros(n)
+        spike[ach_ln] = ELN_SPIKE_MV
     return sim.Gap(
-        i=np.r_[keep["ln"].to_numpy(), sisters["i"].to_numpy()].astype(np.int64),
-        j=np.r_[keep["pn"].to_numpy(), sisters["j"].to_numpy()].astype(np.int64),
+        i=np.r_[eln["pn"].to_numpy(), sisters["i"].to_numpy()].astype(np.int64),
+        j=np.r_[eln["ln"].to_numpy(), sisters["j"].to_numpy()].astype(np.int64),
         coupling=np.r_[
-            keep["weight"].to_numpy() * scale,
-            np.full(len(sisters), sister_cc / (1.0 - sister_cc)),
+            np.full(len(eln), k(ELN_TO_PN_CC)), np.full(len(sisters), k(SISTER_PN_CC))
         ],
+        coupling_back=np.r_[
+            np.full(len(eln), k(PN_TO_ELN_CC)), np.full(len(sisters), k(SISTER_PN_CC))
+        ],
+        spike_mv=spike,
+        spike_ms=spike_ms if spike_ms > 0 else None,
     )
 
 
@@ -272,8 +300,9 @@ def protocol(
     rows = []
     weights = arms(W, idx, list(doc["arms"]))
     runs = [(arm, Wx, None) for arm, Wx in weights.items()]
-    for name, base, k in coupled_arms(doc):
-        gap = gap_for(idx["eln"], idx["sisters"], k, doc["coupling"]["sister_cc"])
+    n = W.shape[0]
+    for name, base, width in coupled_arms(doc):
+        gap = measured_gap(idx["eln"], idx["sisters"], n, idx["ACH_LN"], width)
         runs.append((name, weights[base], gap))
     per_arm = len(proto["odors"]) * len(proto["seeds"])
 
@@ -326,24 +355,7 @@ def protocol(
     table = pd.concat(rows, ignore_index=True)
     d = doc["decides"]
     verdict = decide(table, d["sparse_max"], d["overlap_max"], d.get("sparse_min", 0.0))
-    out = {"table": table, "verdict": verdict}
-    if "coupling" in doc:
-        out["prediction"] = least_coupling(table, doc)
-    return out
-
-
-def least_coupling(table: pd.DataFrame, doc: dict) -> dict:
-    """Per base arm, the smallest eLN-PN coupling of the grid whose arm is within, or None:
-    the model's prediction of the coupling the fly would need."""
-    d = doc["decides"]
-    ok = set(
-        within_arms(table, d["sparse_max"], d["overlap_max"], d.get("sparse_min", 0.0))
-    )
-    out = {}
-    for base in doc["coupling"]["bases"]:
-        hits = [k for name, b, k in coupled_arms(doc) if b == base and name in ok]
-        out[base] = min(hits) if hits else None
-    return out
+    return {"table": table, "verdict": verdict}
 
 
 def stimuli(neurons: pd.DataFrame, proto: dict, data_dir: Path | None) -> dict:

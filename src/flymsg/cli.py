@@ -1032,8 +1032,6 @@ def cmd_kc_sparseness(a, neurons, edges):
     )
     out["table"].to_csv(path / "arms.csv", index=False)
     text = out["table"].to_string(index=False) + f"\nverdict: {out['verdict']}"
-    if "prediction" in out:
-        text += f"\nleast eLN-PN coupling within, per base arm: {out['prediction']}"
     print(text)
     (path / "report.txt").write_text(text + "\n")
     proto = doc["protocol"]
@@ -1054,7 +1052,6 @@ def cmd_kc_sparseness(a, neurons, edges):
         started,
         extra={
             "verdict": out["verdict"],
-            "prediction": out.get("prediction"),
             "resumed_steps": steps.resumed,
         },
     )
@@ -1143,8 +1140,6 @@ def cmd_jump3d(a, neurons, edges):
     path.mkdir(parents=True, exist_ok=True)
     out["table"].to_json(path / "seeds.json", orient="records", indent=2)
     text = out["table"].to_string(index=False) + f"\nverdict: {out['verdict']}"
-    if "prediction" in out:
-        text += f"\nleast eLN-PN coupling within, per base arm: {out['prediction']}"
     print(text)
     (path / "report.txt").write_text(text + "\n")
     n = doc["neural"]

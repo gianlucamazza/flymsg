@@ -324,6 +324,14 @@ as spikelets (Yaksi & Wilson 2010); the model's junctions pass only subthreshold
 because a LIF spike is a reset. The missing waveform is a candidate explanation, not a mechanism isolated by this finite
 grid with the old integrator. No later numerical implementation was tested by v4. Outputs: `results/kc-sparseness/v4/`.
 
+**Version 5 (lock, 2026-10-13, #85).** The coupling is no longer scanned: Yaksi & Wilson
+2010 (Fig. 4C/4F, 37 pairs) give eLN → PN 0.0021 and PN → eLN 0.0039 for hyperpolarizing
+steps, which pass the electrical component only, and Kazama & Wilson 2009 give 0.013
+between sister PNs; each side of a junction couples at c / (1 − c) of the coefficient
+towards it. The depolarizing coupling the fly shows (0.0083) comes with eLN spikes of about
+40 mV, which now cross the junction as spikelets ([electrical synapses](#electrical-synapses-optional-2026-10-13)); their duration is not measured,
+so arms E and F run with 0, 0.5, 1 and 2 ms (8 coupled arms, seeds 86–88) under v3's bounds.
+
 ## Electrical synapses (optional, 2026-10-13)
 
 `sim.Gap` (#85) couples pairs of neurons through their potentials. A coupled neuron follows
