@@ -237,3 +237,18 @@ def looming_radius_deg(t_ms, collision_ms: float, l_over_v_ms: float) -> np.ndar
     with np.errstate(divide="ignore"):
         half = np.degrees(np.arctan(l_over_v_ms / np.where(to_go > 0, to_go, np.nan)))
     return np.where(to_go > 0, np.minimum(half, 90.0), 90.0)
+
+
+def photoreceptor_kicks(
+    coverage: np.ndarray, receptor_columns: np.ndarray, gain: float
+) -> np.ndarray:
+    """Graded input for `sim.run(..., kicks=...)`: one column per photoreceptor, one row per
+    step, in units of the Poisson kick (`Params.poisson_scale * w_syn` mV). `coverage` is
+    (steps, columns), the share of each column's acceptance profile under the dark disk;
+    `receptor_columns` gives each photoreceptor's column index into it (-1 for none, which
+    receives nothing). The drive is `gain` times the light left, 1 - coverage: a dark disk
+    lowers it. `gain` has no measured value; a lock states it."""
+    cov = np.asarray(coverage, dtype=float)
+    idx = np.asarray(receptor_columns, dtype=int)
+    light = np.where(idx >= 0, 1.0 - cov[:, np.clip(idx, 0, None)], 0.0)
+    return gain * np.nan_to_num(light, nan=0.0)

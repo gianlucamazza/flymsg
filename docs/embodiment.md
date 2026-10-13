@@ -185,8 +185,10 @@ not a default; the value and its source go into the lock of the first run. With 
 centred at 90° to the right covers more than half the profile of 5 right-eye columns at a
 radius of 5°, 138 at 30° and 462 at 60°, and no left-eye column.
 
-Next ([#84](https://github.com/gianlucamazza/flymsg/issues/84)): graded photoreceptor input
-fed by that coverage, with a single, locked gain, judged on T4/T5 direction selectivity and
+`eye.photoreceptor_kicks` turns the coverage into graded input for each photoreceptor of a
+column: `gain` times the light left (1 − coverage), in units of the Poisson kick; the gain has
+no measured value and is stated by the lock. Next
+([#84](https://github.com/gianlucamazza/flymsg/issues/84)): that lock, judged on T4/T5 direction selectivity and
 the giant fiber's size/velocity split.
 
 ### M1 jump body (v0.8.34, #33)

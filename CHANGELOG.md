@@ -22,6 +22,10 @@
 
 ### Eye
 
+- **Graded photoreceptor input:** `eye.photoreceptor_kicks` (gain × light left per column, in
+  units of the Poisson kick). `sim.run` already accepted real-valued `kicks`; it is now
+  documented and tested (integer values as floats reproduce the Poisson run spike for spike).
+  `CpuRuntime` and the native executor still take integer counts only.
 - **Looming per column:** `eye.looming_radius_deg` (constant-speed approach, von Reyn et al. 2014) and `eye.disk_coverage` (share of each column's Gaussian acceptance profile covered
   by a dark disk, exact in the small-angle limit). The acceptance angle is an argument for
   the lock to source, not a default.
