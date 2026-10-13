@@ -28,7 +28,7 @@ from flymsg import (
     viz,
     workbench,
 )
-from flymsg.cli.body import cmd_behavior, cmd_jump, cmd_jump3d, cmd_loop
+from flymsg.cli.body import cmd_behavior, cmd_jump, cmd_jump3d, cmd_loop, cmd_muscles
 from flymsg.cli.common import label, ng_link
 from flymsg.cli.connectome import (
     audit_focus_types,
@@ -98,6 +98,7 @@ COMMANDS = {
     "mb-plasticity": cmd_mb_plasticity,
     "eye": cmd_eye,
     "odor": cmd_odor,
+    "muscles": cmd_muscles,
     "t4t5": cmd_t4t5,
     "jump3d": cmd_jump3d,
     "kc-sparseness": cmd_kc_sparseness,
@@ -127,6 +128,7 @@ MALECNS_ONLY = (
     "mb-plasticity",
     "eye",
     "odor",
+    "muscles",
     "t4t5",
     "jump3d",
     "kc-sparseness",

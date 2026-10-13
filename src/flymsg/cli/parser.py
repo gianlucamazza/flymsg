@@ -186,6 +186,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s.add_argument("name", help="DoOR odorant name, e.g. 3-octanol")
     sub.add_parser(
+        "muscles",
+        help="MANC's muscle per MaleCNS motor neuron (Cheong 2024, fetched); no actuator",
+    )
+    sub.add_parser(
         "eye",
         help="column -> viewing direction and photoreceptor -> column tables (#84)",
     )
