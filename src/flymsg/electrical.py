@@ -1,6 +1,8 @@
-"""Bounded exact step maps for continuously clamped refractory membranes."""
+"""Exact steps for continuously clamped refractory membranes: bounded dense step maps, or the
+truncated Taylor action of the same exponential (#155)."""
 
 import hashlib
+import math
 import threading
 import time
 from collections import OrderedDict
@@ -12,6 +14,41 @@ from scipy.linalg import expm
 
 SEMANTICS = "flymsg.gap/continuous-clamp-v1"
 BOUNDARY_SEMANTICS = "flymsg.gap/boundary-reset-v1"
+TAYLOR_SEMANTICS = "flymsg.gap/continuous-clamp-taylor-v1"
+# Truncation bound of the Taylor action, relative to the 1-norm of the step's input
+# [x, g, s]: the float64 unit roundoff.
+TAYLOR_TOL = 2.0**-53
+# Above this step norm the series needs more terms than it saves; use the dense maps.
+TAYLOR_MAX_NORM = 0.5
+
+
+def taylor_terms(norm: float) -> int:
+    """Fewest terms K with norm^(K+1) / (K+1)! * e^norm <= TAYLOR_TOL: the remainder of
+    exp(B dt) u after K terms, in the 1-norm, relative to |u|_1, for |B dt|_1 <= norm."""
+    if not norm <= TAYLOR_MAX_NORM:
+        raise ValueError(
+            f"electrical step norm {norm:.3g} exceeds {TAYLOR_MAX_NORM}: "
+            "use the dense solver"
+        )
+    k = 1
+    while norm ** (k + 1) / math.factorial(k + 1) * math.exp(norm) > TAYLOR_TOL:
+        k += 1
+    return k
+
+
+def step_norm(G, p) -> float:
+    """|B dt|_1 of a component's block [A, I/tau_m, C/tau_m; 0, -I/tau_syn, 0; 0, 0, 0].
+    Every refractory mask's reduced block is a principal submatrix, with no larger norm."""
+    m = len(G)
+    A, C = G[:, :m], G[:, m:]
+    columns = np.r_[
+        np.abs(A).sum(axis=0),
+        1.0 / p.tau_m + 1.0 / p.tau_syn,
+        np.abs(C).sum(axis=0) / p.tau_m,
+    ]
+    return float(columns.max() * p.dt)
+
+
 CACHE_BYTES = 64 * 1024 * 1024
 _maps = OrderedDict()
 _bytes = 0
@@ -32,7 +69,7 @@ def cache_info():
 
 def generators(gap, nodes, offsets, p):
     """Component generators and SHA-256 keys, in the engine's ordered node layout."""
-    values, keys = [], []
+    values, keys, norm = [], [], 0.0
     if nodes.size:
         i = np.asarray(gap.i, dtype=np.int64).reshape(-1)
         j = np.asarray(gap.j, dtype=np.int64).reshape(-1)
@@ -54,9 +91,11 @@ def generators(gap, nodes, offsets, p):
             C = K[nodes[a:b]][:, nodes[a:b]].toarray()
             A = (C - np.diag(1.0 + C.sum(axis=1))) / p.tau_m
             G = np.hstack([A, C])
+            norm = max(norm, step_norm(G, p))
             values.append(G.ravel())
             digest = hashlib.sha256(G.tobytes()).digest()
             keys.append(np.frombuffer(digest, dtype=np.uint64).copy())
+    taylor = gap is not None and gap.solver == "taylor" and nodes.size
     return (
         np.concatenate(values) if values else np.empty(0, np.float64),
         np.array(keys, dtype=np.uint64).reshape(-1, 4),
@@ -66,6 +105,7 @@ def generators(gap, nodes, offsets, p):
                 p.tau_m,
                 p.tau_syn,
                 float(gap is not None and gap.refractory_mode == "boundary"),
+                float(taylor_terms(norm)) if taylor else 0.0,
             ],
             dtype=np.float64,
         ),

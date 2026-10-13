@@ -148,6 +148,8 @@ class CpuRuntime:
             self._semantics += "+" + (
                 electrical.BOUNDARY_SEMANTICS
                 if self._electrical_mode == "boundary"
+                else electrical.TAYLOR_SEMANTICS
+                if gap.solver == "taylor"
                 else electrical.SEMANTICS
             )
         self._state = {

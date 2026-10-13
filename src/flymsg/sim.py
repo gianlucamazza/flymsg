@@ -187,7 +187,10 @@ class Gap:
     Refractory membranes are continuously clamped at rest, with chemical conductance
     frozen. Free partners retain the sink from contacts to those membranes; an explicit
     spike waveform is a separate prescribed input. Reduced step maps are exact for the
-    current refractory mask and cached under a bounded memory budget."""
+    current refractory mask and cached under a bounded memory budget. `solver="taylor"`
+    applies the same exponential as a truncated Taylor series on the state, with as many
+    terms as bound its remainder by the float64 unit roundoff (electrical.taylor_terms):
+    no map per mask, and the same dynamics to rounding (#155)."""
 
     i: np.ndarray
     j: np.ndarray
@@ -196,6 +199,7 @@ class Gap:
     spike_mv: float | np.ndarray | None = None
     spike_ms: float | None = None
     refractory_mode: str = "continuous"
+    solver: str = "dense"
 
 
 def check_membrane_gap(membrane: Membrane | None, gap_nodes: np.ndarray) -> None:
@@ -239,6 +243,10 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
         return empty
     if gap.refractory_mode not in {"continuous", "boundary"}:
         raise ValueError("unknown electrical refractory mode")
+    if gap.solver not in {"dense", "taylor"}:
+        raise ValueError("unknown electrical solver")
+    if gap.solver == "taylor" and gap.refractory_mode != "continuous":
+        raise ValueError("the Taylor solver integrates the continuous clamp only")
     ends = []
     for x in (gap.i, gap.j):
         a = np.asarray(x)
@@ -759,6 +767,44 @@ def _advance(
             break
     em0, es0, gv0, rest0, th0 = em[0], es[0], gv[0], v_rest[0], v_th[0]
     zero, one = np.float32(0.0), np.float32(1.0)
+    # Taylor solver: each component's generator [A | C] as rows of nonzeros (A's pattern is
+    # C's plus the diagonal), read from the dense generators once per chunk
+    terms = int(gap_clock[4]) if gap_clock.size > 4 else 0
+    n_gap = gap_nodes.size
+    t_ptr = np.zeros(n_gap + 1, dtype=np.int64)
+    if terms > 0:
+        for comp in range(gap_off.size - 1):
+            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
+            start = gap_moff[comp] // 3 * 2
+            for r in range(m):
+                nnz = 0
+                for q in range(m):
+                    if gap_gen[start + r * 2 * m + q] != 0.0:
+                        nnz += 1
+                t_ptr[a + r + 1] = nnz
+        for k in range(n_gap):
+            t_ptr[k + 1] += t_ptr[k]
+    t_col = np.empty(t_ptr[n_gap], dtype=np.int64)
+    t_a = np.empty(t_ptr[n_gap], dtype=np.float64)
+    t_c = np.empty(t_ptr[n_gap], dtype=np.float64)
+    if terms > 0:
+        for comp in range(gap_off.size - 1):
+            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
+            start = gap_moff[comp] // 3 * 2
+            for r in range(m):
+                e = t_ptr[a + r]
+                for q in range(m):
+                    if gap_gen[start + r * 2 * m + q] != 0.0:
+                        t_col[e] = q
+                        t_a[e] = gap_gen[start + r * 2 * m + q]
+                        t_c[e] = gap_gen[start + r * 2 * m + m + q]
+                        e += 1
+    t_x = np.zeros(n_gap, dtype=np.float64)
+    t_g = np.zeros(n_gap, dtype=np.float64)
+    t_nx = np.zeros(n_gap, dtype=np.float64)
+    t_ng = np.zeros(n_gap, dtype=np.float64)
+    t_sum = np.zeros(n_gap, dtype=np.float64)
+    t_free = np.zeros(n_gap, dtype=np.bool_)
     for t in range(start_step, stop_step):
         # The refractory mask is constant for the full neural step.
         for comp in range(gap_off.size - 1):
@@ -770,6 +816,44 @@ def _advance(
                 any_frozen = any_frozen or frozen_mask[q]
                 changed = changed or frozen_mask[q] != gap_mask[a + q]
             lo, hi = gap_moff[comp], gap_moff[comp + 1]
+            if terms > 0:
+                # exp(B dt) [x, g, s] summed term by term; refractory cells are clamped
+                # (x = 0, no chemical drive, rows zero) and still sink their partners
+                # through A's diagonal, and their spikelets cross through C
+                tau_m, tau_syn, h = gap_clock[1], gap_clock[2], gap_clock[0]
+                for q in range(m):
+                    node = gap_nodes[a + q]
+                    t_free[a + q] = ref_until[node] <= t
+                    if t_free[a + q]:
+                        t_x[a + q] = np.float64(v[node]) - np.float64(v_rest[node])
+                        t_g[a + q] = np.float64(g[node])
+                    else:
+                        t_x[a + q] = 0.0
+                        t_g[a + q] = 0.0
+                    t_sum[a + q] = t_x[a + q]
+                for k in range(1, terms + 1):
+                    for r in range(m):
+                        if not t_free[a + r]:
+                            t_nx[a + r] = 0.0
+                            t_ng[a + r] = 0.0
+                            continue
+                        acc = t_g[a + r] / tau_m
+                        for e in range(t_ptr[a + r], t_ptr[a + r + 1]):
+                            acc += t_a[e] * t_x[a + t_col[e]]
+                            if k == 1 and gap_pulse[a + t_col[e]] > 0:
+                                acc += t_c[e] / tau_m * gap_amp[a + t_col[e]]
+                        t_nx[a + r] = acc * h / k
+                        t_ng[a + r] = -t_g[a + r] / tau_syn * h / k
+                    for r in range(m):
+                        t_x[a + r] = t_nx[a + r]
+                        t_g[a + r] = t_ng[a + r]
+                        t_sum[a + r] += t_nx[a + r]
+                for r in range(m):
+                    gap_buf[a + r] = np.float32(
+                        np.float64(v_rest[gap_nodes[a + r]]) + t_sum[a + r]
+                    )
+                gap_mask[a : a + m] = frozen_mask
+                continue
             if changed and gap_clock[3] == 0:
                 if any_frozen:
                     start = lo // 3 * 2
