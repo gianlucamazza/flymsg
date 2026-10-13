@@ -67,6 +67,7 @@ PAGES = (
     ("viz", "docs/viz.md", "3D view"),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("approximations", "docs/approximations.md", "Approximations"),
+    ("leads", "docs/leads.md", "Leads"),
     ("integrity-audit", "docs/integrity-audit-2026-10-13.md", "Integrity audit"),
     ("adr-gap-refractory", "docs/adr-gap-refractory.md", "Electrical ADR"),
     ("adr-run-integrity", "docs/adr-run-integrity.md", "Run integrity ADR"),

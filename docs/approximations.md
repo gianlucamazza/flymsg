@@ -16,7 +16,8 @@ Status words:
   exist yet (issue linked).
 
 None of these can be removed by writing code alone. A value invented to fill a gap would be a
-new, unsourced approximation.
+new, unsourced approximation. Sources that could lift some of them are collected in
+[leads](leads.md).
 
 ## Neurons and dynamics
 
