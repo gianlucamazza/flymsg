@@ -30,10 +30,13 @@ _Drosophila_ in MuJoCo. FlyBody (TuragaLab) is the open-source model:
 <https://github.com/TuragaLab/flybody>
 
 Issue #8 compares that model with a one-bit body. The selected task is the
-looming jump in [behavior](behavior.md). FlyBody is not a dependency. The
-protocol is frozen. The closed loop fails the silence check. A 2026-10-12
-re-read is issue #19. FlyBody stays unselected. Issue #20 keeps the residual
-`TTMn_R` partner unnamed.
+looming jump in [behavior](behavior.md). FlyBody is not a dependency and stays
+unselected (issue #19). The body that ran is FlyGym's NeuroMechFly
+([embodiment](embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)).
+The one-bit protocol is frozen, and its closed loop fails the silence check.
+Issue #20 left the residual `TTMn_R` partner unnamed. Silence-scan v2 named
+DNp02 and DNp06, and v3 replicated that naming
+([behavior](behavior.md#residual-partner-scan)).
 
 ## N1 — specific checks need the measured partners
 

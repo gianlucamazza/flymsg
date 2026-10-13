@@ -7,8 +7,9 @@
 - **Kenyon cell sparseness v4: none** (#95, #85). With the cholinergic local neuron → PN
   contacts as electrical synapses (coupling 0–1, sister PNs at Kazama & Wilson's 0.013), no
   arm is sparse: Kenyon cells stay at ≤ 0.3% and fall silent as coupling grows. Coupling
-  that passes only subthreshold potentials drains active PNs; the fly's lateral excitation
-  rides on eLN spikes (spikelets), which a LIF reset cannot carry.
+  that passes only subthreshold potentials drains active PNs. The fly's lateral excitation
+  rides on eLN spikes (spikelets). This run carried none: its lock set no spike term, and a
+  LIF reset draws no waveform.
 
 ### Model
 
@@ -51,6 +52,17 @@
 - **Closed loop** (#90): `jump3d.closed_loop` runs the connectome (incremental runtime) and
   NeuroMechFly in 1 ms blocks at the 0.1 ms neural step and cuts the looming input at the
   first boundary after takeoff; before the cut the spikes equal the open-loop run (tested).
+
+### Documentation
+
+- **One status index.** The roadmap holds the verdict table, and the README points at it.
+  Validation's dated notes moved under a status log. The eye and the T4/T5 locks moved out
+  of the embodiment note into `docs/eye.md`. Provenance records the mechanisms added on
+  2026-10-13. Present-tense sentences describe the default model; a dated sentence stays
+  under its date.
+- **Present tense matches spikelets.** A spike crosses `sim.Gap` only when a lock sets
+  `spike_mv` and `spike_ms`. Provenance cites `936000d`. Kenyon cell v4 stays the
+  subthreshold result; version 5 is locked and has no run.
 
 ## 0.8.44 — 2026-10-13
 

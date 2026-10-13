@@ -42,12 +42,19 @@ MAX_BYTES = 200_000  # a guard: results/ holds tables, not raw activity
 def clean_manifest(doc: dict) -> dict:
     doc.pop("cwd", None)
     extra = doc.get("extra") or {}
-    d = extra.get("data_dir")
-    if d and Path(d).is_absolute():
-        p = Path(d)
-        extra["data_dir"] = (
-            str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else p.name
-        )
+
+    def local(value):
+        p = Path(value)
+        return str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else p.name
+
+    for key in ("data_dir", "out", "replay"):
+        value = extra.get(key)
+        if value and Path(value).is_absolute():
+            extra[key] = local(value)
+    for attempt in extra.get("attempts", []):
+        value = attempt.get("checkpoint")
+        if value and Path(value).is_absolute():
+            attempt["checkpoint"] = local(value)
     return doc
 
 

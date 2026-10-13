@@ -12,6 +12,17 @@ parameters. Criterion v4, N1, and
 [`validation/benchmarks.yaml`](../validation/benchmarks.yaml) stay as they are.
 The looming case is not added again to `validate.CASES`.
 
+## Verdicts
+
+Three locked questions share this page. Each section below keeps its protocol and its
+numbers. The limits under the one-bit task belong to that protocol.
+
+| Question                            | Verdict                                                 | Section                                   |
+| ----------------------------------- | ------------------------------------------------------- | ----------------------------------------- |
+| One-bit loop, both DNp01 silenced   | fails: `TTMn_R` still reaches 3 spikes                  | [Result (2026-10-11)](#result-2026-10-11) |
+| Residual partner of that drive      | DNp02 and DNp06, replicated                             | [scan](#residual-partner-scan)            |
+| Left side, and either partner alone | the mirror replicates; DNp06 alone reaches the jump bit | [follow-up](#residual-partner-follow-up)  |
+
 ## Result (2026-10-11)
 
 The closed loop fails. `w_syn` stayed 0.192 and `th_jump` stayed 0. Seeds 0–2.
@@ -134,8 +145,8 @@ supplementary masses are the mean of 52 females. The README,
 allows Python >=3.10 and pins `numpy==1.26.4`. Issue
 [#19](https://github.com/gianlucamazza/flymsg/issues/19) records the re-read.
 It does not select FlyBody. Issue
-[#20](https://github.com/gianlucamazza/flymsg/issues/20) keeps the residual
-`TTMn_R` partner unnamed. The authored map is
+[#20](https://github.com/gianlucamazza/flymsg/issues/20) left the residual
+`TTMn_R` partner unnamed. The scan below named it. The authored map is
 [`validation/motor_map.yaml`](../validation/motor_map.yaml). Every actuator and
 both `TTMn` neurons are `unmapped`. A command is refused. It does not select
 FlyBody.
