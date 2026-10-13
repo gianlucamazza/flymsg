@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Model
+
+- **Graded neurons** (#97): `sim.Graded` makes chosen neurons non-spiking, with a
+  threshold-linear release curve stated by the caller (no defaults). Bit-identical without
+  them; exact parity of kernel, NumPy reference and `CpuRuntime` with them; the native
+  executor refuses them. `Result.graded_v` holds their mean potential per bin.
+
+### Validation
+
+- **T4/T5 v2 lock** (#84, #97): graded photoreceptors and L1–L3, release scanned over 17
+  configurations within the voltage ranges measured in Drosophila (no release curve is
+  measured there); verdict `robust` only if every configuration agrees.
+
 ### Body
 
 - **Closed loop** (#90): `jump3d.closed_loop` runs the connectome (incremental runtime) and

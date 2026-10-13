@@ -304,6 +304,29 @@ measured electrical coupling of excitatory local neurons to projection neurons, 
 [#85](https://github.com/gianlucamazza/flymsg/issues/85) already asks for. The default model
 is unchanged. Outputs: `results/kc-sparseness/v3/`.
 
+## Graded (non-spiking) neurons (optional, 2026-10-13)
+
+Photoreceptors, the lamina monopolar cells L1–L3 and other fly neurons do not spike; they
+release transmitter in proportion to their membrane potential. `sim.Graded` (#97) makes a
+chosen set of neurons non-spiking. A graded neuron integrates its inputs like every other
+neuron but has no threshold, reset or refractory period. At every step it releases
+f = clip((v − v_lo) / span, 0, 1) times `rate_hz · dt` of one spike's weight on each of its
+synapses, delivered after the synaptic delay. At saturation it acts on its targets like a
+neuron firing at `rate_hz`; with v_lo below rest it releases tonically.
+
+No value has a default. No release curve (presynaptic voltage to release, or to the
+postsynaptic voltage) is measured in Drosophila: the audit of 2026-10-13 found the operating
+ranges only (photoreceptors depolarize 40–65 mV to light, LMCs hyperpolarize 20–45 mV;
+Juusola et al. 2016, Zheng et al. 2006); the one measured R → LMC curve is from Calliphora.
+So a lock that uses graded neurons states its curve as a compensation and scans it over the
+measured ranges instead of choosing a value (`validation/t4t5.yaml` version 2).
+
+Without graded neurons the engine is unchanged, bit for bit. With them, `sim.run`, the NumPy
+reference (`tests/reference_sim.py`) and `CpuRuntime` (chunks, checkpoints) give identical
+spikes and potentials (`tests/test_graded.py`); `Result.graded_v` holds the mean potential of
+the graded neurons per bin. The native executor refuses graded neurons until it implements
+them.
+
 ## Recording neuron states
 
 `flymsg trace STIM --neurons ...` (module `flymsg.tracing`) records, for chosen neurons, the

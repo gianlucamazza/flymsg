@@ -1,9 +1,10 @@
-"""T4/T5 direction selectivity through the eye (issue #84). The YAML file is the lock.
+"""T4/T5 direction selectivity through the eye (issues #84, #97). The YAML file is the lock.
 
 Moving ON and OFF edges are drawn on each eye's measured column directions
 (`eye.edge_coverage`), turned into graded photoreceptor input (`eye.photoreceptor_kicks`),
-and the spikes of each T4/T5 subtype are summed per direction and polarity. Nothing is
-tuned; the default model is unchanged.
+and the spikes of each T4/T5 subtype are summed per direction and polarity. Version 2 makes
+photoreceptors and L1-L3 graded (`sim.Graded`) and runs every configuration of the locked
+envelope of release parameters; nothing is tuned and the default model is unchanged.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy import sparse
 
 from flymsg import data, eye, locks, prereg, sim
 
@@ -21,7 +23,15 @@ PATH = ROOT / "validation" / "t4t5.yaml"
 # sha256 of the canonical JSON of every field except version and content_sha256.
 VERSION_HASHES = {
     1: "bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8",  # ON/OFF edges, 4 directions, 30 deg/s, acceptance 8.23 deg, seeds 90-92
+    2: "d25bcbd7ecd6e01f383c00703995164d29cc57fc11192be15234b19314b0e390",  # graded photoreceptors and L1-L3, 17-configuration envelope, settle 200 ms, seed 93
 }
+SPENT_SEEDS = (90, 91, 92)
+# measured Drosophila ranges and their midpoints (Juusola et al. 2016), and the unmeasured
+# LMC release rate scanned in doublings around the 100 Hz protocol input
+PHOTORECEPTOR_MV = (40.0, 52.5, 65.0)
+LMC_MV = (20.0, 32.5, 45.0)
+LMC_RATE_HZ = (25.0, 50.0, 100.0, 200.0, 400.0)
+PATHWAY = ("Mi1", "Tm3", "Mi4", "Mi9", "Tm1", "Tm2", "Tm4", "Tm9")
 ANGLE = {
     "front_to_back": 0.0,
     "upward": 90.0,
@@ -55,8 +65,17 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         raise T4T5Error("optics or speed are not the sourced values")
     if set(p["directions"]) != set(ANGLE) or p["polarities"] != ["on", "off"]:
         raise T4T5Error("the stimulus set changed")
-    if p["gain"] != 100.0 * sim.Params.dt / 1000.0:
-        raise T4T5Error("the gain is not the protocols' mean Poisson input")
+    env = p["envelope"]
+    if (
+        tuple(env["photoreceptor_response_mv"]) != PHOTORECEPTOR_MV
+        or tuple(env["lmc_hyperpolarisation_mv"]) != LMC_MV
+        or tuple(env["lmc_rate_hz"]) != LMC_RATE_HZ
+    ):
+        raise T4T5Error("the envelope is not the sourced ranges")
+    if p["graded_lmc"] != ["L1", "L2", "L3"] or p["settle_ms"] != 200.0:
+        raise T4T5Error("the graded types or the settle period changed")
+    if p["seed"] in SPENT_SEEDS:
+        raise T4T5Error("the seed was spent by version 1")
     for name, row in doc["reported"].items():
         if row["decides"] is not False:
             raise T4T5Error(f"reported row {name} must not decide")
@@ -72,7 +91,70 @@ def summary(doc: dict | None = None) -> str:
         f"t4t5 v{doc['version']} (issue #{doc['issue']}): ON/OFF edges, 4 directions, "
         f"{p['speed_deg_s']:g} deg/s over {p['travel_deg']:g} deg within "
         f"{p['window_deg']:g} deg of each eye's centre, acceptance {p['acceptance_deg']:g} "
-        f"deg, gain {p['gain']:g}; seeds {', '.join(map(str, p['seeds']))}"
+        f"deg; graded photoreceptors and {'/'.join(p['graded_lmc'])}, "
+        f"{len(configurations(doc))} release configurations; seed {p['seed']}"
+    )
+
+
+def configurations(doc: dict) -> list[dict]:
+    """The locked grid: every LMC range x rate at the middle photoreceptor range, plus the
+    two outer photoreceptor ranges at the middle LMC range and 100 Hz."""
+    mid_r, mid_l = PHOTORECEPTOR_MV[1], LMC_MV[1]
+    grid = [
+        {"photoreceptor_mv": mid_r, "lmc_mv": h, "lmc_rate_hz": r}
+        for h in LMC_MV
+        for r in LMC_RATE_HZ
+    ]
+    grid += [
+        {"photoreceptor_mv": a, "lmc_mv": mid_l, "lmc_rate_hz": 100.0}
+        for a in (PHOTORECEPTOR_MV[0], PHOTORECEPTOR_MV[2])
+    ]
+    return [{"config": i, **c} for i, c in enumerate(grid)]
+
+
+def steady_gain(p: sim.Params) -> float:
+    """Steady-state potential change (mV) per unit of conductance delivered every step:
+    g = c / (1 - es), v - v_rest = g * gv / (1 - em)."""
+    em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
+    gv = p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)
+    return float(gv / ((1.0 - es) * (1.0 - em)))
+
+
+def photoreceptor_gain(response_mv: float, p: sim.Params) -> float:
+    """Kicks per step at full light that hold a photoreceptor `response_mv` above rest."""
+    return response_mv * (1.0 - np.exp(-p.dt / p.tau_m)) / (p.poisson_scale * p.w_syn)
+
+
+def photoreceptor_rate(
+    W: sparse.csc_matrix,
+    lit: np.ndarray,
+    lmc: np.ndarray,
+    hyper_mv: float,
+    p: sim.Params,
+) -> tuple[float, np.ndarray]:
+    """Saturated photoreceptor release rate (Hz) at which full light on `lit` lowers the
+    median LMC receiving their synapses by `hyper_mv` at steady state, photoreceptor input
+    only. Also returns those LMCs."""
+    total = np.asarray(W[:, lit].sum(axis=1)).ravel()[lmc]
+    receiving = lmc[total < 0]
+    if receiving.size == 0:
+        raise T4T5Error("no LMC receives synapses from the lit photoreceptors")
+    per_step = hyper_mv / (steady_gain(p) * float(np.median(-total[total < 0])))
+    return per_step * 1000.0 / p.dt, receiving
+
+
+def graded_spec(
+    receptors_all: np.ndarray, lmc: np.ndarray, cfg: dict, rate_r: float, p: sim.Params
+) -> sim.Graded:
+    """Photoreceptors: no release at rest, saturated `photoreceptor_mv` above. LMCs: half
+    release at rest, none `lmc_mv` below, saturated `lmc_mv` above."""
+    a, h = cfg["photoreceptor_mv"], cfg["lmc_mv"]
+    nr, nl = receptors_all.size, lmc.size
+    return sim.Graded(
+        idx=np.r_[receptors_all, lmc],
+        v_lo=np.r_[np.full(nr, p.v_rest), np.full(nl, p.v_rest - h)],
+        span=np.r_[np.full(nr, a), np.full(nl, 2.0 * h)],
+        rate_hz=np.r_[np.full(nr, rate_r), np.full(nl, cfg["lmc_rate_hz"])],
     )
 
 
@@ -97,7 +179,10 @@ def light(coverage: np.ndarray, polarity: str) -> np.ndarray:
 
 
 def drive(cols, receptors, proto: dict, direction: str, polarity: str, dt: float):
-    """Photoreceptors in the window and their graded input per step."""
+    """Photoreceptors in the window and their light per step, 0 to 1: the edge's first
+    frame held for `settle_ms`, then the motion. Returns neurons, light, total steps and the
+    first moving step."""
+    settle = round(proto["settle_ms"] / dt)
     steps = round(proto["travel_deg"] / proto["speed_deg_s"] * 1000.0 / dt)
     key = list(zip(cols["side"], cols["hex1"], cols["hex2"], strict=True))
     col_of = {k: i for i, k in enumerate(key)}
@@ -117,8 +202,14 @@ def drive(cols, receptors, proto: dict, direction: str, polarity: str, dt: float
         [eye.edge_coverage(cols, direction, x, proto["acceptance_deg"]) for x in t_deg]
     )
     lit = light(cov, polarity)
-    kicks = eye.photoreceptor_kicks(1.0 - lit, rec_cols, proto["gain"])
-    return rec["neuron"].to_numpy(), kicks.astype(np.float32), steps
+    lit = np.concatenate([np.repeat(lit[:1], settle, axis=0), lit])
+    light_per_receptor = eye.photoreceptor_kicks(1.0 - lit, rec_cols, 1.0)
+    return (
+        rec["neuron"].to_numpy(),
+        light_per_receptor.astype(np.float32),
+        settle + steps,
+        settle,
+    )
 
 
 def preferred_angle(responses: dict) -> float:
@@ -187,32 +278,87 @@ def protocol(W, neurons: pd.DataFrame, cols, receptors, doc: dict) -> dict:
     proto = doc["protocol"]
     p = sim.Params()
     win = window(cols, proto["window_deg"])
-    types = neurons["type"].to_numpy()
+    types = neurons["type"].fillna("").to_numpy()
+    pattern = "|".join(f"(?:{x})" for x in eye.RECEPTORS.values())
+    receptors_all = np.flatnonzero(
+        neurons["type"].fillna("").str.contains(pattern).to_numpy()
+    )
+    lmc = np.flatnonzero(np.isin(types, proto["graded_lmc"]))
     groups = {s: np.flatnonzero(types == s) for s in proto["subtypes"]}
-    rows = []
-    for direction in proto["directions"]:
-        for polarity in proto["polarities"]:
-            stim, kicks, steps = drive(win, receptors, proto, direction, polarity, p.dt)
-            for seed in proto["seeds"]:
-                r = sim.run(
-                    W, stim, duration_ms=steps * p.dt, p=p, seed=seed, kicks=kicks
+    path_groups = {t: np.flatnonzero(types == t) for t in PATHWAY}
+    stimuli = {
+        (direction, polarity): drive(win, receptors, proto, direction, polarity, p.dt)
+        for direction in proto["directions"]
+        for polarity in proto["polarities"]
+    }
+    lit_neurons = np.unique(np.concatenate([v[0] for v in stimuli.values()]))
+    rows, path_rows, lmc_rows, metrics, verdicts = [], [], [], [], []
+    for cfg in configurations(doc):
+        rate_r, receiving = photoreceptor_rate(W, lit_neurons, lmc, cfg["lmc_mv"], p)
+        graded = graded_spec(receptors_all, lmc, cfg, rate_r, p)
+        order = np.sort(graded.idx)
+        watch = np.searchsorted(order, receiving)
+        gain = photoreceptor_gain(cfg["photoreceptor_mv"], p)
+        cfg_rows = []
+        for (direction, polarity), (stim, lit, steps, settle) in stimuli.items():
+            r = sim.run(
+                W,
+                stim,
+                duration_ms=steps * p.dt,
+                p=p,
+                seed=proto["seed"],
+                kicks=(gain * lit).astype(np.float32),
+                graded=graded,
+            )
+            first_bin = round(settle * p.dt / r.bin_ms)
+            total = r.counts[first_bin:].sum(axis=0)
+            key = {
+                "config": cfg["config"],
+                "direction": direction,
+                "polarity": polarity,
+            }
+            for sub, idx in groups.items():
+                cfg_rows.append(
+                    {**key, "subtype": sub, "spikes": int(total[idx].sum())}
                 )
-                total = r.counts.sum(axis=0)
-                for sub, idx in groups.items():
-                    rows.append(
-                        {
-                            "subtype": sub,
-                            "direction": direction,
-                            "polarity": polarity,
-                            "seed": seed,
-                            "spikes": int(total[idx].sum()),
-                        }
-                    )
-    table = pd.DataFrame(rows)
-    out = decide(table, proto["preferred"])
-    out["table"] = table
-    out["window_columns"] = len(win)
-    return out
+            path_rows.append(
+                {**key, **{t: int(total[i].sum()) for t, i in path_groups.items()}}
+            )
+            v = r.graded_v[:, watch] - p.v_rest
+            moving = np.median(v[first_bin:], axis=1)
+            lmc_rows.append(
+                {
+                    **key,
+                    "settled_mv": float(np.median(v[first_bin - 1])),
+                    "lowest_mv": float(moving.min()),
+                    "highest_mv": float(moving.max()),
+                }
+            )
+        table = pd.DataFrame(cfg_rows)
+        out = decide(table, proto["preferred"])
+        metrics.append(out["metrics"].assign(config=cfg["config"]))
+        verdicts.append(
+            {**cfg, "photoreceptor_rate_hz": rate_r, "verdict": out["verdict"]}
+        )
+        rows.extend(cfg_rows)
+    verdict_table = pd.DataFrame(verdicts)
+    return {
+        "table": pd.DataFrame(rows),
+        "metrics": pd.concat(metrics, ignore_index=True),
+        "pathway": pd.DataFrame(path_rows),
+        "lmc": pd.DataFrame(lmc_rows),
+        "configurations": verdict_table,
+        "verdict": envelope_verdict(verdict_table["verdict"]),
+        "window_columns": len(win),
+    }
+
+
+def envelope_verdict(verdicts: pd.Series) -> str:
+    """robust: <verdict> when every configuration agrees, otherwise depends with counts."""
+    counts = verdicts.value_counts()
+    if len(counts) == 1:
+        return f"robust: {counts.index[0]}"
+    return "depends: " + ", ".join(f"{v} {n}" for v, n in counts.items())
 
 
 def run(neurons: pd.DataFrame, edges: pd.DataFrame, data_dir: Path) -> dict:

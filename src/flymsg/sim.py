@@ -10,6 +10,10 @@ Drosophila_brain_model, model.py): exact integration of v and g, frozen while re
 threshold; delivery of delayed spikes to g (lost while refractory) and of Poisson input to
 v; reset of v and g.
 Stimulated neurons have no refractory period. The adaptive threshold is the only addition.
+
+Optional graded (non-spiking) neurons (`Graded`, issue #97) integrate like the others but
+have no threshold, reset or refractory period; they release continuously instead. Without
+them every array and every rounding step is the spiking model's.
 """
 
 from dataclasses import dataclass
@@ -46,6 +50,54 @@ class Params:
     dt: float = 0.1  # ms
 
 
+@dataclass(frozen=True)
+class Graded:
+    """Non-spiking neurons and their release curve. At every step a graded neuron releases
+    f = clip((v - v_lo) / span, 0, 1) times `rate_hz * dt / 1000` of one spike's weight on
+    each outgoing synapse, delivered after the synaptic delay: at saturation it acts on its
+    targets like a neuron firing at `rate_hz`. It never spikes and is never refractory. The
+    curve is threshold-linear between two voltages; no value has a default, so a lock states
+    each one and its source. Silenced graded neurons release nothing."""
+
+    idx: np.ndarray  # neuron indices
+    v_lo: np.ndarray  # mV, no release at or below
+    span: np.ndarray  # mV, release saturates at v_lo + span
+    rate_hz: np.ndarray  # spike rate equivalent to saturated release
+
+
+def graded_arrays(graded: Graded | None, n: int, dt: float) -> tuple:
+    """Kernel arrays of `graded`, sorted by neuron index: indices (int64), v_lo, span and the
+    per-step release at saturation (float32), and the (n,) mask. Empty without graded
+    neurons. Shared with `runtime.CpuRuntime`."""
+    mask = np.zeros(n, dtype=np.bool_)
+    if graded is None:
+        empty = np.empty(0, dtype=np.float32)
+        return np.empty(0, dtype=np.int64), empty, empty, empty, mask
+    idx = np.asarray(graded.idx)
+    if idx.size and idx.dtype.kind not in "iu":
+        raise ValueError("graded indices must be integers")
+    idx = idx.astype(np.int64).reshape(-1)
+    cols = [
+        np.broadcast_to(np.asarray(x, dtype=np.float64), idx.shape)
+        for x in (graded.v_lo, graded.span, graded.rate_hz)
+    ]
+    if np.unique(idx).size != idx.size or np.any(idx < 0) or np.any(idx >= n):
+        raise ValueError("graded indices must be unique and inside the network")
+    if not all(np.isfinite(c).all() for c in cols):
+        raise ValueError("graded parameters must be finite")
+    if np.any(cols[1] <= 0) or np.any(cols[2] < 0):
+        raise ValueError("graded span must be positive and rate nonnegative")
+    order = np.argsort(idx)
+    mask[idx] = True
+    return (
+        idx[order],
+        cols[0][order].astype(np.float32),
+        cols[1][order].astype(np.float32),
+        (cols[2][order] * dt / 1000.0).astype(np.float32),
+        mask,
+    )
+
+
 def network(
     neurons: pd.DataFrame, edges: pd.DataFrame, p: "Params"
 ) -> sparse.csc_matrix:
@@ -79,6 +131,9 @@ class Result:
     traced: np.ndarray | None = (
         None  # (steps, n_trace) spike bits; None if not requested
     )
+    # (bins, n_graded) mean membrane potential of the graded neurons per bin, in the order
+    # of their sorted indices; None without graded neurons
+    graded_v: np.ndarray | None = None
 
     @property
     def duration_ms(self) -> float:
@@ -117,6 +172,7 @@ def run(
     silence: np.ndarray | None = None,
     kicks: np.ndarray | None = None,
     trace: np.ndarray | None = None,
+    graded: Graded | None = None,
 ) -> Result:
     """Simulate; stimulation lasts `stim_ms` (default: the whole run). Neurons in `silence`
     never fire, so they transmit nothing: for the rest of the network this equals zeroing
@@ -124,7 +180,8 @@ def run(
 
     `kicks` replaces the seeded draw: shape (steps, n_stim), applied in order. `trace` records
     every spike step of those neurons, in the order given. The recording is written after the
-    spike bookkeeping and does not enter the state update.
+    spike bookkeeping and does not enter the state update. `graded` makes those neurons
+    non-spiking (see `Graded`); their mean potential per bin is returned in `graded_v`.
     """
     p = p or Params()
     stim = np.unique(stim)  # duplicates would be dropped by fancy-index +=
@@ -164,7 +221,8 @@ def run(
         traced = np.zeros((steps, trace.size), dtype=np.uint8)
         keep_trace = traced
     d, ref_steps = _delays(p)
-    counts, first = _kernel(
+    g_idx, g_lo, g_span, g_scale, is_graded = graded_arrays(graded, n, p.dt)
+    counts, first, g_vsum = _kernel(
         W.indptr.astype(np.int64),
         W.indices.astype(np.int64),
         W.data.astype(np.float32),
@@ -181,6 +239,11 @@ def run(
         *_constants(p),
         trace_col,
         traced,
+        g_idx,
+        g_lo,
+        g_span,
+        g_scale,
+        is_graded,
     )
     return Result(
         counts=counts,
@@ -188,7 +251,14 @@ def run(
         bin_ms=per_bin * p.dt,
         stim_ms=stim_steps * p.dt,
         traced=keep_trace,
+        graded_v=_bin_means(g_vsum, steps, per_bin) if g_idx.size else None,
     )
+
+
+def _bin_means(vsum: np.ndarray, steps: int, per_bin: int) -> np.ndarray:
+    """Mean per bin from per-bin sums; the last bin may be shorter."""
+    sizes = np.minimum(per_bin, steps - np.arange(vsum.shape[0]) * per_bin)
+    return vsum / sizes[:, None]
 
 
 def _delays(p: Params) -> tuple[int, int]:
@@ -240,6 +310,11 @@ def _kernel(
     kick,
     trace_col,
     traced,
+    g_idx,
+    g_lo,
+    g_span,
+    g_scale,
+    is_graded,
 ):
     """One simulation. Same operations, order and float32/float64 rounding as the NumPy
     reference (tests/reference_sim.py), so the spikes are identical:
@@ -248,7 +323,10 @@ def _kernel(
     2. threshold; silenced neurons never fire;
     3. delivery of the spikes emitted d steps ago, summed per target in float32 column by
        column (as scipy's CSC product), lost on refractory targets; Poisson input into v;
-    4. reset of v and g, threshold jump."""
+    4. reset of v and g, threshold jump.
+    Graded neurons skip 2 and 4; their release, computed at 2 from v, is delivered d steps
+    later at 3, after the spikes, summed per target column by column (as scipy's CSC
+    matrix-vector product)."""
     v = np.full(n, v_rest, dtype=np.float32)
     g = np.zeros(n, dtype=np.float32)
     th = np.zeros(n, dtype=np.float32)
@@ -261,6 +339,9 @@ def _kernel(
     touched = np.empty(n, dtype=np.int32)  # targets with delivered input this step
     hit = np.zeros(n, dtype=np.bool_)
     spiking = np.empty(n, dtype=np.int32)
+    g_ring = np.zeros((d, g_idx.size), dtype=np.float32)
+    g_new = np.zeros(g_idx.size, dtype=np.float32)
+    g_vsum = np.zeros((counts.shape[0], g_idx.size), dtype=np.float64)
     _advance(
         0,
         steps,
@@ -297,8 +378,16 @@ def _kernel(
         touched,
         hit,
         spiking,
+        g_idx,
+        g_lo,
+        g_span,
+        g_scale,
+        is_graded,
+        g_ring,
+        g_new,
+        g_vsum,
     )
-    return counts, first
+    return counts, first, g_vsum
 
 
 @numba.njit(cache=True)
@@ -338,8 +427,17 @@ def _advance(
     touched,
     hit,
     spiking,
+    g_idx,
+    g_lo,
+    g_span,
+    g_scale,
+    is_graded,
+    g_ring,
+    g_new,
+    g_vsum,
 ):
     stim_steps = kicks.shape[0]
+    zero, one = np.float32(0.0), np.float32(1.0)
     for t in range(start_step, stop_step):
         # 1. state update (refractory: v stays at v_rest, g frozen), branch-free so that
         # it vectorises; the refractory lanes compute and discard
@@ -353,9 +451,14 @@ def _advance(
         # 2. threshold
         ns = 0
         for i in range(n):
-            if v[i] > v_th + th[i] and not silent[i]:
+            if v[i] > v_th + th[i] and not silent[i] and not is_graded[i]:
                 spiking[ns] = i
                 ns += 1
+        for k in range(g_idx.size):
+            i = g_idx[k]
+            f = (v[i] - g_lo[k]) / g_span[k]
+            f = max(zero, min(f, one))
+            g_new[k] = zero if silent[i] else f * g_scale[k]
         # 3. delivery: per-target sums in column order, then applied to the touched targets
         slot = t % d
         nt = 0
@@ -364,6 +467,25 @@ def _advance(
             for q in range(indptr[j], indptr[j + 1]):
                 r = indices[q]
                 c[r] += data[q]
+                if not hit[r]:
+                    hit[r] = True
+                    touched[nt] = r
+                    nt += 1
+        for k in range(nt):
+            r = touched[k]
+            if ref_until[r] <= t:
+                g[r] = g[r] + c[r]
+            c[r] = 0.0
+            hit[r] = False
+        nt = 0
+        for k in range(g_idx.size):
+            a = g_ring[slot, k]
+            if a == zero:
+                continue
+            j = g_idx[k]
+            for q in range(indptr[j], indptr[j + 1]):
+                r = indices[q]
+                c[r] += data[q] * a
                 if not hit[r]:
                     hit[r] = True
                     touched[nt] = r
@@ -395,3 +517,6 @@ def _advance(
             if col >= 0:
                 traced[t, col] = 1
         ring_len[slot] = ns
+        for k in range(g_idx.size):
+            g_ring[slot, k] = g_new[k]
+            g_vsum[b, k] += v[g_idx[k]]

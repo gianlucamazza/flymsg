@@ -1,54 +1,86 @@
-# T4/T5 direction selectivity through the eye (issue 84). Version 1, fixed 2026-10-13 before
-# any run. Changing a locked field requires incrementing `version` and updating
-# `content_sha256` and flymsg.t4t5.VERSION_HASHES. `flymsg t4t5` prints this file.
-version: 1
-content_sha256: bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8
+# T4/T5 direction selectivity through the eye (issues 84, 97). Version 2, fixed 2026-10-13
+# after the v1 run and before any v2 run. Version 1 is the file at 0c574f5.
+# Changing a locked field requires incrementing `version` and updating `content_sha256` and
+# flymsg.t4t5.VERSION_HASHES. `flymsg t4t5` prints this file.
+version: 2
+content_sha256: d25bcbd7ecd6e01f383c00703995164d29cc57fc11192be15234b19314b0e390
 
 issue: 84
-question: "Driven through the measured eye by moving ON and OFF edges, do the model's T4 and T5 subtypes respond to the right contrast polarity, and with the preferred directions measured in the fly?"
+supersedes:
+  version: 1
+  verdict: neither
+  reason: "No T4/T5 spike: photoreceptors fired, but their inhibitory (histaminergic) synapses cannot move silent spiking lamina neurons. In the fly photoreceptors and lamina monopolar cells are graded and the lamina is tonically active. Version 2 makes photoreceptors and L1-L3 graded (sim.Graded, #97) and, since no release curve is measured in Drosophila, scans the curve over the measured voltage ranges instead of choosing one."
+question: "With graded photoreceptors and L1-L3 whose release spans the voltage ranges measured in Drosophila, do the model's T4 and T5 subtypes respond to the right contrast polarity and with the measured preferred directions, and does the answer hold over the whole range of release parameters?"
 
-prior: "Lappalainen et al. 2024 (doi:10.1038/s41586-024-07939-3, Fig 2d): untrained connectome models with signs predict contrast preference well but direction selectivity poorly. Polarity is expected; direction is the open question."
+prior: "Lappalainen et al. 2024 (doi:10.1038/s41586-024-07939-3, Fig 2d): untrained connectome models with signs predict contrast preference well but direction selectivity poorly. Polarity is expected if contrast crosses the lamina; direction is the open question. The medulla neurons downstream of the lamina (Mi1, Tm3, Mi4, Mi9, Tm1, Tm2, Tm4, Tm9) stay spiking and silent at rest, so disinhibition alone may not reach them."
+
+seen_before_lock: "Version 1 (results/t4t5/v1, seeds 90-92) and its exploratory count (seed 0): photoreceptors fire, L1-L3 and the medulla stay silent. A 200 ms timing run of the whole CNS in the dark with photoreceptors and L1-L3 graded (L1-L3 at 32.5 mV, 100 Hz): 6,790 spikes in total, no type inspected. An engineering smoke run of the v2 code (first configuration, 0.3 deg of travel, 10 ms settle), checked for output shapes only. No full-length moving edge has been run with graded neurons before this lock."
 
 sources:
   subtypes: "Maisak et al. 2013, Nature, doi:10.1038/nature12320: T4 respond to ON edges, T5 to OFF edges; subtypes a-d prefer front-to-back, back-to-front, upward, downward (Shinomiya et al. 2019, eLife 8:e40025, Fig 3B)"
-  dsi: "Haag, Mishra & Borst 2017, eLife (PMC5582866), Fig 4c-d: DSI = (PD - ND) / (PD + ND) about 0.8 in calcium for gratings and edges; gratings at 30 deg/s"
+  dsi: "Haag, Mishra & Borst 2017, eLife (PMC5582866), Fig 4c-d: DSI about 0.8 in calcium for gratings and edges; gratings at 30 deg/s"
   acceptance: "Gonzalez-Bellido, Wardill & Juusola 2011, PNAS 108:4224, Fig 3A: acceptance angle 8.23 deg (FWHM, Gaussian)"
+  graded_photoreceptors: "Juusola, Dau, Zheng & Rien 2016, JoVE 112:54142, doi:10.3791/54142: Drosophila R1-R6 in vivo rest near -65 mV and depolarize 40-65 mV to light"
+  graded_lmc: "Juusola et al. 2016 (as above): Drosophila LMCs rest at -30 to -50 mV and hyperpolarize 20-45 mV to light; Zheng et al. 2006, J Gen Physiol 127:495, doi:10.1085/jgp.200509470: LMC transients up to 45 mV, both cell classes non-spiking"
+  no_release_curve: "No Vpre -> release or Vpre -> Vpost relation is measured in Drosophila (audit 2026-10-13, issue 97); the only measured R -> LMC curve is from Calliphora"
+  lmc_types: "L1 glutamatergic, L2 and L3 cholinergic in MaleCNS; L1 feeds the ON pathway (Mi1, Tm3), L2 and L3 the OFF pathway (Tm1, Tm2, Tm4, Tm9) (Shinomiya et al. 2019)"
 
 protocol:
   speed_deg_s: 30.0
   window_deg: 30.0
-  window_note: "columns within 30 deg of each eye's median viewing direction; each eye is stimulated in its own frame"
+  window_note: "columns within 30 deg of each eye's median viewing direction; each eye is stimulated in its own frame; photoreceptors outside the window stay dark"
   travel_deg: 60.0
+  settle_ms: 200.0
+  settle_note: "the edge's first frame is held for settle_ms before it moves, so graded neurons reach steady state; spikes are counted only while the edge moves"
   acceptance_deg: 8.23
   directions: [front_to_back, back_to_front, upward, downward]
   polarities: [on, off]
-  gain: 0.01
-  gain_from: "kicks per step at full light: the mean input of the 100 Hz Poisson stimulus of every flymsg protocol (100 Hz x 0.1 ms); graded photoreceptor transduction has no measured value for a spiking model"
-  seeds: [90, 91, 92]
+  seed: 93
+  seed_note: "the input is deterministic (graded light, no Poisson draw), so one run per stimulus and configuration; the seed is recorded and draws nothing"
   subtypes: [T4a, T4b, T4c, T4d, T5a, T5b, T5c, T5d]
   preferred:
     a: front_to_back
     b: back_to_front
     c: upward
     d: downward
+  graded_photoreceptors: "every photoreceptor type of flymsg.eye.RECEPTORS (R1-R6, R7*, R8*)"
+  graded_lmc: [L1, L2, L3]
+  photoreceptor_curve: "release 0 at rest (v_rest) rising linearly to saturation at v_rest + photoreceptor_response_mv; the light gain is set so that full light holds a photoreceptor at that depolarization (steady state of the membrane equation, photoreceptor input only)"
+  lmc_curve: "release half-saturated at rest, 0 at v_rest - lmc_hyperpolarisation_mv, saturated at v_rest + lmc_hyperpolarisation_mv (tonic, symmetric about rest)"
+  photoreceptor_rate: "set so that full light on the window hyperpolarizes by lmc_hyperpolarisation_mv the median L1-L3 among those receiving synapses from window photoreceptors, at steady state, counting photoreceptor input only"
+  envelope:
+    photoreceptor_response_mv: [40.0, 52.5, 65.0]
+    lmc_hyperpolarisation_mv: [20.0, 32.5, 45.0]
+    lmc_rate_hz: [25.0, 50.0, 100.0, 200.0, 400.0]
+    grid: "every lmc_hyperpolarisation_mv x lmc_rate_hz at photoreceptor_response_mv 52.5 (15 configurations), plus photoreceptor_response_mv 40 and 65 at 32.5 mV and 100 Hz (2): 17 configurations"
+    ranges_from: "photoreceptor and LMC voltage ranges: the measured Drosophila ranges and their midpoints (Juusola et al. 2016); lmc_rate_hz has no measurement and spans four doublings around the 100 Hz input rate of every flymsg protocol"
 
 compensations:
-  - "Photoreceptors spike in the model; in the fly they are graded."
-  - "Only photoreceptors assigned to a column with a viewing direction are driven; many R1-R6 bodies are fragments, so about a third of cartridges receive light."
+  - "The release curve is threshold-linear with endpoints at the measured voltage ranges; its shape is not measured in Drosophila."
+  - "LMC release is symmetric about rest; the depolarizing range above rest is not measured separately."
+  - "The LMC release rate at saturation (lmc_rate_hz) is not measured; it is scanned, not chosen."
+  - "Photoreceptor depolarization is linear in light, without adaptation or the log compression of real photoreceptors; rest is darkness."
+  - "Only photoreceptors assigned to a column with a viewing direction are driven; about a third of cartridges receive light."
   - "Point neurons with one time constant: direction selectivity in the fly relies on delay differences between inputs (Mi1/Tm3 against Mi4/Mi9) that the model does not set per type."
+  - "Medulla neurons and every type other than photoreceptors and L1-L3 stay spiking; some (e.g. Mi1, Tm3) are graded or tonically active in the fly."
   - "CT1 is one point neuron per side; in the fly it is compartmentalised per column."
   - "The left eye is the right eye mirrored; spike counts are compared with calcium measurements."
 
 decides:
-  polarity: "every T4 subtype fires more, summed over directions, to ON than to OFF edges, and every T5 subtype more to OFF than to ON"
-  direction: "for at least 6 of the 8 subtypes, the vector sum of responses to their preferred polarity points within 45 deg of the measured preferred direction"
-  verdict: "both, polarity only, direction only, or neither"
+  polarity: "per configuration: every T4 subtype fires more, summed over directions, to ON than to OFF edges, and every T5 subtype more to OFF than to ON"
+  direction: "per configuration: for at least 6 of the 8 subtypes, the vector sum of responses to their preferred polarity points within 45 deg of the measured preferred direction"
+  verdict: "per configuration: both, polarity only, direction only, or neither"
+  envelope_verdict: "robust: <verdict> if all 17 configurations give the same verdict; otherwise depends, with the count of configurations per verdict"
 
 reported:
   dsi:
     decides: false
-    what: "DSI = (R_PD - R_ND) / (R_PD + R_ND) per subtype, next to the 0.8 measured in calcium"
-  responses:
+    what: "DSI = (R_PD - R_ND) / (R_PD + R_ND) per subtype and configuration, next to the 0.8 measured in calcium"
+  pathway:
     decides: false
+    what: "spikes per type of the lamina-to-T4/T5 pathway (Mi1, Tm3, Mi4, Mi9, Tm1, Tm2, Tm4, Tm9, T4, T5) per configuration and stimulus, to locate where the signal stops"
+  lmc_voltage:
+    decides: false
+    what: "potential of the L1-L3 receiving synapses from window photoreceptors: median at the end of the settle period, lowest and highest bin mean during motion, next to the measured 20-45 mV"
 
 defaults_changed: false

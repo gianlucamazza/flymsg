@@ -53,9 +53,17 @@ def test_b2_engine_entry_point():
         "silence",
         "kicks",
         "trace",
+        "graded",
     ]
     fields = {f for f in sim.Result.__dataclass_fields__}
-    assert fields == {"counts", "first_spike_ms", "bin_ms", "stim_ms", "traced"}
+    assert fields == {
+        "counts",
+        "first_spike_ms",
+        "bin_ms",
+        "stim_ms",
+        "traced",
+        "graded_v",
+    }
     assert sim.Params.dt == 0.1
 
 
