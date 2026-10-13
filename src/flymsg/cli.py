@@ -21,6 +21,7 @@ from flymsg import (
     homology,
     intervention,
     jump,
+    kc_sparseness,
     loop,
     manifest,
     nulls,
@@ -982,6 +983,38 @@ def cmd_eye(a, neurons, edges):
     print(f"-> {out / 'columns.parquet'}, {out / 'photoreceptors.parquet'}")
 
 
+def cmd_kc_sparseness(a, neurons, edges):
+    """The frozen Kenyon cell sparseness diagnostic (issue #95)."""
+    started = datetime.now(UTC)
+    doc = kc_sparseness.assert_matches_code()
+    print(kc_sparseness.summary(doc))
+    out = kc_sparseness.run(neurons, edges)
+    path = Path("runs/kc-sparseness") / f"v{doc['version']}"  # never overwrite
+    path.mkdir(parents=True, exist_ok=True)
+    out["table"].to_csv(path / "arms.csv", index=False)
+    text = out["table"].to_string(index=False) + f"\nverdict: {out['verdict']}"
+    print(text)
+    (path / "report.txt").write_text(text + "\n")
+    proto = doc["protocol"]
+    _stamp(
+        path,
+        "kc-sparseness --run",
+        a,
+        neurons,
+        edges,
+        {
+            "sparseness_version": doc["version"],
+            "sparseness_sha256": doc["content_sha256"],
+            "rate_hz": proto["rate_hz"],
+            "odor_ms": proto["odor_ms"],
+        },
+        {"all": list(proto["seeds"])},
+        started,
+        extra={"verdict": out["verdict"]},
+    )
+    print(f"report -> {path / 'report.txt'}")
+
+
 def cmd_benchmarks(a, neurons, edges):
     """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
@@ -1377,6 +1410,7 @@ COMMANDS = {
     "partner-followup": cmd_partner_followup,
     "mb-plasticity": cmd_mb_plasticity,
     "eye": cmd_eye,
+    "kc-sparseness": cmd_kc_sparseness,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
     "experiment": cmd_experiment,
@@ -1402,6 +1436,7 @@ MALECNS_ONLY = (
     "partner-followup",
     "mb-plasticity",
     "eye",
+    "kc-sparseness",
     "trace",
     "sensitivity",
     "experiment",
@@ -1572,6 +1607,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="JSON-lines file; an interrupted run resumes from it",
     )
+    s = sub.add_parser(
+        "kc-sparseness",
+        help="print the frozen Kenyon cell sparseness diagnostic (issue #95), or run it",
+    )
+    s.add_argument("--run", action="store_true", help="run the frozen diagnostic")
     sub.add_parser(
         "eye",
         help="column -> viewing direction and photoreceptor -> column tables (#84)",
@@ -1872,6 +1912,8 @@ def main() -> None:
             return print(partner_followup.summary())
         if a.cmd == "mb-plasticity" and not a.run:
             return print(plasticity.summary())
+        if a.cmd == "kc-sparseness" and not a.run:
+            return print(kc_sparseness.summary())
         if a.cmd == "behavior" and not a.run:
             return print(behavior.summary())
         if a.cmd == "benchmarks" and a.run and a.corners:
@@ -1906,6 +1948,8 @@ def main() -> None:
     except partner_followup.FollowupError as err:
         sys.exit(f"flymsg: {err}")
     except plasticity.PlasticityError as err:
+        sys.exit(f"flymsg: {err}")
+    except kc_sparseness.SparsenessError as err:
         sys.exit(f"flymsg: {err}")
     except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")
