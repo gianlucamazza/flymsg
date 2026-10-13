@@ -16,6 +16,7 @@ from flymsg import (
     data,
     dimorphism,
     draws,
+    eye,
     graph,
     homology,
     intervention,
@@ -954,6 +955,33 @@ def cmd_mb_plasticity(a, neurons, edges):
     print(f"report -> {path / 'report.txt'}")
 
 
+def cmd_eye(a, neurons, edges):
+    """Column -> viewing direction table and the photoreceptor -> column assignment (#84).
+    Fetches the GPL-3.0 eye map into data/raw/eyemap on first use; outputs stay in data/."""
+    eye.fetch(a.data)
+    ann = pd.read_feather(
+        a.data / "raw" / data.RAW["annotations"],
+        columns=["bodyId", "type", "instance", "assignedOlHex1", "assignedOlHex2"],
+    )
+    cols = eye.columns(ann, eye.lenses(a.data))
+    receptors = eye.photoreceptors(neurons, edges, ann)
+    out = a.data / "eye"
+    out.mkdir(exist_ok=True)
+    cols.to_parquet(out / "columns.parquet")
+    receptors.to_parquet(out / "photoreceptors.parquet")
+    c = eye.check(cols, receptors)
+    for s in "LR":
+        print(
+            f"{s}: {c['with_direction'][s]} of {c['columns'][s]} columns have a direction"
+        )
+    print("photoreceptors per column:", c["receptors"])
+    print(
+        f"dorsal-rim R7d/R8d columns: median elevation {c['dorsal_rim_elevation_deg']:.1f} deg; "
+        f"other R7/R8: {c['other_r7_r8_elevation_deg']:.1f} deg"
+    )
+    print(f"-> {out / 'columns.parquet'}, {out / 'photoreceptors.parquet'}")
+
+
 def cmd_benchmarks(a, neurons, edges):
     """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
@@ -1348,6 +1376,7 @@ COMMANDS = {
     "silence-scan": cmd_silence_scan,
     "partner-followup": cmd_partner_followup,
     "mb-plasticity": cmd_mb_plasticity,
+    "eye": cmd_eye,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
     "experiment": cmd_experiment,
@@ -1372,6 +1401,7 @@ MALECNS_ONLY = (
     "silence-scan",
     "partner-followup",
     "mb-plasticity",
+    "eye",
     "trace",
     "sensitivity",
     "experiment",
@@ -1541,6 +1571,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--checkpoint",
         type=Path,
         help="JSON-lines file; an interrupted run resumes from it",
+    )
+    sub.add_parser(
+        "eye",
+        help="column -> viewing direction and photoreceptor -> column tables (#84)",
     )
     s = sub.add_parser(
         "mb-plasticity",
