@@ -6,7 +6,7 @@
 
 - **Neuron-level MANC matches recorded, not used** (#19): `flymsg muscles` adds each
   neuron's own MANC match type and whether it agrees with its type (140 of 623 disagree,
-  107 with another muscle); the muscle stays the type's.
+  107 with another target); the muscle stays the type's.
 
 ## 0.8.45 — 2026-10-13
 
