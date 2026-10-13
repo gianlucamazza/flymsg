@@ -377,6 +377,14 @@ coupling at the junction than at the soma, and the chemical cholinergic componen
 al. 2010) that arm E removes. Outputs: `results/kc-sparseness/v5/`. Figure:
 [v1–v5, dense or silent](img/kc-sparseness.svg).
 
+**Version 6 (locked 2026-10-13, no run).** v5 treated all 137 cholinergic ALLNs as eLNs, and
+removing their 216,510 synapses onto PNs takes Kenyon cells from 30–37% (arm A) to 0.2–0.3%.
+Eckstein et al. 2024 liken only lLN2T_abc (13 MaleCNS neurons, 39,108 synapses onto PNs) to
+the cholinergic krasavietz eLNs, by soma position and morphology. v6 treats only them as
+electrical partners of PNs (with lLN1_bc, 30 neighbouring neurons, as a variant set), keeps
+every other cholinergic local neuron chemical, and runs E, F and the eight coupled arms once per set (16 in all)
+with the current continuous clamp, seeds 89–91, under v3's bounds.
+
 ## Electrical synapses (optional, 2026-10-13)
 
 `sim.Gap` (#85) couples pairs of neurons through their potentials. A coupled neuron follows

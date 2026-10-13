@@ -1,20 +1,20 @@
-# Kenyon cell sparseness diagnostic (issues 95, 85). Version 5, fixed 2026-10-13 after the v4
-# run and before any v5 run. Version 1 is the file at b096b4a, version 2 at 374309e, version 3
-# at c1cf896, version 4 at b1116af. A diagnosis, not a fix: the default model is not changed by
-# the result. Changing a locked field requires incrementing `version` and updating
-# `content_sha256` and flymsg.kc_sparseness.VERSION_HASHES. `flymsg kc-sparseness` prints
-# this file.
-version: 5
-content_sha256: 2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b
+# Kenyon cell sparseness diagnostic (issues 95, 85). Version 6, fixed 2026-10-13 after the v5
+# run and before any v6 run. Version 1 is the file at b096b4a, version 2 at 374309e, version 3
+# at c1cf896, version 4 at b1116af, version 5 at 00aff9c. A diagnosis, not a fix: the default
+# model is not changed by the result. Changing a locked field requires incrementing `version`
+# and updating `content_sha256` and flymsg.kc_sparseness.VERSION_HASHES. `flymsg
+# kc-sparseness` prints this file.
+version: 6
+content_sha256: bf1ae62f9b563e52df8523eefccbc7f3253c0ab457621969cf3e8ee77c1f6b9b
 
 issue: 95
 supersedes:
-  version: 4
+  version: 5
   verdict: none
-  reason: "v4 scanned a symmetric eLN -> PN coupling of 0-1 without spikelets: every arm silent, quieter as coupling grew, because junctions that pass only subthreshold potentials drain active PNs. In the fly eLN -> PN coupling is measured (Yaksi & Wilson 2010 Fig 4C/4F) and stronger for depolarization, when eLNs fire 40 mV spikes that a LIF reset does not draw. Version 5 uses the measured coefficients on each side and lets eLN spikes cross as spikelets."
-question: "With the cholinergic local neuron -> PN contacts electrical at the measured, asymmetric coupling, sister PNs coupled as measured, and eLN spikes crossing as 40 mV spikelets of 0.5-2 ms, do Hige et al. 2015's two odors recruit a sparse, distinct set of Kenyon cells, and does the answer depend on the spikelet duration?"
+  reason: "v5 treated every cholinergic ALLN (137 neurons, 216,510 synapses onto ALPNs) as an excitatory local neuron: removing all their chemical synapses onto PNs left 0.2-0.3% of Kenyon cells responding with or without the measured coupling, while keeping them all chemical (arm A) recruits 30-37%. Eckstein et al. 2024 name lLN2T_abc (13 MaleCNS neurons, 39,108 synapses onto ALPNs) as the local neurons most similar to the reported cholinergic (krasavietz) eLNs. Version 6 treats only them as eLNs, with lLN1_bc added as a variant, and leaves the other cholinergic local neurons chemical."
+question: "With only the local neurons Eckstein et al. 2024 liken to the cholinergic eLNs (lLN2T_a/b/c; with lLN1_bc as a variant) treated as electrical partners of PNs, at the measured asymmetric coupling with sister PNs coupled as measured and eLN spikes crossing as 40 mV spikelets of 0.5-2 ms, and every other cholinergic local neuron kept chemical, do Hige et al. 2015's two odors recruit a sparse, distinct set of Kenyon cells?"
 
-seen_before_lock: "Versions 1-4 (results/kc-sparseness/v1-v4; seeds 60-62, 70-72, 80-82, 83-85) and the KC -> MBON11 run (seeds 50-52). No run with asymmetric coupling or spikelets has been made before this lock; the coefficients were measured from the figures and the durations chosen before any coupled run. An engineering check before the lock: 24,056 eLN-PN and 579 sister pairs, one coupled group of 823 neurons (step matrices built in 15 s), a 100 ms run without input for timing; no neuron was inspected."
+seen_before_lock: "Versions 1-5 (results/kc-sparseness/v1-v5; seeds 60-62, 70-72, 80-82, 83-85, 86-88) and the KC -> MBON11 run (seeds 50-52). Before this lock the MaleCNS type, class and transmitter of lLN2T_a/b/c and lLN1_bc and their synapses onto ALPNs were counted (lLN2T 13 neurons, 2,927 PN pairs, 39,108 synapses; lLN1_bc 30 neurons, 6,658 pairs, 79,142 synapses; all cholinergic ALLN 137, 21,985 pairs, 216,510 synapses), and an engineering check built the coupled pairs (joined either way: lLN2T 3,210 eLN-PN pairs, lLN2T+lLN1_bc 10,171; 579 sister pairs) without simulating; no simulation with these sets has been run."
 
 sources:
   sparseness: "Turner, Bazhenov & Laurent 2008, J Neurophysiol 99:734, doi:10.1152/jn.01283.2007, Fig 2A: an odor evokes spikes in 6 +/- 5% of KCs (n = 71)"
@@ -31,7 +31,8 @@ sources:
   eln_pn_coupling: "Yaksi & Wilson 2010, Neuron 67:1034, doi:10.1016/j.neuron.2010.08.041, Fig 4C and 4F, control pairs of the shakB2 comparison (n = 37 eLN -> PN): coupling coefficient eLN -> PN 0.0021 for hyperpolarizing steps (0.0083 for depolarizing), PN -> eLN 0.0039 (hyperpolarizing); hyperpolarizing steps pass the electrical component only; values measured from the bar heights"
   eln_spikes: "Yaksi & Wilson 2010 (text, Fig 2D): eLNs fire full-sized spikes of about 40 mV, besides attenuated ~10 mV events"
   sister_pn_coupling: "Kazama & Wilson 2009, Nat Neurosci 12:1136, doi:10.1038/nn.2376, Fig 7d: coupling coefficient 0.013 between ipsilateral homotypic (DM6) PNs for hyperpolarizing steps, which reveal the electrical component only (0.011 in Cd2+); value read from the bar height"
-  eln_pn_identity: "the krasavietz eLNs of Yaksi & Wilson 2010 and Huang et al. 2010 have no published MaleCNS type (audit 2026-10-13); the coefficients are given in Fig 4C/4F, not in the text"
+  eln_pn_identity: "the krasavietz eLNs of Yaksi & Wilson 2010 and Huang et al. 2010 have no genetically confirmed EM type (audit 2026-10-13); the coefficients are given in Fig 4C/4F, not in the text"
+  eln_types: "Eckstein et al. 2024, Cell 187:2574, doi:10.1016/j.cell.2024.03.016 (CC BY 4.0), STAR Methods on antennal lobe local neurons: 'among them are ~13 lLN2T_abc neurons that have a cell body placement and general morphology most similar to reported cholinergic local neurons' (refs Shang et al. 2007, Yaksi & Wilson 2010); Figure S5F legend: these neurons 'are the most similar to described Krasavietz positive cholinergic local neurons'. Soma position and morphology only, no staining. lLN1_bc: 'Positioned closely among them are other local lLN1_bc neurons', some of which the authors suspect are cholinergic; not named a krasavietz match. MaleCNS v1.0 types all four as class ALLN, acetylcholine"
 
 protocol:
   odor_source: door
@@ -42,24 +43,32 @@ protocol:
   unmeasured: "ORN types without a DoOR response for the odorant get no input"
   odor_ms: 1000.0
   duration_ms: 1000.0
-  seeds: [86, 87, 88]
+  seeds: [89, 90, 91]
   kc: "^KC"
   apl: APL
   apl_n: 2
   ln_class: ALLN
   pn_class: ALPN
   ln_transmitter: acetylcholine
+  eln_sets:
+    lLN2T:
+      types: [lLN2T_a, lLN2T_b, lLN2T_c]
+      n: 13
+    lLN2T+lLN1_bc:
+      types: [lLN2T_a, lLN2T_b, lLN2T_c, lLN1_bc]
+      n: 43
+  eln_rule: "arms E and F and every coupled arm run once per eLN set, named <arm>/<set>; only that set's chemical synapses onto ALPNs are removed and coupled, and the other cholinergic ALLNs stay chemical"
   responder: "a Kenyon cell that spikes during the odor in at least 2 of the 3 seeds"
   responder_note: "the model has no spontaneous KC activity, so the measured criteria (a rise above baseline SD) reduce to any spike; reliability across seeds stands in for repeated presentations"
 
 arms:
   A: "the default model"
-  E: "chemical synapses from cholinergic antennal-lobe local neurons (class ALLN) onto projection neurons (class ALPN) removed: in the fly that coupling is electrical"
+  E: "chemical synapses from the eLN set onto projection neurons (class ALPN) removed: in the fly that coupling is electrical"
   F: "E, and KC -> KC synapses without fast effect, as the model treats metabotropic transmission"
 
 coupling:
   bases: [E, F]
-  pairs: "each cholinergic ALLN and ALPN joined by chemical synapses (either direction): one electrical synapse per pair, as Yaksi & Wilson measured per recorded pair"
+  pairs: "each neuron of the eLN set and ALPN joined by chemical synapses (either direction): one electrical synapse per pair, as Yaksi & Wilson measured per recorded pair"
   eln_to_pn_cc: 0.0021
   pn_to_eln_cc: 0.0039
   sister_cc: 0.013
@@ -68,10 +77,12 @@ coupling:
   spike_ms: [0.0, 0.5, 1.0, 2.0]
   spike_rule: "an eLN spike adds 40 mV to the potential its partners see for spike_ms (0: spikes do not cross); PN spikes do not cross"
   spike_ms_from: "unmeasured: from no spikelet to a 2 ms one around the ~1 ms width of an insect spike; scanned, not chosen"
-  arm_names: "<base>+spike<ms>ms, e.g. E+spike1ms; 8 coupled arms"
+  arm_names: "<base>/<set>+spike<ms>ms, e.g. E/lLN2T+spike1ms; 16 coupled arms"
+
+electrical_semantics: flymsg.gap/continuous-clamp-v1
 
 compensations:
-  - "Chemical contacts stand in for the unseen electrical ones: EM does not show gap junctions; the krasavietz eLNs have no published MaleCNS type, so the cholinergic ALLN class stands in for them."
+  - "Chemical contacts stand in for the unseen electrical ones: EM does not show gap junctions. The eLN sets are a morphological match (Eckstein et al. 2024), not a genetic one; lLN1_bc only neighbours the match."
   - "Coupling coefficients are from paired somatic recordings, which underestimate the coupling at the junction (Yaksi & Wilson 2010), and the two-cell relation c / (1 - c) is applied to cells that couple to many partners."
   - "Junctions do not rectify; the depolarizing excess the fly shows is carried by the spikelets, whose duration is not measured and is scanned."
   - "The spikelet is a rectangle of the full spike amplitude; PN spikes do not cross (their amplitude at the junction is not measured)."
@@ -97,5 +108,8 @@ reported:
   per_duration:
     decides: false
     what: "KC and PN fractions of each coupled arm by spikelet duration, to see whether the answer depends on it"
+  per_set:
+    decides: false
+    what: "KC and PN fractions of each arm by eLN set (arms.csv); the result note sets them next to v5's whole cholinergic ALLN class (results/kc-sparseness/v5)"
 
 defaults_changed: false
