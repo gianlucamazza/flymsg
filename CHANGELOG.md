@@ -59,8 +59,8 @@
   performance readout is hidden; the site's page links scroll in one row. Touch screens get
   touch hints, a 12 px tap slop, the clear button instead of Esc and 44 px buttons; panels
   respect safe-area insets. `prefers-reduced-motion` opens a replay paused. A lost WebGL
-  context is restored behind a notice, and a frame after a background tab advances the
-  replay by at most 0.1 s. Checked in an emulated 390×844 viewport; real-phone frame rates
+  context is restored behind a notice, and time spent in a background tab does not advance
+  the replay. Checked in an emulated 390×844 viewport; real-phone frame rates
   remain #24.
 
 ### Documentation

@@ -1846,12 +1846,14 @@ renderer.domElement.addEventListener("webglcontextrestored", () => {
   invalidate();
 });
 
-// A hidden tab pauses requestAnimationFrame. The first frame back would otherwise advance
-// the replay by the whole time away; one frame never moves it by more than MAX_DT_S.
-const MAX_DT_S = 0.1;
+// A hidden tab pauses requestAnimationFrame. The time away is not replay time: restart the
+// frame clock when the tab is shown, so the first frame back does not jump.
 const timer = new THREE.Clock();
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) timer.getDelta();
+});
 renderer.setAnimationLoop(() => {
-  const dt = Math.min(timer.getDelta(), MAX_DT_S);
+  const dt = timer.getDelta();
   const moved = controls.update(); // damping keeps moving after the pointer is released
   const playing = replay && clock.playing;
   if (playing) clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
