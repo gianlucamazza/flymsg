@@ -12,26 +12,27 @@ and what would remove it.
 
 ## Results
 
-| Result                                     | Verdict                                                            | Record                                                                                            |
-| ------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
-| Validation battery, criterion v4           | 29/29 at `w_syn` 0.192, replicated                                 | [validation](validation.md)                                                                       |
-| N1, one degree-preserving shuffle          | 5/29, all of them `stability`                                      | [related](related.md#n1-specific-checks-need-the-measured-partners)                               |
-| Four null families, 20 draws               | the one-hop headline sits above every draw                         | [nulls](nulls.md)                                                                                 |
-| Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                                    | [comparison](comparison.md#engine-check)                                                          |
-| Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not          | [dimorphism](dimorphism.md)                                                                       |
-| Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                       | [benchmarks](benchmarks.md)                                                                       |
-| Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                      | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
-| KC → MBON11 depression v1                  | inconsistent: both odors go silent                                 | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
-| One-bit looming jump                       | silence fails                                                      | [behavior](behavior.md#result-2026-10-11)                                                         |
-| Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                                    | [behavior](behavior.md#residual-partner-scan)                                                     |
-| Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit       | [behavior](behavior.md#residual-partner-follow-up)                                                |
-| T4/T5 through the eye v1                   | neither                                                            | [eye](eye.md#t4t5-direction-selectivity-through-the-eye-lock-2026-10-13)                          |
-| T4/T5 v2                                   | robust: neither; contrast crosses the lamina, stops in the medulla | [eye](eye.md#t4t5-version-2-graded-photoreceptors-and-lamina-lock-2026-10-13-84-97)               |
-| NeuroMechFly jump v1                       | short                                                              | [embodiment](embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)               |
-| Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference       | [comparison](comparison.md)                                                                       |
-| Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                              | [comparison](comparison.md)                                                                       |
-| Motor map                                  | every row `unmapped`                                               | [`validation/motor_map.yaml`](../validation/motor_map.yaml)                                       |
-| Held-out behavior milestone                | no eligible case left in the frozen partition                      | [validation](validation.md)                                                                       |
+| Result                                     | Verdict                                                                 | Record                                                                                            |
+| ------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Validation battery, criterion v4           | 29/29 at `w_syn` 0.192, replicated                                      | [validation](validation.md)                                                                       |
+| N1, one degree-preserving shuffle          | 5/29, all of them `stability`                                           | [related](related.md#n1-specific-checks-need-the-measured-partners)                               |
+| Four null families, 20 draws               | the one-hop headline sits above every draw                              | [nulls](nulls.md)                                                                                 |
+| Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                                         | [comparison](comparison.md#engine-check)                                                          |
+| Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not               | [dimorphism](dimorphism.md)                                                                       |
+| Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                            | [benchmarks](benchmarks.md)                                                                       |
+| Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                           | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| KC → MBON11 depression v1                  | inconsistent: both odors go silent                                      | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
+| One-bit looming jump                       | silence fails                                                           | [behavior](behavior.md#result-2026-10-11)                                                         |
+| Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                                         | [behavior](behavior.md#residual-partner-scan)                                                     |
+| Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit            | [behavior](behavior.md#residual-partner-follow-up)                                                |
+| T4/T5 through the eye v1                   | neither                                                                 | [eye](eye.md#t4t5-direction-selectivity-through-the-eye-lock-2026-10-13)                          |
+| Synapse weight rule v1                     | undecided: density and count rank Liu et al.'s uEPSPs alike (Δρ +0.015) | [model](model.md#synapse-weight-scaled-for-synapse-density)                                       |
+| T4/T5 v2                                   | robust: neither; contrast crosses the lamina, stops in the medulla      | [eye](eye.md#t4t5-version-2-graded-photoreceptors-and-lamina-lock-2026-10-13-84-97)               |
+| NeuroMechFly jump v1                       | short                                                                   | [embodiment](embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)               |
+| Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference            | [comparison](comparison.md)                                                                       |
+| Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                                   | [comparison](comparison.md)                                                                       |
+| Motor map                                  | every row `unmapped`                                                    | [`validation/motor_map.yaml`](../validation/motor_map.yaml)                                       |
+| Held-out behavior milestone                | no eligible case left in the frozen partition                           | [validation](validation.md)                                                                       |
 
 ## Brain coverage
 
@@ -145,12 +146,12 @@ never with a chosen value, so the order follows the evidence that exists.
 
 **1. Now: nothing outside is needed.**
 
-| Issue                                                      | Work                                                                                                        | Exit                                                                            |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Viewer baseline on an idle host (`scripts/bench_viewer.py`)                                                 | Baseline committed; regression thresholds from it; a physical phone stays open  |
-| [#139](https://github.com/gianlucamazza/flymsg/issues/139) | Lock count vs density on Liu et al. 2022's 29 PN → LHN pairs (`sim.density_scale`, `scripts/mesh_area.mjs`) | A verdict; no default changes without the validation battery rerun under a lock |
-| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Decide the 144 neurons whose MANC neuron-level match names another type than the type-level join            | A written rule, then a per-neuron muscle column if it holds                     |
-| [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Lock Pacheco et al. 2021 (song → neuropil responses, iav mutants as null) as the first held-out benchmark   | Scoring rule fixed before the run                                               |
+| Issue                                                      | Work                                                                                                      | Exit                                                                           |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Viewer baseline on an idle host (`scripts/bench_viewer.py`)                                               | Baseline committed; regression thresholds from it; a physical phone stays open |
+| [#139](https://github.com/gianlucamazza/flymsg/issues/139) | Done: v1 undecided (Δρ +0.015, interval −0.011 to +0.054); count stays                                    | More power needs measured pairs across more LHN types                          |
+| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Decide the 144 neurons whose MANC neuron-level match names another type than the type-level join          | A written rule, then a per-neuron muscle column if it holds                    |
+| [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Lock Pacheco et al. 2021 (song → neuropil responses, iav mutants as null) as the first held-out benchmark | Scoring rule fixed before the run                                              |
 
 **2. Next: the evidence exists and must be read and fixed in a lock.**
 

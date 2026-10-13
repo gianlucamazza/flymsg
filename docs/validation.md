@@ -343,6 +343,12 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: synapse weight rule v1, undecided.** Liu et al. 2022's 57 PN → LHN pairs of six
+matched LHN types: Spearman ρ 0.567 (count) against 0.581 (density), Δρ +0.015 with a 95%
+interval of −0.011 to +0.054. Count stays the rule. MaleCNS counts rank the measured
+amplitudes at ρ 0.81 on the 13 nonzero pairs; density r² 0.80 against Liu et al.'s 0.77.
+Report: `results/weight-rule/v1.executions/…/output/`.
+
 **2026-10-13: T4/T5 through the eye v2, robust: neither.** Seed 93, 17 configurations of
 graded photoreceptors and L1–L3 over the measured voltage ranges. No T4/T5 spike in any
 configuration. The lamina now carries contrast (L1–L3 hyperpolarize by 14–33 mV under light);
