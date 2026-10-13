@@ -377,13 +377,24 @@ coupling at the junction than at the soma, and the chemical cholinergic componen
 al. 2010) that arm E removes. Outputs: `results/kc-sparseness/v5/`. Figure:
 [v1–v5, dense or silent](img/kc-sparseness.svg).
 
-**Version 6 (locked 2026-10-13, no run).** v5 treated all 137 cholinergic ALLNs as eLNs, and
+**Version 6 (locked 2026-10-13, interrupted).** v5 treated all 137 cholinergic ALLNs as eLNs, and
 removing their 216,510 synapses onto PNs takes Kenyon cells from 30–37% (arm A) to 0.2–0.3%.
 Eckstein et al. 2024 liken only lLN2T_abc (13 MaleCNS neurons, 39,108 synapses onto PNs) to
 the cholinergic krasavietz eLNs, by soma position and morphology. v6 treats only them as
 electrical partners of PNs (with lLN1_bc, 30 neighbouring neurons, as a variant set), keeps
 every other cholinergic local neuron chemical, and runs E, F and the eight coupled arms once per set (16 in all)
-with the current continuous clamp, seeds 89–91, under v3's bounds.
+with the current continuous clamp, seeds 89–91, under v3's bounds. Its run was stopped after
+the five uncoupled arms (saved, not read): the coupling joins 688 cells (726 with lLN1_bc) in
+one component, and the continuous clamp builds a dense exponential of about 2,100 × 2,100 for
+each new refractory mask, 1.1–1.6 s each with no cache hit, so one coupled simulation takes
+hours (#155).
+
+**Version 7 (locked 2026-10-13, no run).** Version 6 with the boundary reset of v5 and seeds
+92–94. Before the lock, `scripts/qualify_boundary_reset.py` ran arm E/lLN2T on 3-octanol for
+50 ms (seed 0, spikelets 0 and 1 ms) under both modes: every neuron's spike count and first
+spike agree (9,798 and 9,634 spikes), in 2–5 s against 671–696 s
+(`docs/evidence/kc-boundary-qualification-2026-10-13.json`). That qualifies 50 ms of one
+odor and seed, which the lock names as a compensation.
 
 ## Electrical synapses (optional, 2026-10-13)
 

@@ -12,6 +12,11 @@
 
 ### Validation
 
+- **Kenyon cell sparseness v7 lock** (#85, #95): v6 with the boundary reset of v5. The v6 run
+  was stopped after its uncoupled arms (not read): under the continuous clamp each new
+  refractory mask of the 688-cell coupled component costs a dense exponential of ~1–1.6 s
+  (#155). On 50 ms of arm E/lLN2T (seed 0) the two modes give identical spikes for every
+  neuron (`scripts/qualify_boundary_reset.py`, `docs/evidence/`). Seeds 92–94. No run.
 - **Kenyon cell sparseness v6 lock** (#85, #95): the eLNs are the types Eckstein et al. 2024
   liken to the cholinergic krasavietz LNs (lLN2T_a/b/c, 13 neurons; with lLN1_bc as a
   variant set), not the whole cholinergic ALLN class; every other cholinergic local neuron
