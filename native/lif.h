@@ -69,9 +69,8 @@ public:
   // Version 2 extension (graded neurons, electrically coupled groups); offsets
   // into `input` and `state`, all zero for version 1 fixtures.
   uint64_t ng = 0, nc = 0, ncomp = 0, nmat = 0, width = 0;
-  double amplitude = 0;
   uint64_t x_gcol = 0, x_lo = 0, x_span = 0, x_scale = 0, x_gpos = 0,
-           x_nodes = 0, x_off = 0, x_moff = 0, x_mat = 0;
+           x_nodes = 0, x_off = 0, x_moff = 0, x_mat = 0, x_amp = 0;
   uint64_t s_ring = 0, s_new = 0, s_vsum = 0, s_buf = 0, s_pulse = 0;
   explicit Runtime(std::vector<uint32_t> fixture) : input(std::move(fixture)) {
     require(std::endian::native == std::endian::little,
@@ -97,25 +96,21 @@ public:
       require(cursor <= input.size(), "input range overflow");
     }
     if (input[1] == 2) {
-      require(input[37] == cursor && cursor + 7 <= input.size(),
+      require(input[37] == cursor && cursor + 5 <= input.size(),
               "invalid extension offset");
       ng = input[cursor];
       nc = input[cursor + 1];
       ncomp = input[cursor + 2];
       nmat = input[cursor + 3];
       width = input[cursor + 4];
-      amplitude = word_double(input, cursor + 5);
       require(ng <= n && nc <= n && ncomp <= nc && (ng || nc),
               "invalid extension dimensions");
-      require(std::isfinite(amplitude) && amplitude >= 0 &&
-                  (width == 0) == (amplitude == 0) && (nc || !width),
-              "invalid spike term");
-      cursor += 7;
-      const uint64_t ext_sizes[] = {n,  ng,        ng,        ng,      n,
-                                    nc, ncomp + 1, ncomp + 1, nmat * 2};
+      cursor += 5;
+      const uint64_t ext_sizes[] = {n,  ng,        ng,        ng,       n,
+                                    nc, ncomp + 1, ncomp + 1, nmat * 2, nc * 2};
       uint64_t *ext_offsets[] = {&x_gcol,  &x_lo,  &x_span, &x_scale, &x_gpos,
-                                 &x_nodes, &x_off, &x_moff, &x_mat};
-      for (int k = 0; k < 9; ++k) {
+                                 &x_nodes, &x_off, &x_moff, &x_mat,   &x_amp};
+      for (int k = 0; k < 10; ++k) {
         *ext_offsets[k] = cursor;
         cursor += ext_sizes[k];
         require(cursor <= input.size(), "extension range overflow");
@@ -239,6 +234,13 @@ public:
     for (uint64_t q = 0; q < nmat; ++q)
       require(std::isfinite(word_double(input, x_mat + 2 * q)),
               "nonfinite step matrix");
+    bool crossing = false;
+    for (uint64_t k = 0; k < nc; ++k) {
+      const double a = word_double(input, x_amp + 2 * k);
+      require(std::isfinite(a) && a >= 0, "invalid spike amplitude");
+      crossing = crossing || a > 0;
+    }
+    require((width > 0) == crossing, "invalid spike term");
   }
   float get(uint32_t slot, uint32_t i) const {
     return std::bit_cast<float>(state[input[slot] + i]);
@@ -271,8 +273,8 @@ public:
           }
           for (uint64_t q = 0; q < m; ++q)
             if (int32_t(state[s_pulse + a + q]) > 0)
-              acc +=
-                  word_double(input, x_mat + 2 * (row + 2 * m + q)) * amplitude;
+              acc += word_double(input, x_mat + 2 * (row + 2 * m + q)) *
+                     word_double(input, x_amp + 2 * (a + q));
           state[s_buf + a + r] = std::bit_cast<uint32_t>(float(rest + acc));
         }
       }

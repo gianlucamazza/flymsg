@@ -90,7 +90,11 @@ def run_reference(
             x = np.r_[
                 v[nodes].astype(np.float64) - rest64,
                 np.where(frozen[nodes], 0.0, g[nodes].astype(np.float64)),
-                np.where(gap_pulse[gap_off[c] : gap_off[c + 1]] > 0, gap_amp, 0.0),
+                np.where(
+                    gap_pulse[gap_off[c] : gap_off[c + 1]] > 0,
+                    gap_amp[gap_off[c] : gap_off[c + 1]],
+                    0.0,
+                ),
             ]
             exact.append((M * x).cumsum(axis=1)[:, -1])
         gap_pulse[gap_pulse > 0] -= 1

@@ -160,7 +160,8 @@ def test_step_matrices_match_quadrature_of_the_coupled_equation():
     gap = sim.Gap(i=i, j=j, coupling=c, coupling_back=back, spike_mv=40.0, spike_ms=1.0)
     nodes, off, mat, _, pos, width, amp = sim.gap_arrays(gap, 4, p)
     assert nodes.tolist() == [0, 1, 2, 3] and off.tolist() == [0, 4]
-    assert pos.tolist() == [0, 1, 2, 3] and (width, amp) == (10, 40.0)
+    assert pos.tolist() == [0, 1, 2, 3] and width == 10
+    assert amp.tolist() == [40.0] * 4
     M = mat.reshape(4, 12)
     K = np.zeros((4, 4))
     K[i, j], K[j, i] = c, back
@@ -262,3 +263,35 @@ def test_a_spike_crosses_as_a_spikelet():
     assert np.all(lift[:2] == 0)  # spike at step 1, term from step 2
     assert lift[2:12].min() > 0 and lift[11] == lift.max()
     assert np.all(np.diff(lift[12:40]) < 0)  # then relaxes
+
+
+def test_per_neuron_spike_amplitudes_and_a_silent_crossing():
+    # only neuron 0's spikes cross (40 mV); with no amplitude anywhere there is no term
+    p = sim.Params()
+    amps = np.zeros(3)
+    amps[0] = 40.0
+    gap = sim.Gap(
+        i=np.array([0, 1]),
+        j=np.array([1, 2]),
+        coupling=0.3,
+        spike_mv=amps,
+        spike_ms=1.0,
+    )
+    *_, width, amp = sim.gap_arrays(gap, 3, p)
+    assert width == 10 and amp.tolist() == [40.0, 0.0, 0.0]
+    none = sim.Gap(
+        i=np.array([0]), j=np.array([1]), coupling=0.3, spike_mv=0.0, spike_ms=1.0
+    )
+    assert sim.gap_arrays(none, 2, p)[5] == 0
+    with pytest.raises(ValueError, match="nonnegative"):
+        sim.gap_arrays(
+            sim.Gap(
+                i=np.array([0]),
+                j=np.array([1]),
+                coupling=0.3,
+                spike_mv=-1.0,
+                spike_ms=1.0,
+            ),
+            2,
+            p,
+        )

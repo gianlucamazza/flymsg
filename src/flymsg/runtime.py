@@ -180,7 +180,7 @@ class CpuRuntime:
                 (
                     *self._gap[:5],
                     np.array([self._gap[5]], dtype=np.int64),
-                    np.array([self._gap[6]], dtype=np.float64),
+                    self._gap[6],
                 )
                 if self._gap[0].size
                 else ()

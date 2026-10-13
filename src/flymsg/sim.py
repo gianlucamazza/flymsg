@@ -120,9 +120,10 @@ class Gap:
     form for the decaying synaptic input and for the spike term).
 
     s_j is the spike a LIF reset does not draw: if `spike_mv` and `spike_ms` are given, a
-    spike of j adds a rectangular `spike_mv` to the potential its partners see for the
-    `spike_ms` after it (rounded to steps), so spikes cross the junction as spikelets. Without
-    them spikes do not cross. Junctions do not rectify.
+    spike of j adds a rectangular spike_mv[j] to the potential its partners see for the
+    `spike_ms` after it (rounded to steps), so spikes cross the junction as spikelets.
+    `spike_mv` is one value or one per neuron of the network (0: that neuron's spikes do not
+    cross). Without them spikes do not cross. Junctions do not rectify.
 
     As everywhere in the model, discrete events act at step boundaries: spikes, resets,
     deliveries, kicks and the refractory hold. A neuron refractory at a step starts it at
@@ -135,7 +136,7 @@ class Gap:
     j: np.ndarray
     coupling: np.ndarray
     coupling_back: np.ndarray | None = None
-    spike_mv: float | None = None
+    spike_mv: float | np.ndarray | None = None
     spike_ms: float | None = None
 
 
@@ -149,8 +150,9 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
     component offsets); per component of m neurons the m x 3m float64 step matrix
     [P | Q | S], row-major, with its offsets, such that for free neurons
     v(t + dt) - v_rest = P (v - v_rest) + Q g + S s with s the spike term of each member;
-    each neuron's position among the coupled ones (-1 if none); and the spike term's length
-    in steps and its amplitude in mV (0 without spike transmission)."""
+    each neuron's position among the coupled ones (-1 if none); the spike term's length in
+    steps (0 when no coupled spike crosses); and each coupled neuron's spike amplitude in
+    mV."""
     from scipy.linalg import expm
     from scipy.sparse.csgraph import connected_components
 
@@ -161,7 +163,7 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
         np.zeros(1, dtype=np.int64),
         np.full(n, -1, dtype=np.int64),
         0,
-        0.0,
+        np.empty(0, dtype=np.float64),
     )
     if gap is None:
         return empty
@@ -190,11 +192,14 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
         )
     if (gap.spike_mv is None) != (gap.spike_ms is None):
         raise ValueError("spike transmission needs both spike_mv and spike_ms")
-    width, amp = 0, 0.0
+    width, amp_all = 0, np.zeros(n)
     if gap.spike_mv is not None:
-        width, amp = round(gap.spike_ms / p.dt), float(gap.spike_mv)
-        if not (np.isfinite(amp) and amp > 0 and width >= 1):
-            raise ValueError("spike_mv must be positive and spike_ms at least one step")
+        width = round(gap.spike_ms / p.dt)
+        amp_all = np.broadcast_to(np.asarray(gap.spike_mv, dtype=np.float64), (n,))
+        if not (np.isfinite(amp_all).all() and np.all(amp_all >= 0) and width >= 1):
+            raise ValueError(
+                "spike_mv must be finite and nonnegative, spike_ms at least one step"
+            )
     keep = c > 0
     i, j, c, back = i[keep], j[keep], c[keep], back[keep]
     if i.size == 0:
@@ -235,8 +240,8 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
         np.concatenate(mats),
         np.asarray(moff, dtype=np.int64),
         pos,
-        width,
-        amp,
+        width if np.any(amp_all[nodes] > 0) else 0,
+        np.ascontiguousarray(amp_all[nodes]),
     )
 
 
@@ -491,7 +496,7 @@ def _kernel(
     component's exact step [P | Q | S] applied to the state before it (potentials relative
     to rest, conductances of non-refractory neurons, then the spike term of members whose
     spike is still crossing), summed in float64 in that order; a member's spike at 4 makes
-    its spike term `gap_amp` for the next `gap_width` steps."""
+    its spike term its `gap_amp` for the next `gap_width` steps."""
     v = np.full(n, v_rest, dtype=np.float32)
     g = np.zeros(n, dtype=np.float32)
     th = np.zeros(n, dtype=np.float32)
@@ -639,7 +644,7 @@ def _advance(
                         acc += gap_mat[row + m + q] * np.float64(g[j])
                 for q in range(m):
                     if gap_pulse[a + q] > 0:
-                        acc += gap_mat[row + 2 * m + q] * gap_amp
+                        acc += gap_mat[row + 2 * m + q] * gap_amp[a + q]
                 gap_buf[a + r] = np.float32(rest64 + acc)
         for k in range(gap_pulse.size):
             if gap_pulse[k] > 0:

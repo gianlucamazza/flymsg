@@ -88,8 +88,7 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
         graded_col[g_idx] = np.arange(ng)
         gap_pos = np.full(n, -1, dtype=np.int32)
         gap_pos[gap_nodes] = np.arange(nc)
-        amp = np.array([gap_amp], dtype="<f8").view("<u4")
-        ext = np.array([ng, nc, ncomp, gap_mat.size, gap_width, *amp], dtype="<u4")
+        ext = np.array([ng, nc, ncomp, gap_mat.size, gap_width], dtype="<u4")
         chunks.append(ext.tobytes())
         cursor += ext.size
         for values, dtype in (
@@ -102,6 +101,7 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
             (gap_off, "<u4"),
             (gap_moff, "<u4"),
             (gap_mat, "<f8"),
+            (gap_amp, "<f8"),
         ):
             raw = np.asarray(values, dtype=dtype).tobytes()
             chunks.append(raw)

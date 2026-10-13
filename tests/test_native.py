@@ -121,13 +121,13 @@ def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word
     export_fixture(runtime, fixture)
     raw = bytearray(fixture.read_bytes())
     ext = struct.unpack_from("<I", raw, 37 * 4)[0]
-    # extension: 7 header words, then the graded column of each of the 4 neurons, v_lo,
+    # extension: 5 header words, then the graded column of each of the 4 neurons, v_lo,
     # span
     at = {
         "offset": 37 * 4,
         "ng": ext * 4,
-        "span": (ext + 7 + 4 + 1) * 4,
-        "width": (ext + 4) * 4,  # a spike term without amplitude
+        "span": (ext + 5 + 4 + 1) * 4,
+        "width": (ext + 4) * 4,  # a spike term without any amplitude
     }[word]
     value = {"offset": ext + 1, "ng": 3, "span": 0, "width": 5}[word]
     struct.pack_into("<I", raw, at, value)

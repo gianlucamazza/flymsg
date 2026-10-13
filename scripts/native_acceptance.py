@@ -34,7 +34,7 @@ EXTENSIONS = {
             j=np.array([2, 3, 4]),
             coupling=[0.2, 1.0, 0.4],
             coupling_back=[0.6, 0.3, 0.9],
-            spike_mv=40.0,
+            spike_mv=np.array([0.0, 40.0, 0.0, 25.0, 40.0, 0.0, 0.0, 0.0]),
             spike_ms=1.0,
         )
     },

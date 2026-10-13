@@ -332,8 +332,9 @@ missing excitation, not that the coupling is absent. Outputs: `results/kc-sparse
 conductance over i's leak conductance; a coupling coefficient c measured from j to i gives
 c / (1 − c), and the two sides of a junction may differ (cells of different input
 resistance). s_j is the spike a LIF reset does not draw: with `spike_mv` and `spike_ms`, a
-spike of j adds a rectangular `spike_mv` to the potential its partners see for `spike_ms`,
-so spikes cross the junction as spikelets. Junctions do not rectify.
+spike of j adds a rectangular `spike_mv` (one value, or one per neuron; 0 for neurons whose
+spikes do not cross) to the potential its partners see for `spike_ms`, so spikes cross the
+junction as spikelets. Junctions do not rectify.
 
 Between step boundaries the equation is linear, so each connected group is integrated
 exactly: the matrix exponential of the group's membrane, synaptic and spike terms (Van
