@@ -13,6 +13,7 @@ spikes crossing as spikelets of the measured amplitude and a scanned duration.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -64,6 +65,17 @@ HIGE_ODORS = ["3-octanol", "4-methylcyclohexanol"]
 
 class SparsenessError(ValueError):
     """The sparseness protocol drifted from the locked version."""
+
+
+def electrical_semantics(doc: dict) -> str | None:
+    """Frozen versions retain the integrator fixed before their runs, not today's default."""
+    if "coupling" not in doc:
+        return None
+    historical = {
+        4: "flymsg.gap/explicit-first-order-v1",
+        5: electrical.BOUNDARY_SEMANTICS,
+    }
+    return historical.get(doc["version"], doc.get("electrical_semantics"))
 
 
 def load(path: Path = PATH) -> dict:
@@ -303,6 +315,12 @@ def protocol(
     n = W.shape[0]
     for name, base, width in coupled_arms(doc):
         gap = measured_gap(idx["eln"], idx["sisters"], n, idx["ACH_LN"], width)
+        mode = (
+            "boundary"
+            if electrical_semantics(doc) == electrical.BOUNDARY_SEMANTICS
+            else "continuous"
+        )
+        gap = replace(gap, refractory_mode=mode)
         runs.append((name, weights[base], gap))
     per_arm = len(proto["odors"]) * len(proto["seeds"])
 
@@ -398,7 +416,10 @@ def run(
     doc = assert_matches_code()
     # v4 explicitly locks the first-order integrator; it cannot be silently rescored
     # with the continuous-clamp model. A new registered lock must name the new semantics.
-    if "coupling" in doc and doc.get("electrical_semantics") != electrical.SEMANTICS:
+    if "coupling" in doc and electrical_semantics(doc) not in {
+        electrical.SEMANTICS,
+        electrical.BOUNDARY_SEMANTICS,
+    }:
         raise SparsenessError(
             "this electrical lock names an older integrator; preserve its results and "
             "register a new lock with electrical_semantics=" + electrical.SEMANTICS

@@ -84,9 +84,9 @@ claim follows. Do not replace exact integration with an unqualified approximatio
 an experiment finish sooner.
 
 KC v4 explicitly locks first-order coupling. Its archived `none` result is preserved and
-the scored runner refuses to reinterpret that lock under the new integrator. Any new
-scored electrical run needs a prospectively registered protocol naming the new numerical
-semantics. A paired numerical replication must be identified as such, not fresh biological
+the scored runner refuses to reinterpret that lock under the new integrator. KC v5, registered concurrently by #125, preserves its boundary-reset numerical mode
+explicitly in the version registry and execution identity. Any run of a changed electrical
+model needs a prospectively registered protocol naming its numerical semantics. A paired numerical replication must be identified as such, not fresh biological
 confirmation; grid, hypotheses and thresholds cannot be chosen after its outcomes.
 
 ## Viewer measurements

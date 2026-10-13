@@ -106,6 +106,8 @@ def prepare(a):
     }
     # Namespace flags are JSON scalars/lists; paths outside the execution assets are not inputs.
     config = json.loads(json.dumps(config, default=str))
+    if a.cmd == "kc-sparseness":
+        config["electrical_semantics"] = kc_sparseness.electrical_semantics(doc)
     identity = runstore.execution(a.cmd, config, doc, paths)
     return identity, paths, doc
 

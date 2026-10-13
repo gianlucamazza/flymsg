@@ -156,3 +156,9 @@ named numerical mode and their original native qualification. New Gap configurat
 use continuous clamps by default. There is no automatic substitution when the native
 backend cannot run a continuous refractory mask; it refuses that mode. This preserves
 concurrently registered protocols rather than changing their physics retrospectively.
+
+Concurrent #125 registered KC v5 before its run. Its exact hash, parameters, grid and
+boundary-reset convention are preserved; the execution identity and manifest explicitly
+name that mode. The source-version registry selects it, not today's Gap default. KC v4's
+explicit first-order model is not implemented by the new runner and remains refused.
+Changing v5 to continuous clamps would require a new prospective protocol, not editing v5.

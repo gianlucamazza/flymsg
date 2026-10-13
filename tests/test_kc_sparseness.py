@@ -241,6 +241,19 @@ def test_an_interrupted_run_resumes_to_the_same_table(tmp_path):
     pd.testing.assert_frame_equal(resumed, whole)
 
 
-def test_historical_electrical_lock_is_not_rescored_with_new_semantics():
+def test_historical_electrical_lock_is_not_rescored_with_new_semantics(monkeypatch):
+    monkeypatch.setattr(
+        kc_sparseness, "assert_matches_code", lambda: {"version": 4, "coupling": {}}
+    )
     with pytest.raises(kc_sparseness.SparsenessError, match="older integrator"):
         kc_sparseness.run(pd.DataFrame(), pd.DataFrame())
+
+
+def test_v5_keeps_the_boundary_model_that_was_locked_before_its_run():
+    from flymsg import electrical, sim
+
+    assert (
+        kc_sparseness.electrical_semantics(kc_sparseness.load())
+        == electrical.BOUNDARY_SEMANTICS
+    )
+    assert sim.Gap.__dataclass_fields__["refractory_mode"].default == "continuous"

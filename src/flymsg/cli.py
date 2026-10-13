@@ -1043,6 +1043,7 @@ def cmd_kc_sparseness(a, neurons, edges):
         edges,
         {
             "sparseness_version": doc["version"],
+            "electrical_semantics": kc_sparseness.electrical_semantics(doc),
             "sparseness_sha256": doc["content_sha256"],
             "rate_hz": proto.get("rate_hz", proto.get("rate_at_response_1_hz")),
             "odor_source": proto.get("odor_source", "orn_type"),

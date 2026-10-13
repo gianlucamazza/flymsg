@@ -1,3 +1,4 @@
+import json
 import shutil
 import struct
 import subprocess
@@ -55,6 +56,17 @@ def test_native_full_acceptance(native_exe, tmp_path):
         check=True,
         capture_output=True,
     )
+    report = json.loads((tmp_path / "report.json").read_text())
+    assert report["passed"] == 72
+    assert len(report["unsupported"]) == 12
+    assert {c["extension"] for c in report["unsupported"]} == {
+        "gap-continuous-refractory"
+    }
+    assert {
+        c["electrical_mode"]
+        for c in report["cases"]
+        if c["extension"] in {"gap", "spikelets", "both"}
+    } == {"boundary"}
 
 
 @pytest.mark.parametrize(
