@@ -26,6 +26,10 @@
 
 ### Tooling
 
+- **GitHub templates:** a pre-registered experiment issue form (question, sources,
+  protocol and verdicts, what was seen before the lock, compensations), a bug form, and a PR
+  checklist with the project's rules. Labels `preregistration`, `result`, `architecture`,
+  `embodiment`.
 - **`scripts/bench_viewer.py`** (#24): builds the site, opens each scene with `?bench=` in a
   fresh browser profile and appends the summary, the GL backend and the load average to
   `runs/viewer-bench/`. It refuses to start above a 1-minute load of 1.0, so a baseline is
