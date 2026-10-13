@@ -4,6 +4,10 @@ Status on 2026-10-13. This page is the index. Each verdict is recorded on the li
 and the table adds none. What remains open needs a measurement from an animal, a published
 map, hardware, or a lock that is written and not yet run.
 
+The [integrity audit](integrity-audit-2026-10-13.md) records the numerical/provenance
+baseline and the accepted corrections. [Run integrity](run-integrity.md) specifies
+immutable executions, checkpoint compatibility and explicit electrical numerical modes.
+
 ## Results
 
 | Result                                     | Verdict                                                      | Record                                                                                            |
@@ -21,7 +25,7 @@ map, hardware, or a lock that is written and not yet run.
 | Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                              | [behavior](behavior.md#residual-partner-scan)                                                     |
 | Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit | [behavior](behavior.md#residual-partner-follow-up)                                                |
 | T4/T5 through the eye v1                   | neither                                                      | [eye](eye.md#t4t5-direction-selectivity-through-the-eye-lock-2026-10-13)                          |
-| T4/T5 v2                                   | locked, no run                                               | [eye](eye.md#t4t5-version-2-graded-photoreceptors-and-lamina-lock-2026-10-13-84-97)               |
+| T4/T5 v2                                   | original worktree running; no completed result               | [eye](eye.md#t4t5-version-2-graded-photoreceptors-and-lamina-lock-2026-10-13-84-97)               |
 | NeuroMechFly jump v1                       | short                                                        | [embodiment](embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)               |
 | Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference | [comparison](comparison.md)                                                                       |
 | Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                        | [comparison](comparison.md)                                                                       |
@@ -88,7 +92,7 @@ Both stay off unless a lock names them.
 | Issue                                                                                                                 | Blocked by                                                                                                                                                               | Unblocked by                                                                                                                          | Ready when it arrives                                                                                                                      |
 | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | [#34](https://github.com/gianlucamazza/flymsg/issues/34) M2                                                           | No measured LC4 tuning: the transducer's gain and ceiling are stated by the caller                                                                                       | LC4 or LPLC2 responses to looming with trial variability, mapped to MaleCNS bodyIds (anchors: von Reyn et al. 2014, Ache et al. 2019) | `sensory_runtime.schedule_sensory_drive`, the closed loop with its three controls                                                          |
-| [#84](https://github.com/gianlucamazza/flymsg/issues/84) eye                                                          | No measured Drosophila release curve. The column → direction table exists. T4/T5 v2 is locked and has no result                                                          | The v2 envelope, judged against Maisak et al. 2013, or a measured photoreceptor and LMC release curve                                 | [eye](eye.md): geometry, `eye.edge_coverage`, `sim.Graded`, `validation/t4t5.yaml` v2                                                      |
+| [#84](https://github.com/gianlucamazza/flymsg/issues/84) eye                                                          | No measured Drosophila release curve. The column → direction table exists. T4/T5 v2 is running in its original worktree and has no completed result                      | The v2 envelope, judged against Maisak et al. 2013, or a measured photoreceptor and LMC release curve                                 | [eye](eye.md): geometry, `eye.edge_coverage`, `sim.Graded`, `validation/t4t5.yaml` v2                                                      |
 | [#85](https://github.com/gianlucamazza/flymsg/issues/85) electrical, modulation                                       | No junctional conductance; no gap-junction list; no per-type modulatory effect                                                                                           | Paired recordings with conductance and input resistance; a ShakB puncta map on MaleCNS bodyIds; receptor maps with measured effects   | `sim.Gap` (off by default; a spike crosses when the lock sets `spike_mv` and `spike_ms`) and the sign table with its documented exclusions |
 | [#19](https://github.com/gianlucamazza/flymsg/issues/19), [#35](https://github.com/gianlucamazza/flymsg/issues/35) M3 | No published assignment of a MaleCNS motor neuron to a FlyBody actuator; FlyBody has no tergotrochanter joint (FlyGym's NeuroMechFly has the coxa-trochanter joint, #90) | A muscle-level map for `TTMn_L` and `TTMn_R` with force and timing, and a body that has the joint                                     | `validation/motor_map.yaml` (fail-closed, every row `unmapped`), the M0 contracts, the timestep rules                                      |
 | [#36](https://github.com/gianlucamazza/flymsg/issues/36) M4                                                           | No held-out animal measurement for a model prediction                                                                                                                    | An animal test of the predictions below, pre-registered before the data are seen                                                      | The predictions, the frozen partition, the behavior lock                                                                                   |
@@ -118,7 +122,11 @@ about the fly.
 
 ## Open model-side
 
-- T4/T5 v2 is locked and has no result ([eye](eye.md)).
+- Integrity corrections are implemented under the accepted ADRs; the full validation
+  record is maintained in the [audit](integrity-audit-2026-10-13.md). Archived results and
+  already registered boundary-reset protocols preserve their original physics.
+
+- T4/T5 v2 is running in its original worktree and has no completed result ([eye](eye.md)).
 - Kenyon cell sparseness v5 is locked and has no result
   ([model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)). v4 showed that
   subthreshold coupling drains projection neurons.

@@ -357,7 +357,9 @@ def protocol(
             f"config{cfg['config']:02d}", lambda c=cfg: configuration(c)
         )
         if not fresh and report is not None:
-            report.step(len(stimuli), note=f"config {cfg['config']} resumed")
+            report.step(
+                len(stimuli), note=f"config {cfg['config']} resumed", resumed=True
+            )
         out = decide(got["spikes"], proto["preferred"])
         metrics.append(out["metrics"].assign(config=cfg["config"]))
         rate_r = float(got["rate"]["photoreceptor_rate_hz"].iloc[0])

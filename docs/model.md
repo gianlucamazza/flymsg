@@ -324,14 +324,13 @@ of the coupling the fly would need. It is a calibration of a free parameter agai
 sparseness, not a test: what would test it is a measured eLN → PN coupling.
 
 **Result of version 4 (2026-10-13): none.** Run from `b1116af` (coupling as an explicit
-first-order step, a compensation named in the lock). No coupled arm is within, so the model
-predicts no coupling: E and F stay silent (0.2% of Kenyon cells) and coupling makes them
+first-order step, a compensation named in the lock). No scanned coupled arm meets the locked bounds: E and F stay silent (0.2% of Kenyon cells) and coupling makes them
 quieter, down to 0% at 1, while the share of spiking PNs falls from 11% / 8% to 5% / 1%.
 Symmetric subthreshold coupling ties active PNs to local neurons at rest and drains them.
 In the fly the eLN → PN lateral excitation is driven by eLN spikes, which cross the junction
 as spikelets (Yaksi & Wilson 2010). This run's junctions pass only subthreshold potentials:
-the lock sets no spike term, and a LIF reset draws none. So v4 says that coupling without
-spikelets cannot be the missing excitation, not that the coupling is absent. Outputs:
+the lock sets no spike term, and a LIF reset draws none. The missing waveform is a candidate explanation, not a cause isolated by this finite
+grid and its explicit first-order integrator. v4 did not test the later implementations. Outputs:
 `results/kc-sparseness/v4/`. Figure: [v1–v4, dense or silent](img/kc-sparseness.svg).
 
 **Version 5 (lock, 2026-10-13, #85).** The coupling is no longer scanned: Yaksi & Wilson
@@ -357,15 +356,18 @@ Between step boundaries the equation is linear, so each connected group is integ
 exactly: the matrix exponential of the group's membrane, synaptic and spike terms (Van
 Loan's block form) is computed once per run, and each step applies it in float64. As
 everywhere in the model, discrete events act at step boundaries: spikes, resets,
-deliveries, kicks, the start and end of a spike term, and the refractory hold (a refractory
-neuron starts each step at rest with its conductance frozen and is set back to rest at its
-end).
+deliveries, kicks, the start and end of a spike term, and the refractory hold. Refractory membranes are continuously clamped at rest, with frozen
+chemical conductance; free partners retain the sink from their contacts. The accepted
+[electrical ADR](adr-gap-refractory.md) and [run integrity](run-integrity.md) document the
+reduced operators and execution identity.
 
 EM does not show gap junctions and few are measured (#85), so no electrical synapse is in
 the default model. Without them the engine is unchanged, bit for bit; with them `sim.run`,
 the NumPy reference and `CpuRuntime` agree exactly (`tests/test_gap.py`), two coupled cells
-relax as the exact solution and reproduce c / (1 + c), and the native C++ executor matches
-the CPU runtime bit for bit (fixture version 2); the GPU lane refuses them (#39).
+relax as the exact solution and reproduce c / (1 + c), the native C++ executor retains its explicitly named boundary-reset and all-free
+electrical paths; dynamic
+continuous clamps require a separately qualified native implementation and are refused.
+The GPU lane refuses electrical fixtures (#39).
 Until 2026-10-13 (`b1116af`, Kenyon cell v4) the coupling was an explicit first-order step
 added to the membrane update.
 

@@ -9,7 +9,7 @@ from typing import Protocol
 import numpy as np
 from scipy import sparse
 
-from flymsg import sim
+from flymsg import electrical, sim
 
 SCHEMA = "flymsg.neural_checkpoint/v1"
 
@@ -135,6 +135,17 @@ class CpuRuntime:
         n = self._n
         self._graded = sim.graded_arrays(graded, n, self._p.dt)
         self._gap = sim.gap_arrays(gap, n, self._p)
+        self._gap_system = electrical.generators(
+            gap, self._gap[0], self._gap[1], self._p
+        )
+        self._electrical_mode = gap.refractory_mode if gap is not None else "none"
+        self._semantics = SEMANTICS
+        if self._gap[0].size:
+            self._semantics += "+" + (
+                electrical.BOUNDARY_SEMANTICS
+                if self._electrical_mode == "boundary"
+                else electrical.SEMANTICS
+            )
         self._state = {
             "v": np.full(n, self._p.v_rest, dtype=np.float32),
             "g": np.zeros(n, dtype=np.float32),
@@ -159,7 +170,7 @@ class CpuRuntime:
             self._state["gap_pulse"] = np.zeros(self._gap[0].size, dtype=np.int32)
         config = json.dumps(
             {
-                "semantics": SEMANTICS,
+                "semantics": self._semantics,
                 "params": asdict(self._p),
                 "steps": steps,
                 "per_bin": per_bin,
@@ -188,6 +199,10 @@ class CpuRuntime:
         ):
             digest.update(str((array.shape, array.dtype.str)).encode())
             digest.update(array.tobytes())
+        if self._gap[0].size:
+            for array in self._gap_system:
+                digest.update(str((array.shape, array.dtype.str)).encode())
+                digest.update(array.tobytes())
         digest.update(str(self._stim_steps).encode())
         self._identity = digest.hexdigest()
         self._state["input_counts"] = self._kicks
@@ -200,6 +215,8 @@ class CpuRuntime:
         self._graded_new = np.zeros(ng, dtype=np.float32)
         self._gap_buf = np.zeros(self._gap[0].size, dtype=np.float32)
         self._no_pulse = np.zeros(0, dtype=np.int32)
+        self._gap_current = self._gap[2].copy()
+        self._gap_mask = np.zeros(self._gap[0].size, dtype=np.bool_)
 
     @property
     def step(self) -> int:
@@ -261,6 +278,9 @@ class CpuRuntime:
             self._gap_buf,
             *self._gap[4:],
             s.get("gap_pulse", self._no_pulse),
+            *self._gap_system,
+            self._gap_current,
+            self._gap_mask,
         )
         self._step = step
 
@@ -332,7 +352,7 @@ class CpuRuntime:
         metadata = json.dumps(
             {
                 "schema": SCHEMA,
-                "semantics": SEMANTICS,
+                "semantics": self._semantics,
                 "identity": self._identity,
                 "step": self._step,
                 "state_sha256": _state_digest(
@@ -355,7 +375,7 @@ class CpuRuntime:
             meta = json.loads(str(document["metadata"]))
             if (
                 meta.get("schema") != SCHEMA
-                or meta.get("semantics") != SEMANTICS
+                or meta.get("semantics") != self._semantics
                 or meta.get("identity") != self._identity
             ):
                 raise ValueError("incompatible checkpoint")

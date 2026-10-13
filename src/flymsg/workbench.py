@@ -22,7 +22,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, prereg, sim
+from flymsg import data, prereg, runstore, sim
 
 CONFIG_SCHEMA = "flymsg.experiment/v1"
 LABELS = ("exploratory", "preregistered", "held-out")
@@ -201,10 +201,34 @@ def index(roots: list[Path]) -> pd.DataFrame:
     rows = []
     for root in roots:
         for path in sorted(Path(root).rglob("manifest.json")):
+            if any(part.startswith(".") for part in path.relative_to(root).parts):
+                continue
+            if path.parent.name == "output" and path.parent.parent.parent.name.endswith(
+                ".executions"
+            ):
+                if not (path.parent.parent / "complete.json").exists():
+                    continue
+                try:
+                    runstore.verify_completed(path.parent.parent)
+                except ValueError:
+                    rows.append(
+                        {
+                            "path": str(path.parent),
+                            "label": "invalid",
+                            "started_at": None,
+                        }
+                    )
+                    continue
             try:
                 doc = json.loads(path.read_text())
             except (OSError, json.JSONDecodeError):
-                rows.append({"path": str(path.parent), "label": "unreadable"})
+                rows.append(
+                    {
+                        "path": str(path.parent),
+                        "label": "unreadable",
+                        "started_at": None,
+                    }
+                )
                 continue
             if doc.get("schema") != "flymsg.run_manifest/v1":
                 continue
@@ -213,6 +237,7 @@ def index(roots: list[Path]) -> pd.DataFrame:
             rows.append(
                 {
                     "path": str(path.parent),
+                    "execution": (doc.get("extra") or {}).get("execution_sha256", ""),
                     "command": doc.get("command"),
                     "label": label_of(doc),
                     "outcome": outcome_of(doc),

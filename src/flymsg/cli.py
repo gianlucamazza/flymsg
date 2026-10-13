@@ -24,6 +24,7 @@ from flymsg import (
     jump3d_lock,
     kc_sparseness,
     loop,
+    managed,
     manifest,
     nulls,
     odors,
@@ -163,6 +164,14 @@ def summarize(
 def _stamp(out, command, a, neurons, edges, config, seeds, started, extra=None):
     """Write a run manifest next to this command's outputs."""
     dataset_dir = a.data / "fafb" if a.dataset == "fafb" else a.data
+    if getattr(a, "_run", None) is not None:
+        return a._run.stamp(
+            command=command,
+            config=config,
+            seeds=seeds,
+            dataset=a._dataset_snapshot,
+            extra={"data_dir": os.fspath(dataset_dir), **(extra or {})},
+        )
     manifest.write(
         out,
         command=command,
@@ -297,7 +306,7 @@ def cmd_sensitivity(a, neurons, edges):
     doc = sensitivity.assert_matches_code()
     print(sensitivity.summary(doc))
     cells = sensitivity.run(neurons, edges, a.workers, a.checkpoint)
-    out = Path("runs/sensitivity") / f"v{doc['version']}"
+    out = managed.output(a, Path("runs/sensitivity") / f"v{doc['version']}")
     out.mkdir(parents=True, exist_ok=True)
     cells.to_csv(out / "cells.csv", index=False)
     held = sensitivity.holds(cells, doc)
@@ -639,7 +648,7 @@ def cmd_homology(a, neurons, edges):
         "schema": homology.SCHEMA,
         "evidence": homology.EVIDENCE,
         "male": manifest.dataset_info("malecns", a.data, neurons, edges),
-        "female": manifest.dataset_info("fafb", a.data / "fafb", *female),
+        "female": manifest.dataset_info("fafb", a.data, *female),
         "categories": counts.to_dict(),
     }
     meta.update(
@@ -649,6 +658,17 @@ def cmd_homology(a, neurons, edges):
         evidence_codes={"flywireType": homology.EVIDENCE},
     )
     (out / "mapping.meta.json").write_text(json.dumps(meta, indent=1, sort_keys=True))
+    _stamp(
+        out,
+        "homology",
+        a,
+        neurons,
+        edges,
+        {"method": "published crosswalk; no inferred homology"},
+        {},
+        started,
+        extra={"label": "exploratory"},
+    )
     print(f"-> {out}")
 
 
@@ -674,7 +694,7 @@ def cmd_wiring_null(a, neurons, edges):
     )
     real = validate.run(neurons, edges, params, wiring.N1_SEEDS)
     shuf = validate.run(neurons, shuffled, params, wiring.N1_SEEDS)
-    out = Path("runs")
+    out = managed.output(a, Path("runs"))
     out.mkdir(exist_ok=True)
     real.to_csv(out / "n1-real.csv", index=False)
     shuf.to_csv(out / "n1-shuffle.csv", index=False)
@@ -719,7 +739,7 @@ def cmd_validate(a, neurons, edges):
     print(report.round(1).to_string(index=False))
     failed = int((~report["passed"]).sum())
     print(f"\n{len(report) - failed}/{len(report)} checks passed")
-    out = a.out or Path("runs/validate")
+    out = managed.output(a, a.out or Path("runs/validate"))
     out.mkdir(parents=True, exist_ok=True)
     report.to_csv(out / "report.csv", index=False)
     _stamp(
@@ -751,7 +771,7 @@ def _cmd_benchmark_corners(a, neurons, edges, started):
     print(report.round(1).to_string(index=False))
     text = benchmarks.corner_verdicts(report)
     print(text)
-    out = Path("runs/benchmarks/corners")
+    out = managed.output(a, Path("runs/benchmarks/corners"))
     out.mkdir(parents=True, exist_ok=True)
     report.to_csv(out / "report.csv", index=False)
     _stamp(
@@ -793,7 +813,7 @@ def cmd_behavior(a, neurons, edges):
     text = behavior.verdict(report)
     print(text)
     print("reported rows do not decide and are not a retune")
-    out = Path("runs/behavior")
+    out = managed.output(a, Path("runs/behavior"))
     out.mkdir(parents=True, exist_ok=True)
     report.to_csv(out / "report.csv", index=False)
     np.savez_compressed(out / "replay.npz", **replay)
@@ -826,7 +846,9 @@ def cmd_silence_scan(a, neurons, edges):
     doc = silence_scan.assert_matches_code()
     print(silence_scan.summary(doc))
     out = silence_scan.run(neurons, edges, a.workers, a.checkpoint)
-    path = Path("runs/silence-scan") / f"v{doc['version']}"  # never overwrite a version
+    path = managed.output(
+        a, Path("runs/silence-scan") / f"v{doc['version']}"
+    )  # never overwrite a version
     path.mkdir(parents=True, exist_ok=True)
     lines = [
         f"base arm, screen seeds: {out['base_screen']}",
@@ -874,7 +896,9 @@ def cmd_partner_followup(a, neurons, edges):
     doc = partner_followup.assert_matches_code()
     print(partner_followup.summary(doc))
     out = partner_followup.run(neurons, edges, a.workers, a.checkpoint)
-    path = Path("runs/partner-followup") / f"v{doc['version']}"  # never overwrite
+    path = managed.output(
+        a, Path("runs/partner-followup") / f"v{doc['version']}"
+    )  # never overwrite
     path.mkdir(parents=True, exist_ok=True)
     out["left"].to_csv(path / "left.csv", index=False)
     drive = pd.DataFrame(
@@ -926,7 +950,9 @@ def cmd_mb_plasticity(a, neurons, edges):
     doc = plasticity.assert_matches_code()
     print(plasticity.summary(doc))
     out = plasticity.run(neurons, edges)
-    path = Path("runs/mb-plasticity") / f"v{doc['version']}"  # never overwrite
+    path = managed.output(
+        a, Path("runs/mb-plasticity") / f"v{doc['version']}"
+    )  # never overwrite
     path.mkdir(parents=True, exist_ok=True)
     out["table"].to_csv(path / "counts.csv", index=False)
     text = "\n".join(
@@ -992,9 +1018,11 @@ def cmd_kc_sparseness(a, neurons, edges):
     started = datetime.now(UTC)
     doc = kc_sparseness.assert_matches_code()
     print(kc_sparseness.summary(doc))
-    path = Path("runs/kc-sparseness") / f"v{doc['version']}"  # never overwrite
+    path = managed.output(
+        a, Path("runs/kc-sparseness") / f"v{doc['version']}"
+    )  # never overwrite
     path.mkdir(parents=True, exist_ok=True)
-    steps = progress.Steps(path / "steps", doc["content_sha256"])
+    steps = progress.Steps(a._run.root / "steps", a._run.identity)
     out = kc_sparseness.run(
         neurons,
         edges,
@@ -1015,6 +1043,7 @@ def cmd_kc_sparseness(a, neurons, edges):
         edges,
         {
             "sparseness_version": doc["version"],
+            "electrical_semantics": kc_sparseness.electrical_semantics(doc),
             "sparseness_sha256": doc["content_sha256"],
             "rate_hz": proto.get("rate_hz", proto.get("rate_at_response_1_hz")),
             "odor_source": proto.get("odor_source", "orn_type"),
@@ -1052,9 +1081,11 @@ def cmd_t4t5(a, neurons, edges):
     started = datetime.now(UTC)
     doc = t4t5.assert_matches_code()
     print(t4t5.summary(doc))
-    path = Path("runs/t4t5") / f"v{doc['version']}"  # never overwrite
+    path = managed.output(
+        a, Path("runs/t4t5") / f"v{doc['version']}"
+    )  # never overwrite
     path.mkdir(parents=True, exist_ok=True)
-    steps = progress.Steps(path / "steps", doc["content_sha256"])
+    steps = progress.Steps(a._run.root / "steps", a._run.identity)
     out = t4t5.run(
         neurons, edges, a.data, steps, progress.Progress(t4t5.n_runs(doc), "t4t5")
     )
@@ -1104,7 +1135,9 @@ def cmd_jump3d(a, neurons, edges):
     doc = jump3d_lock.assert_matches_code()
     print(jump3d_lock.summary(doc))
     out = jump3d_lock.run(neurons, edges)
-    path = Path("runs/jump3d") / f"v{doc['version']}"  # never overwrite
+    path = managed.output(
+        a, Path("runs/jump3d") / f"v{doc['version']}"
+    )  # never overwrite
     path.mkdir(parents=True, exist_ok=True)
     out["table"].to_json(path / "seeds.json", orient="records", indent=2)
     text = out["table"].to_string(index=False) + f"\nverdict: {out['verdict']}"
@@ -1147,7 +1180,7 @@ def cmd_benchmarks(a, neurons, edges):
     print(report.round(1).to_string(index=False))
     print(benchmarks.verdict(report))
     print("reported rows do not decide and are not a retune")
-    out = Path("runs/benchmarks")
+    out = managed.output(a, Path("runs/benchmarks"))
     out.mkdir(parents=True, exist_ok=True)
     report.to_csv(out / "report.csv", index=False)
     _stamp(
@@ -1247,7 +1280,7 @@ def cmd_nulls(a, neurons, edges):
     results = nulls.run_all(neurons, edges, draws, families, a.seed0)
     text = nulls.format_report(results)
     print(text)
-    out = a.out or Path("runs/nulls")
+    out = managed.output(a, a.out or Path("runs/nulls"))
     out.mkdir(parents=True, exist_ok=True)
     (out / "report.txt").write_text(text + "\n", encoding="utf-8")
     for family, got in results.items():
@@ -1419,6 +1452,24 @@ def cmd_dimorphism(a, neurons, edges):
         )
         table = dimorphism.run(neurons, edges, params, a.seeds)
     print(table.round(3).to_string(index=False))
+    out = a._run.output
+    table.to_csv(out / "table.csv", index=False)
+    _stamp(
+        out,
+        "dimorphism",
+        a,
+        neurons,
+        edges,
+        {
+            "loop": a.loop,
+            "silencing": a.silencing,
+            "by_type": a.by_type,
+            "w_syn": params.w_syn,
+            "th_jump": params.th_jump,
+        },
+        {"seeds": a.seeds, "null": a.null},
+        datetime.now(UTC),
+    )
 
 
 def cmd_calibrate(a, neurons, edges):
@@ -2063,8 +2114,9 @@ def main() -> None:
         if a.dataset == "fafb" and a.cmd in MALECNS_ONLY:
             # the battery needs the VNC, and the 3D view streams MaleCNS geometry
             sys.exit(f"flymsg: {a.cmd} needs --dataset malecns")
+        prepared = managed.prepare(a)
         neurons, edges = data.load(a.data, a.dataset)
-        COMMANDS[a.cmd](a, neurons, edges)
+        managed.execute(a, neurons, edges, COMMANDS[a.cmd], prepared)
     except KeyError as err:  # unknown neuron query
         sys.exit(f"flymsg: {err.args[0]}")
     except OSError as err:  # missing data files, failed downloads
