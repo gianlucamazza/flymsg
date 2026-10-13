@@ -112,6 +112,63 @@ def graded_arrays(graded: Graded | None, n: int, dt: float) -> tuple:
 
 
 @dataclass(frozen=True)
+class Membrane:
+    """Membrane and threshold parameters of neurons `idx`, replacing those of `Params` for
+    them only: membrane and synaptic time constants (ms), rest (also the reset, mV) and
+    threshold (mV). No value has a default, so a lock states each one and its source. The
+    refractory period, delay and weights stay those of `Params`. Neurons not listed keep
+    `Params`, so a network without `Membrane` runs exactly as before."""
+
+    idx: np.ndarray
+    tau_m: np.ndarray
+    tau_syn: np.ndarray
+    v_rest: np.ndarray
+    v_th: np.ndarray
+
+
+def membrane_arrays(membrane: Membrane | None, n: int, p: "Params") -> tuple:
+    """Per-neuron float32 kernel arrays (em, es, gv, v_rest, v_th): membrane and synaptic
+    decays and the synaptic gain over one step, rest and threshold. Each neuron's values are
+    computed in float64 and rounded as `_constants` does, so a neuron that keeps `Params`
+    gets exactly the scalar constants. Shared with `runtime.CpuRuntime`."""
+    tau_m = np.full(n, p.tau_m)
+    tau_syn = np.full(n, p.tau_syn)
+    v_rest = np.full(n, p.v_rest)
+    v_th = np.full(n, p.v_th)
+    if membrane is not None:
+        idx = np.asarray(membrane.idx)
+        if idx.size and idx.dtype.kind not in "iu":
+            raise ValueError("membrane indices must be integers")
+        idx = idx.astype(np.int64).reshape(-1)
+        if np.unique(idx).size != idx.size or np.any(idx < 0) or np.any(idx >= n):
+            raise ValueError("membrane indices must be unique and inside the network")
+        cols = [
+            np.broadcast_to(np.asarray(x, dtype=np.float64), idx.shape)
+            for x in (membrane.tau_m, membrane.tau_syn, membrane.v_rest, membrane.v_th)
+        ]
+        if not all(np.isfinite(c).all() for c in cols):
+            raise ValueError("membrane parameters must be finite")
+        if np.any(cols[0] <= 0) or np.any(cols[1] <= 0) or np.any(cols[0] == cols[1]):
+            raise ValueError(
+                "membrane time constants must be positive and tau_m != tau_syn"
+            )
+        if np.any(cols[3] <= cols[2]):
+            raise ValueError("membrane threshold must lie above rest")
+        tau_m[idx], tau_syn[idx], v_rest[idx], v_th[idx] = cols
+    em, es = np.exp(-p.dt / tau_m), np.exp(-p.dt / tau_syn)
+    gv = tau_syn / (tau_syn - tau_m) * (es - em)
+    return tuple(x.astype(np.float32) for x in (em, es, gv, v_rest, v_th))
+
+
+def kernel_constants(membrane: Membrane | None, n: int, p: "Params") -> tuple:
+    """The constants `_advance` takes, in its order: per-neuron (em, es, gv), the scalar
+    threshold decay, per-neuron rest and threshold, the scalar Poisson kick."""
+    em, es, gv, v_rest, v_th = membrane_arrays(membrane, n, p)
+    scalars = _constants(p)
+    return em, es, gv, scalars[3], v_rest, v_th, scalars[6]
+
+
+@dataclass(frozen=True)
 class Gap:
     """Electrical synapses between neurons `i[k]` and `j[k]`. `coupling[k]` is the junction's
     conductance over i's leak conductance and `coupling_back[k]` over j's (default: the
@@ -139,6 +196,18 @@ class Gap:
     spike_mv: float | np.ndarray | None = None
     spike_ms: float | None = None
     refractory_mode: str = "continuous"
+
+
+def check_membrane_gap(membrane: Membrane | None, gap_nodes: np.ndarray) -> None:
+    """Electrical coupling is integrated with the `Params` membrane: refuse a `Membrane` on a
+    coupled neuron rather than integrate it with the wrong time constants or rest."""
+    if (
+        membrane is not None
+        and np.intersect1d(np.asarray(membrane.idx, dtype=np.int64), gap_nodes).size
+    ):
+        raise ValueError(
+            "a Membrane on an electrically coupled neuron is not supported"
+        )
 
 
 # largest coupled group: its dense step matrix is m x 3m float64 and its exponential needs a
@@ -324,6 +393,7 @@ def run(
     trace: np.ndarray | None = None,
     graded: Graded | None = None,
     gap: Gap | None = None,
+    membrane: Membrane | None = None,
 ) -> Result:
     """Simulate; stimulation lasts `stim_ms` (default: the whole run). Neurons in `silence`
     never fire, so they transmit nothing: for the rest of the network this equals zeroing
@@ -333,7 +403,8 @@ def run(
     every spike step of those neurons, in the order given. The recording is written after the
     spike bookkeeping and does not enter the state update. `graded` makes those neurons
     non-spiking (see `Graded`); their mean potential per bin is returned in `graded_v`.
-    `gap` adds electrical synapses (see `Gap`).
+    `gap` adds electrical synapses (see `Gap`). `membrane` gives listed neurons their own
+    membrane and threshold parameters (see `Membrane`).
     """
     p = p or Params()
     stim = np.unique(stim)  # duplicates would be dropped by fancy-index +=
@@ -378,6 +449,7 @@ def run(
         gap, n, p
     )
     gap_gen, gap_keys, gap_clock = electrical.generators(gap, gap_nodes, gap_off, p)
+    check_membrane_gap(membrane, gap_nodes)
     counts, first, g_vsum = _kernel(
         W.indptr.astype(np.int64),
         W.indices.astype(np.int64),
@@ -392,7 +464,7 @@ def run(
         is_stim,
         silent,
         jump,
-        *_constants(p),
+        *kernel_constants(membrane, n, p),
         trace_col,
         traced,
         g_idx,
@@ -507,7 +579,7 @@ def _kernel(
     to rest, conductances of non-refractory neurons, then the spike term of members whose
     spike is still crossing), summed in float64 in that order; a member's spike at 4 makes
     its spike term its `gap_amp` for the next `gap_width` steps."""
-    v = np.full(n, v_rest, dtype=np.float32)
+    v = v_rest.copy()
     g = np.zeros(n, dtype=np.float32)
     th = np.zeros(n, dtype=np.float32)
     ref_until = np.zeros(n, dtype=np.int32)
@@ -649,7 +721,20 @@ def _advance(
     gap_mask,
 ):
     stim_steps = kicks.shape[0]
-    rest64 = np.float64(v_rest)
+    # without a Membrane every neuron has the Params constants: the hot loops then read
+    # scalars, as before per-neuron membranes existed, with the same float32 values
+    per_neuron = False
+    for i in range(n):
+        if (
+            em[i] != em[0]
+            or es[i] != es[0]
+            or gv[i] != gv[0]
+            or v_rest[i] != v_rest[0]
+            or v_th[i] != v_th[0]
+        ):
+            per_neuron = True
+            break
+    em0, es0, gv0, rest0, th0 = em[0], es[0], gv[0], v_rest[0], v_th[0]
     zero, one = np.float32(0.0), np.float32(1.0)
     for t in range(start_step, stop_step):
         # The refractory mask is constant for the full neural step.
@@ -679,35 +764,51 @@ def _advance(
             for r in range(m):
                 acc = 0.0
                 for q in range(m):
-                    acc += M[r, q] * (np.float64(v[gap_nodes[a + q]]) - rest64)
+                    node = gap_nodes[a + q]
+                    acc += M[r, q] * (np.float64(v[node]) - np.float64(v_rest[node]))
                 for q in range(m):
                     if ref_until[gap_nodes[a + q]] <= t:
                         acc += M[r, m + q] * np.float64(g[gap_nodes[a + q]])
                 for q in range(m):
                     if gap_pulse[a + q] > 0:
                         acc += M[r, 2 * m + q] * gap_amp[a + q]
-                gap_buf[a + r] = np.float32(rest64 + acc)
+                gap_buf[a + r] = np.float32(np.float64(v_rest[gap_nodes[a + r]]) + acc)
         for k in range(gap_pulse.size):
             if gap_pulse[k] > 0:
                 gap_pulse[k] -= 1
         # 1. state update (refractory: v stays at v_rest, g frozen), branch-free so that
         # it vectorises; the refractory lanes compute and discard
-        for i in range(n):
-            frozen = ref_until[i] > t
-            vi = (v[i] - v_rest) * em + g[i] * gv + v_rest
-            gi = g[i] * es
-            v[i] = v_rest if frozen else vi
-            g[i] = g[i] if frozen else gi
-            th[i] = th[i] * decay_th
+        if per_neuron:
+            for i in range(n):
+                frozen = ref_until[i] > t
+                vi = (v[i] - v_rest[i]) * em[i] + g[i] * gv[i] + v_rest[i]
+                gi = g[i] * es[i]
+                v[i] = v_rest[i] if frozen else vi
+                g[i] = g[i] if frozen else gi
+                th[i] = th[i] * decay_th
+        else:
+            for i in range(n):
+                frozen = ref_until[i] > t
+                vi = (v[i] - rest0) * em0 + g[i] * gv0 + rest0
+                gi = g[i] * es0
+                v[i] = rest0 if frozen else vi
+                g[i] = g[i] if frozen else gi
+                th[i] = th[i] * decay_th
         for k in range(gap_nodes.size):
             if ref_until[gap_nodes[k]] <= t:
                 v[gap_nodes[k]] = gap_buf[k]
         # 2. threshold
         ns = 0
-        for i in range(n):
-            if v[i] > v_th + th[i] and not silent[i] and not is_graded[i]:
-                spiking[ns] = i
-                ns += 1
+        if per_neuron:
+            for i in range(n):
+                if v[i] > v_th[i] + th[i] and not silent[i] and not is_graded[i]:
+                    spiking[ns] = i
+                    ns += 1
+        else:
+            for i in range(n):
+                if v[i] > th0 + th[i] and not silent[i] and not is_graded[i]:
+                    spiking[ns] = i
+                    ns += 1
         for k in range(g_idx.size):
             i = g_idx[k]
             f = (v[i] - g_lo[k]) / g_span[k]
@@ -758,7 +859,7 @@ def _advance(
         b = t // per_bin
         for k in range(ns):
             i = spiking[k]
-            v[i] = v_rest
+            v[i] = v_rest[i]
             g[i] = 0.0
             th[i] = th[i] + jump[i]
             if not is_stim[i]:

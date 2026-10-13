@@ -62,6 +62,7 @@ class CpuRuntime:
         trace: np.ndarray | None = None,
         graded: sim.Graded | None = None,
         gap: sim.Gap | None = None,
+        membrane: sim.Membrane | None = None,
     ):
         if type(steps) is not int or steps <= 0 or steps >= 2**31:
             raise ValueError("steps must be a positive int below 2**31")
@@ -133,12 +134,15 @@ class CpuRuntime:
             raise ValueError("refractory deadlines exceed int32")
         self._constants = sim._constants(self._p)
         n = self._n
+        self._membrane = membrane
+        self._kernel_constants = sim.kernel_constants(membrane, n, self._p)
         self._graded = sim.graded_arrays(graded, n, self._p.dt)
         self._gap = sim.gap_arrays(gap, n, self._p)
         self._gap_system = electrical.generators(
             gap, self._gap[0], self._gap[1], self._p
         )
         self._electrical_mode = gap.refractory_mode if gap is not None else "none"
+        sim.check_membrane_gap(membrane, self._gap[0])
         self._semantics = SEMANTICS
         if self._gap[0].size:
             self._semantics += "+" + (
@@ -147,7 +151,7 @@ class CpuRuntime:
                 else electrical.SEMANTICS
             )
         self._state = {
-            "v": np.full(n, self._p.v_rest, dtype=np.float32),
+            "v": self._kernel_constants[4].copy(),
             "g": np.zeros(n, dtype=np.float32),
             "th": np.zeros(n, dtype=np.float32),
             "ref_until": np.zeros(n, dtype=np.int32),
@@ -199,6 +203,12 @@ class CpuRuntime:
         ):
             digest.update(str((array.shape, array.dtype.str)).encode())
             digest.update(array.tobytes())
+        if membrane is not None:
+            # per-neuron constants enter the identity only when given, so checkpoints
+            # without a Membrane keep theirs
+            for array in self._kernel_constants[:3] + self._kernel_constants[4:6]:
+                digest.update(str((array.shape, array.dtype.str)).encode())
+                digest.update(array.tobytes())
         if self._gap[0].size:
             for array in self._gap_system:
                 digest.update(str((array.shape, array.dtype.str)).encode())
@@ -258,7 +268,7 @@ class CpuRuntime:
             self._is_stim,
             self._silent,
             self._jump,
-            *self._constants,
+            *self._kernel_constants,
             self._trace_col,
             s["traced"],
             s["v"],

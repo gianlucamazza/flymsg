@@ -66,7 +66,8 @@ Still outside the default model: a gap-junction list, per-type neuromodulation
 ([#85](https://github.com/gianlucamazza/flymsg/issues/85)) and per-type membrane parameters.
 `sim.Gap` can express a caller-stated junction, and a spikelet term when the same lock
 sets `spike_mv` and `spike_ms`. `sim.Graded` can express a caller-stated release curve.
-Both stay off unless a lock names them.
+`sim.Membrane` can express caller-stated per-neuron membrane and threshold parameters. All
+three stay off unless a lock names them.
 
 ## Done model-side
 

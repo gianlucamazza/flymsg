@@ -38,6 +38,11 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
         raise NativeCapabilityError(
             "native continuous-clamp electrical coupling with refractory cells is unqualified"
         )
+    if runtime._membrane is not None:
+        # the fixture header carries one set of membrane constants
+        raise NativeCapabilityError(
+            "native per-neuron membrane parameters are unqualified"
+        )
     if np.any(runtime._kicks > 2**53):
         raise ValueError("native double-count fixtures require counts <= 2**53")
     n, steps, d = runtime._n, runtime._steps, runtime._d

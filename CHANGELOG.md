@@ -19,6 +19,11 @@
 
 ### Model
 
+- **Per-neuron membranes** (`sim.Membrane`): listed neurons get their own membrane and
+  synaptic time constants, rest and threshold, stated by a lock with no defaults. Without one
+  the spikes are unchanged bit for bit; the kernel, the oracle and `CpuRuntime` agree with
+  one; coupled neurons and the native executor refuse it. Contract B2 gains `membrane`.
+  Measured cost of the uniform path: about 5% per step on the whole CNS.
 - **Spikelets and asymmetric junctions** (#85): `sim.Gap` takes a coupling per side of a
   junction and, with `spike_mv` and `spike_ms`, lets a spike cross as a rectangular term
   integrated exactly with the rest (third Van Loan block); CPU, NumPy reference, runtime

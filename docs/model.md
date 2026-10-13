@@ -408,6 +408,22 @@ the graded neurons per bin. The native C++ executor runs them from fixture versi
 matches the CPU runtime bit for bit; the GPU lane refuses them until hardware qualifies it
 (#39).
 
+## Per-neuron membranes (optional, 2026-10-13)
+
+`sim.Membrane` gives listed neurons their own membrane time constant, synaptic time
+constant, rest (also the reset) and threshold; every other neuron keeps `Params`. No value
+has a default: a lock states each one and its source, as for `Graded`. The refractory
+period, the delay and the weights stay global. Each neuron's step constants are computed in
+float64 and rounded as the scalar ones are, so without a `Membrane` the kernel reads the same
+float32 values and its spikes are unchanged bit for bit (tested, and 11,091 spikes equal on
+the whole CNS with LC4_R input); the uniform case keeps scalar loops and costs about 5% more
+time per step in a measured whole-CNS run (0.99 s against 1.05 s for 300 ms). The kernel, the
+NumPy oracle and `CpuRuntime` agree exactly with random per-neuron membranes; a runtime with
+a `Membrane` names it in its checkpoint identity. A `Membrane` on an electrically coupled
+neuron is refused (`sim.Gap` integrates with the `Params` membrane), and the native executor
+refuses any `Membrane` until it is qualified. Sources that could fill it are in
+[leads](leads.md); none is used yet.
+
 ## Recording neuron states
 
 `flymsg trace STIM --neurons ...` (module `flymsg.tracing`) records, for chosen neurons, the

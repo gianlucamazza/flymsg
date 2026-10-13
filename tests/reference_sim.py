@@ -6,7 +6,7 @@ flymsg.tracing (tests/test_tracing.py)."""
 import numpy as np
 from scipy import sparse
 
-from flymsg.sim import Gap, Graded, Params, Result, graded_arrays
+from flymsg.sim import Gap, Graded, Membrane, Params, Result, graded_arrays
 
 
 def run_reference(
@@ -22,6 +22,7 @@ def run_reference(
     record: np.ndarray | None = None,
     graded: Graded | None = None,
     gap: Gap | None = None,
+    membrane: Membrane | None = None,
 ):
     """Simulate; stimulation lasts `stim_ms` (default: the whole run). Neurons in `silence`
     never fire, so they transmit nothing: for the rest of the network this equals zeroing
@@ -36,7 +37,15 @@ def run_reference(
     if steps % per_bin:
         raise ValueError(f"duration_ms must be a multiple of bin_ms ({bin_ms})")
     d = max(1, round(p.delay / p.dt))
-    v = np.full(n, p.v_rest, dtype=np.float32)
+    # per-neuron membrane: Params everywhere, then the listed neurons' own values
+    tau_m, tau_syn = np.full(n, p.tau_m), np.full(n, p.tau_syn)
+    rest, v_th = np.full(n, p.v_rest), np.full(n, p.v_th)
+    if membrane is not None:
+        idx = np.asarray(membrane.idx, dtype=np.int64)
+        tau_m[idx], tau_syn[idx] = membrane.tau_m, membrane.tau_syn
+        rest[idx], v_th[idx] = membrane.v_rest, membrane.v_th
+    rest, v_th = rest.astype(np.float32), v_th.astype(np.float32)
+    v = rest.copy()
     g = np.zeros(n, dtype=np.float32)
     th = np.zeros(n, dtype=np.float32)  # adaptive threshold offset
     jump = np.full(n, p.th_jump, dtype=np.float32)
@@ -100,11 +109,11 @@ def run_reference(
     counts = np.zeros((-(-steps // per_bin), n), dtype=np.uint16)
     first = np.full(n, -1, dtype=np.int64)
     # exact solution of dv/dt = (v_rest - v + g) / tau_m, dg/dt = -g / tau_syn over dt
-    em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
+    em, es = np.exp(-p.dt / tau_m), np.exp(-p.dt / tau_syn)
     em, es, gv = (
-        np.float32(em),
-        np.float32(es),
-        np.float32(p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)),
+        em.astype(np.float32),
+        es.astype(np.float32),
+        (tau_syn / (tau_syn - tau_m) * (es - em)).astype(np.float32),
     )
     decay_th = np.float32(np.exp(-p.dt / p.tau_th))
     lam, kick = rate_hz * p.dt / 1000.0, np.float32(p.poisson_scale * p.w_syn)
@@ -147,18 +156,18 @@ def run_reference(
             ]
             exact.append((nodes, (operators[key] * x).cumsum(axis=1)[:, -1]))
         pulse[pulse > 0] -= 1
-        v -= p.v_rest
+        v -= rest
         v *= em
         v += g * gv
-        v += p.v_rest
+        v += rest
         for nodes, values in exact:
             v[nodes] = (rest64 + values).astype(np.float32)
         g *= es
-        v[ref] = p.v_rest
+        v[ref] = rest[ref]
         g[ref] = g_ref
         th *= decay_th
         # threshold (a refractory neuron sits at v_rest, below any threshold)
-        spiking = np.flatnonzero(v > p.v_th + th)
+        spiking = np.flatnonzero(v > v_th + th)
         if silence is not None:
             spiking = spiking[~silent[spiking]]
         spiking = spiking[~is_graded[spiking]]
@@ -177,7 +186,7 @@ def run_reference(
         if t < stim_steps:
             v[stim] += kick * rng.poisson(lam, stim.size)
         # reset
-        v[spiking] = p.v_rest
+        v[spiking] = rest[spiking]
         g[spiking] = 0.0
         th[spiking] += jump[spiking]
         if recent:
