@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Body
+
+- **Closed loop** (#90): `jump3d.closed_loop` runs the connectome (incremental runtime) and
+  NeuroMechFly in 1 ms blocks at the 0.1 ms neural step and cuts the looming input at the
+  first boundary after takeoff; before the cut the spikes equal the open-loop run (tested).
+
 ## 0.8.44 — 2026-10-13
 
 ### Result

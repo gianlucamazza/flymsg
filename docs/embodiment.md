@@ -245,6 +245,16 @@ extensor is not modelled. The body bridge and the measured actuator work; the ju
 both legs together and the TLM, which the model's motor side does not yet have. Outputs:
 `results/jump3d/v1/`.
 
+**Closed loop (#90).** `jump3d.closed_loop` runs the connectome and the body together under
+the M0 clock rules: integer periods, the body stepping at the neural step (0.1 ms), control
+every 1 ms. Each block the incremental runtime (`CpuRuntime`, bit-identical to `sim.run`)
+advances, the new TTMn spikes join the twitch trains from their own time on, and the body
+integrates the same interval; at the first block boundary after takeoff the remaining
+stimulus input is replaced by zeros, the behavior v1 one-bit loop with takeoff as the bit.
+A test checks that the spikes before the cut equal an open-loop run with the same input and
+that none follow the cut. The vision path (body pose → eye → photoreceptors) waits on graded
+lamina neurons ([#97](https://github.com/gianlucamazza/flymsg/issues/97)).
+
 ### M1 jump body (v0.8.34, #33)
 
 `flymsg.jump.JumpBody` is a point mass over a rigid floor: gravity, an actuator force along
