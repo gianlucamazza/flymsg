@@ -149,8 +149,9 @@ sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about hal
   short-term synaptic dynamics and compartments have no value that transfers into
   this LIF. Silencing DNp01 removes that cell's output, and `TTMn_R` still fires,
   so the silence failure is not a missing giant-fiber gap junction; the residual
-  drive goes through DNp02 and DNp06. Neuromodulation and associative learning are closed as
-  blocked ([model](docs/model.md)).
+  drive goes through DNp02 and DNp06. Neuromodulation stays out; associative learning has
+  one optional rule, the measured dopamine-gated depression at Kenyon cell → MBON11,
+  locked before its run ([model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13)).
 - **No held-out behavior is eligible.** The frozen partition has no remaining task that
   can fill the validated-behavior milestone. Exploratory rows stay exploratory
   ([validation](docs/validation.md)).
