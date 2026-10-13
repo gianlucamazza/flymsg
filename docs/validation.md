@@ -325,6 +325,12 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: KC → MBON11 depression v1, inconsistent.** `flymsg mb-plasticity --run`,
+seeds 50–52, locked before the run. The measured rule (×0.10 on eligible Kenyon cell
+synapses) silences MBON11 for both odors (272–286 → 0 spikes): ORN_VA1d and ORN_DL3 each
+recruit about 1,000 Kenyon cells and share 95% of them, against 30–33% in the fly. The model's
+Kenyon cell code is neither sparse nor odor-specific. Report: `results/mb-plasticity/v1/`.
+
 **2026-10-11: T4, AVLP717m drops pIP10 after P1.** 1,000 matched-responder nulls, seeds
 0–2, `w_syn` 0.192, threshold p ≤ 0.05. Silencing AVLP717m (2 neurons) drops pIP10 by
 43% (104 → 60 Hz), p = 0.001. dPR1 after P1 drops 28% (97 → 70 Hz), p = 0.001; that

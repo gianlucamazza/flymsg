@@ -191,6 +191,18 @@ least 49.8% and the unpaired one by at most 64.6% (the measured means ∓ 2 SD),
 `ORN_VA1d` and `ORN_DL3` as the two odors by a stated rule. It is a model-side consistency
 check of one rule, not a learning model of the mushroom body.
 
+**Result of version 1 (2026-10-13): inconsistent.** The run started from `ce20fce` on `main`
+(clean) and took 8 min. Before pairing, MBON11 fired 272–286 spikes to each odor; after,
+0 to both, on all three seeds, so the CS+ and the CS− drop are both 100% and the CS− bound
+(64.6%) fails. The descriptive columns show why: each odor recruits about 1,000 of the 4,064
+Kenyon cells (25%), the two odors share 95% of them (965–998), and 1,055–1,071 Kenyon cells
+were eligible. In the fly the Kenyon cell code is sparse and the two odors of the experiment
+overlap by 30–33% (Hige et al. 2015, Fig 7I). The rule did what was measured; the model's odor
+representation is not separated enough for it to be odor-specific. This is the same limit as
+the held-out ORN_DM1 failure: excitatory Kenyon cell to Kenyon cell synapses, which a point
+LIF turns into a self-sustaining loop ([benchmarks](benchmarks.md)). Nothing is retuned.
+Outputs: `results/mb-plasticity/v1/`.
+
 ## Recording neuron states
 
 `flymsg trace STIM --neurons ...` (module `flymsg.tracing`) records, for chosen neurons, the

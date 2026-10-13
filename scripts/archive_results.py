@@ -21,6 +21,7 @@ DIRS = (
     "silence-scan/v1",
     "silence-scan/v2",
     "silence-scan/v3",
+    "mb-plasticity/v1",
     "jump/intact",
     "jump/dnp01",
     "loop",

@@ -1,0 +1,4 @@
+seed,cs_plus_before,cs_minus_before,cs_plus_after,cs_minus_after,eligible_kcs,kcs_cs_plus,kcs_cs_minus,kcs_both
+50,282,275,0,0,1071,1024,1004,965
+51,280,279,0,0,1055,1031,1033,979
+52,272,286,0,0,1059,1041,1067,998
