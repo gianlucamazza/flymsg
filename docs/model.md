@@ -382,7 +382,7 @@ removing their 216,510 synapses onto PNs takes Kenyon cells from 30–37% (arm A
 Eckstein et al. 2024 liken only lLN2T_abc (13 MaleCNS neurons, 39,108 synapses onto PNs) to
 the cholinergic krasavietz eLNs, by soma position and morphology. v6 treats only them as
 electrical partners of PNs (with lLN1_bc, 30 neighbouring neurons, as a variant set), keeps
-every other cholinergic local neuron chemical, and runs E, F and the 16 coupled arms per set
+every other cholinergic local neuron chemical, and runs E, F and the eight coupled arms once per set (16 in all)
 with the current continuous clamp, seeds 89–91, under v3's bounds.
 
 ## Electrical synapses (optional, 2026-10-13)

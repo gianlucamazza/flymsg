@@ -5,7 +5,7 @@
 # and updating `content_sha256` and flymsg.kc_sparseness.VERSION_HASHES. `flymsg
 # kc-sparseness` prints this file.
 version: 6
-content_sha256: 96b63c553e399847dfc297570fc7dd3700321b1d1d651ae9647db31551e4c2e7
+content_sha256: bf1ae62f9b563e52df8523eefccbc7f3253c0ab457621969cf3e8ee77c1f6b9b
 
 issue: 95
 supersedes:
@@ -110,6 +110,6 @@ reported:
     what: "KC and PN fractions of each coupled arm by spikelet duration, to see whether the answer depends on it"
   per_set:
     decides: false
-    what: "KC and PN fractions of each arm by eLN set, next to v5's whole cholinergic ALLN class (results/kc-sparseness/v5)"
+    what: "KC and PN fractions of each arm by eLN set (arms.csv); the result note sets them next to v5's whole cholinergic ALLN class (results/kc-sparseness/v5)"
 
 defaults_changed: false

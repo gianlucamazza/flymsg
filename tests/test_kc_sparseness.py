@@ -328,3 +328,48 @@ def test_each_eln_set_removes_and_couples_only_its_own_neurons():
     assert list(t.index) == ["A", "E/one", "E/both"]
     assert t.loc["A", "responders_1"] == t.loc["E/one", "responders_1"] == 1
     assert t.loc["E/both", "responders_1"] == 0
+
+
+def test_a_coupled_arm_couples_its_own_sets_pairs(monkeypatch):
+    seen = []
+    real = kc_sparseness.measured_gap
+
+    def spy(eln, sisters, n, ach_ln, spike_ms):
+        seen.append((eln["ln"].tolist(), ach_ln.tolist()))
+        return real(eln, sisters, n, ach_ln, spike_ms)
+
+    monkeypatch.setattr(kc_sparseness, "measured_gap", spy)
+    W = sparse.csc_matrix(
+        (np.array([60.0, 60.0], dtype=np.float32), ([1, 2], [0, 0])), shape=(4, 4)
+    )
+
+    def pair(ln):
+        return pd.DataFrame({"ln": [ln], "pn": [3], "weight": [1]})
+
+    idx = {
+        "stimuli": {
+            o: (np.array([0]), np.array([100.0])) for o in kc_sparseness.HIGE_ODORS
+        },
+        "APL": np.array([], dtype=int),
+        "KC": np.array([3]),
+        "PN": np.array([3]),
+        "ACH_LN": np.array([1, 2]),
+        "sisters": pd.DataFrame({"i": [], "j": []}, dtype=int),
+        "sets": {
+            "one": {"ACH_LN": np.array([1]), "eln": pair(1)},
+            "two": {"ACH_LN": np.array([2]), "eln": pair(2)},
+        },
+    }
+    doc = kc_sparseness.load()
+    proto = {**doc["protocol"], "eln_sets": {"one": {}, "two": {}}}
+    coupling = {**doc["coupling"], "bases": ["E"], "spike_ms": [0.0]}
+    doc = {**doc, "protocol": proto, "arms": {"A": "", "E": ""}, "coupling": coupling}
+    t = kc_sparseness.protocol(W, idx, doc)["table"]
+    assert t["arm"].tolist() == [
+        "A",
+        "E/one",
+        "E/two",
+        "E/one+spike0ms",
+        "E/two+spike0ms",
+    ]
+    assert seen == [([1], [1]), ([2], [2])]

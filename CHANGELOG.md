@@ -15,7 +15,7 @@
 - **Kenyon cell sparseness v6 lock** (#85, #95): the eLNs are the types Eckstein et al. 2024
   liken to the cholinergic krasavietz LNs (lLN2T_a/b/c, 13 neurons; with lLN1_bc as a
   variant set), not the whole cholinergic ALLN class; every other cholinergic local neuron
-  stays chemical. Arms E, F and the 16 coupled arms run once per set, seeds 89–91. No run.
+  stays chemical. Arms E, F and the eight coupled arms run once per set (16 coupled arms), seeds 89–91. No run.
 - **Synapse weight rule lock** (#139): `validation/weight_rule.yaml` v1 compares count
   against density (count over the postsynaptic mesh area) on Liu et al. 2022's measured
   PN → LHN unitary EPSPs: 57 pairs of the six LHN types MaleCNS matches exactly, Spearman

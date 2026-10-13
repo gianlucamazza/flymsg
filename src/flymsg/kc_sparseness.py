@@ -44,7 +44,7 @@ VERSION_HASHES = {
     3: "0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2",  # Hige odors from DoOR, lower bound, seeds 80-82
     4: "72059246ade98ec69b49ce32bac587e0f6f52d39b2cb747c962fb4177694af67",  # E and F with electrical eLN-PN coupling 0-1 and sister PNs at 0.013, seeds 83-85
     5: "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",  # measured asymmetric eLN-PN coupling, eLN spikelets 0-2 ms, seeds 86-88
-    6: "96b63c553e399847dfc297570fc7dd3700321b1d1d651ae9647db31551e4c2e7",  # eLNs restricted to lLN2T (and lLN2T + lLN1_bc), seeds 89-91
+    6: "bf1ae62f9b563e52df8523eefccbc7f3253c0ab457621969cf3e8ee77c1f6b9b",  # eLNs restricted to lLN2T (and lLN2T + lLN1_bc), seeds 89-91
 }
 # synapse classes without fast effect in each arm
 ARM_CLASSES = {
@@ -133,11 +133,12 @@ def assert_matches_code(doc: dict | None = None) -> dict:
             raise SparsenessError("the coupling is not the sourced one")
         if c["spike_ms"] != sorted(set(c["spike_ms"])) or min(c["spike_ms"]) != 0.0:
             raise SparsenessError("the spike durations must start at 0 and increase")
-    if "eln_sets" in proto:
-        if {k: v["types"] for k, v in proto["eln_sets"].items()} != ELN_SETS:
-            raise SparsenessError("the eLN sets are not Eckstein et al.'s types")
-        if doc.get("electrical_semantics") != electrical.SEMANTICS:
-            raise SparsenessError("a new electrical lock names the current integrator")
+    sets = {k: v["types"] for k, v in proto.get("eln_sets", {}).items()}
+    if sets and sets != ELN_SETS:
+        raise SparsenessError("the eLN sets are not Eckstein et al.'s types")
+    new_electrical = "coupling" in doc and doc["version"] >= 6
+    if new_electrical and doc.get("electrical_semantics") != electrical.SEMANTICS:
+        raise SparsenessError("a new electrical lock names the current integrator")
     for v, spent in SPENT_SEEDS.items():
         if v < doc["version"] and set(proto["seeds"]) & set(spent):
             raise SparsenessError(f"seeds must not reuse version {v}'s")
