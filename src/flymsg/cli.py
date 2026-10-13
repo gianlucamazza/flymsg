@@ -989,7 +989,7 @@ def cmd_kc_sparseness(a, neurons, edges):
     started = datetime.now(UTC)
     doc = kc_sparseness.assert_matches_code()
     print(kc_sparseness.summary(doc))
-    out = kc_sparseness.run(neurons, edges)
+    out = kc_sparseness.run(neurons, edges, a.data)
     path = Path("runs/kc-sparseness") / f"v{doc['version']}"  # never overwrite
     path.mkdir(parents=True, exist_ok=True)
     out["table"].to_csv(path / "arms.csv", index=False)
@@ -1006,7 +1006,8 @@ def cmd_kc_sparseness(a, neurons, edges):
         {
             "sparseness_version": doc["version"],
             "sparseness_sha256": doc["content_sha256"],
-            "rate_hz": proto["rate_hz"],
+            "rate_hz": proto.get("rate_hz", proto.get("rate_at_response_1_hz")),
+            "odor_source": proto.get("odor_source", "orn_type"),
             "odor_ms": proto["odor_ms"],
         },
         {"all": list(proto["seeds"])},

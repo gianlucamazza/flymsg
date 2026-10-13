@@ -1,19 +1,19 @@
-# Kenyon cell sparseness diagnostic (issue 95). Version 2, fixed 2026-10-13 after the v1 run
-# and before any v2 run. Version 1 (v1 verdict not_recurrence) is the file at b096b4a.
+# Kenyon cell sparseness diagnostic (issues 95, 96). Version 3, fixed 2026-10-13 after the v2
+# run and before any v3 run. Version 1 is the file at b096b4a, version 2 at 374309e.
 # A diagnosis, not a fix: the default model is not changed by the result. Changing a locked
 # field requires incrementing `version` and updating `content_sha256` and
 # flymsg.kc_sparseness.VERSION_HASHES. `flymsg kc-sparseness` prints this file.
-version: 2
-content_sha256: bcfef9af52861dfd0a903c8b01aded5f8f504b645cdf6933d91b01ae47350322
+version: 3
+content_sha256: 0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2
 
 issue: 95
 supersedes:
-  version: 1
-  verdict: not_recurrence
-  reason: "v1 showed that removing fast KC -> KC excitation lowers density (25% -> 17.4%) but leaves the 95% odor overlap; an exploratory run after the verdict (seed 0) found one ORN type driving 414 of 577 PN-like neurons, 121 PN types, 120 shared between the two odors. Version 2 adds the antennal-lobe arm that the evidence below points to."
-question: "Why does one ORN type recruit about 25% of Kenyon cells, with 95% overlap between two odors, where the fly uses 5-10% and little overlap?"
+  version: 2
+  verdict: "within: E, F"
+  reason: "v2 met its upper bounds only by undershoot: without the chemical cholinergic local neuron -> PN contacts one ORN type drives 0.2% of Kenyon cells, because a single receptor type is not an odor. Version 3 uses the two odors of Hige et al. 2015 as measured receptor vectors (DoOR), adds the lower bound v2 lacked, and keeps the arms."
+question: "With the two odors of Hige et al. 2015 as measured receptor vectors, how many Kenyon cells respond and how many are shared, with and without the fast KC -> KC and cholinergic local neuron -> PN synapses?"
 
-seen_before_lock: "Version 1 results (results/kc-sparseness/v1) and the exploratory PN count above, all on seeds 60-62 or 0. The KC -> MBON11 run (results/mb-plasticity/v1, seeds 50-52) recorded 1,004-1,067 responding Kenyon cells per odor and 965-998 shared, with these two odors. No arm below was run before this lock."
+seen_before_lock: "Versions 1 and 2 (results/kc-sparseness/v1, v2; seeds 60-62, 70-72) with single ORN types, an exploratory PN count (seed 0), and the KC -> MBON11 run (seeds 50-52). No run has used 3-octanol or 4-methylcyclohexanol before this lock."
 
 sources:
   sparseness: "Turner, Bazhenov & Laurent 2008, J Neurophysiol 99:734, doi:10.1152/jn.01283.2007, Fig 2A: an odor evokes spikes in 6 +/- 5% of KCs (n = 71)"
@@ -23,17 +23,21 @@ sources:
   eln_pn: "Yaksi & Wilson 2010, Neuron 67:1034, doi:10.1016/j.neuron.2010.08.041, Fig 4 and 7: excitatory local neuron -> PN coupling is electrical (abolished in shakB2, insensitive to Cd2+ and mecamylamine), and shakB2 abolishes odor-evoked lateral excitation of PNs"
   eln_pn_caveat: "Huang et al. 2010, Neuron 67:1021, doi:10.1016/j.neuron.2010.08.025, report a cholinergic chemical component as well; the transmitter of lateral-lineage LNs in MaleCNS is a prediction"
   lateral_input: "Olsen, Bhandawat & Wilson 2007, Neuron 54:89, doi:10.1016/j.neuron.2007.03.010, Fig 5-6: with one ORN type active, PNs of other glomeruli depolarize by 1.7-11.8 mV and spike only a few times"
+  odors: "Münch & Galizia 2016, Sci Rep 6:21841, doi:10.1038/srep21841 (DoOR consensus responses, ropensci/DoOR.data at db323a4)"
+  overlap_oct_mch: "Hige et al. 2015, Neuron 88:985, doi:10.1016/j.neuron.2015.11.003: 33% of MCH-responding and 30% of OCT-responding KCs respond to both"
   apl: "Lin et al. 2014, Nat Neurosci 17:559, doi:10.1038/nn.3660: blocking APL output makes KC responses denser and more correlated across odors"
   model_rule: "flymsg gives metabotropic transmitters no fast effect (sign 0, docs/model.md)"
 
 protocol:
-  odors: [ORN_VA1d, ORN_DL3]
-  odor_n: [132, 103]
-  odor_rule: "the odors of the KC -> MBON11 lock (validation/mb_plasticity.yaml v1)"
-  rate_hz: 100.0
+  odor_source: door
+  odors: [3-octanol, 4-methylcyclohexanol]
+  odor_rule: "the two odors of Hige et al. 2015 (OCT, MCH)"
+  rate_at_response_1_hz: 100.0
+  rate_from: "the stimulus rate of every flymsg protocol; DoOR responses are normalised, so the rate of a response of 1 is a named compensation"
+  unmeasured: "ORN types without a DoOR response for the odorant get no input"
   odor_ms: 1000.0
   duration_ms: 1000.0
-  seeds: [70, 71, 72]
+  seeds: [80, 81, 82]
   kc: "^KC"
   apl: APL
   apl_n: 2
@@ -50,12 +54,17 @@ arms:
   F: "B and E together"
 
 decides:
+  sparse_min: 0.01
+  sparse_min_from: "Turner et al. 2008: 6% minus one SD (5%)"
   sparse_max: 0.17
   overlap_max: 0.646
-  within: "both odors recruit at most sparse_max of the Kenyon cells and the shared responders are at most overlap_max of each odor's responders"
+  within: "both odors recruit between sparse_min and sparse_max of the Kenyon cells and the shared responders are at most overlap_max of each odor's responders"
   verdict: "the list of arms that are within, or none"
 
 reported:
+  overlap_vs_hige:
+    decides: false
+    what: "the shared share of each odor's responders, next to the 30% (OCT) and 33% (MCH) of Hige et al. 2015"
   pn_spread:
     decides: false
     what: "the share of ALPN neurons that spike during each odor, per arm"
