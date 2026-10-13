@@ -128,6 +128,25 @@ def join(motor: pd.DataFrame, table: pd.DataFrame) -> pd.DataFrame:
     return out.drop(columns="manc_type")
 
 
+def neuron_agreement(
+    joined: pd.DataFrame, manc_body: pd.Series, supp3: pd.DataFrame
+) -> pd.DataFrame:
+    """Add the type of the MANC neuron each MaleCNS neuron was individually matched to
+    (`mancBodyid`, aligned with `joined`) and whether it agrees with the type-level join.
+    The type-level muscle stays the one used: `mancType` is curated per type, while
+    individual pairings in serially repeated leg types can land on a neighbouring type.
+    `neuron_match_agrees` is None when the neuron has no resolvable MANC neuron."""
+    types = supp3.drop_duplicates("bodyid").set_index("bodyid")["type"]
+    ids = pd.to_numeric(manc_body, errors="coerce")
+    out = joined.copy()
+    out["manc_neuron_type"] = ids.map(types).to_numpy()
+    agrees = out["manc_neuron_type"] == out["mancType"]
+    out["neuron_match_agrees"] = agrees.astype(object).where(
+        out["manc_neuron_type"].notna(), None
+    )
+    return out
+
+
 def summary(joined: pd.DataFrame) -> pd.DataFrame:
     """Neurons and MaleCNS types per status."""
     return (

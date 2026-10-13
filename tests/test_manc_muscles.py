@@ -86,3 +86,26 @@ def test_a_muscle_does_not_open_the_motor_map():
         motor_map.command("TTMn_R", doc)
     with pytest.raises(motor_map.MotorMapError, match="not in the motor map"):
         motor_map.command("TTM", doc)
+
+
+def test_neuron_level_matches_are_recorded_not_used():
+    supp3 = pd.DataFrame(
+        {"bodyid": [1, 2, 3], "type": ["Ti flexor MN", "Acc. ti flexor MN", "TTMn"]}
+    )
+    joined = pd.DataFrame(
+        {
+            "bodyId": [10, 11, 12, 13],
+            "mancType": ["Ti flexor MN", "Ti flexor MN", "TTMn", "TTMn"],
+            "muscle": ["Ti flexor", "Ti flexor", "TTM", "TTM"],
+        }
+    )
+    manc_body = pd.Series([1, 2, 3, None])
+    out = manc_muscles.neuron_agreement(joined, manc_body, supp3)
+    assert out["manc_neuron_type"].tolist()[:3] == [
+        "Ti flexor MN",
+        "Acc. ti flexor MN",
+        "TTMn",
+    ]
+    assert out["neuron_match_agrees"].tolist() == [True, False, True, None]
+    # the muscle stays the type's
+    assert out["muscle"].tolist() == joined["muscle"].tolist()
