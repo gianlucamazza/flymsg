@@ -509,3 +509,26 @@ but p is above 0.05; `conjunction` if both single arms stay at 2 spikes or fewer
 
 Every null draw is kept (`null_draws.csv`). The run starts from a commit on `main`. Results
 stay model-side; `gf_required_for_the_jump_bit` stays `unverified`.
+
+### Result of version 1 (2026-10-13)
+
+The run started from `39b53a5` on `main` (clean, in a separate worktree) and took 3 h 30 min
+under load.
+
+**Left: `replicates`.** The mirrored base arm gave `TTMn_L` 3, 1 and 1 spikes on seeds 40–42,
+a weak residual as expected. With DNp02 or DNp06 silenced as well, `TTMn_L` stays at 0 on all
+three seeds: p 0.001 (null mean 2.21) and p 0.003 (null mean 2.15), both below 0.025. The
+naming holds on the other side.
+
+**Drive: `single_sufficient: DNp06_R`.** Driven at 200 Hz without LC4 and with DNp01 silenced,
+`TTMn_R` fires 0, 0, 0 with `DNp02_R` alone, 3, 4, 6 with `DNp06_R` alone, and 9, 8, 11 with
+the pair; 1,000 matched descending-neuron pairs give a mean of 0.013 (p 0.001). The
+conjunction hypothesis is rejected: DNp06 alone reaches the jump bit at the driven rate, and
+DNp02 adds to it. Read with the scan: during looming DNp06_R fires about 150 Hz (45–50 spikes
+in 300 ms), below the driven 200 Hz, so silencing DNp02 removes the drive it needs; that is
+why each is necessary in the looming arm. The pair is specific: random descending pairs
+almost never drive `TTMn_R`.
+
+![Follow-up v1: the left mirror with each named unit silenced against its matched null; TTMn_R spikes with DNp02_R, DNp06_R or both driven at 200 Hz; the null of 1,000 matched pairs with the observed pair mean.](img/partner-followup.svg)
+
+Outputs: `results/partner-followup/v1/` (with every null draw).

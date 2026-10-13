@@ -47,7 +47,7 @@ Blocked outside the model: gap junctions and neuromodulation
 | One-bit looming loop; DNp01 silence check fails                | [behavior](behavior.md)                                                                           |
 | Residual `TTMn_R` drive: DNp02 and DNp06, replicated (#20)     | [behavior](behavior.md#result-of-version-3-2026-10-12)                                            |
 | KC → MBON11 depression v1 run: inconsistent (#85)              | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
-| Left mirror and direct drive of the pair, locked (#76)         | [behavior](behavior.md#residual-partner-follow-up)                                                |
+| Left mirror replicates; DNp06 alone sufficient at 200 Hz (#76) | [behavior](behavior.md#residual-partner-follow-up)                                                |
 | M0 interface, M1 jump body, M2 closed loop (engineering)       | [embodiment](embodiment.md)                                                                       |
 | R0 incremental CPU runtime; native executor matches the oracle | [runtime](runtime.md)                                                                             |
 | Archived outputs; figures redraw from a clone                  | [`results/`](../results/README.md)                                                                |

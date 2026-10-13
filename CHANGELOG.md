@@ -1,9 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.8.42 — 2026-10-13
 
 ### Result
 
+- **Partner follow-up v1** (#76): the left mirror `replicates` (DNp02 p 0.001, DNp06 p 0.003),
+  and the direct drive gives `single_sufficient: DNp06_R`: at 200 Hz DNp06_R alone brings
+  `TTMn_R` to the jump bit (3–6 spikes), DNp02_R alone does not (0), the pair gives 8–11
+  against a matched null mean of 0.013 (p 0.001). Conjunction rejected; figure
+  `partner-followup.svg`; outputs with every null draw in `results/partner-followup/v1/`.
 - **Kenyon cell sparseness v2: within E, F, by undershoot** (#95). Without the cholinergic
   local neuron → PN chemical contacts (electrical in the fly) one ORN type drives 4.5% of the
   PNs instead of 73%, and the Kenyon cells fall to 0.2% (measured 6 ± 5%): the overlap was an
