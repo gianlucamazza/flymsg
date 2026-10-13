@@ -34,18 +34,17 @@ and what would remove it.
 | Motor map                                  | every row `unmapped`                                                    | [`validation/motor_map.yaml`](../validation/motor_map.yaml)                                       |
 | Held-out behavior milestone                | no eligible case left in the frozen partition                           | [validation](validation.md)                                                                       |
 
-
 ## Scientific fidelity programme (proposed, 2026-10-13)
 
 The [scientific fidelity architecture](scientific-fidelity.md) defines separate numerical, physiological and behavioral validation gates. This is a forward plan, not a change to any verdict above.
 
-| Stage | Deliverable | Acceptance | Dependency |
-| --- | --- | --- | --- |
-| SF1 | Evidence registry and parameter provenance | Every new scored parameter carries source, units, uncertainty and role; missing evidence fails closed | Source audit |
-| SF2 | Uncertainty and numerical benchmark suite | Convergence, sensitivity, identifiability and baseline comparisons are reproducible | SF1 |
-| SF3 | Independent physiology benchmarks | T4/T5 and Kenyon-cell experiments preregistered against external measurements | #140, #95, #85 |
-| SF4 | Neuromechanical held-out validation | Cited motor map and animal-data evaluation without tuning on holdout | #19, #36, #90 |
-| SF5 | Independent reproduction package | External team can reproduce runs and distinguish model validation from numerical parity | SF1–SF4 |
+| Stage | Deliverable                                | Acceptance                                                                                            | Dependency     |
+| ----- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- | -------------- |
+| SF1   | Evidence registry and parameter provenance | Every new scored parameter carries source, units, uncertainty and role; missing evidence fails closed | Source audit   |
+| SF2   | Uncertainty and numerical benchmark suite  | Convergence, sensitivity, identifiability and baseline comparisons are reproducible                   | SF1            |
+| SF3   | Independent physiology benchmarks          | T4/T5 and Kenyon-cell experiments preregistered against external measurements                         | #140, #95, #85 |
+| SF4   | Neuromechanical held-out validation        | Cited motor map and animal-data evaluation without tuning on holdout                                  | #19, #36, #90  |
+| SF5   | Independent reproduction package           | External team can reproduce runs and distinguish model validation from numerical parity               | SF1–SF4        |
 
 Do not call SF4 or SF5 complete without external evidence. Historical 29/29 calibration and failed held-out results remain unchanged.
 
