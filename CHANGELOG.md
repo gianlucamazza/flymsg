@@ -30,6 +30,14 @@
   neuron's own MANC match type and whether it agrees with its type (140 of 623 disagree,
   107 with another target); the muscle stays the type's.
 
+### Viewer
+
+- **Baseline of the live scenes** (#24): five runs of the six live scenes on one laptop GPU,
+  their ranges in `docs/viz.md` and the runs in `docs/evidence/viewer-bench-2026-10-13/`.
+  `scripts/bench_viewer.py` judges a pass by the CPU other processes used during it (not
+  the load its own browser makes) and waits (`--cooldown`) for an idle machine;
+  `scripts/bench_check.py` compares a new run with the baseline ranges.
+
 ## 0.8.45 — 2026-10-13
 
 ### Result
