@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.43 — 2026-10-13
 
 ### Result
 
@@ -9,21 +9,17 @@
   spiking lamina neurons, where the fly's are graded with a resting tone. The concrete case
   for graded neurons (#97).
 
-### Pre-registration
-
-- **T4/T5 direction selectivity v1** (#84): moving ON/OFF edges in four directions through
-  the measured eye (`eye.edge_coverage`), 30°/s, acceptance 8.23°; decides polarity and
-  preferred direction against Maisak et al. 2013, prior from Lappalainen et al. 2024 stated.
-  Locked before its run; `flymsg t4t5`.
-
-### Result
-
 - **Kenyon cell sparseness v3: none** (#95, #96). With Hige et al. 2015's odors as DoOR
   vectors the model is either dense (default 36% / 30% of Kenyon cells, 82–99% shared, against
   30–33% measured) or silent (0.2% without the chemical local neuron → PN contacts). The
   sparse regime needs the measured electrical coupling the model lacks (#85).
 
 ### Pre-registration
+
+- **T4/T5 direction selectivity v1** (#84): moving ON/OFF edges in four directions through
+  the measured eye (`eye.edge_coverage`), 30°/s, acceptance 8.23°; decides polarity and
+  preferred direction against Maisak et al. 2013, prior from Lappalainen et al. 2024 stated.
+  Locked before its run; `flymsg t4t5`.
 
 - **Kenyon cell sparseness diagnostic v3** (#95, #96): Hige et al. 2015's odors (3-octanol,
   4-methylcyclohexanol) as DoOR receptor vectors, the same four arms, seeds 80–82, and a
