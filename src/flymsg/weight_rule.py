@@ -81,8 +81,10 @@ def fetch_areas(doc: dict, neurons: pd.DataFrame, data_dir: Path) -> Path:
         ["node", str(ROOT / "scripts" / "mesh_area.mjs"), *map(str, bodies["bodyId"])],
         capture_output=True,
         text=True,
-        check=True,
+        check=False,  # the error is reported with Node's stderr below
     )
+    if proc.returncode:
+        raise WeightRuleError(f"mesh_area.mjs failed:\n{proc.stderr.strip()}")
     measured = {int(r["bodyId"]): r for r in map(json.loads, proc.stdout.splitlines())}
     with out.open("w", newline="") as f:
         w = csv.writer(f)

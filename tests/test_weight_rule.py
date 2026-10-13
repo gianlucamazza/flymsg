@@ -106,3 +106,18 @@ def test_the_lock_matches_its_hash_and_lists_the_source_table():
     assert sum(v > 0 for v in pairs.values()) == 13
     with pytest.raises(weight_rule.WeightRuleError):
         weight_rule.assert_locked({**doc, "pairs": doc["pairs"][:-1]})
+
+
+def test_a_failed_mesh_measurement_reports_its_error(monkeypatch, tmp_path):
+    doc, neurons, _ = tiny()
+
+    class Failed:
+        returncode, stdout, stderr = (
+            1,
+            "",
+            "Error: draco: Failed to parse Draco header.",
+        )
+
+    monkeypatch.setattr(weight_rule.subprocess, "run", lambda *a, **k: Failed())
+    with pytest.raises(weight_rule.WeightRuleError, match="Draco header"):
+        weight_rule.fetch_areas(doc, neurons, tmp_path)

@@ -10,6 +10,12 @@
   per rule, paired bootstrap interval of the difference. `flymsg weight-rule --areas`
   measures the meshes before `--run`. No count or area was computed before the lock.
 
+### Engineering
+
+- **Mesh areas skip empty fragments** (#139): `scripts/mesh_area.mjs` failed on a neuron
+  whose full-resolution mesh has an empty fragment (bodyId 517804); it now skips them as the
+  viewer does, and `flymsg weight-rule --areas` reports Node's error instead of an exit code.
+
 ### Body
 
 - **Neuron-level MANC matches recorded, not used** (#19): `flymsg muscles` adds each
