@@ -7,6 +7,8 @@ map, hardware, or a lock that is written and not yet run.
 The [integrity audit](integrity-audit-2026-10-13.md) records the numerical/provenance
 baseline and the accepted corrections. [Run integrity](run-integrity.md) specifies
 immutable executions, checkpoint compatibility and explicit electrical numerical modes.
+[Approximations](approximations.md) lists every simplification of the model with its status
+and what would remove it.
 
 ## Results
 
