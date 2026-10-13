@@ -29,7 +29,9 @@ volume are counted in `somata.json`, not drawn: mostly sensory neurons, whose ce
 in the periphery, and optic-lobe neurons whose soma falls outside the imaged volume. The layer
 is context: its points are not picked and do not show activity. `?somata=0` hides it; the
 panel's "Whole CNS" folder sets opacity and point size. A local `flymsg viz` export has no
-layer unless `?somata=<url>` points to a soma file. The README links
+layer unless `?somata=<url>` points to a soma file. `?chrome=0` does not build the control
+panel and hides the performance readout; the colour legend stays, and a page without the
+flag is unchanged. The README links
 add `?neuropils=1`, so the 114 brain and VNC shells outline the whole CNS around the
 activity; without it a replay starts with the shells hidden. The shells stream in after the
 neurons and cost GPU time while the replay plays.

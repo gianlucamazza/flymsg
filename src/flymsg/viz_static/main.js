@@ -34,6 +34,7 @@ import {
   colourOf as colourIn,
   isShown as shownIn,
 } from "./colors.js";
+import { applyChrome, showChrome } from "./chrome.js";
 import {
   effectiveBudget,
   scaledRatio,
@@ -1583,111 +1584,122 @@ const initial = selectParam(location.search);
 if (initial) find(initial);
 
 // ---------- GUI ----------
-const gui = new GUI({ title: "flymsg" });
-gui
-  .add(view, "colorBy", COLOR_MODES)
-  .name("colour by")
-  .onChange(refreshColours);
-gui
-  .add({ find: "" }, "find")
-  .name("select (bodyId/type)")
-  .onFinishChange((v) => v.trim() && find(v));
-gui
-  .add(view, "filter")
-  .name("type filter")
-  .onChange((v) => {
-    view.filter = v.toLowerCase();
-    selectionDirty = true;
-    refreshColours();
-  });
-gui
-  .add(settings, "detailPx", 32, 1024, 1)
-  .name("detail (px)")
-  .onChange(() => (selectionDirty = true));
-gui
-  .add(settings, "budgetM", 1, 40, 1)
-  .name("budget (M tris)")
-  .onFinishChange(() => {
-    makeBatched();
-    selectionDirty = true;
-  });
-gui
-  .add(settings, "adaptive")
-  .name("adaptive quality")
-  .onChange((on) => on || setQuality(nativeRatio, MSAA));
-if (replay) {
-  gui.add(bloom, "strength", 0, 3).name("bloom").onChange(invalidate);
-  gui
-    .add(shared.uInactiveAlpha, "value", 0.05, 1, 0.05)
-    .name("silent surfaces")
-    .onChange(invalidate);
-}
-const gFolder = gui.addFolder("Groups");
-groups.forEach((g) =>
-  gFolder.add(view.groupsOn, g).onChange(() => {
-    selectionDirty = true;
-    refreshColours();
-  }),
+// ?chrome=0 is a gallery frame: the panel is not built, and the performance
+// readout is hidden. The colour legend stays.
+applyChrome(
+  {
+    stats: document.getElementById("stats"),
+    perf: document.getElementById("perf"),
+  },
+  location.search,
 );
-somataLoaded.then(() => {
-  if (!somata.points) return;
-  const f = gui.addFolder(`Whole CNS (${somata.count.toLocaleString()} somata)`).close();
-  f.add(somata.points, "visible").name("show").onChange(invalidate);
-  f.add(somataMaterial, "opacity", 0, 1).onChange(invalidate);
-  f.add(somataMaterial, "size", 0.5, 6).name("point px").onChange(invalidate);
-});
-const pFolder = gui.addFolder("Neuropils");
-pFolder
-  .add(shellMaterial.uniforms.uOpacity, "value", 0, 1)
-  .name("opacity")
-  .onChange(invalidate);
-neuropilsListed.then(() => {
-  for (const region of Object.keys(ROIS)) {
-    const names = Object.keys(shells).filter(
-      (s) => shells[s].region === region,
-    );
-    const f = pFolder.addFolder(region).close();
-    const toggles = Object.fromEntries(
-      names.map((n) => [n, shells[n].visible]),
-    );
-    const boxes = {};
-    const set = (name, v) => {
-      shells[name].visible = v;
-      if (shells[name].mesh) shells[name].mesh.visible = v;
-      ensureNeuropil(name);
-      invalidate();
-    };
-    f.add({ all: settings.neuropils }, "all").onChange((v) =>
-      names.forEach((n) => {
-        toggles[n] = v;
-        set(n, v);
-        boxes[n].updateDisplay();
-      }),
-    );
-    names.forEach(
-      (n) => (boxes[n] = f.add(toggles, n).onChange((v) => set(n, v))),
-    );
+if (showChrome(location.search)) {
+  const gui = new GUI({ title: "flymsg" });
+  gui
+    .add(view, "colorBy", COLOR_MODES)
+    .name("colour by")
+    .onChange(refreshColours);
+  gui
+    .add({ find: "" }, "find")
+    .name("select (bodyId/type)")
+    .onFinishChange((v) => v.trim() && find(v));
+  gui
+    .add(view, "filter")
+    .name("type filter")
+    .onChange((v) => {
+      view.filter = v.toLowerCase();
+      selectionDirty = true;
+      refreshColours();
+    });
+  gui
+    .add(settings, "detailPx", 32, 1024, 1)
+    .name("detail (px)")
+    .onChange(() => (selectionDirty = true));
+  gui
+    .add(settings, "budgetM", 1, 40, 1)
+    .name("budget (M tris)")
+    .onFinishChange(() => {
+      makeBatched();
+      selectionDirty = true;
+    });
+  gui
+    .add(settings, "adaptive")
+    .name("adaptive quality")
+    .onChange((on) => on || setQuality(nativeRatio, MSAA));
+  if (replay) {
+    gui.add(bloom, "strength", 0, 3).name("bloom").onChange(invalidate);
+    gui
+      .add(shared.uInactiveAlpha, "value", 0.05, 1, 0.05)
+      .name("silent surfaces")
+      .onChange(invalidate);
   }
-});
-if (replay) {
-  const rFolder = gui.addFolder("Replay");
-  if (comparison) {
-    const labels = comparison.runs.map((r) => r.label);
+  const gFolder = gui.addFolder("Groups");
+  groups.forEach((g) =>
+    gFolder.add(view.groupsOn, g).onChange(() => {
+      selectionDirty = true;
+      refreshColours();
+    }),
+  );
+  somataLoaded.then(() => {
+    if (!somata.points) return;
+    const f = gui.addFolder(`Whole CNS (${somata.count.toLocaleString()} somata)`).close();
+    f.add(somata.points, "visible").name("show").onChange(invalidate);
+    f.add(somataMaterial, "opacity", 0, 1).onChange(invalidate);
+    f.add(somataMaterial, "size", 0.5, 6).name("point px").onChange(invalidate);
+  });
+  const pFolder = gui.addFolder("Neuropils");
+  pFolder
+    .add(shellMaterial.uniforms.uOpacity, "value", 0, 1)
+    .name("opacity")
+    .onChange(invalidate);
+  neuropilsListed.then(() => {
+    for (const region of Object.keys(ROIS)) {
+      const names = Object.keys(shells).filter(
+        (s) => shells[s].region === region,
+      );
+      const f = pFolder.addFolder(region).close();
+      const toggles = Object.fromEntries(
+        names.map((n) => [n, shells[n].visible]),
+      );
+      const boxes = {};
+      const set = (name, v) => {
+        shells[name].visible = v;
+        if (shells[name].mesh) shells[name].mesh.visible = v;
+        ensureNeuropil(name);
+        invalidate();
+      };
+      f.add({ all: settings.neuropils }, "all").onChange((v) =>
+        names.forEach((n) => {
+          toggles[n] = v;
+          set(n, v);
+          boxes[n].updateDisplay();
+        }),
+      );
+      names.forEach(
+        (n) => (boxes[n] = f.add(toggles, n).onChange((v) => set(n, v))),
+      );
+    }
+  });
+  if (replay) {
+    const rFolder = gui.addFolder("Replay");
+    if (comparison) {
+      const labels = comparison.runs.map((r) => r.label);
+      rFolder
+        .add({ run: startRun }, "run", {
+          [`A ${labels[0]}`]: "a",
+          [`B ${labels[1]}`]: "b",
+          "difference |A − B|": "difference",
+        })
+        .name("run")
+        .onChange(showRun);
+    }
+    rFolder.add(clock, "playing");
+    rFolder.add(clock, "speed", 5, 200).name("speed (sim ms / s)");
     rFolder
-      .add({ run: startRun }, "run", {
-        [`A ${labels[0]}`]: "a",
-        [`B ${labels[1]}`]: "b",
-        "difference |A − B|": "difference",
-      })
-      .name("run")
-      .onChange(showRun);
+      .add(clock, "t", 0, A.bins * A.bin_ms - 1, 1)
+      .name("time (ms)")
+      .listen();
   }
-  rFolder.add(clock, "playing");
-  rFolder.add(clock, "speed", 5, 200).name("speed (sim ms / s)");
-  rFolder
-    .add(clock, "t", 0, A.bins * A.bin_ms - 1, 1)
-    .name("time (ms)")
-    .listen();
 }
 
 // ---------- adaptive quality ----------

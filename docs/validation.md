@@ -346,7 +346,7 @@ that close an open route are kept here too.
 **2026-10-13: TTM-driven NeuroMechFly jump v1, short.** Seeds 110–112. Takeoff at 28–32 ms,
 0.05 m/s, range 0.3–0.5 mm against 28.6–37.75 mm: only the right TTMn fires before takeoff,
 one twitch is below the force a jump needs, and the TLM is absent. Report:
-`results/jump3d/v1/`.
+`results/jump3d/v1/`. Figure: [drag-free range](img/jump-range.svg).
 
 **2026-10-13: T4/T5 through the eye v1, neither.** Seeds 90–92, edges at 30°/s. No T4/T5
 spike: photoreceptors fire, but their inhibitory (histaminergic) synapses cannot move silent
@@ -356,7 +356,8 @@ spiking lamina neurons; the fly's lamina is graded and tonically active. Report:
 **2026-10-13: Kenyon cell sparseness v4, none.** Seeds 83–85. The cholinergic local neuron →
 PN contacts as electrical synapses, coupling 0–1, sister PNs at 0.013: every coupled arm is
 silent (≤ 0.3% of Kenyon cells), quieter as coupling grows; subthreshold coupling without
-spikelets drains active PNs. Report: `results/kc-sparseness/v4/`.
+spikelets drains active PNs. Report: `results/kc-sparseness/v4/`. Figure:
+[v1–v4](img/kc-sparseness.svg).
 
 **2026-10-13: Kenyon cell sparseness v3, none.** Hige et al. 2015's odors from DoOR, seeds
 80–82, bounds 1–17% and ≤ 64.6% shared. Default: 36% / 30% of Kenyon cells, 82–99% shared;

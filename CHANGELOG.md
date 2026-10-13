@@ -63,6 +63,11 @@
 - **Present tense matches spikelets.** A spike crosses `sim.Gap` only when a lock sets
   `spike_mv` and `spike_ms`. Provenance cites `936000d`. Kenyon cell v4 stays the
   subthreshold result; version 5 is locked and has no run.
+- **Gallery frames and two figures.** The stills are reshot with the neuropil shells, the
+  soma layer, and `?chrome=0`: the control panel is not built, the performance readout is
+  hidden, and the colour legend stays. `docs/img/looming-vs-dnp01.png` shows the failed
+  DNp01 silence check. Kenyon cell sparseness v1–v4 and the NeuroMechFly jump v1 range
+  have figures (`kc-sparseness.svg`, `jump-range.svg`).
 
 ## 0.8.44 — 2026-10-13
 

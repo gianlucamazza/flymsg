@@ -176,7 +176,7 @@ leg pushes and the body leaves sideways; one twitch of 101 µN is below the 137 
 on both legs together, that Zumstein et al. compute a jump needs, and the femur-tibia
 extensor is not modelled. The body bridge and the measured actuator work; the jump needs
 both legs together and the TLM, which the model's motor side does not yet have. Outputs:
-`results/jump3d/v1/`.
+`results/jump3d/v1/`. Figure: [drag-free range](img/jump-range.svg).
 
 **Closed loop (#90).** `jump3d.closed_loop` runs the connectome and the body together under
 the M0 clock rules: integer periods, the body stepping at the neural step (0.1 ms), control
