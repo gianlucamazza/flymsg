@@ -13,6 +13,10 @@ HEADER_WORDS = 40
 MAX_BYTES = 512 * 1024 * 1024
 
 
+class NativeCapabilityError(ValueError):
+    """A numerical mode has no qualified native implementation."""
+
+
 def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
     """Export a fresh initialized CPU runtime; scientific authority stays Python.
 
@@ -21,6 +25,19 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
     """
     if runtime.step != 0:
         raise ValueError("native fixtures require fresh state")
+    coupled = runtime._gap[0]
+    never_refractory = runtime._graded[-1] | runtime._silent | runtime._is_stim
+    if (
+        coupled.size
+        and runtime._electrical_mode == "continuous"
+        and runtime._ref_steps > 1
+        and not never_refractory[coupled].all()
+    ):
+        # The native fixed map is equivalent only when the refractory mask is always
+        # empty. Do not export a dynamic clamp as the older boundary-reset model.
+        raise NativeCapabilityError(
+            "native continuous-clamp electrical coupling with refractory cells is unqualified"
+        )
     if np.any(runtime._kicks > 2**53):
         raise ValueError("native double-count fixtures require counts <= 2**53")
     n, steps, d = runtime._n, runtime._steps, runtime._d

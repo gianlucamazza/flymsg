@@ -97,7 +97,8 @@ def test_the_report_reads_yes_or_no_per_cell(monkeypatch, capsys, data_dir, tmp_
     monkeypatch.setattr(sensitivity, "svg", lambda *_a: "<svg/>")  # needs the full grid
     monkeypatch.chdir(tmp_path)
     run(monkeypatch, capsys, "--data", str(data_dir), "sensitivity", "--run")
-    report = (tmp_path / "runs/sensitivity/v1/report.txt").read_text()
+    (path,) = tmp_path.glob("runs/sensitivity/v1.executions/*/output/report.txt")
+    report = path.read_text()
     assert (
         "yes" in report and "no" in report and "1.0  " not in report.split("spreads")[0]
     )

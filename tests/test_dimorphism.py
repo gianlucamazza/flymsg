@@ -228,8 +228,8 @@ def _square(j):
 
 
 def test_null_draws_resume_after_an_interruption_with_the_same_result(tmp_path):
-    def run(partial, fail_at=None):
-        rng = np.random.default_rng(7)
+    def run(partial, fail_at=None, seed=7):
+        rng = np.random.default_rng(seed)
         calls = []
 
         def rates(idx):
@@ -252,11 +252,25 @@ def test_null_draws_resume_after_an_interruption_with_the_same_result(tmp_path):
     resumed, simulated = run(part)
     assert simulated == 3 and np.array_equal(resumed, full)
     # a saved draw that the generator no longer reproduces is refused
+    with pytest.raises(draws.CheckpointMismatch, match="draw 0"):
+        run(part, seed=8)
     lines = part.read_text().splitlines()
     lines[1] = lines[1].replace('"pick": ', '"pick": 1')
     part.write_text("\n".join(lines) + "\n")
-    with pytest.raises(draws.CheckpointMismatch, match="draw 0"):
+    with pytest.raises(draws.CheckpointMismatch, match="integrity"):
         run(part)
+
+
+def test_a_torn_first_draw_record_is_discarded_and_other_prefixes_are_refused(tmp_path):
+    torn = tmp_path / "first.partial"
+    torn.write_bytes(b'{"_record_schema": "fly')
+    assert draws._read_checked(torn) == []
+    assert torn.read_bytes() == b""
+    other = tmp_path / "legacy.partial"
+    other.write_bytes(b'{"schema": "old"')
+    with pytest.raises(draws.CheckpointMismatch, match="unidentified"):
+        draws._read_checked(other)
+    assert other.read_bytes() == b'{"schema": "old"'
 
 
 def test_map_jobs_runs_the_first_jobs_first_and_keeps_the_job_order():

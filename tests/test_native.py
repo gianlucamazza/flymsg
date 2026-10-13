@@ -1,3 +1,4 @@
+import json
 import shutil
 import struct
 import subprocess
@@ -55,6 +56,17 @@ def test_native_full_acceptance(native_exe, tmp_path):
         check=True,
         capture_output=True,
     )
+    report = json.loads((tmp_path / "report.json").read_text())
+    assert report["passed"] == 72
+    assert len(report["unsupported"]) == 12
+    assert {c["extension"] for c in report["unsupported"]} == {
+        "gap-continuous-refractory"
+    }
+    assert {
+        c["electrical_mode"]
+        for c in report["cases"]
+        if c["extension"] in {"gap", "spikelets", "both"}
+    } == {"boundary"}
 
 
 @pytest.mark.parametrize(
@@ -114,7 +126,10 @@ def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word
         steps=100,
         kicks=np.ones((100, 1), dtype=np.int64),
         per_bin=100,
-        graded=sim.Graded(idx=np.array([2]), v_lo=-60.0, span=10.0, rate_hz=100.0),
+        # This corruption fixture needs an exportable all-free electrical component.
+        graded=sim.Graded(
+            idx=np.array([1, 2, 3]), v_lo=-60.0, span=10.0, rate_hz=[0.0, 100.0, 0.0]
+        ),
         gap=sim.Gap(i=np.array([1]), j=np.array([3]), coupling=0.5),
     )
     fixture, output = tmp_path / "fixture.bin", tmp_path / "out.bin"
@@ -126,10 +141,10 @@ def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word
     at = {
         "offset": 37 * 4,
         "ng": ext * 4,
-        "span": (ext + 5 + 4 + 1) * 4,
+        "span": (ext + 5 + 4 + 3) * 4,
         "width": (ext + 4) * 4,  # a spike term without any amplitude
     }[word]
-    value = {"offset": ext + 1, "ng": 3, "span": 0, "width": 5}[word]
+    value = {"offset": ext + 1, "ng": 5, "span": 0, "width": 5}[word]
     struct.pack_into("<I", raw, at, value)
     fixture.write_bytes(raw)
     result = subprocess.run(

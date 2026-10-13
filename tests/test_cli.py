@@ -161,7 +161,8 @@ def test_trace_writes_states_and_a_manifest(monkeypatch, capsys, data_dir, tmp_p
         "--out",
         str(out),
     )
-    got = np.load(out / "trace.npz")
+    (result,) = out.parent.glob(f"{out.name}.executions/*/output")
+    got = np.load(result / "trace.npz")
     assert got["v"].shape == (500, 2) and got["spikes"].shape == (500, 2)
     assert got["body_ids"].tolist() == [20, 30]
-    assert json.loads((out / "manifest.json").read_text())["command"] == "trace"
+    assert json.loads((result / "manifest.json").read_text())["command"] == "trace"

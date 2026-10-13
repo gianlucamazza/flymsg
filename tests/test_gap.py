@@ -11,6 +11,100 @@ from flymsg import native, sim
 from flymsg.runtime import CpuRuntime
 
 
+@pytest.mark.parametrize("conductance", [0.0, 4.0])
+def test_refractory_partner_is_clamped_throughout_the_exact_step(conductance):
+    p, c = sim.Params(), 5.0
+    rt = CpuRuntime(
+        sparse.csc_matrix((2, 2), dtype=np.float32),
+        np.array([], dtype=int),
+        steps=1,
+        kicks=np.zeros((0, 0), dtype=np.int32),
+        p=p,
+        per_bin=1,
+        gap=sim.Gap(np.array([0]), np.array([1]), c),
+    )
+    rt._state["v"][0] = p.v_rest + 5
+    rt._state["g"][:] = [conductance, 99.0]
+    rt._state["ref_until"][1] = 100
+    rt.advance_to(1)
+    decay = -(1 + c) / p.tau_m
+    exact = p.v_rest + 5 * np.exp(decay * p.dt)
+    exact += (
+        conductance
+        / p.tau_m
+        * (np.exp(decay * p.dt) - np.exp(-p.dt / p.tau_syn))
+        / (decay + 1 / p.tau_syn)
+    )
+    state = rt.snapshot()
+    assert state["v"][0] == np.float32(exact)
+    assert state["v"][1] == p.v_rest and state["g"][1] == 99.0
+
+
+def test_all_clamped_cells_and_release_at_integer_boundary():
+    p = sim.Params()
+    rt = CpuRuntime(
+        sparse.csc_matrix((3, 3), dtype=np.float32),
+        np.array([], dtype=int),
+        steps=3,
+        kicks=np.zeros((0, 0), dtype=np.int32),
+        p=p,
+        per_bin=1,
+        gap=sim.Gap(np.array([0, 1]), np.array([1, 2]), 0.4),
+    )
+    rt._state["ref_until"][:] = 2
+    rt._state["g"][:] = 3.0
+    rt.advance_to(2)
+    assert np.all(rt.snapshot()["v"] == p.v_rest)
+    assert np.all(rt.snapshot()["g"] == 3.0)
+    rt.advance_to(3)
+    assert np.all(rt.snapshot()["v"] > p.v_rest)
+    assert np.all(rt.snapshot()["g"] < 3.0)
+
+
+def test_old_electrical_semantics_are_refused_without_mutating_state(tmp_path):
+    import json
+
+    rt = CpuRuntime(
+        sparse.csc_matrix((2, 2), dtype=np.float32),
+        np.array([], dtype=int),
+        steps=2,
+        kicks=np.zeros((0, 0), dtype=np.int32),
+        per_bin=1,
+        gap=sim.Gap(np.array([0]), np.array([1]), 0.4),
+    )
+    path = tmp_path / "checkpoint.npz"
+    rt.checkpoint(path)
+    with np.load(path, allow_pickle=False) as doc:
+        arrays = {k: doc[k] for k in doc.files}
+    meta = json.loads(str(arrays["metadata"]))
+    meta["semantics"] = "flymsg.lif/ordered-f32-v1"
+    arrays["metadata"] = np.array(json.dumps(meta))
+    np.savez(path, **arrays)
+    before = rt.snapshot()
+    with pytest.raises(ValueError, match="incompatible"):
+        rt.restore(path)
+    for name, value in before.items():
+        np.testing.assert_array_equal(rt.snapshot()[name], value)
+
+
+def test_refractory_map_cache_has_a_byte_budget(monkeypatch):
+    from flymsg import electrical
+
+    with electrical._lock:
+        electrical._maps.clear()
+        electrical._bytes = 0
+    monkeypatch.setattr(electrical, "CACHE_BYTES", 96)
+    A = np.c_[np.diag([-0.2, -0.3]), np.zeros((2, 2))]
+    for i in range(6):
+        electrical.clamped_map(
+            A,
+            np.array([False, bool(i % 2)]),
+            np.array([0.1, 20.0, 5.0]),
+            np.array([i, 0, 0, 0], dtype=np.uint64),
+        )
+        assert electrical._bytes <= electrical.CACHE_BYTES
+
+
 def _gap(n=1200, m=400, seed=4, coupling=0.3):
     rng = np.random.default_rng(seed)
     i, j = rng.integers(0, n, m), rng.integers(0, n, m)
@@ -100,10 +194,8 @@ def test_gap_runtime_chunks_and_checkpoints_match_the_run(tmp_path):
     plain = CpuRuntime(W, np.arange(30), steps=steps, kicks=kicks, p=p, per_bin=100)
     with pytest.raises(ValueError, match="incompatible"):
         plain.restore(tmp_path / "c.npz")
-    exported = native.export_fixture(
-        CpuRuntime(W, np.arange(30), **kw), tmp_path / "f.bin"
-    )
-    assert exported["schema"].endswith("/v2")
+    with pytest.raises(native.NativeCapabilityError, match="continuous-clamp"):
+        native.export_fixture(rt.__class__(W, np.arange(30), **kw), tmp_path / "f.bin")
 
 
 @pytest.mark.parametrize(
@@ -295,3 +387,19 @@ def test_per_neuron_spike_amplitudes_and_a_silent_crossing():
             2,
             p,
         )
+
+
+def test_explicit_historical_boundary_mode_remains_distinct():
+    rt = CpuRuntime(
+        sparse.csc_matrix((2, 2), dtype=np.float32),
+        np.array([], dtype=int),
+        steps=1,
+        kicks=np.zeros((0, 0), dtype=np.int32),
+        per_bin=1,
+        gap=sim.Gap(np.array([0]), np.array([1]), 5.0, refractory_mode="boundary"),
+    )
+    rt._state["v"][0] = sim.Params.v_rest + 5
+    rt._state["ref_until"][1] = 100
+    rt.advance_to(1)
+    assert rt.snapshot()["v"][0] == np.float32(-47.14625549316406)
+    assert "boundary-reset-v1" in rt._semantics

@@ -11,7 +11,7 @@ import numpy as np
 from scipy import sparse
 
 from flymsg import sim
-from flymsg.native import export_fixture, read_output
+from flymsg.native import NativeCapabilityError, export_fixture, read_output
 from flymsg.runtime import CpuRuntime
 
 # version 2 fixtures: graded neurons (tonic: half release at rest) and electrically
@@ -25,7 +25,10 @@ EXTENSIONS = {
     },
     "gap": {
         "gap": sim.Gap(
-            i=np.array([2, 3, 6]), j=np.array([3, 4, 7]), coupling=[0.3, 1.5, 0.8]
+            i=np.array([2, 3, 6]),
+            j=np.array([3, 4, 7]),
+            coupling=[0.3, 1.5, 0.8],
+            refractory_mode="boundary",
         )
     },
     "spikelets": {
@@ -36,6 +39,7 @@ EXTENSIONS = {
             coupling_back=[0.6, 0.3, 0.9],
             spike_mv=np.array([0.0, 40.0, 0.0, 25.0, 40.0, 0.0, 0.0, 0.0]),
             spike_ms=1.0,
+            refractory_mode="boundary",
         )
     },
     "both": {
@@ -46,13 +50,26 @@ EXTENSIONS = {
             coupling=[0.5, 2.0],
             spike_mv=40.0,
             spike_ms=0.5,
+            refractory_mode="boundary",
         ),
     },
 }
 
 
+# Explicitly separate all-free qualification from the original refractory fixtures.
+EXTENSIONS["gap-continuous-refractory"] = {
+    "gap": sim.Gap(
+        i=np.array([2, 3, 6]), j=np.array([3, 4, 7]), coupling=[0.3, 1.5, 0.8]
+    ),
+}
+EXTENSIONS["gap-all-free"] = {
+    "gap": sim.Gap(i=np.array([2, 3]), j=np.array([3, 4]), coupling=[0.3, 1.5]),
+    "graded": sim.Graded(idx=np.array([2, 3, 4]), v_lo=-62.0, span=20.0, rate_hz=150.0),
+}
+
+
 def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
-    cases = []
+    cases, unsupported = [], []
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         for seed, adapt, silent, ext in (
@@ -83,7 +100,19 @@ def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
                 root / "output.bin",
                 root / "checkpoint.bin",
             )
-            export_fixture(oracle, fixture)
+            try:
+                export_fixture(oracle, fixture)
+            except NativeCapabilityError as exc:
+                unsupported.append(
+                    {
+                        "seed": seed,
+                        "adaptation": adapt,
+                        "silenced": silent,
+                        "extension": ext,
+                        "reason": str(exc),
+                    }
+                )
+                continue
             extra = ["--gpu", str(shader.resolve())] if shader else []
             base = [
                 str(executable.resolve()),
@@ -128,6 +157,9 @@ def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
                     "adaptation": adapt,
                     "silenced": silent,
                     "extension": ext,
+                    "electrical_mode": getattr(
+                        EXTENSIONS[ext].get("gap"), "refractory_mode", "none"
+                    ),
                     "fixture_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
                     "passed": True,
                 }
@@ -148,6 +180,8 @@ def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
     report = {
         "schema": "flymsg.native_acceptance/v1",
         "backend": "dx12" if shader else "cpu",
+        "unsupported": unsupported,
+        "dynamic_electrical_clamp_qualified": False,
         "cases": cases,
         "passed": len(cases),
         "corrupt_checkpoint_rejected": True,

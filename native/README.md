@@ -52,3 +52,12 @@ Suspension requests a deferral and stops at a completed boundary, then writes ch
 ## Reuse and license
 
 UWP build/project/package patterns and placeholder package icons are adapted from `gianlucamazza/xbox-gpu-training` at `d067b325b0232e0f766512e4b6e2c3ed902d478e`, MIT, copyright 2026 Gianluca Mazza. The original trainer and its accepted campaigns are unchanged. These assets are packaging placeholders, not a FlyMSG visual identity. The runtime and HLSL implement FlyMSG semantics directly and do not depend on transformer operators.
+
+Continuous refractory clamps use a new Python electrical semantics. The native fixed-map
+path retains the explicit historical boundary-reset mode. For the new continuous mode
+it is equivalent only for coupled cells that cannot become refractory (graded, silenced,
+stimulated, or a model without a refractory hold). The fixture exporter proves that
+condition before admitting an electrical fixture; otherwise it raises
+`NativeCapabilityError`. The acceptance report preserves original fixtures in their named boundary mode, lists
+continuous refractory fixtures as unsupported, and separately qualifies all-free fixtures. This is not native
+qualification of dynamic continuous clamps or GPU hardware.

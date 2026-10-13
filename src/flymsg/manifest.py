@@ -101,6 +101,7 @@ def write(
     started_at: datetime,
     finished_at: datetime | None = None,
     extra: dict | None = None,
+    provenance: dict | None = None,
 ) -> Path:
     """Write `manifest.json` next to a run's outputs and return its path."""
     out = Path(out)
@@ -137,6 +138,8 @@ def write(
         },
         "cwd": os.fspath(Path.cwd()),
     }
+    if provenance:
+        payload.update(provenance)
     if extra:
         payload["extra"] = extra
     path = out / "manifest.json"
