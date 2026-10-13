@@ -11,6 +11,9 @@
 
 ### Documentation
 
+- **Realism plan** in `docs/roadmap.md`: five steps (eye, Kenyon cell sparseness, odors as
+  receptor vectors, body and TTM actuator, non-spiking neurons), each with its evidence and an
+  independent test; tracked in #84, #95, #96, #90, #94, #97.
 - **`docs/roadmap.md`** (on the site as Roadmap): what of the brain the model uses and leaves
   out, in numbers from `scripts/brain_coverage.py` (signs, the FlyWire cross-check of the
   unsigned neurons, somata, photoreceptor columns), and every open item with what blocks it
