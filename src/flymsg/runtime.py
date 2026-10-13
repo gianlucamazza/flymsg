@@ -60,6 +60,7 @@ class CpuRuntime:
         per_bin: int = 100,
         silence: np.ndarray | None = None,
         trace: np.ndarray | None = None,
+        graded: sim.Graded | None = None,
     ):
         if type(steps) is not int or steps <= 0 or steps >= 2**31:
             raise ValueError("steps must be a positive int below 2**31")
@@ -131,6 +132,7 @@ class CpuRuntime:
             raise ValueError("refractory deadlines exceed int32")
         self._constants = sim._constants(self._p)
         n = self._n
+        self._graded = sim.graded_arrays(graded, n, self._p.dt)
         self._state = {
             "v": np.full(n, self._p.v_rest, dtype=np.float32),
             "g": np.zeros(n, dtype=np.float32),
@@ -142,6 +144,14 @@ class CpuRuntime:
             "first": np.full(n, -1, dtype=np.int64),
             "traced": np.zeros((steps, max(1, self._trace.size)), dtype=np.uint8),
         }
+        ng = self._graded[0].size
+        if ng:
+            # graded state exists only with graded neurons, so spiking checkpoints keep their
+            # fields and identity
+            self._state["graded_ring"] = np.zeros((self._d, ng), dtype=np.float32)
+            self._state["graded_vsum"] = np.zeros(
+                (steps // per_bin, ng), dtype=np.float64
+            )
         config = json.dumps(
             {
                 "semantics": SEMANTICS,
@@ -160,6 +170,7 @@ class CpuRuntime:
             self._kicks,
             self._silent,
             self._trace,
+            *(self._graded if ng else ()),
         ):
             digest.update(str((array.shape, array.dtype.str)).encode())
             digest.update(array.tobytes())
@@ -172,6 +183,7 @@ class CpuRuntime:
             np.zeros(n, dtype=np.bool_),
             np.empty(n, dtype=np.int32),
         )
+        self._graded_new = np.zeros(ng, dtype=np.float32)
 
     @property
     def step(self) -> int:
@@ -191,6 +203,13 @@ class CpuRuntime:
         if type(step) is not int or not self._step <= step <= self._steps:
             raise ValueError("advance target must be monotonic and within horizon")
         s = self._state
+        ng = self._graded[0].size
+        g_ring = s["graded_ring"] if ng else np.zeros((self._d, 0), dtype=np.float32)
+        g_vsum = (
+            s["graded_vsum"]
+            if ng
+            else np.zeros((s["counts"].shape[0], 0), dtype=np.float64)
+        )
         sim._advance(
             self._step,
             step,
@@ -218,6 +237,10 @@ class CpuRuntime:
             s["counts"],
             s["first"],
             *self._scratch,
+            *self._graded,
+            g_ring,
+            self._graded_new,
+            g_vsum,
         )
         self._step = step
 
@@ -277,6 +300,9 @@ class CpuRuntime:
             self._per_bin * self._p.dt,
             self._stim_steps * self._p.dt,
             s["traced"] if self._trace.size else None,
+            sim._bin_means(s["graded_vsum"], self._steps, self._per_bin)
+            if "graded_vsum" in s
+            else None,
         )
 
     def checkpoint(self, path: Path) -> None:

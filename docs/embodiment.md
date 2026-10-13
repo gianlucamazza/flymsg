@@ -219,6 +219,24 @@ is the case for graded, tonically active neurons
 ([#97](https://github.com/gianlucamazza/flymsg/issues/97)), now with a concrete failure.
 Outputs: `results/t4t5/v1/`.
 
+### T4/T5 version 2: graded photoreceptors and lamina (lock, 2026-10-13, #84, #97)
+
+Version 2 of [`validation/t4t5.yaml`](../validation/t4t5.yaml), locked after the v1 run and
+before any v2 run, makes photoreceptors and L1–L3 graded ([model](model.md#graded-non-spiking-neurons-optional-2026-10-13)).
+Photoreceptors release nothing at rest and saturate at their light response; L1–L3 release
+half their maximum at rest, nothing at the measured maximal hyperpolarization and saturate
+as far above rest. The light gain holds a fully lit photoreceptor at its response, and the
+photoreceptor release rate makes full light hyperpolarize the median receiving LMC by the
+LMC range, both from the steady state of the membrane equation. Because no release curve is
+measured in Drosophila, the test runs an envelope of 17 configurations: LMC ranges 20, 32.5
+and 45 mV times LMC release rates 25–400 Hz (unmeasured, four doublings) at a 52.5 mV
+photoreceptor response, plus 40 and 65 mV. The edge's first frame is held 200 ms before it
+moves and spikes count only during motion; the input is deterministic, so one run per
+stimulus and configuration. The decision per configuration is v1's; the test reports
+`robust: <verdict>` only if all 17 agree, and otherwise `depends` with the counts. The
+pathway's spikes per type (Mi1 to Tm9) and the LMC potentials are reported next to the
+measured ranges.
+
 ### A TTM-driven jump of NeuroMechFly (lock, 2026-10-13, #90, #94)
 
 `flymsg.ttm` turns TTMn spikes into the measured muscle force: a twitch rising to 101 µN in

@@ -1037,19 +1037,27 @@ def cmd_odor(a, neurons, edges):
 
 
 def cmd_t4t5(a, neurons, edges):
-    """The frozen T4/T5 direction-selectivity test through the eye (issue #84)."""
+    """The frozen T4/T5 direction-selectivity test through the eye (issues #84, #97)."""
     started = datetime.now(UTC)
     doc = t4t5.assert_matches_code()
     print(t4t5.summary(doc))
     out = t4t5.run(neurons, edges, a.data)
     path = Path("runs/t4t5") / f"v{doc['version']}"  # never overwrite
     path.mkdir(parents=True, exist_ok=True)
-    out["table"].to_csv(path / "spikes.csv", index=False)
-    out["metrics"].to_csv(path / "metrics.csv", index=False)
+    for name in ("table", "metrics", "pathway", "lmc", "configurations"):
+        out[name].to_csv(
+            path / f"{'spikes' if name == 'table' else name}.csv", index=False
+        )
     text = "\n".join(
         [
             f"window columns: {out['window_columns']}",
-            out["metrics"].round(3).to_string(index=False),
+            out["configurations"].round(3).to_string(index=False),
+            out["lmc"]
+            .groupby("config")[["settled_mv", "lowest_mv", "highest_mv"]]
+            .median()
+            .round(2)
+            .to_string(),
+            out["pathway"].groupby("config").sum(numeric_only=True).to_string(),
             f"verdict: {out['verdict']}",
         ]
     )
@@ -1067,9 +1075,9 @@ def cmd_t4t5(a, neurons, edges):
             "t4t5_sha256": doc["content_sha256"],
             "speed_deg_s": proto["speed_deg_s"],
             "acceptance_deg": proto["acceptance_deg"],
-            "gain": proto["gain"],
+            "envelope": proto["envelope"],
         },
-        {"all": list(proto["seeds"])},
+        {"all": [proto["seed"]]},
         started,
         extra={"verdict": out["verdict"]},
     )

@@ -6,7 +6,7 @@ flymsg.tracing (tests/test_tracing.py)."""
 import numpy as np
 from scipy import sparse
 
-from flymsg.sim import Params, Result
+from flymsg.sim import Graded, Params, Result, graded_arrays
 
 
 def run_reference(
@@ -20,6 +20,7 @@ def run_reference(
     bin_ms: float = 10.0,
     silence: np.ndarray | None = None,
     record: np.ndarray | None = None,
+    graded: Graded | None = None,
 ):
     """Simulate; stimulation lasts `stim_ms` (default: the whole run). Neurons in `silence`
     never fire, so they transmit nothing: for the rest of the network this equals zeroing
@@ -48,6 +49,9 @@ def run_reference(
     silent = np.zeros(n, dtype=bool)
     if silence is not None:
         silent[silence] = True
+    gi, g_lo, g_span, g_scale, is_graded = graded_arrays(graded, n, p.dt)
+    g_flight = [np.zeros(gi.size, dtype=np.float32)] * d  # release in flight
+    g_vsum = np.zeros((-(-steps // per_bin), gi.size))
     recent: list[np.ndarray] = [np.empty(0, dtype=np.int64)] * max(ref_steps - 1, 0)
     in_flight: list[np.ndarray] = [
         np.empty(0, dtype=np.int64)
@@ -81,12 +85,19 @@ def run_reference(
         spiking = np.flatnonzero(v > p.v_th + th)
         if silence is not None:
             spiking = spiking[~silent[spiking]]
+        spiking = spiking[~is_graded[spiking]]
+        release = np.clip((v[gi] - g_lo) / g_span, 0, 1) * g_scale
+        release[silent[gi]] = 0
         # synaptic delivery: spikes from `delay` ago into g, Poisson input into v;
         # like brian2, input reaching a refractory neuron is lost
         arriving = in_flight[t % d]
         if arriving.size:
             g += np.asarray(W[:, arriving].sum(axis=1)).ravel()
             g[ref] = g_ref
+        if np.any(g_flight[t % d]):
+            g += W[:, gi] @ g_flight[t % d]
+            g[ref] = g_ref
+        g_flight[t % d] = release
         if t < stim_steps:
             v[stim] += kick * rng.poisson(lam, stim.size)
         # reset
@@ -98,6 +109,7 @@ def run_reference(
         counts[t // per_bin, spiking] += 1
         first[spiking[first[spiking] < 0]] = t
         in_flight[t % d] = spiking
+        g_vsum[t // per_bin] += v[gi]
         if rec is not None:
             for k, x in (("v", v), ("g", g), ("th", th)):
                 rec[k].append(x[record].copy())
@@ -106,6 +118,10 @@ def run_reference(
         first_spike_ms=np.where(first >= 0, first * p.dt, np.nan),
         bin_ms=per_bin * p.dt,
         stim_ms=stim_steps * p.dt,
+        graded_v=g_vsum
+        / np.minimum(per_bin, steps - np.arange(len(g_vsum)) * per_bin)[:, None]
+        if gi.size
+        else None,
     )
     if rec is None:
         return result

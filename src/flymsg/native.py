@@ -21,6 +21,8 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
     """
     if runtime.step != 0:
         raise ValueError("native fixtures require fresh state")
+    if runtime._graded[0].size:
+        raise ValueError("the native executor has no graded neurons")
     if np.any(runtime._kicks > 2**53):
         raise ValueError("native double-count fixtures require counts <= 2**53")
     n, steps, d = runtime._n, runtime._steps, runtime._d
