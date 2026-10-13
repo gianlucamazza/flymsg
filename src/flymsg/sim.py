@@ -327,10 +327,23 @@ def network(
 
 
 def weight_matrix(
-    edges: pd.DataFrame, sign: np.ndarray, n: int, w_syn: float
+    edges: pd.DataFrame,
+    sign: np.ndarray,
+    n: int,
+    w_syn: float,
+    post_scale: np.ndarray | None = None,
 ) -> sparse.csc_matrix:
-    """Signed (post x pre) matrix; CSC so that columns of spiking neurons slice fast."""
+    """Signed (post x pre) matrix; CSC so that columns of spiking neurons slice fast.
+
+    `post_scale` (one value per neuron) multiplies every weight onto that neuron, so a lock
+    can state a rule other than count x w_syn, such as synapse density (`density_scale`).
+    Without it the weights are count x sign x w_syn, as always."""
     w = edges["weight"].to_numpy() * sign[edges["pre"].to_numpy()] * w_syn
+    if post_scale is not None:
+        scale = np.asarray(post_scale, dtype=np.float64).reshape(-1)
+        if scale.shape != (n,) or not np.isfinite(scale).all() or np.any(scale <= 0):
+            raise ValueError("post_scale needs one positive finite value per neuron")
+        w = w * scale[edges["post"].to_numpy()]
     keep = w != 0
     return sparse.csc_matrix(
         (
@@ -339,6 +352,16 @@ def weight_matrix(
         ),
         shape=(n, n),
     )
+
+
+def density_scale(area_um2: np.ndarray, ref_um2: float) -> np.ndarray:
+    """`post_scale` for weights proportional to synapse density on the postsynaptic neuron
+    (count over its surface area, Liu et al. 2022): ref_um2 / area. The reference area is
+    the one at which a synapse keeps the weight w_syn; a lock states it and its source."""
+    area = np.asarray(area_um2, dtype=np.float64)
+    if not (np.isfinite(area).all() and np.all(area > 0)) or not ref_um2 > 0:
+        raise ValueError("areas and the reference area must be positive and finite")
+    return ref_um2 / area
 
 
 @dataclass

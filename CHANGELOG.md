@@ -24,6 +24,10 @@
   the spikes are unchanged bit for bit; the kernel, the oracle and `CpuRuntime` agree with
   one; coupled neurons and the native executor refuse it. Contract B2 gains `membrane`.
   Measured cost of the uniform path: about 5% per step on the whole CNS.
+- **Weight rules beyond count** (`sim.weight_matrix(post_scale=...)`, `sim.density_scale`):
+  a lock can scale every weight onto a neuron, e.g. by synapse density (Liu et al. 2022);
+  without it the weights are unchanged. `scripts/mesh_area.mjs` measures a neuron's surface
+  area from its published mesh at full resolution with the viewer's readers.
 - **Spikelets and asymmetric junctions** (#85): `sim.Gap` takes a coupling per side of a
   junction and, with `spike_mv` and `spike_ms`, lets a spike cross as a rectangular term
   integrated exactly with the rest (third Van Loan block); CPU, NumPy reference, runtime
