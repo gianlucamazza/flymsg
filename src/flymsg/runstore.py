@@ -307,7 +307,14 @@ class Run:
                 if attempt["status"] == "running":
                     attempt.update(status="interrupted", detected_at=now())
             self.attempts.append(
-                {"id": uuid.uuid4().hex, "started_at": now(), "status": "running"}
+                {
+                    "id": uuid.uuid4().hex,
+                    "started_at": now(),
+                    "status": "running",
+                    "host": platform.node(),
+                    "kernel": platform.release(),
+                    "system": platform.system(),
+                }
             )
             atomic_json(attempts, self.attempts)
             # This is explicitly uncommitted output; never touch a finalized output.

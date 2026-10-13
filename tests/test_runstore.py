@@ -118,6 +118,10 @@ def test_real_writer_exclusion_and_process_death_release(tmp_path):
         child.communicate(timeout=10)
     with runstore.Run(tmp_path / "v1", IDENTITY) as recovered:
         assert recovered.attempts[0]["status"] == "interrupted"
+        for attempt in recovered.attempts:
+            assert attempt["host"] == runstore.platform.node()
+            assert attempt["kernel"] == runstore.platform.release()
+            assert attempt["system"] == runstore.platform.system()
         _write_result(recovered)
         recovered.finalize()
 

@@ -162,3 +162,38 @@ boundary-reset convention are preserved; the execution identity and manifest exp
 name that mode. The source-version registry selects it, not today's Gap default. KC v4's
 explicit first-order model is not implemented by the new runner and remains refused.
 Changing v5 to continuous clamps would require a new prospective protocol, not editing v5.
+
+## Final engineering verification
+
+PR [#127](https://github.com/gianlucamazza/flymsg/pull/127) is merged at
+`409bb34ae3acdbae440095a1793de0b48dd5ba7c`. Subsequent main commit
+`e09c016864a7cdc15ba4d29d7f5e4dc0d514c87c` also passed the complete standard CI suite:
+465 tests passed, two data-dependent tests deselected; native Linux reference, Windows
+build and Pages deployment passed. These are engineering gates, not animal validation.
+
+The source-pinned controller `scripts/check_v5_state.py` compared clean original v5
+`00aff9cb11573686ffcf0ea6dea90639c30093d7` with clean main `e09c016864a7cdc15ba4d29d7f5e4dc0d514c87c`
+on 165,122 neurons and 25,563,197 chemical edges. The 500-step trial preserves chemical
+contacts, uses ORN_DM1, seed 1357, 100 Hz for 300 steps and a 0.5 ms prescribed spikelet,
+and crosses an incremental boundary at step 217. All eleven state arrays match in
+dtype, shape and exact bytes, including 2,344 spikes in electrically coupled cells.
+[The machine-readable report](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/v5-engine-parity-2026-10-13.json)
+records input hashes, parameters, source versions and per-array hashes. This is a short
+numerical compatibility trial of the frozen boundary-reset protocol, not a scored KC
+result, a performance benchmark or qualification of continuous refractory native execution.
+
+Review recovery of a torn first draw record is covered by regression tests. The proposed
+Windows best-effort directory-fsync fallback is deliberately not adopted: the accepted
+run-integrity ADR qualifies managed writes on Linux only, and unsupported platforms
+already fail before entering the managed writer. Windows native builds qualify native
+code compilation, not the Python experiment-storage lifecycle.
+
+Latest read-only observation: T4/T5 has eight persisted configurations (64/136 simulations
+reported); no active T4/T5 or KC process was observed at final inspection. The original
+checkpoint directories and worktrees remain untouched. Neither an incomplete checkpoint
+nor the original lock-only format is promoted to a verified completed run. The twelve
+open issues retain the evidence/hardware acceptance requirements listed above.
+
+Attempt provenance also records host, kernel and OS when each attempt starts, preserving
+those fields across process-death recovery. These are diagnostic metadata; they do not
+change execution identity or retrospectively fill historical attempt records.
