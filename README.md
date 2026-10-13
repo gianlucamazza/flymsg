@@ -94,98 +94,30 @@ sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about hal
 
 ## Results so far
 
-- **The model passes every validation check on the traced graph, with no compensation**
-  (29/29, criterion v4). The cases are looming escape (LC4 → Giant Fiber → jump motor
-  neuron), Giant Fiber output, P1 courtship drive and the pIP10 song pathway, sugar →
-  proboscis motor neuron MN9, and bitter taste leaving MN9 silent. The only departure from
-  the published model is a synapse weight scaled for MaleCNS's denser synapse detection,
-  chosen by a pre-registered model selection and confirmed on fresh seeds
-  ([validation](docs/validation.md)).
-- **Those specific checks need the measured partners.** One shuffle of who connects to whom,
-  with each neuron keeping its degree and its outgoing weights, drops the same battery from
-  29/29 to 5/29. The five that remain are the `stability` check of every case:
-  self-sustained activity still dies out. All 7 `specific` checks fail, and so do
-  `positive`, `order`, `dose` and `negative`. The synapse weight stays 0.192
-  ([related](docs/related.md)). Four further null families, 20 draws each on MaleCNS v1.0,
-  put the one-hop signed pathway weights above every draw (_p_ = 1/21): degree-preserving
-  null mean 21.4 against a real headline of 4077; cell-type-preserving 3196; weight-within-type
-  680; sign 1314. Four pathways have no direct synapses (including sugar → MN9). See
-  [nulls](docs/nulls.md).
-- **The engine matches the published model.** On the female FlyWire brain, with the same
-  sugar neurons, flymsg and Shiu et al.'s brian2 code agree within noise (r ≥ 0.998 over all
-  active neurons). The check uncovered six places where an earlier version of flymsg had
-  departed from the published model ([comparison](docs/comparison.md#engine-check)).
-- **Courtship circuits run through the dimorphic network; escape and feeding do not.**
-  Responders to P1 and pIP10 stimulation are 4–19× enriched in fru/dsx+, male-specific and
-  dimorphic neurons over superclass-matched chance. Two pre-registered silencing tests with
-  1,000 matched null draws each then asked what is necessary: silencing the 948 sexually
-  dimorphic neurons raises the song neuron dPR1 by 61–64 % after either stimulus (confirmed),
-  and silencing the two dMS9 neurons alone raises it by two thirds, more than silencing any
-  matched active neurons. The same tests reject the other half of v0.5's prediction: the
-  inhibitory neurons vPR9_a and IN00A038 are not the route by which dMS9 holds dPR1 back.
-  T3 supports the route fixed before the run: silencing IN03B024, or vMS12_a+b+c, raises
-  dPR1 after both courtship stimuli (p = 0.001), and silencing dMS9 together with IN03B024
-  raises it no more, because the 95% intervals overlap.
-  T4 passes its one test: silencing AVLP717m drops pIP10 after P1 by 43% (p = 0.001).
-  The same silencing after the pIP10 stimulus has no matched null, so that case has no p
-  ([dimorphism](docs/dimorphism.md)). The gallery colours the pIP10 replay by the sex annotation.
-- **The held-out olfactory case fails.** ORN_DM1 recruits DM1_lPN (284.4 Hz, 3/3 seeds),
-  and the CO2 ORNs recruit their PNs, but neither is specific against other olfactory
-  neurons and both leave thousands of neurons firing after the stimulus. The same
-  failure survives the Shiu weight and adaptation. The scored weight stays 0.192
-  ([benchmarks](docs/benchmarks.md)).
-- **Why the held-out olfactory case keeps firing** (exploratory). Most of the neurons still
-  active after the stimulus are Kenyon cells, and 73% of the excitatory synapses onto Kenyon
-  cells come from other Kenyon cells; in a point LIF that loop sustains itself. A model limit,
-  not a fit ([benchmarks](docs/benchmarks.md)). Those synapses are metabotropic in the fly
-  (Manoim et al. 2022); a locked diagnostic shows that treating them so lowers an odor's share
-  of Kenyon cells from 25% to 17%, but two odors still share 95%. The overlap is made in the
-  antennal lobe, where the model turns the electrical coupling of excitatory local neurons into
-  fast chemical excitation: without it one ORN type drives 4.5% of the projection neurons, not 73%. With
-  real odors (DoOR) the code is either dense or silent, never sparse: the measured electrical
-  coupling is what the model lacks
-  ([model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)).
-- **The measured dopamine-gated depression is not odor-specific in the model.** Applying the
-  Kenyon cell → MBON11 depression of Hige et al. 2015 after pairing silences MBON11 for the
-  paired and the unpaired odor alike: the two odors share 95% of their ~1,000 Kenyon cells,
-  against 30–33% in the fly. The same Kenyon cell limit, seen from learning
-  ([model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13)).
-- **The one-bit looming jump fails silence.** `TTMn_R` reaches three spikes on time
-  in 3/3 seeds, and the closed loop stops there. With both DNp01 silenced it still
-  reaches three spikes, later. The raster is
-  [TTMn_R](docs/img/looming-jump.svg), explained in [behavior](docs/behavior.md).
-  `w_syn` stays 0.192.
-- **The residual `TTMn_R` drive goes through DNp02 and DNp06, in the model.** With both
-  DNp01 silenced, silencing either one as well removes every `TTMn_R` spike. Version 1 of the
-  pre-registered scan missed its threshold because each null contained the other unit;
-  version 2, fixed after that result but before its own run, excludes it and names both
-  (p 0.001 each against 0.025) ([behavior](docs/behavior.md#result-of-version-2-2026-10-12)).
-  Version 3 repeats version 2 on fresh seeds 30–32 and names both again
-  ([behavior](docs/behavior.md#result-of-version-3-2026-10-12)): the naming replicates.
-  A follow-up, locked before its run, finds the same on the left side, and shows that DNp06
-  driven at 200 Hz reaches the jump bit alone while DNp02 alone does not; together they are
-  far above random descending pairs ([behavior](docs/behavior.md#result-of-version-1-2026-10-13)).
-- **Extensions only where a measurement transfers.** Cell-type parameters, gap junctions,
-  short-term synaptic dynamics and compartments have no value that transfers into
-  this LIF, and none is added. Silencing DNp01 removes that cell's output, and `TTMn_R` still fires,
-  so the silence failure is not a missing giant-fiber gap junction; the residual
-  drive goes through DNp02 and DNp06. Neuromodulation stays out; associative learning has
-  one optional rule, the measured dopamine-gated depression at Kenyon cell → MBON11,
-  locked before its run ([model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13)).
-- **No held-out behavior is eligible.** The frozen partition has no remaining task that
-  can fill the validated-behavior milestone. Exploratory rows stay exploratory
-  ([validation](docs/validation.md)).
-- **Synapse counts are not comparable across datasets.** A male neuron has a median 1.81× the
-  synapses of its female counterpart over 7,327 matched cell types, a difference between the
-  reconstructions. Male vs female simulations are corrected for it
-  ([comparison](docs/comparison.md)).
-- **Part of the published sugar response comes from LB3d-like taste neurons**, a subtype one
-  study matched to high-salt receptor lines. In the female model the "sugar" set of Shiu et
-  al. splits into 14 sugar-like and 6 LB3d-like neurons; the latter add about a quarter of
-  the MN9 response.
+The index lives on the [roadmap](docs/roadmap.md#results). Each row is a verdict already
+recorded on the linked page. Negative results stay in the
+[findings log](docs/validation.md#findings-log).
 
-Negative results are kept as well: the [findings log](docs/validation.md#findings-log)
-records what failed and why.
+| Result                                     | Verdict                                                      | Record                                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Validation battery, criterion v4           | 29/29 at `w_syn` 0.192, replicated                           | [validation](docs/validation.md)                                                                       |
+| N1, one degree-preserving shuffle          | 5/29, all of them `stability`                                | [related](docs/related.md#n1-specific-checks-need-the-measured-partners)                               |
+| Four null families, 20 draws               | the one-hop headline sits above every draw                   | [nulls](docs/nulls.md)                                                                                 |
+| Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                              | [comparison](docs/comparison.md#engine-check)                                                          |
+| Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not    | [dimorphism](docs/dimorphism.md)                                                                       |
+| Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                 | [benchmarks](docs/benchmarks.md)                                                                       |
+| Kenyon cell sparseness v1–v4               | dense or silent, never sparse                                | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| KC → MBON11 depression v1                  | inconsistent: both odors go silent                           | [model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
+| One-bit looming jump                       | silence fails                                                | [behavior](docs/behavior.md#result-2026-10-11)                                                         |
+| Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                              | [behavior](docs/behavior.md#residual-partner-scan)                                                     |
+| Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit | [behavior](docs/behavior.md#residual-partner-follow-up)                                                |
+| T4/T5 through the eye v1                   | neither                                                      | [eye](docs/eye.md)                                                                                     |
+| T4/T5 v2                                   | locked, no run                                               | [eye](docs/eye.md)                                                                                     |
+| NeuroMechFly jump v1                       | short                                                        | [embodiment](docs/embodiment.md)                                                                       |
+| Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference | [comparison](docs/comparison.md)                                                                       |
+| Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                        | [comparison](docs/comparison.md)                                                                       |
+| Motor map                                  | every row `unmapped`                                         | `validation/motor_map.yaml`                                                                            |
+| Held-out behavior milestone                | no eligible case left in the frozen partition                | [validation](docs/validation.md)                                                                       |
 
 ## Quick start
 
@@ -229,7 +161,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `silence-scan [--run]`                                          | the locked residual `TTMn_R` partner scan (#20); prints the protocol without `--run`                    |
 | `partner-followup [--run]`                                      | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                          |
 | `mb-plasticity [--run]`                                         | the locked dopamine-gated KC → MBON11 depression (#85), applied between trials                          |
-| `kc-sparseness [--run]`                                         | the locked diagnostic of why an odor recruits 25% of Kenyon cells (#95): KC → KC and APL arms           |
+| `kc-sparseness [--run]`                                         | the locked Kenyon-cell sparseness diagnostic (#95), v1–v4: recurrence, antennal lobe, odors, coupling   |
 | `jump3d [--run]`                                                | the locked TTM-driven jump: TTMn spikes → measured twitch → NeuroMechFly in MuJoCo (#90, #94)           |
 | `t4t5 [--run]`                                                  | the locked T4/T5 test: ON/OFF edges moving through the measured eye; polarity and direction (#84)       |
 | `odor NAME`                                                     | a DoOR odorant as a response per MaleCNS ORN type (fetched, CC BY-SA)                                   |
@@ -276,35 +208,46 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 - **One animal per dataset.** There is no measure of individual variability, and sex
   differences cannot be separated from reconstruction differences. `flymsg audit` flags
   incompletely reconstructed bilateral neurons (3.2 % of types, including MN9_R).
-- **Wiring only, by default.** No gap junctions, neuromodulation or cell-specific
-  properties; one optional, locked plasticity rule (KC → MBON11) changes nothing unless
-  called; transmitters are machine predictions, and 2.6% of synapses carry no sign. What of the
-  brain is in the model is counted in [roadmap](docs/roadmap.md#brain-coverage). The Giant Fiber, for example, behaves like a
-  `shak-B²` mutant lacking its electrical synapse.
+- **Wiring only, by default.** The default model has no gap junctions, no graded release and
+  no neuromodulation. `sim.Gap` and `sim.Graded` exist and stay off unless a lock names
+  them. A spike crosses a junction only when that lock sets `spike_mv` and `spike_ms`
+  ([model](docs/model.md#electrical-synapses-optional-2026-10-13)). One optional plasticity
+  rule (KC → MBON11) changes nothing unless called. Transmitters are machine predictions,
+  and 2.6% of synapses carry no sign. What of the brain is in the model is counted in
+  [roadmap](docs/roadmap.md#brain-coverage). The Giant Fiber behaves like a `shak-B²` mutant
+  lacking its electrical synapse.
 - **Qualitative rates.** Use the model to rank which circuits a stimulus recruits and in what
   order, not to predict exact firing.
 - **Few, short cases.** The validation cases are mostly 1–2-hop feed-forward chains.
 
 ## Documentation
 
-| Document                             | Content                                                                       |
-| ------------------------------------ | ----------------------------------------------------------------------------- |
-| [data](docs/data.md)                 | sources, files, filtering, schema, the female FAFB dataset, citations         |
-| [model](docs/model.md)               | equations, parameters, signs, density scaling, extensions, optional KC→MBON11 |
-| [validation](docs/validation.md)     | current status, protocol, cases, calibration, model selection, findings log   |
-| [benchmarks](docs/benchmarks.md)     | held-out partition, the ORN_DM1 failure, both corners fail                    |
-| [behavior](docs/behavior.md)         | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated  |
-| [architecture](docs/architecture.md) | module layers, the six contracts and their tests, migration order             |
-| [embodiment](docs/embodiment.md)     | M0 neural/body contract, synthetic body, no motor map; the E1–E4 roadmap      |
-| [runtime](docs/runtime.md)           | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned           |
-| [nulls](docs/nulls.md)               | pre-registered null families, scores, draw counts, methods                    |
-| [provenance](docs/provenance.md)     | date, public source and commit for each existing idea                         |
-| [comparison](docs/comparison.md)     | engine check against the published model, male vs female, the LB3 split       |
-| [dimorphism](docs/dimorphism.md)     | dimorphic neurons among responders, silencing                                 |
-| [related](docs/related.md)           | adjacent whole-CNS models, the raw 211,577 count, wiring null N1              |
-| [viz](docs/viz.md)                   | 3D pipeline, whole-CNS soma layer, sides, levels of detail, GPU measurements  |
-| [roadmap](docs/roadmap.md)           | brain coverage in numbers; what is blocked on evidence or hardware, and why   |
-| [CHANGELOG](CHANGELOG.md)            | what changed in each version                                                  |
+A fact has one home. The [roadmap](docs/roadmap.md#results) is the index of verdicts. A
+protocol stays in its own page and in `validation/*.yaml`. A negative result is one line in
+the [findings log](docs/validation.md#findings-log). A public source enters
+[provenance](docs/provenance.md) when its commit is on `main`. The changelog is the release
+note. A present-tense sentence describes the default model today. A dated sentence stays
+under its date.
+
+| Document                             | Content                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| [data](docs/data.md)                 | sources, files, filtering, schema, the female FAFB dataset, citations                      |
+| [model](docs/model.md)               | equations, parameters, the 2026-10-11 default, optional Gap, Graded and KC→MBON11          |
+| [validation](docs/validation.md)     | battery status, the dated status log, protocol, calibration, findings log                  |
+| [benchmarks](docs/benchmarks.md)     | held-out partition, the ORN_DM1 failure, both corners fail                                 |
+| [behavior](docs/behavior.md)         | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated               |
+| [architecture](docs/architecture.md) | module layers, the six contracts and their tests, migration order                          |
+| [embodiment](docs/embodiment.md)     | M0 contract, M1/M2 engineering bodies, NeuroMechFly jump v1 (short); FlyBody unselected    |
+| [eye](docs/eye.md)                   | column directions, column stimuli, T4/T5 v1 (neither) and the locked v2 envelope           |
+| [runtime](docs/runtime.md)           | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                        |
+| [nulls](docs/nulls.md)               | pre-registered null families, scores, draw counts, methods                                 |
+| [provenance](docs/provenance.md)     | date, public source and introducing commit for each idea on `main`                         |
+| [comparison](docs/comparison.md)     | engine check against the published model, male vs female, the LB3 split                    |
+| [dimorphism](docs/dimorphism.md)     | dimorphic neurons among responders, silencing                                              |
+| [related](docs/related.md)           | adjacent whole-CNS models, the raw 211,577 count, wiring null N1                           |
+| [viz](docs/viz.md)                   | 3D pipeline, whole-CNS soma layer, sides, levels of detail, GPU measurements               |
+| [roadmap](docs/roadmap.md)           | the results index; brain coverage; what is blocked on evidence, hardware, or an unrun lock |
+| [CHANGELOG](CHANGELOG.md)            | what changed in each version                                                               |
 
 ## Development
 

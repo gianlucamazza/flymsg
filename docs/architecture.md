@@ -28,8 +28,8 @@ a manifest. Long batches fan out to worker processes on one machine.
   `silence_scan` and `prereg` each define `load`, `content_hash`, `assert_locked` and a
   `VERSION_HASHES` table with the same code.
 - **The draw engine lived in an experiment** until v0.8.29 (`flymsg.draws`).
-- **`cli.py` is 1,100 lines.** Each command parses, runs, prints and writes its own outputs and
-  manifest.
+- **`cli.py` is about 2,100 lines.** Each command parses, runs, prints and writes its own
+  outputs and manifest.
 - **The viewer bundle had no version** until v0.8.26 (`flymsg.scene/v1`).
 - **Runs are not indexed.** Every output directory has a manifest, but nothing lists or
   compares them (#27).

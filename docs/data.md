@@ -115,7 +115,7 @@ The viewing direction of each lens comes from Zhao et al. 2025
 `data/eyemap.RData` (lens hex coordinates) and `data/microCT/20240701.RData` (lens
 directions). Both are GPL-3.0. `flymsg eye` downloads them into `data/raw/eyemap/` on first
 use; flymsg does not redistribute them or anything derived from them. See
-[embodiment](embodiment.md#eye-geometry-84).
+[eye](eye.md#eye-geometry-84).
 
 ## Odor responses (`flymsg odor`)
 

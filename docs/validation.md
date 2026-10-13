@@ -7,9 +7,36 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
 
 ## Current status
 
+The scored picture is the index on the [roadmap](roadmap.md#results). This page is the
+validation battery: its protocol, how the defaults were chosen, and the
+[findings log](#findings-log). Notes kept as they were written on the day are the
+[status log](#status-log). A later note supersedes an earlier one where they disagree.
+
 - **Criterion v4, 29/29 with the defaults** (`w_syn` 0.192, no adaptive threshold) at seeds
   0–2, at seeds 0–9 (model selection) and at fresh seeds 10–19 with fresh control draws
   (replication).
+
+- **N1** drops the same battery to 5/29 on one degree-preserving shuffle
+  ([related](related.md#n1-specific-checks-need-the-measured-partners)).
+- **Held-out** ORN_DM1 → DM1_lPN fails specific and stability
+  ([benchmarks](benchmarks.md)).
+- **One-bit looming jump** fails the DNp01 silence check. The residual drive is DNp02 and
+  DNp06 ([behavior](behavior.md)).
+
+- **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
+  sugar → MN9, and bitter → MN9 as a negative case.
+- **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency
+  order, dose-response, stability, negative.
+- **How the defaults were reached:** calibrate-v2 and calibrate-v3 tuned an adaptive threshold
+  while `w_syn` stayed at Shiu's FAFB value. Once MaleCNS's higher synapse density was found,
+  a pre-registered model selection and a replication chose the density-scaled weight with no
+  compensation. The sections below keep the whole history, and the findings log keeps every
+  negative result.
+
+## Status log
+
+These notes stay in the order they were added.
+
 - **N1** (2026-10-11, [related](related.md#n1-specific-checks-need-the-measured-partners)).
   One degree-preserving shuffle of `post`, seed 0, the same defaults and criterion v4,
   seeds 0–2. The traced graph passes 29/29. The shuffle passes 5/29, and those five are
@@ -78,15 +105,6 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   A replication of v2 with every rule unchanged and fresh confirm seeds 30–32, locked before
   its run: names_partner: DNp02, DNp06 again (p 0.001 each). The v2 naming replicates;
   model-side.
-- **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
-  sugar → MN9, and bitter → MN9 as a negative case.
-- **Kinds of check:** positive, specific (class-matched control for sensory stimuli), latency
-  order, dose-response, stability, negative.
-- **How the defaults were reached:** calibrate-v2 and calibrate-v3 tuned an adaptive threshold
-  while `w_syn` stayed at Shiu's FAFB value. Once MaleCNS's higher synapse density was found,
-  a pre-registered model selection and a replication chose the density-scaled weight with no
-  compensation. The sections below keep the whole history, and the findings log keeps every
-  negative result.
 
 ## Protocol
 
