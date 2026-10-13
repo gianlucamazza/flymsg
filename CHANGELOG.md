@@ -69,6 +69,10 @@
 
 ### Pre-registration
 
+- **Kenyon cell sparseness diagnostic v2** (#95): after v1, an antennal-lobe arm. Cholinergic
+  local neuron → PN contacts are electrical in the fly (Yaksi & Wilson 2010) and fast chemical
+  in the model; v2 removes them (arm E), alone and with KC → KC (arm F), on fresh seeds 70–72,
+  same measured bounds. Locked before its run.
 - **Kenyon cell sparseness diagnostic v1** (#95): four weight matrices (default; KC → KC
   without fast effect, since these synapses act through the metabotropic mAChR-B, Manoim et
   al. 2022; APL → KC removed; both) compared on the share of Kenyon cells responding to an

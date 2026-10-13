@@ -238,8 +238,18 @@ Removing the fast KC → KC excitation cuts the recruited Kenyon cells by a thir
 above the 17% bound, but the two odors still share 95% of them. The recurrence makes the code
 denser; it does not make two odors look alike. The overlap comes from upstream: two ORN
 types already reach the same Kenyon cells. The APL control moves as Lin et al. 2014 predict.
-Next ([#95](https://github.com/gianlucamazza/flymsg/issues/95)): how far one ORN type
-spreads in the antennal lobe, PN type by PN type. Outputs: `results/kc-sparseness/v1/`.
+Outputs: `results/kc-sparseness/v1/`.
+
+**Version 2 (fixed 2026-10-13, after the v1 verdict, before its run).** An exploratory run
+after v1 (seed 0) found one ORN type driving 414 of 577 PN-like neurons, 121 PN types, 120 of
+them shared between the two odors: the overlap is made in the antennal lobe. There, the
+excitatory local neurons couple to projection neurons electrically (abolished in `shakB²`,
+insensitive to Cd²⁺ and mecamylamine; Yaksi & Wilson 2010), while the model, with no gap
+junctions, turns the 137 cholinergic local neurons' chemical contacts onto PNs into fast
+excitation. Version 2 keeps the bounds and odors, moves to seeds 70–72, and runs four arms:
+default, KC → KC without fast effect, cholinergic local neuron → PN removed, and both. Its
+verdict lists the arms within the measured bounds. Named caveat: Huang et al. 2010 report a
+chemical component as well, and the lateral local neurons' transmitter is a prediction.
 
 ## Recording neuron states
 
