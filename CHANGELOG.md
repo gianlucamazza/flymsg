@@ -43,6 +43,14 @@
 
 ### Engineering
 
+- **Lock parser, subset 2** (#159): the lock parser cut ` #` inside quoted strings and read
+  a quoted list item holding `:` as a one-key map. A lock with the top-level line
+  `yaml_subset: 2` is parsed quote-aware (no escapes; a list item that opens a quote must be
+  one quoted string); the seven registered locks the old parse misreads keep it, since their
+  hashes were taken on it, and a test refuses any other lock, or new version of those seven,
+  that depends on it. In `silence_scan.yaml` v3 the hash covers `replication.on_failure`
+  only up to "issue"; the full clause is in git at the lock commit.
+
 - **Mesh areas skip empty fragments** (#139): `scripts/mesh_area.mjs` failed on a neuron
   whose full-resolution mesh has an empty fragment (bodyId 517804); it now skips them as the
   viewer does, and `flymsg weight-rule --areas` reports Node's error instead of an exit code.

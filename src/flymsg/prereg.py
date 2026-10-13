@@ -36,7 +36,7 @@ def _parse_scalar(text: str):
         return False
     if text in ("null", "None", "~"):
         return None
-    if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
+    if _is_quoted(text):
         return text[1:-1]
     if text.startswith("[") and text.endswith("]"):
         inner = text[1:-1].strip()
@@ -81,11 +81,57 @@ def _indent(line: str) -> int:
     return len(line) - len(line.lstrip(" "))
 
 
+def _opens_scalar(before: str) -> bool:
+    """A quote opens a quoted scalar only where a value starts."""
+    head = before.rstrip()
+    return head == "" or head[-1] in ":-[,"
+
+
+def _strip_comment(raw: str) -> str:
+    """Cut a ` #` comment that starts outside quotes (no escapes in the subset)."""
+    quote = None
+    for i, ch in enumerate(raw):
+        if quote:
+            if ch == quote:
+                quote = None
+        elif ch in "\"'" and _opens_scalar(raw[:i]):
+            quote = ch
+        elif ch == "#" and i > 0 and raw[i - 1] == " ":
+            return raw[:i]
+    return raw
+
+
+def _is_quoted(text: str) -> bool:
+    return len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'"
+
+
+def _one_quoted(text: str) -> bool:
+    """The whole text is one quoted string: its quote does not close earlier."""
+    return _is_quoted(text) and text[0] not in text[1:-1]
+
+
+def _subset(text: str) -> int:
+    for raw in text.splitlines():
+        if raw.startswith("yaml_subset:"):
+            value = _parse_scalar(_strip_comment(raw).partition(":")[2])
+            if value != 2:
+                raise PreregistrationError(f"unknown yaml_subset {value!r}")
+            return 2
+    return 1
+
+
 def load_yaml(text: str) -> dict:
-    """Load the restricted YAML subset used by the preregistration file."""
+    """Load the restricted YAML subset used by the preregistration file.
+
+    Subset 1 cuts ` #` even inside quotes and reads a quoted list item holding `:` as a
+    one-key map (#159); registered locks keep it, since their hashes were taken on it. A
+    file with the top-level key `yaml_subset: 2` gets quote-aware comments and quoted
+    list items as plain strings.
+    """
+    subset = _subset(text)
     lines = []
     for raw in text.splitlines():
-        cut = raw.split(" #", 1)[0].rstrip()
+        cut = (_strip_comment(raw) if subset == 2 else raw.split(" #", 1)[0]).rstrip()
         if not cut.strip() or cut.lstrip().startswith("#"):
             continue
         lines.append(cut)
@@ -107,7 +153,10 @@ def load_yaml(text: str) -> dict:
                 kind = "list"
                 item = body[2:].strip()
                 index += 1
-                if item and ":" in item and not item.startswith("["):
+                quoted = subset == 2 and _one_quoted(item)
+                if subset == 2 and item.startswith(('"', "'")) and not quoted:
+                    raise PreregistrationError(f"not one quoted string: {item!r}")
+                if item and ":" in item and not item.startswith("[") and not quoted:
                     key, _, rest = item.partition(":")
                     nested, index = parse_block(index, indent + 2)
                     nested = {key.strip(): _parse_scalar(rest), **nested}
