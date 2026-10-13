@@ -1,10 +1,11 @@
 """Kenyon cell sparseness diagnostic (issue #95). The YAML file is the lock.
 
-Four arms differ only in the weight matrix: the default; Kenyon cell to Kenyon cell
-synapses without fast effect (they are metabotropic, Manoim et al. 2022, and the model gives
-metabotropic transmission sign 0); APL -> KC removed; both. Each arm drives two ORN types
-and counts the responding Kenyon cells and those shared between the odors. The default model
-is not changed by the result.
+Arms differ only in the weight matrix: each removes the fast effect of named synapse
+classes (KC -> KC, metabotropic in the fly, Manoim et al. 2022; APL -> KC; cholinergic
+antennal-lobe local neuron -> projection neuron, electrical in the fly, Yaksi & Wilson 2010).
+Each arm drives two ORN types and counts the responding Kenyon cells, those shared between
+the odors, and the projection neurons that spike. The default model is not changed by the
+result. Version 1 (arms A-D) ran from b096b4a; version 2 runs arms A, B, E, F.
 """
 
 from __future__ import annotations
@@ -22,8 +23,18 @@ PATH = ROOT / "validation" / "kc_sparseness.yaml"
 # sha256 of the canonical JSON of every field except version and content_sha256.
 VERSION_HASHES = {
     1: "d5343b238f61e3bd9cb51ed8fc21981da7a418ad5fdfe7133fe201899c33caba",  # arms A-D, odors ORN_VA1d and ORN_DL3, seeds 60-62
+    2: "bcfef9af52861dfd0a903c8b01aded5f8f504b645cdf6933d91b01ae47350322",  # arms A, B, E, F (cholinergic LN -> PN), seeds 70-72
 }
-ARMS = ("A", "B", "C", "D")
+# synapse classes without fast effect in each arm
+ARM_CLASSES = {
+    "A": (),
+    "B": ("kc_kc",),
+    "C": ("apl_kc",),
+    "D": ("kc_kc", "apl_kc"),
+    "E": ("ach_ln_pn",),
+    "F": ("kc_kc", "ach_ln_pn"),
+}
+SPENT_SEEDS = {1: (60, 61, 62)}
 
 
 class SparsenessError(ValueError):
@@ -51,8 +62,11 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     proto = doc["protocol"]
     if proto["odors"] != [mb["cs_plus"], mb["cs_minus"]]:
         raise SparsenessError("the odors are not the KC -> MBON11 lock's")
-    if tuple(doc["arms"]) != ARMS:
+    if set(doc["arms"]) - set(ARM_CLASSES) or next(iter(doc["arms"])) != "A":
         raise SparsenessError("the arms changed")
+    for v, spent in SPENT_SEEDS.items():
+        if v < doc["version"] and set(proto["seeds"]) & set(spent):
+            raise SparsenessError(f"seeds must not reuse version {v}'s")
     dec = doc["decides"]
     if (dec["sparse_max"], dec["overlap_max"]) != (0.17, 0.646):
         raise SparsenessError("the bounds are not the measured ones")
@@ -69,24 +83,33 @@ def assert_matches_code(doc: dict | None = None) -> dict:
 def summary(doc: dict | None = None) -> str:
     doc = assert_matches_code() if doc is None else doc
     p, d = doc["protocol"], doc["decides"]
+    arms_text = "; ".join(
+        f"{a} {'+'.join(ARM_CLASSES[a]) or 'default'}" for a in doc["arms"]
+    )
     return (
-        f"kc-sparseness v{doc['version']} (issue #{doc['issue']}): arms A default, "
-        f"B KC->KC without fast effect, C no APL->KC, D both; odors "
+        f"kc-sparseness v{doc['version']} (issue #{doc['issue']}): arms {arms_text}; odors "
         f"{', '.join(p['odors'])} at {p['rate_hz']:g} Hz for {p['odor_ms']:g} ms; seeds "
         f"{', '.join(map(str, p['seeds']))}; within if <= {d['sparse_max']} of KCs respond "
         f"and <= {d['overlap_max']} of responders are shared"
     )
 
 
-def arms(W, kcs: np.ndarray, apl: np.ndarray) -> dict:
-    """The four weight matrices of the lock."""
-    b = plasticity.depress(W, kcs, kcs, 0.0)
-    return {
-        "A": W,
-        "B": b,
-        "C": plasticity.depress(W, apl, kcs, 0.0),
-        "D": plasticity.depress(b, apl, kcs, 0.0),
+def arms(W, idx: dict, names) -> dict:
+    """The weight matrix of each named arm. `idx` holds the neuron sets "KC", "APL",
+    "ACH_LN" and "PN"."""
+    pairs = {
+        "kc_kc": ("KC", "KC"),
+        "apl_kc": ("APL", "KC"),
+        "ach_ln_pn": ("ACH_LN", "PN"),
     }
+    out = {}
+    for name in names:
+        Wx = W
+        for cls in ARM_CLASSES[name]:
+            pre, post = pairs[cls]
+            Wx = plasticity.depress(Wx, idx[pre], idx[post], 0.0)
+        out[name] = Wx
+    return out
 
 
 def responders(counts_per_seed: list[np.ndarray], min_seeds: int) -> np.ndarray:
@@ -99,30 +122,30 @@ def within(fractions, overlaps, sparse_max: float, overlap_max: float) -> bool:
 
 
 def decide(table: pd.DataFrame, sparse_max: float, overlap_max: float) -> str:
-    ok = {
-        arm: within(
+    """The arms whose two odors are within the measured bounds, or `none`."""
+    ok = [
+        row["arm"]
+        for _, row in table.iterrows()
+        if within(
             [row["fraction_1"], row["fraction_2"]],
             [row["shared_of_1"], row["shared_of_2"]],
             sparse_max,
             overlap_max,
         )
-        for arm, row in table.set_index("arm").iterrows()
-    }
-    if ok["A"]:
-        return "already_within"
-    return "recurrence" if ok["B"] else "not_recurrence"
+    ]
+    return "within: " + ", ".join(ok) if ok else "none"
 
 
 def protocol(W, idx: dict, doc: dict) -> dict:
     proto = doc["protocol"]
     p = sim.Params()
-    kcs, apl = idx["KC"], idx[proto["apl"]]
+    kcs, pns = idx["KC"], idx["PN"]
     bins = round(proto["odor_ms"] / 10.0)
     rows = []
-    for arm, Wx in arms(W, kcs, apl).items():
-        resp = []
+    for arm, Wx in arms(W, idx, list(doc["arms"])).items():
+        resp, pn_share = [], []
         for odor in proto["odors"]:
-            per_seed = []
+            per_seed, pn_seed = [], []
             for seed in proto["seeds"]:
                 r = sim.run(
                     Wx,
@@ -134,7 +157,9 @@ def protocol(W, idx: dict, doc: dict) -> dict:
                     seed,
                 )
                 per_seed.append(r.counts[:bins, kcs].sum(axis=0))
+                pn_seed.append(r.counts[:bins, pns].sum(axis=0))
             resp.append(responders(per_seed, 2))
+            pn_share.append(float(responders(pn_seed, 2).mean()) if pns.size else 0.0)
         n1, n2, both = (
             int(resp[0].sum()),
             int(resp[1].sum()),
@@ -150,6 +175,8 @@ def protocol(W, idx: dict, doc: dict) -> dict:
                 "fraction_2": n2 / kcs.size,
                 "shared_of_1": both / n1 if n1 else 0.0,
                 "shared_of_2": both / n2 if n2 else 0.0,
+                "pn_spiking_1": pn_share[0],
+                "pn_spiking_2": pn_share[1],
             }
         )
     table = pd.DataFrame(rows)
@@ -170,5 +197,13 @@ def run(neurons: pd.DataFrame, edges: pd.DataFrame) -> dict:
         idx[name] = got
     idx["KC"] = np.flatnonzero(
         neurons["type"].fillna("").str.contains(proto["kc"]).to_numpy()
+    )
+    idx["APL"] = idx[proto["apl"]]
+    cls = neurons["class"].fillna("")
+    idx["PN"] = np.flatnonzero((cls == proto["pn_class"]).to_numpy())
+    idx["ACH_LN"] = np.flatnonzero(
+        (
+            (cls == proto["ln_class"]) & (neurons["nt"] == proto["ln_transmitter"])
+        ).to_numpy()
     )
     return protocol(sim.network(neurons, edges, sim.Params()), idx, doc)

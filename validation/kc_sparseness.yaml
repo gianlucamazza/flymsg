@@ -1,20 +1,28 @@
-# Kenyon cell sparseness diagnostic (issue 95). Version 1, fixed 2026-10-13 before any run.
+# Kenyon cell sparseness diagnostic (issue 95). Version 2, fixed 2026-10-13 after the v1 run
+# and before any v2 run. Version 1 (v1 verdict not_recurrence) is the file at b096b4a.
 # A diagnosis, not a fix: the default model is not changed by the result. Changing a locked
 # field requires incrementing `version` and updating `content_sha256` and
 # flymsg.kc_sparseness.VERSION_HASHES. `flymsg kc-sparseness` prints this file.
-version: 1
-content_sha256: d5343b238f61e3bd9cb51ed8fc21981da7a418ad5fdfe7133fe201899c33caba
+version: 2
+content_sha256: bcfef9af52861dfd0a903c8b01aded5f8f504b645cdf6933d91b01ae47350322
 
 issue: 95
+supersedes:
+  version: 1
+  verdict: not_recurrence
+  reason: "v1 showed that removing fast KC -> KC excitation lowers density (25% -> 17.4%) but leaves the 95% odor overlap; an exploratory run after the verdict (seed 0) found one ORN type driving 414 of 577 PN-like neurons, 121 PN types, 120 shared between the two odors. Version 2 adds the antennal-lobe arm that the evidence below points to."
 question: "Why does one ORN type recruit about 25% of Kenyon cells, with 95% overlap between two odors, where the fly uses 5-10% and little overlap?"
 
-seen_before_lock: "The KC -> MBON11 run (results/mb-plasticity/v1, seeds 50-52) recorded 1,004-1,067 responding Kenyon cells per odor and 965-998 shared, with these two odors. No arm below was run before this lock."
+seen_before_lock: "Version 1 results (results/kc-sparseness/v1) and the exploratory PN count above, all on seeds 60-62 or 0. The KC -> MBON11 run (results/mb-plasticity/v1, seeds 50-52) recorded 1,004-1,067 responding Kenyon cells per odor and 965-998 shared, with these two odors. No arm below was run before this lock."
 
 sources:
   sparseness: "Turner, Bazhenov & Laurent 2008, J Neurophysiol 99:734, doi:10.1152/jn.01283.2007, Fig 2A: an odor evokes spikes in 6 +/- 5% of KCs (n = 71)"
   sparseness_imaging: "Honegger, Campbell & Turner 2011, J Neurosci 31:11772, doi:10.1523/JNEUROSCI.1099-11.2011, Fig 5A: about 5% of KCs per odor (933 KCs, 8 flies); single flies up to 17%"
   overlap: "Campbell et al. 2013, J Neurosci 33:10568, doi:10.1523/JNEUROSCI.0682-12.2013, Fig 4B-C: 64.6% of responders shared between similar odors, 21.8% between dissimilar ones"
   kc_kc: "Manoim et al. 2022, Curr Biol, doi:10.1016/j.cub.2022.09.007: axo-axonic KC -> KC connections act through the metabotropic mAChR-B and suppress odor responses of neighbouring KCs"
+  eln_pn: "Yaksi & Wilson 2010, Neuron 67:1034, doi:10.1016/j.neuron.2010.08.041, Fig 4 and 7: excitatory local neuron -> PN coupling is electrical (abolished in shakB2, insensitive to Cd2+ and mecamylamine), and shakB2 abolishes odor-evoked lateral excitation of PNs"
+  eln_pn_caveat: "Huang et al. 2010, Neuron 67:1021, doi:10.1016/j.neuron.2010.08.025, report a cholinergic chemical component as well; the transmitter of lateral-lineage LNs in MaleCNS is a prediction"
+  lateral_input: "Olsen, Bhandawat & Wilson 2007, Neuron 54:89, doi:10.1016/j.neuron.2007.03.010, Fig 5-6: with one ORN type active, PNs of other glomeruli depolarize by 1.7-11.8 mV and spike only a few times"
   apl: "Lin et al. 2014, Nat Neurosci 17:559, doi:10.1038/nn.3660: blocking APL output makes KC responses denser and more correlated across odors"
   model_rule: "flymsg gives metabotropic transmitters no fast effect (sign 0, docs/model.md)"
 
@@ -25,33 +33,32 @@ protocol:
   rate_hz: 100.0
   odor_ms: 1000.0
   duration_ms: 1000.0
-  seeds: [60, 61, 62]
+  seeds: [70, 71, 72]
   kc: "^KC"
   apl: APL
   apl_n: 2
+  ln_class: ALLN
+  pn_class: ALPN
+  ln_transmitter: acetylcholine
   responder: "a Kenyon cell that spikes during the odor in at least 2 of the 3 seeds"
   responder_note: "the model has no spontaneous KC activity, so the measured criteria (a rise above baseline SD) reduce to any spike; reliability across seeds stands in for repeated presentations"
 
 arms:
   A: "the default model"
   B: "KC -> KC synapses without fast effect, as the model treats metabotropic transmission"
-  C: "APL -> KC synapses removed (positive control: denser, more overlapping)"
-  D: "B and C together"
+  E: "chemical synapses from cholinergic antennal-lobe local neurons (class ALLN) onto projection neurons (class ALPN) removed: in the fly that coupling is electrical, and the model has no gap junctions"
+  F: "B and E together"
 
 decides:
   sparse_max: 0.17
   overlap_max: 0.646
   within: "both odors recruit at most sparse_max of the Kenyon cells and the shared responders are at most overlap_max of each odor's responders"
-  recurrence: "arm B is within and arm A is not: the fast excitatory KC -> KC synapses are the main cause"
-  not_recurrence: "arm A and arm B are both outside"
-  already_within: "arm A is within"
+  verdict: "the list of arms that are within, or none"
 
 reported:
-  arm_c:
+  pn_spread:
     decides: false
-    what: "the APL control; Lin et al. 2014 predict denser and more overlapping responses than A"
-  arm_d:
-    decides: false
+    what: "the share of ALPN neurons that spike during each odor, per arm"
   per_seed:
     decides: false
 
