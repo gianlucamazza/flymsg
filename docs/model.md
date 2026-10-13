@@ -341,7 +341,8 @@ them: a LIF spike is a reset, not a waveform.
 EM does not show gap junctions and few are measured (#85), so no electrical synapse is in
 the default model. Without them the engine is unchanged, bit for bit; with them `sim.run`,
 the NumPy reference and `CpuRuntime` agree exactly (`tests/test_gap.py`), two coupled cells
-relax as the exact solution and reproduce c / (1 + c), and the native executor refuses them.
+relax as the exact solution and reproduce c / (1 + c), and the native C++ executor matches
+the CPU runtime bit for bit (fixture version 2); the GPU lane refuses them (#39).
 Until 2026-10-13 (`b1116af`, Kenyon cell v4) the coupling was an explicit first-order step
 added to the membrane update.
 
@@ -365,8 +366,9 @@ measured ranges instead of choosing a value (`validation/t4t5.yaml` version 2).
 Without graded neurons the engine is unchanged, bit for bit. With them, `sim.run`, the NumPy
 reference (`tests/reference_sim.py`) and `CpuRuntime` (chunks, checkpoints) give identical
 spikes and potentials (`tests/test_graded.py`); `Result.graded_v` holds the mean potential of
-the graded neurons per bin. The native executor refuses graded neurons until it implements
-them.
+the graded neurons per bin. The native C++ executor runs them from fixture version 2 and
+matches the CPU runtime bit for bit; the GPU lane refuses them until hardware qualifies it
+(#39).
 
 ## Recording neuron states
 

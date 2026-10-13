@@ -14,84 +14,108 @@ from flymsg import sim
 from flymsg.native import export_fixture, read_output
 from flymsg.runtime import CpuRuntime
 
+# version 2 fixtures: graded neurons (tonic: half release at rest) and electrically
+# coupled groups, alone and together
+EXTENSIONS = {
+    "none": {},
+    "graded": {
+        "graded": sim.Graded(
+            idx=np.array([5, 6]), v_lo=-62.0, span=20.0, rate_hz=[150.0, 300.0]
+        )
+    },
+    "gap": {
+        "gap": sim.Gap(
+            i=np.array([2, 3, 6]), j=np.array([3, 4, 7]), coupling=[0.3, 1.5, 0.8]
+        )
+    },
+    "both": {
+        "graded": sim.Graded(idx=np.array([5]), v_lo=-62.0, span=20.0, rate_hz=200.0),
+        "gap": sim.Gap(i=np.array([2, 5]), j=np.array([3, 6]), coupling=[0.5, 2.0]),
+    },
+}
+
 
 def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
     cases = []
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
-        for seed in (3, 7, 19):
-            for adapt in (0.0, 2.0):
-                for silent in (False, True):
-                    p = sim.Params(th_jump=adapt, delay=0.3 if seed == 3 else 1.8)
-                    rng = np.random.default_rng(seed)
-                    W = sparse.csc_matrix(
-                        rng.integers(-20, 80, (8, 8)).astype(np.float32)
-                    )
-                    kicks = sim.poisson_kicks(seed, 700, p.dt, 700, 2)
-                    kwargs = {
-                        "steps": 1000,
-                        "kicks": kicks,
-                        "p": p,
-                        "per_bin": 100,
-                        "trace": np.arange(8),
-                        "silence": np.array([3]) if silent else None,
-                    }
-                    oracle = CpuRuntime(W, np.array([0, 1]), **kwargs)
-                    fixture, result, checkpoint = (
-                        root / "fixture.bin",
-                        root / "output.bin",
-                        root / "checkpoint.bin",
-                    )
-                    export_fixture(oracle, fixture)
-                    extra = ["--gpu", str(shader.resolve())] if shader else []
-                    base = [
-                        str(executable.resolve()),
-                        "--fixture",
-                        str(fixture),
-                        "--output",
-                        str(result),
-                    ]
-                    subprocess.run(
-                        [
-                            *base,
-                            "--advance",
-                            "217",
-                            "--checkpoint",
-                            str(checkpoint),
-                            *extra,
-                        ],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    oracle.advance_to(217)
-                    check(oracle, read_output(result, fixture))
-                    subprocess.run(
-                        [
-                            *base,
-                            "--resume",
-                            str(checkpoint),
-                            "--advance",
-                            "1000",
-                            *extra,
-                        ],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    oracle.advance_to(1000)
-                    check(oracle, read_output(result, fixture))
-                    cases.append(
-                        {
-                            "seed": seed,
-                            "adaptation": adapt,
-                            "silenced": silent,
-                            "fixture_sha256": hashlib.sha256(
-                                fixture.read_bytes()
-                            ).hexdigest(),
-                            "passed": True,
-                        }
-                    )
+        for seed, adapt, silent, ext in (
+            (seed, adapt, silent, ext)
+            for seed in (3, 7, 19)
+            for adapt in (0.0, 2.0)
+            for silent in (False, True)
+            for ext in EXTENSIONS
+        ):
+            if shader and ext != "none":
+                continue  # the GPU lane runs version 1 fixtures only
+            p = sim.Params(th_jump=adapt, delay=0.3 if seed == 3 else 1.8)
+            rng = np.random.default_rng(seed)
+            W = sparse.csc_matrix(rng.integers(-20, 80, (8, 8)).astype(np.float32))
+            kicks = sim.poisson_kicks(seed, 700, p.dt, 700, 2)
+            kwargs = {
+                "steps": 1000,
+                "kicks": kicks,
+                "p": p,
+                "per_bin": 100,
+                "trace": np.arange(8),
+                "silence": np.array([3]) if silent else None,
+                **EXTENSIONS[ext],
+            }
+            oracle = CpuRuntime(W, np.array([0, 1]), **kwargs)
+            fixture, result, checkpoint = (
+                root / "fixture.bin",
+                root / "output.bin",
+                root / "checkpoint.bin",
+            )
+            export_fixture(oracle, fixture)
+            extra = ["--gpu", str(shader.resolve())] if shader else []
+            base = [
+                str(executable.resolve()),
+                "--fixture",
+                str(fixture),
+                "--output",
+                str(result),
+            ]
+            subprocess.run(
+                [
+                    *base,
+                    "--advance",
+                    "217",
+                    "--checkpoint",
+                    str(checkpoint),
+                    *extra,
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            oracle.advance_to(217)
+            check(oracle, read_output(result, fixture))
+            subprocess.run(
+                [
+                    *base,
+                    "--resume",
+                    str(checkpoint),
+                    "--advance",
+                    "1000",
+                    *extra,
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            oracle.advance_to(1000)
+            check(oracle, read_output(result, fixture))
+            cases.append(
+                {
+                    "seed": seed,
+                    "adaptation": adapt,
+                    "silenced": silent,
+                    "extension": ext,
+                    "fixture_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
+                    "passed": True,
+                }
+            )
         # Corruption and incompatible assets must fail before producing a new result.
         raw = bytearray(checkpoint.read_bytes())
         raw[-1] ^= 1
@@ -131,6 +155,12 @@ def check(oracle: CpuRuntime, actual: dict) -> None:
     for slot, length in enumerate(expected["ring_len"]):
         ring_mask[slot, expected["ring"][slot, :length]] = 1
     np.testing.assert_array_equal(actual["ring_mask"], ring_mask)
+    for name in ("graded_ring", "graded_vsum"):
+        if name in expected:
+            got = actual[name]
+            np.testing.assert_array_equal(
+                got.view(np.uint8), expected[name].view(np.uint8), err_msg=name
+            )
 
 
 if __name__ == "__main__":
