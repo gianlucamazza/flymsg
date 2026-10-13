@@ -252,3 +252,34 @@ def photoreceptor_kicks(
     idx = np.asarray(receptor_columns, dtype=int)
     light = np.where(idx >= 0, 1.0 - cov[:, np.clip(idx, 0, None)], 0.0)
     return gain * np.nan_to_num(light, nan=0.0)
+
+
+# a direction of motion as (axis, sign): the coordinate that changes and the way it grows,
+# per eye, so that "front_to_back" moves away from the midline on both sides
+DIRECTIONS = {
+    "front_to_back": ("azimuth_deg", {"R": 1.0, "L": -1.0}),
+    "back_to_front": ("azimuth_deg", {"R": -1.0, "L": 1.0}),
+    "upward": ("elevation_deg", {"R": 1.0, "L": 1.0}),
+    "downward": ("elevation_deg", {"R": -1.0, "L": -1.0}),
+}
+
+
+def edge_coverage(
+    cols: pd.DataFrame, direction: str, travelled_deg: float, acceptance_deg: float
+) -> np.ndarray:
+    """Share of each column's acceptance profile already crossed by a straight edge that
+    started at the column with the smallest coordinate along `direction` (per eye) and has
+    travelled `travelled_deg`. The crossed side is the edge's trailing side: dark for an OFF
+    edge, bright for an ON edge. In the small-angle limit the share is the normal CDF of the
+    edge's distance past the column, with sigma from the profile's full width at half
+    maximum. NaN where a column has no direction."""
+    axis, sign = DIRECTIONS[direction]
+    sigma = acceptance_deg / (2 * np.sqrt(2 * np.log(2)))
+    s = cols["side"].map(sign).to_numpy(dtype=float)
+    pos = cols[axis].to_numpy(dtype=float) * s
+    start = np.full(pos.shape, np.nan)
+    for side in ("L", "R"):
+        m = (cols["side"] == side).to_numpy()
+        if m.any():
+            start[m] = np.nanmin(pos[m])
+    return stats.norm.cdf((start + travelled_deg - pos) / sigma)

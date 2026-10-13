@@ -191,6 +191,21 @@ no measured value and is stated by the lock. Next
 ([#84](https://github.com/gianlucamazza/flymsg/issues/84)): that lock, judged on T4/T5 direction selectivity and
 the giant fiber's size/velocity split.
 
+### T4/T5 direction selectivity through the eye (lock, 2026-10-13)
+
+`eye.edge_coverage` moves a straight edge across each eye's measured columns (direction per
+eye, so front-to-back points away from the midline on both sides).
+[`validation/t4t5.yaml`](../validation/t4t5.yaml), locked before its run, drives the 640
+photoreceptors of the 336 columns within 30° of each eye's centre with ON and OFF edges in
+the four cardinal directions at 30°/s (Haag et al. 2017), acceptance 8.23° (Gonzalez-Bellido
+et al. 2011), and a gain equal to the mean input of every flymsg protocol (a named
+compensation). It decides on two levels: **polarity** (every T4 subtype fires more to ON than
+to OFF edges, every T5 subtype the reverse; Maisak et al. 2013), which signs alone predict,
+and **direction** (the vector sum of at least 6 of the 8 subtypes within 45° of the measured
+preferred direction: a front-to-back, b back-to-front, c up, d down). The prior is stated in
+the lock: Lappalainen et al. 2024 found untrained connectome models get polarity right and
+direction wrong. DSI is reported next to the 0.8 measured in calcium.
+
 ### M1 jump body (v0.8.34, #33)
 
 `flymsg.jump.JumpBody` is a point mass over a rigid floor: gravity, an actuator force along

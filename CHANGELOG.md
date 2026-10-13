@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Pre-registration
+
+- **T4/T5 direction selectivity v1** (#84): moving ON/OFF edges in four directions through
+  the measured eye (`eye.edge_coverage`), 30°/s, acceptance 8.23°; decides polarity and
+  preferred direction against Maisak et al. 2013, prior from Lappalainen et al. 2024 stated.
+  Locked before its run; `flymsg t4t5`.
+
 ### Result
 
 - **Kenyon cell sparseness v3: none** (#95, #96). With Hige et al. 2015's odors as DoOR

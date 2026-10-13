@@ -33,6 +33,7 @@ from flymsg import (
     sensitivity,
     silence_scan,
     sim,
+    t4t5,
     tracing,
     validate,
     viz,
@@ -1034,6 +1035,46 @@ def cmd_odor(a, neurons, edges):
     print(odors.per_type(v).round(3).to_string())
 
 
+def cmd_t4t5(a, neurons, edges):
+    """The frozen T4/T5 direction-selectivity test through the eye (issue #84)."""
+    started = datetime.now(UTC)
+    doc = t4t5.assert_matches_code()
+    print(t4t5.summary(doc))
+    out = t4t5.run(neurons, edges, a.data)
+    path = Path("runs/t4t5") / f"v{doc['version']}"  # never overwrite
+    path.mkdir(parents=True, exist_ok=True)
+    out["table"].to_csv(path / "spikes.csv", index=False)
+    out["metrics"].to_csv(path / "metrics.csv", index=False)
+    text = "\n".join(
+        [
+            f"window columns: {out['window_columns']}",
+            out["metrics"].round(3).to_string(index=False),
+            f"verdict: {out['verdict']}",
+        ]
+    )
+    print(text)
+    (path / "report.txt").write_text(text + "\n")
+    proto = doc["protocol"]
+    _stamp(
+        path,
+        "t4t5 --run",
+        a,
+        neurons,
+        edges,
+        {
+            "t4t5_version": doc["version"],
+            "t4t5_sha256": doc["content_sha256"],
+            "speed_deg_s": proto["speed_deg_s"],
+            "acceptance_deg": proto["acceptance_deg"],
+            "gain": proto["gain"],
+        },
+        {"all": list(proto["seeds"])},
+        started,
+        extra={"verdict": out["verdict"]},
+    )
+    print(f"report -> {path / 'report.txt'}")
+
+
 def cmd_benchmarks(a, neurons, edges):
     """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
@@ -1430,6 +1471,7 @@ COMMANDS = {
     "mb-plasticity": cmd_mb_plasticity,
     "eye": cmd_eye,
     "odor": cmd_odor,
+    "t4t5": cmd_t4t5,
     "kc-sparseness": cmd_kc_sparseness,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
@@ -1457,6 +1499,7 @@ MALECNS_ONLY = (
     "mb-plasticity",
     "eye",
     "odor",
+    "t4t5",
     "kc-sparseness",
     "trace",
     "sensitivity",
@@ -1633,6 +1676,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the frozen Kenyon cell sparseness diagnostic (issue #95), or run it",
     )
     s.add_argument("--run", action="store_true", help="run the frozen diagnostic")
+    s = sub.add_parser(
+        "t4t5",
+        help="print the frozen T4/T5 direction-selectivity test (#84), or run it",
+    )
+    s.add_argument("--run", action="store_true", help="run the frozen test")
     s = sub.add_parser(
         "odor", help="a DoOR odorant as a response per MaleCNS ORN type (#96)"
     )
@@ -1939,6 +1987,8 @@ def main() -> None:
             return print(plasticity.summary())
         if a.cmd == "kc-sparseness" and not a.run:
             return print(kc_sparseness.summary())
+        if a.cmd == "t4t5" and not a.run:
+            return print(t4t5.summary())
         if a.cmd == "behavior" and not a.run:
             return print(behavior.summary())
         if a.cmd == "benchmarks" and a.run and a.corners:
@@ -1975,6 +2025,8 @@ def main() -> None:
     except plasticity.PlasticityError as err:
         sys.exit(f"flymsg: {err}")
     except kc_sparseness.SparsenessError as err:
+        sys.exit(f"flymsg: {err}")
+    except t4t5.T4T5Error as err:
         sys.exit(f"flymsg: {err}")
     except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")
