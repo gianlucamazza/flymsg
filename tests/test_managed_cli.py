@@ -204,6 +204,7 @@ def test_sister_writer_policy_is_explicit_and_complete():
         "kc-sparseness",
         "t4t5",
         "jump3d",
+        "weight-rule",
         "sensitivity",
         "nulls",
         "select-model",
