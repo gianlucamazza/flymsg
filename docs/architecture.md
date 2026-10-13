@@ -28,8 +28,8 @@ a manifest. Long batches fan out to worker processes on one machine.
   `silence_scan` and `prereg` each define `load`, `content_hash`, `assert_locked` and a
   `VERSION_HASHES` table with the same code.
 - **The draw engine lived in an experiment** until v0.8.29 (`flymsg.draws`).
-- **`cli.py` is about 2,100 lines.** Each command parses, runs, prints and writes its own
-  outputs and manifest.
+- **`cli.py` was about 2,100 lines** until step 6. Each command parses, runs, prints and
+  writes its own outputs and manifest.
 - **The viewer bundle had no version** until v0.8.26 (`flymsg.scene/v1`).
 - **Runs are not indexed.** Every output directory has a manifest, but nothing lists or
   compares them (#27).
@@ -106,6 +106,11 @@ flymsg.scene/v1` (`viz.SCENE_SCHEMA`); the page warns in the console on another 
    - #28 robustness (tool in v0.8.31): `flymsg.sensitivity` runs a locked grid (B3) and
      reports every cell; `sim.Params` defaults never change.
    - #31 embodiment: bodies attach through B6 only.
+6. **CLI modules** (unreleased). `flymsg.cli` is a package: `__init__` keeps `main`, the
+   command table and the error handling; `parser` builds the whole argparse tree; the
+   commands live in `connectome`, `simulate`, `validation`, `experiments`, `body` and
+   `sensory`, with `common` for labels, links and `stamp`. Commands, flags, help, output
+   and written files are unchanged.
 
 ## Experiments and the run index
 

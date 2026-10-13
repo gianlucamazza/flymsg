@@ -85,6 +85,12 @@
   DNp01 silence check. Kenyon cell sparseness v1–v4 and the NeuroMechFly jump v1 range
   have figures (`kc-sparseness.svg`, `jump-range.svg`).
 
+### Engineering
+
+- **The command line is a package.** `cli.py` (2,158 lines) is split into
+  `flymsg/cli/` modules by area, with `flymsg.cli:main` as the entry point; every command,
+  flag, default, help text, printed line and written file is unchanged (architecture step 6).
+
 ## 0.8.44 — 2026-10-13
 
 ### Result
