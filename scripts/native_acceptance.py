@@ -28,9 +28,25 @@ EXTENSIONS = {
             i=np.array([2, 3, 6]), j=np.array([3, 4, 7]), coupling=[0.3, 1.5, 0.8]
         )
     },
+    "spikelets": {
+        "gap": sim.Gap(
+            i=np.array([1, 2, 3]),
+            j=np.array([2, 3, 4]),
+            coupling=[0.2, 1.0, 0.4],
+            coupling_back=[0.6, 0.3, 0.9],
+            spike_mv=40.0,
+            spike_ms=1.0,
+        )
+    },
     "both": {
         "graded": sim.Graded(idx=np.array([5]), v_lo=-62.0, span=20.0, rate_hz=200.0),
-        "gap": sim.Gap(i=np.array([2, 5]), j=np.array([3, 6]), coupling=[0.5, 2.0]),
+        "gap": sim.Gap(
+            i=np.array([2, 5]),
+            j=np.array([3, 6]),
+            coupling=[0.5, 2.0],
+            spike_mv=40.0,
+            spike_ms=0.5,
+        ),
     },
 }
 
@@ -155,7 +171,7 @@ def check(oracle: CpuRuntime, actual: dict) -> None:
     for slot, length in enumerate(expected["ring_len"]):
         ring_mask[slot, expected["ring"][slot, :length]] = 1
     np.testing.assert_array_equal(actual["ring_mask"], ring_mask)
-    for name in ("graded_ring", "graded_vsum"):
+    for name in ("graded_ring", "graded_vsum", "gap_pulse"):
         if name in expected:
             got = actual[name]
             np.testing.assert_array_equal(

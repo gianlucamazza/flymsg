@@ -68,10 +68,11 @@ public:
   uint32_t step = 0;
   // Version 2 extension (graded neurons, electrically coupled groups); offsets
   // into `input` and `state`, all zero for version 1 fixtures.
-  uint64_t ng = 0, nc = 0, ncomp = 0, nmat = 0;
+  uint64_t ng = 0, nc = 0, ncomp = 0, nmat = 0, width = 0;
+  double amplitude = 0;
   uint64_t x_gcol = 0, x_lo = 0, x_span = 0, x_scale = 0, x_gpos = 0,
            x_nodes = 0, x_off = 0, x_moff = 0, x_mat = 0;
-  uint64_t s_ring = 0, s_new = 0, s_vsum = 0, s_buf = 0;
+  uint64_t s_ring = 0, s_new = 0, s_vsum = 0, s_buf = 0, s_pulse = 0;
   explicit Runtime(std::vector<uint32_t> fixture) : input(std::move(fixture)) {
     require(std::endian::native == std::endian::little,
             "little endian host required");
@@ -96,15 +97,20 @@ public:
       require(cursor <= input.size(), "input range overflow");
     }
     if (input[1] == 2) {
-      require(input[37] == cursor && cursor + 4 <= input.size(),
+      require(input[37] == cursor && cursor + 7 <= input.size(),
               "invalid extension offset");
       ng = input[cursor];
       nc = input[cursor + 1];
       ncomp = input[cursor + 2];
       nmat = input[cursor + 3];
+      width = input[cursor + 4];
+      amplitude = word_double(input, cursor + 5);
       require(ng <= n && nc <= n && ncomp <= nc && (ng || nc),
               "invalid extension dimensions");
-      cursor += 4;
+      require(std::isfinite(amplitude) && amplitude >= 0 &&
+                  (width == 0) == (amplitude == 0) && (nc || !width),
+              "invalid spike term");
+      cursor += 7;
       const uint64_t ext_sizes[] = {n,  ng,        ng,        ng,      n,
                                     nc, ncomp + 1, ncomp + 1, nmat * 2};
       uint64_t *ext_offsets[] = {&x_gcol,  &x_lo,  &x_span, &x_scale, &x_gpos,
@@ -130,7 +136,8 @@ public:
       s_new = s_ring + d * ng;
       s_vsum = s_new + ng;
       s_buf = s_vsum + 2 * (steps / per) * ng;
-      cursor = s_buf + nc;
+      s_pulse = s_buf + nc;
+      cursor = s_pulse + nc;
     }
     require(cursor == input[35], "invalid state size");
     for (uint32_t k = 9; k < 16; ++k)
@@ -226,7 +233,7 @@ public:
     for (uint64_t c = 0; c < ncomp; ++c) {
       const uint64_t m = input[x_off + c + 1] - input[x_off + c];
       require(input[x_off + c + 1] > input[x_off + c] &&
-                  input[x_moff + c + 1] - input[x_moff + c] == 2 * m * m,
+                  input[x_moff + c + 1] - input[x_moff + c] == 3 * m * m,
               "invalid coupled group size");
     }
     for (uint64_t q = 0; q < nmat; ++q)
@@ -251,7 +258,7 @@ public:
       for (uint64_t c = 0; c < ncomp; ++c) {
         const uint64_t a = input[x_off + c], m = input[x_off + c + 1] - a;
         for (uint64_t r = 0; r < m; ++r) {
-          const uint64_t row = input[x_moff + c] + r * 2 * m;
+          const uint64_t row = input[x_moff + c] + r * 3 * m;
           double acc = 0.0;
           for (uint64_t q = 0; q < m; ++q)
             acc += word_double(input, x_mat + 2 * (row + q)) *
@@ -262,9 +269,16 @@ public:
               acc += word_double(input, x_mat + 2 * (row + m + q)) *
                      double(get(26, j));
           }
+          for (uint64_t q = 0; q < m; ++q)
+            if (int32_t(state[s_pulse + a + q]) > 0)
+              acc +=
+                  word_double(input, x_mat + 2 * (row + 2 * m + q)) * amplitude;
           state[s_buf + a + r] = std::bit_cast<uint32_t>(float(rest + acc));
         }
       }
+      for (uint64_t k = 0; k < nc; ++k)
+        if (int32_t(state[s_pulse + k]) > 0)
+          --state[s_pulse + k];
       for (uint32_t i = 0; i < n; ++i) {
         const bool frozen = state[input[28] + i] > step;
         float vi = (get(25, i) - constant(13)) * constant(9) +
@@ -336,6 +350,8 @@ public:
           ++state[input[30] + (step / input[4]) * n + i];
           if (int32_t(state[input[31] + i]) < 0)
             state[input[31] + i] = step;
+          if (width && int32_t(input[x_gpos + i]) >= 0)
+            state[s_pulse + input[x_gpos + i]] = uint32_t(width);
           const auto col = int32_t(input[input[22] + i]);
           if (col >= 0)
             state[input[32] + uint64_t(step) * input[8] + uint32_t(col)] = 1;

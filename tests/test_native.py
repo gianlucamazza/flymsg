@@ -103,7 +103,7 @@ def test_fixture_requires_fresh_state_and_valid_output(tmp_path):
         export_fixture(runtime, fixture)
 
 
-@pytest.mark.parametrize("word", ["offset", "ng", "span"])
+@pytest.mark.parametrize("word", ["offset", "ng", "span", "width"])
 def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word):
     from flymsg import sim
 
@@ -121,8 +121,15 @@ def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word
     export_fixture(runtime, fixture)
     raw = bytearray(fixture.read_bytes())
     ext = struct.unpack_from("<I", raw, 37 * 4)[0]
-    at = {"offset": 37 * 4, "ng": ext * 4, "span": (ext + 4 + 4 + 1) * 4}[word]
-    value = {"offset": ext + 1, "ng": 3, "span": 0}[word]
+    # extension: 7 header words, then the graded column of each of the 4 neurons, v_lo,
+    # span
+    at = {
+        "offset": 37 * 4,
+        "ng": ext * 4,
+        "span": (ext + 7 + 4 + 1) * 4,
+        "width": (ext + 4) * 4,  # a spike term without amplitude
+    }[word]
+    value = {"offset": ext + 1, "ng": 3, "span": 0, "width": 5}[word]
     struct.pack_into("<I", raw, at, value)
     fixture.write_bytes(raw)
     result = subprocess.run(
