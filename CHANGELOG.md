@@ -4,6 +4,15 @@
 
 ### Result
 
+- **Kenyon cell sparseness v7: within, only with the variant set** (#95, #85). With
+  lLN2T+lLN1_bc (43 neurons) as eLNs, 9 of 10 arms are sparse and distinct: 2.0–2.2% /
+  1.5–1.7% of Kenyon cells, 43–65% shared (one arm misses by 0.5 points of overlap). With
+  lLN2T alone, the set Eckstein et al. 2024 liken to the eLNs, Kenyon cells stay dense
+  (16–23% / 14–19%, 79–96% shared). Coupled arms match their uncoupled bases within 17
+  cells: removing the chemical cholinergic contacts onto PNs separates the sets, not the
+  electrical coupling. Run from the lock commit `45c0641`; the unread v6 step store was lost
+  with its worktree.
+
 - **Synapse weight rule v1: undecided** (#139). On Liu et al. 2022's 57 PN → LHN pairs of
   six matched LHN types, density (count over mesh area) ranks the measured amplitudes
   barely better than count (Spearman 0.581 against 0.567; Δρ interval −0.011 to +0.054);
@@ -13,7 +22,7 @@
 ### Validation
 
 - **Kenyon cell sparseness v7 lock** (#85, #95): v6 with the boundary reset of v5. The v6 run
-  was stopped after its uncoupled arms (not read): under the continuous clamp each new
+  was stopped after its uncoupled arms (never read, later lost with its worktree): under the continuous clamp each new
   refractory mask of the 688-cell coupled component costs a dense exponential of ~1–1.6 s
   (#155). On 50 ms of arm E/lLN2T (seed 0) the two modes give identical spikes for every
   neuron (`scripts/qualify_boundary_reset.py`, `docs/evidence/`). Seeds 92–94. No run.

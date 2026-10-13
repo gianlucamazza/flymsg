@@ -29,6 +29,7 @@ DIRS = (
     "kc-sparseness/v3",
     "kc-sparseness/v4",
     "kc-sparseness/v5",
+    "kc-sparseness/v7.executions/f8549bf7414656b26cf37dcf99811142bb3b1b3a7743b79d5ebeda941457c3a5/output",
     "t4t5/v1",
     "t4t5/v2",
     "weight-rule/v1.executions/beb2fccf6b8094ee842de39deba87da17448ac37fab0626e1fa15db517762f4f/output",

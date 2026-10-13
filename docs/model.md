@@ -384,17 +384,39 @@ the cholinergic krasavietz eLNs, by soma position and morphology. v6 treats only
 electrical partners of PNs (with lLN1_bc, 30 neighbouring neurons, as a variant set), keeps
 every other cholinergic local neuron chemical, and runs E, F and the eight coupled arms once per set (16 in all)
 with the current continuous clamp, seeds 89–91, under v3's bounds. Its run was stopped after
-the five uncoupled arms (saved, not read): the coupling joins 688 cells (726 with lLN1_bc) in
+the five uncoupled arms, saved and never read; that step store was then deleted
+with the run's worktree, so those arms are lost. The coupling joins 688 cells (726 with lLN1_bc) in
 one component, and the continuous clamp builds a dense exponential of about 2,100 × 2,100 for
 each new refractory mask, 1.1–1.6 s each with no cache hit, so one coupled simulation takes
 hours (#155).
 
-**Version 7 (locked 2026-10-13, no run).** Version 6 with the boundary reset of v5 and seeds
+**Version 7 (lock, 2026-10-13).** Version 6 with the boundary reset of v5 and seeds
 92–94. Before the lock, `scripts/qualify_boundary_reset.py` ran arm E/lLN2T on 3-octanol for
 50 ms (seed 0, spikelets 0 and 1 ms) under both modes: every neuron's spike count and first
 spike agree (9,798 and 9,634 spikes), in 2–5 s against 671–696 s
 (`docs/evidence/kc-boundary-qualification-2026-10-13.json`). That qualifies 50 ms of one
 odor and seed, which the lock names as a compensation.
+
+**Result of version 7 (2026-10-13): within, only with the variant set.** Run from
+`45c0641`, the lock commit, in one attempt. With the variant set lLN2T+lLN1_bc (43
+neurons), 9 of its 10 arms are within: 2.0–2.2% of Kenyon cells respond to 3-octanol and
+1.5–1.7% to 4-methylcyclohexanol (82–90 and 61–70 of 4,064 cells), and 43–47% / 59–65% of
+each odor's responders are shared. The tenth, E/lLN2T+lLN1_bc+spike0ms, misses by overlap:
+65.1% of the second odor's responders are shared against the 64.6% bound. With lLN2T alone,
+the set Eckstein et al. 2024 liken to the eLNs, no arm is within: 16–23% / 14–19% of Kenyon
+cells respond and 79–82% / 91–96% are shared, dense and overlapping like arm A (37% / 30%).
+The coupling does not make the difference: every coupled arm stays within 17 cells of its
+uncoupled base (E/lLN2T 928 responders, coupled 921–942; E/lLN2T+lLN1_bc 87, coupled 88–90),
+whatever the spikelet duration. What separates the sets is the chemical cholinergic input
+arm E removes: without lLN1_bc's contacts onto PNs as well, 41–43% / 37–38% of PNs spike
+instead of 72–73% / 68–69%, and Kenyon cells come down to the low end of the measured range
+(Turner et al. 2008: 6 ± 5%). Against v5, which removed all 137 cholinergic ALLNs (0.2–0.3%
+of Kenyon cells, 6–11% of PNs), the variant set lands between dense and silent. The shared
+share stays above Hige et al. 2015's 30% / 33%, though under the similar-odor bound. So the
+sparse arms rest on a set that is a morphological neighbour of the match, not the match, and
+on removing chemical synapses rather than on electrical coupling; the result does not say
+the eLNs are electrical, and the default model is unchanged. Outputs:
+`results/kc-sparseness/v7.executions/f8549bf7414656b26cf37dcf99811142bb3b1b3a7743b79d5ebeda941457c3a5/output/`.
 
 ## Electrical synapses (optional, 2026-10-13)
 

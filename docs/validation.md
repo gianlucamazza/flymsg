@@ -355,6 +355,13 @@ configuration. The lamina now carries contrast (L1–L3 hyperpolarize by 14–33
 Mi1, Tm3 and Mi4 never fire, and the OFF inputs fire only at LMC release rates of 200–400 Hz.
 The signal stops at the spiking medulla. Report: `results/t4t5/v2/`.
 
+**2026-10-13: Kenyon cell sparseness v7, within only with the variant set.** Seeds 92–94.
+eLNs restricted to Eckstein et al. 2024's lLN2T (13 neurons): dense in every arm (16–23% of
+Kenyon cells, 79–96% shared). With lLN1_bc too (43 neurons): 9 of 10 arms within, 1.5–2.2%
+of Kenyon cells, 43–65% shared, above Hige et al. 2015's 30–33%. Coupling and spikelets move
+no arm by more than 17 cells: the chemical contacts arm E removes make the difference.
+Report: `results/kc-sparseness/v7.executions/f8549bf7414656b26cf37dcf99811142bb3b1b3a7743b79d5ebeda941457c3a5/output/`.
+
 **2026-10-13: Kenyon cell sparseness v5, none.** Seeds 86–88. Measured asymmetric eLN ↔ PN
 coupling (0.0021 / 0.0039), sister PNs at 0.013, eLN spikelets of 40 mV for 0–2 ms: every
 coupled arm is silent (0.22–0.30% of Kenyon cells), as without coupling, whatever the
