@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Odors
+
+- **`flymsg odor`** (#96): DoOR consensus responses (fetched at run time, CC BY-SA 4.0, not
+  redistributed) as one response per MaleCNS ORN type, and per-neuron Poisson input
+  (`odors.kicks`). 3-octanol drives 31 ORN types, 4-methylcyclohexanol 22.
+
 ## 0.8.42 — 2026-10-13
 
 ### Result

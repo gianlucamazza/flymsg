@@ -102,6 +102,13 @@ glutamatergic, which only matters where they synapse onto central neurons.
 - `--rate` is the rate of the Poisson input; stimulated neurons fire at that rate (minus the
   ~`rate · dt` share lost to the reset, see above).
 - `--stim-ms` stops the input early, which lets you measure decay and self-sustained activity.
+- **Odors as receptor vectors.** `flymsg.odors` reads a DoOR odorant as one response per
+  MaleCNS ORN type (receptor → glomerulus → `ORN_<glomerulus>`); a neuron-level recording
+  wins over a receptor recording, else the largest co-expressed receptor. Each ORN of a type
+  gets Poisson input at a rate proportional to the response, drawn per neuron by
+  `odors.kicks` (equal rates reproduce `sim.poisson_kicks`). 3-octanol reaches 31 ORN types
+  (1,456 neurons), 4-methylcyclohexanol 22 (1,095); receptors DoOR has not measured for an
+  odorant get no input. The rate for a response of 1 is stated by each lock.
 - **Graded input.** `sim.run(..., kicks=K)` takes the input per step and stimulated neuron
   in units of the Poisson kick (`poisson_scale · w_syn` mV). `K` may be real, not only a
   count: the kernel adds `kick · K[t, s]` in float64 at the same phase as Poisson input, so

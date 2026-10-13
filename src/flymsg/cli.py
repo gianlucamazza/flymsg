@@ -25,6 +25,7 @@ from flymsg import (
     loop,
     manifest,
     nulls,
+    odors,
     partner_followup,
     plasticity,
     prereg,
@@ -1015,6 +1016,23 @@ def cmd_kc_sparseness(a, neurons, edges):
     print(f"report -> {path / 'report.txt'}")
 
 
+def cmd_odor(a, neurons, edges):
+    """A DoOR odorant as a response per MaleCNS ORN type (#96). Fetches DoOR (CC BY-SA 4.0)
+    into data/raw/door on first use; nothing is redistributed."""
+    odors.fetch(a.data)
+    responses, mappings, odor_table = odors.tables(a.data)
+    types = set(
+        neurons["type"].dropna()[neurons["type"].dropna().str.startswith("ORN_")]
+    )
+    v = odors.vector(responses, mappings, odor_table, a.name, types)
+    c = odors.coverage(responses, odor_table, a.name, v)
+    print(
+        f"{a.name}: {c['measured']} of {c['receptors']} DoOR receptors measured, "
+        f"{c['in_volume']} map to a MaleCNS ORN type"
+    )
+    print(odors.per_type(v).round(3).to_string())
+
+
 def cmd_benchmarks(a, neurons, edges):
     """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
@@ -1410,6 +1428,7 @@ COMMANDS = {
     "partner-followup": cmd_partner_followup,
     "mb-plasticity": cmd_mb_plasticity,
     "eye": cmd_eye,
+    "odor": cmd_odor,
     "kc-sparseness": cmd_kc_sparseness,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
@@ -1436,6 +1455,7 @@ MALECNS_ONLY = (
     "partner-followup",
     "mb-plasticity",
     "eye",
+    "odor",
     "kc-sparseness",
     "trace",
     "sensitivity",
@@ -1612,6 +1632,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the frozen Kenyon cell sparseness diagnostic (issue #95), or run it",
     )
     s.add_argument("--run", action="store_true", help="run the frozen diagnostic")
+    s = sub.add_parser(
+        "odor", help="a DoOR odorant as a response per MaleCNS ORN type (#96)"
+    )
+    s.add_argument("name", help="DoOR odorant name, e.g. 3-octanol")
     sub.add_parser(
         "eye",
         help="column -> viewing direction and photoreceptor -> column tables (#84)",

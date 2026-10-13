@@ -19,6 +19,9 @@ The eye map of Zhao et al. 2025 (reiserlab/eyemap_T4, GPL-3.0), used by `flymsg 
 downloaded at run time into data/raw/eyemap. flymsg does not redistribute it or the tables
 derived from it.
 
+The odorant response database DoOR (ropensci/DoOR.data, CC BY-SA 4.0), used by `flymsg odor`,
+is downloaded at run time into data/raw/door and not redistributed.
+
 The FlyWire FAFB v783 connectome data (used via `--dataset fafb`) is licensed CC BY-NC 4.0
 (non-commercial). flymsg does not redistribute it. Users who download it must respect its
 terms: https://join.flywire.ai/guidelines
