@@ -278,6 +278,14 @@ fly integrate about ten PNs (Turner et al. 2008). Real odors activate many recep
 is the test that can tell. The default model is unchanged. Outputs:
 `results/kc-sparseness/v2/`.
 
+**Version 3 (fixed 2026-10-13, after the v2 run, before its own).** The two odors of Hige et
+al. 2015, 3-octanol and 4-methylcyclohexanol, as DoOR receptor vectors (31 and 22 ORN types),
+with a rate of 100 Hz for a response of 1 (the flymsg stimulus rate; a named compensation),
+on seeds 80–82, the same four arms, and the lower bound v2 lacked: between 1% (Turner et al.
+2008, 6% minus one SD) and 17% of Kenyon cells per odor, at most 64.6% shared. Reported next to
+the verdict: the share of shared responders against the 30% (OCT) and 33% (MCH) that Hige et
+al. 2015 measured for exactly these odors.
+
 ## Recording neuron states
 
 `flymsg trace STIM --neurons ...` (module `flymsg.tracing`) records, for chosen neurons, the

@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, locks, plasticity, prereg, sim
+from flymsg import data, locks, odors, plasticity, prereg, sim
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "kc_sparseness.yaml"
@@ -24,6 +24,7 @@ PATH = ROOT / "validation" / "kc_sparseness.yaml"
 VERSION_HASHES = {
     1: "d5343b238f61e3bd9cb51ed8fc21981da7a418ad5fdfe7133fe201899c33caba",  # arms A-D, odors ORN_VA1d and ORN_DL3, seeds 60-62
     2: "bcfef9af52861dfd0a903c8b01aded5f8f504b645cdf6933d91b01ae47350322",  # arms A, B, E, F (cholinergic LN -> PN), seeds 70-72
+    3: "0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2",  # Hige odors from DoOR, lower bound, seeds 80-82
 }
 # synapse classes without fast effect in each arm
 ARM_CLASSES = {
@@ -34,7 +35,8 @@ ARM_CLASSES = {
     "E": ("ach_ln_pn",),
     "F": ("kc_kc", "ach_ln_pn"),
 }
-SPENT_SEEDS = {1: (60, 61, 62)}
+SPENT_SEEDS = {1: (60, 61, 62), 2: (70, 71, 72)}
+HIGE_ODORS = ["3-octanol", "4-methylcyclohexanol"]
 
 
 class SparsenessError(ValueError):
@@ -60,7 +62,10 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     doc = assert_locked() if doc is None else doc
     mb = plasticity.load()["protocol"]
     proto = doc["protocol"]
-    if proto["odors"] != [mb["cs_plus"], mb["cs_minus"]]:
+    if proto.get("odor_source") == "door":
+        if proto["odors"] != HIGE_ODORS:
+            raise SparsenessError("the odors are not Hige et al. 2015's")
+    elif proto["odors"] != [mb["cs_plus"], mb["cs_minus"]]:
         raise SparsenessError("the odors are not the KC -> MBON11 lock's")
     if set(doc["arms"]) - set(ARM_CLASSES) or next(iter(doc["arms"])) != "A":
         raise SparsenessError("the arms changed")
@@ -68,7 +73,9 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         if v < doc["version"] and set(proto["seeds"]) & set(spent):
             raise SparsenessError(f"seeds must not reuse version {v}'s")
     dec = doc["decides"]
-    if (dec["sparse_max"], dec["overlap_max"]) != (0.17, 0.646):
+    if (dec["sparse_max"], dec["overlap_max"]) != (0.17, 0.646) or dec.get(
+        "sparse_min", 0.0
+    ) not in (0.0, 0.01):
         raise SparsenessError("the bounds are not the measured ones")
     if set(proto["seeds"]) & set(mb["seeds"]):
         raise SparsenessError("seeds must be fresh")
@@ -88,8 +95,15 @@ def summary(doc: dict | None = None) -> str:
     )
     return (
         f"kc-sparseness v{doc['version']} (issue #{doc['issue']}): arms {arms_text}; odors "
-        f"{', '.join(p['odors'])} at {p['rate_hz']:g} Hz for {p['odor_ms']:g} ms; seeds "
-        f"{', '.join(map(str, p['seeds']))}; within if <= {d['sparse_max']} of KCs respond "
+        f"{', '.join(p['odors'])} "
+        + (
+            f"(DoOR, {p['rate_at_response_1_hz']:g} Hz at response 1)"
+            if p.get("odor_source") == "door"
+            else f"at {p['rate_hz']:g} Hz"
+        )
+        + f" for {p['odor_ms']:g} ms; seeds "
+        f"{', '.join(map(str, p['seeds']))}; within if {d.get('sparse_min', 0)}-"
+        f"{d['sparse_max']} of KCs respond "
         f"and <= {d['overlap_max']} of responders are shared"
     )
 
@@ -117,11 +131,19 @@ def responders(counts_per_seed: list[np.ndarray], min_seeds: int) -> np.ndarray:
     return np.sum([c > 0 for c in counts_per_seed], axis=0) >= min_seeds
 
 
-def within(fractions, overlaps, sparse_max: float, overlap_max: float) -> bool:
-    return bool(max(fractions) <= sparse_max and max(overlaps) <= overlap_max)
+def within(
+    fractions, overlaps, sparse_max: float, overlap_max: float, sparse_min: float = 0.0
+) -> bool:
+    return bool(
+        sparse_min <= min(fractions)
+        and max(fractions) <= sparse_max
+        and max(overlaps) <= overlap_max
+    )
 
 
-def decide(table: pd.DataFrame, sparse_max: float, overlap_max: float) -> str:
+def decide(
+    table: pd.DataFrame, sparse_max: float, overlap_max: float, sparse_min: float = 0.0
+) -> str:
     """The arms whose two odors are within the measured bounds, or `none`."""
     ok = [
         row["arm"]
@@ -131,6 +153,7 @@ def decide(table: pd.DataFrame, sparse_max: float, overlap_max: float) -> str:
             [row["shared_of_1"], row["shared_of_2"]],
             sparse_max,
             overlap_max,
+            sparse_min,
         )
     ]
     return "within: " + ", ".join(ok) if ok else "none"
@@ -146,16 +169,10 @@ def protocol(W, idx: dict, doc: dict) -> dict:
         resp, pn_share = [], []
         for odor in proto["odors"]:
             per_seed, pn_seed = [], []
+            cells, rates = idx["stimuli"][odor]
             for seed in proto["seeds"]:
-                r = sim.run(
-                    Wx,
-                    idx[odor],
-                    proto["rate_hz"],
-                    proto["duration_ms"],
-                    proto["odor_ms"],
-                    p,
-                    seed,
-                )
+                k = odors.kicks(rates, seed, p.dt, round(proto["odor_ms"] / p.dt))
+                r = sim.run(Wx, cells, duration_ms=proto["duration_ms"], p=p, kicks=k)
                 per_seed.append(r.counts[:bins, kcs].sum(axis=0))
                 pn_seed.append(r.counts[:bins, pns].sum(axis=0))
             resp.append(responders(per_seed, 2))
@@ -181,20 +198,46 @@ def protocol(W, idx: dict, doc: dict) -> dict:
         )
     table = pd.DataFrame(rows)
     d = doc["decides"]
-    return {"table": table, "verdict": decide(table, d["sparse_max"], d["overlap_max"])}
+    verdict = decide(table, d["sparse_max"], d["overlap_max"], d.get("sparse_min", 0.0))
+    return {"table": table, "verdict": verdict}
 
 
-def run(neurons: pd.DataFrame, edges: pd.DataFrame) -> dict:
-    doc = assert_matches_code()
-    proto = doc["protocol"]
-    expect = dict(zip(proto["odors"], proto["odor_n"], strict=True))
-    expect[proto["apl"]] = proto["apl_n"]
-    idx = {}
-    for name, n in expect.items():
+def stimuli(neurons: pd.DataFrame, proto: dict, data_dir: Path | None) -> dict:
+    """Stimulated neurons and their Poisson rates per odor: every ORN of each responding
+    type at the lock's rate times its DoOR response, or one ORN type at one rate."""
+    out = {}
+    if proto.get("odor_source") == "door":
+        odors.fetch(data_dir)
+        responses, mappings, odor_table = odors.tables(data_dir)
+        orn = neurons["type"].dropna()
+        types = set(orn[orn.str.startswith("ORN_")])
+        for name in proto["odors"]:
+            v = odors.vector(responses, mappings, odor_table, name, types)
+            out[name] = odors.stimulus(
+                neurons, odors.per_type(v), proto["rate_at_response_1_hz"]
+            )
+        return out
+    for name, n in zip(proto["odors"], proto["odor_n"], strict=True):
         got = data.resolve(neurons, name)
         if got.size != n:
             raise SparsenessError(f"{name} has {got.size} neurons, the lock says {n}")
-        idx[name] = got
+        out[name] = (got, np.full(got.size, proto["rate_hz"]))
+    return out
+
+
+def run(
+    neurons: pd.DataFrame, edges: pd.DataFrame, data_dir: Path | None = None
+) -> dict:
+    doc = assert_matches_code()
+    proto = doc["protocol"]
+    idx = {}
+    apl = data.resolve(neurons, proto["apl"])
+    if apl.size != proto["apl_n"]:
+        raise SparsenessError(
+            f"APL has {apl.size} neurons, the lock says {proto['apl_n']}"
+        )
+    idx[proto["apl"]] = apl
+    idx["stimuli"] = stimuli(neurons, proto, data_dir)
     idx["KC"] = np.flatnonzero(
         neurons["type"].fillna("").str.contains(proto["kc"]).to_numpy()
     )

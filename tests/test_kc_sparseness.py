@@ -10,11 +10,12 @@ from flymsg import cli, kc_sparseness
 
 def test_locked_to_the_measured_bounds_and_the_plasticity_odors():
     doc = kc_sparseness.assert_matches_code()
-    assert doc["version"] == 2
-    assert kc_sparseness.content_hash(doc) == kc_sparseness.VERSION_HASHES[2]
+    assert doc["version"] == 3
+    assert kc_sparseness.content_hash(doc) == kc_sparseness.VERSION_HASHES[3]
     assert list(doc["arms"]) == ["A", "B", "E", "F"]
-    assert doc["supersedes"]["verdict"] == "not_recurrence"
-    assert doc["protocol"]["odors"] == ["ORN_VA1d", "ORN_DL3"]
+    assert doc["supersedes"]["verdict"] == "within: E, F"
+    assert doc["protocol"]["odors"] == ["3-octanol", "4-methylcyclohexanol"]
+    assert doc["decides"]["sparse_min"] == 0.01
     assert doc["defaults_changed"] is False
 
 
@@ -42,14 +43,28 @@ def test_prints_the_protocol_without_data(monkeypatch, capsys, tmp_path):
         "sys.argv", ["flymsg", "--data", str(tmp_path), "kc-sparseness"]
     )
     cli.main()
-    assert "E ach_ln_pn" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "E ach_ln_pn" in out and "DoOR" in out
 
 
-def test_v2_refuses_the_v1_seeds():
+@pytest.mark.parametrize(("seeds", "spent"), [([60, 61, 62], 1), ([70, 71, 72], 2)])
+def test_v3_refuses_spent_seeds(seeds, spent):
     doc = kc_sparseness.load()
-    doc["protocol"]["seeds"] = [60, 61, 62]
-    with pytest.raises(kc_sparseness.SparsenessError, match="version 1"):
+    doc["protocol"]["seeds"] = seeds
+    with pytest.raises(kc_sparseness.SparsenessError, match=f"version {spent}"):
         kc_sparseness.assert_matches_code(doc)
+
+
+def test_v3_uses_hige_odors():
+    doc = kc_sparseness.load()
+    doc["protocol"]["odors"] = ["3-octanol", "ethyl acetate"]
+    with pytest.raises(kc_sparseness.SparsenessError, match="Hige"):
+        kc_sparseness.assert_matches_code(doc)
+
+
+def test_the_lower_bound_rejects_a_silent_arm():
+    assert not kc_sparseness.within([0.002, 0.0], [0.0, 0.0], 0.17, 0.646, 0.01)
+    assert kc_sparseness.within([0.05, 0.06], [0.3, 0.3], 0.17, 0.646, 0.01)
 
 
 def test_responders_need_two_of_three_seeds():
@@ -94,8 +109,10 @@ def test_kc_recurrence_spreads_an_odor_and_arm_b_removes_it():
         (np.full(len(pre), 60.0, dtype=np.float32), (post, pre)), shape=(n, n)
     )
     idx = {
-        "ORN_VA1d": np.array([0]),
-        "ORN_DL3": np.array([1]),
+        "stimuli": {
+            "3-octanol": (np.array([0]), np.array([100.0])),
+            "4-methylcyclohexanol": (np.array([1]), np.array([100.0])),
+        },
         "APL": np.array([6]),
         "KC": np.arange(2, 6),
         "PN": np.array([], dtype=int),

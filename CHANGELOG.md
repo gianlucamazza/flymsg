@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Pre-registration
+
+- **Kenyon cell sparseness diagnostic v3** (#95, #96): Hige et al. 2015's odors (3-octanol,
+  4-methylcyclohexanol) as DoOR receptor vectors, the same four arms, seeds 80–82, and a
+  lower bound (1%) next to the upper ones; the shared share is reported against the 30% and
+  33% measured for these odors. Locked before its run.
+
 ### Odors
 
 - **`flymsg odor`** (#96): DoOR consensus responses (fetched at run time, CC BY-SA 4.0, not
