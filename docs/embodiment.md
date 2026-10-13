@@ -260,6 +260,16 @@ source maps a muscle to a FlyBody or NeuroMechFly actuator, so every row stays `
 `motor_map.command` still refuses (contract B6). MANC is a different male than MaleCNS, and
 the muscle is a property of the type, not of the individual neuron.
 
+MaleCNS also pairs each motor neuron with one MANC neuron (`mancBodyid`). For 623 neurons that
+neuron is in Supplementary file 3; for 140 of them its type differs from the type-level
+`mancType`: 33 only by name (same target), 107 with another target, mostly an antagonist or
+accessory muscle of the same leg segment (`Ti flexor` against `Acc. ti flexor`, `Ta
+depressor` against `Acc. ti flexor`). The rule (2026-10-13, #19): the muscle is the type's,
+since `mancType` is curated per type and individual pairings in serially repeated leg types
+can land on a neighbouring type; `muscles.parquet` records each neuron's `manc_neuron_type`
+and `neuron_match_agrees` (empty when unresolvable), so the disagreements stay visible and
+no per-neuron muscle is used.
+
 ### Evidence each step needs
 
 From the research plan of PR #47. A step that lacks its evidence keeps the synthetic label.
