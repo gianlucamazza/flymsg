@@ -145,6 +145,8 @@ reference area stated by the lock. `scripts/mesh_area.mjs BODYID ...` measures a
 surface area from its published mesh at full resolution with the viewer's own readers and
 Draco decoder (DNp01_R, bodyId 10001: about 59,800 µm² over 45 M triangles); holes in a
 published mesh are not closed. No rule other than count is used by any result.
+`validation/weight_rule.yaml` (#139) locks the comparison of the two rules on Liu et al.'s
+measured pairs before any MaleCNS count or area between those neurons is computed.
 
 ## Adaptive threshold (optional; off by default since v0.5)
 

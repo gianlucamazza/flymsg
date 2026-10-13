@@ -20,6 +20,7 @@ from flymsg import (
     sensitivity,
     silence_scan,
     t4t5,
+    weight_rule,
 )
 
 PROTOCOLS = {
@@ -35,6 +36,7 @@ PROTOCOLS = {
     "kc-sparseness": kc_sparseness,
     "t4t5": t4t5,
     "jump3d": jump3d_lock,
+    "weight-rule": weight_rule,
     "calibrate": prereg,
     "wiring-null": prereg,
     "dimorphism": prereg,
@@ -87,6 +89,9 @@ def prepare(a):
             {f"eyemap/{name}": eye.raw_dir(a.data) / name for name in eye.EYEMAP_FILES}
         )
         paths["raw/annotations"] = a.data / "raw" / data.RAW["annotations"]
+    if a.cmd == "weight-rule":
+        # measured before the run by `flymsg weight-rule --areas`, frozen with the tables
+        paths[weight_rule.AREAS] = a.data / weight_rule.AREAS
     if a.cmd == "jump3d":
         distribution = metadata.distribution("flygym")
         paths.update(

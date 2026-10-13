@@ -172,6 +172,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s.add_argument("--run", action="store_true", help="run the frozen diagnostic")
     s = sub.add_parser(
+        "weight-rule",
+        help="print the frozen count-vs-density weight comparison (#139), or run it",
+    )
+    s.add_argument("--run", action="store_true", help="run the frozen comparison")
+    s.add_argument(
+        "--areas",
+        action="store_true",
+        help="measure the LHN mesh areas into data/weight_rule/ (before --run)",
+    )
+    s = sub.add_parser(
         "jump3d",
         help="print the frozen TTM-driven NeuroMechFly jump (#90, #94), or run it",
     )

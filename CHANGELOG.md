@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Validation
+
+- **Synapse weight rule lock** (#139): `validation/weight_rule.yaml` v1 compares count
+  against density (count over the postsynaptic mesh area) on Liu et al. 2022's measured
+  PN → LHN unitary EPSPs: 57 pairs of the six LHN types MaleCNS matches exactly, Spearman
+  per rule, paired bootstrap interval of the difference. `flymsg weight-rule --areas`
+  measures the meshes before `--run`. No count or area was computed before the lock.
+
 ### Body
 
 - **Neuron-level MANC matches recorded, not used** (#19): `flymsg muscles` adds each
