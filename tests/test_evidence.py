@@ -34,6 +34,8 @@ def test_a_missing_field_fails(field):
         ("source.locator", "unknown", "must be known"),
         ("status", "guessed", "status"),
         ("value", "unknown", "value and unit"),
+        ("value", None, "value and unit"),
+        ("unit", "", "value and unit"),
         ("used_by", ["validation/none.yaml"], "missing file"),
     ],
 )
@@ -80,3 +82,15 @@ def test_records_carry_the_values_their_locks_use():
         "medulla_mv"
     ]
     assert records["medulla_t4_input_voltages"]["value"] == medulla
+
+
+def test_nested_unknowns_are_audited_and_duplicate_keys_refused():
+    from flymsg import prereg
+
+    record = _record()
+    record["transformation"]["inputs_sha256"] = {"a": "unknown"}
+    paths = [p for f in evidence.FIELDS for p in evidence._unknown_paths(record[f], f)]
+    assert "transformation.inputs_sha256.a" in paths
+    with pytest.raises(prereg.PreregistrationError, match="duplicate"):
+        prereg.load_yaml("yaml_subset: 2\na: 1\na: 2\n")
+    assert prereg.load_yaml("a: 1\na: 2\n") == {"a": 2}  # subset 1 unchanged

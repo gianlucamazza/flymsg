@@ -43,6 +43,16 @@ class EvidenceError(ValueError):
     """An evidence record or a lock's evidence list is incomplete."""
 
 
+def _missing(value) -> bool:
+    return value is None or value in ("", [], {}, UNKNOWN)
+
+
+def _unknown_paths(value, path: str) -> list[str]:
+    if isinstance(value, dict):
+        return [p for k, v in value.items() for p in _unknown_paths(v, f"{path}.{k}")]
+    return [path] if value == UNKNOWN else []
+
+
 def _get(record: dict, dotted: str):
     value = record
     for part in dotted.split("."):
@@ -66,11 +76,13 @@ def check_record(record: dict) -> dict:
         raise EvidenceError(f"{name}: unknown fields {sorted(extra)}")
     for dotted in KNOWN:
         value = _get(record, dotted)
-        if value in (None, "", [], UNKNOWN):
+        if _missing(value):
             raise EvidenceError(f"{name}: {dotted} must be known")
     if record["status"] not in STATUSES:
         raise EvidenceError(f"{name}: status must be one of {', '.join(STATUSES)}")
-    if record["status"] == "measured" and UNKNOWN in (record["value"], record["unit"]):
+    if record["status"] == "measured" and (
+        _missing(record["value"]) or _missing(record["unit"])
+    ):
         raise EvidenceError(f"{name}: a measured record needs its value and unit")
     if not isinstance(record["used_by"], list):
         raise EvidenceError(f"{name}: used_by must be a list of lock files")
@@ -111,12 +123,7 @@ def audit(root: Path = ROOT) -> str:
     records = load(root / "validation" / "evidence.yaml")
     lines = ["record | status | unknown fields | used by"]
     for rid, record in records.items():
-        unknown = [
-            f"{field}.{sub}" if sub else field
-            for field, subs in FIELDS.items()
-            for sub in (subs or (None,))
-            if (record[field][sub] if sub else record[field]) == UNKNOWN
-        ]
+        unknown = [p for f in FIELDS for p in _unknown_paths(record[f], f)]
         lines.append(
             f"{rid} | {record['status']} | {', '.join(unknown) or '-'} | "
             f"{', '.join(record['used_by'])}"

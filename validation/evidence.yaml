@@ -30,7 +30,7 @@ records:
     transfer_limits: "somatic coefficients underestimate the coupling at the junction; the two-cell relation c / (1 - c) is applied to cells with many partners"
     transformation:
       code: "flymsg.kc_sparseness.measured_gap: c / (1 - c) per side"
-      inputs_sha256: "none: read from a figure"
+      inputs_sha256: "none: transcribed from the published figure (doi and locator); no file archived"
     used_by: [validation/kc_sparseness.yaml]
 
   - id: eln_spike_amplitude
@@ -56,7 +56,7 @@ records:
     transfer_limits: "the amplitude at the junction is not measured; the model applies the somatic amplitude as a rectangular spikelet of scanned duration"
     transformation:
       code: "flymsg.sim.Gap spike_mv"
-      inputs_sha256: "none: read from the text"
+      inputs_sha256: "none: transcribed from the published text (doi and locator); no file archived"
     used_by: [validation/kc_sparseness.yaml]
 
   - id: sister_pn_coupling
@@ -82,7 +82,7 @@ records:
     transfer_limits: "one glomerulus; somatic coefficient"
     transformation:
       code: "flymsg.kc_sparseness.measured_gap: symmetric c / (1 - c)"
-      inputs_sha256: "none: read from a figure"
+      inputs_sha256: "none: transcribed from the published figure (doi and locator); no file archived"
     used_by: [validation/kc_sparseness.yaml]
 
   - id: kc_odor_sparseness
@@ -111,7 +111,7 @@ records:
     transfer_limits: "odors differ from the DoOR odors the model is driven with"
     transformation:
       code: "flymsg.kc_sparseness decides: sparse_min = mean - sd"
-      inputs_sha256: "none: read from a figure"
+      inputs_sha256: "none: transcribed from the published figure (doi and locator); no file archived"
     used_by: [validation/kc_sparseness.yaml]
 
   - id: medulla_t4_input_voltages
