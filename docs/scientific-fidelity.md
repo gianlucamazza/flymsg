@@ -18,6 +18,18 @@ Every biological parameter and mapping in a scored experiment should declare:
 - Transformation code and derived-data digest.
   Unknown values stay unknown. An inference must never be presented as a measurement.
 
+### SF1 in the code (#147)
+
+[`validation/evidence.yaml`](https://github.com/gianlucamazza/flymsg/blob/main/validation/evidence.yaml)
+holds one record per sourced quantity with every field above; `flymsg.evidence` refuses a
+record with a missing field, an unknown status, an unknown citation, locator or user, or a
+measured status without value and unit. A field the source does not state is written
+`unknown`, and `scripts/evidence_audit.py` lists them per record. Every lock written with
+`yaml_subset: 2` (all locks after #159) must name its records in `evidence`; historical
+locks keep their prose `sources`, unchanged. The first records are the coupling, spike and
+sparseness values of Kenyon cell sparseness v5–v7 and the medulla voltages of T4/T5 v3;
+the test suite checks them against the values the locks and the code use.
+
 ## Model and execution contracts
 
 Retain the single Python package and B1–B6 boundaries. For each run, identify the model family (LIF, graded, conductance-based or compartmental), solver, timestep, parameter provenance and applicable benchmark. Add complexity only when independent tests show that simpler models fail. Keep optional mechanisms off by default until validated.

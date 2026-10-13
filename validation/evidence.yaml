@@ -1,0 +1,171 @@
+# Evidence records for biological parameters (SF1, issue #147; flymsg.evidence). Every field
+# is present; what the source does not state is written unknown. Values are copied from the
+# locks that first cited them, where they were checked against the source.
+yaml_subset: 2
+
+records:
+  - id: eln_pn_coupling
+    quantity: "coupling coefficient between excitatory antennal-lobe local neurons (eLNs) and projection neurons, hyperpolarizing steps"
+    value:
+      eln_to_pn: 0.0021
+      pn_to_eln: 0.0039
+      eln_to_pn_depolarizing: 0.0083
+    unit: "dimensionless (voltage ratio)"
+    status: measured
+    method: "paired whole-cell recordings, control pairs of the shakB2 comparison (n = 37 eLN -> PN); hyperpolarizing steps pass the electrical component only"
+    uncertainty: "read from bar heights of Fig 4C and 4F; error bars not transcribed"
+    source:
+      citation: "Yaksi & Wilson 2010, Neuron 67:1034"
+      doi: "10.1016/j.neuron.2010.08.041"
+      license: unknown
+      locator: "Fig 4C and 4F"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: unknown
+      stage: adult
+    cell:
+      type: "krasavietz-positive eLN and PN pairs"
+      maps_to: "lLN2T_a/b/c (and lLN1_bc as a variant) and ALPN in MaleCNS v1.0"
+      mapping_uncertainty: "morphological match only (Eckstein et al. 2024, STAR Methods and Fig S5F); no genetically confirmed EM type"
+    transfer_limits: "somatic coefficients underestimate the coupling at the junction; the two-cell relation c / (1 - c) is applied to cells with many partners"
+    transformation:
+      code: "flymsg.kc_sparseness.measured_gap: c / (1 - c) per side"
+      inputs_sha256: "none: read from a figure"
+    used_by: [validation/kc_sparseness.yaml]
+
+  - id: eln_spike_amplitude
+    quantity: "amplitude of full-sized eLN spikes"
+    value: 40.0
+    unit: mV
+    status: measured
+    method: "whole-cell recordings of eLNs"
+    uncertainty: "stated as about 40 mV; attenuated ~10 mV events also occur"
+    source:
+      citation: "Yaksi & Wilson 2010, Neuron 67:1034"
+      doi: "10.1016/j.neuron.2010.08.041"
+      license: unknown
+      locator: "text and Fig 2D"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: unknown
+      stage: adult
+    cell:
+      type: "krasavietz-positive eLN"
+      maps_to: "lLN2T_a/b/c (and lLN1_bc as a variant) in MaleCNS v1.0"
+      mapping_uncertainty: "morphological match only (Eckstein et al. 2024)"
+    transfer_limits: "the amplitude at the junction is not measured; the model applies the somatic amplitude as a rectangular spikelet of scanned duration"
+    transformation:
+      code: "flymsg.sim.Gap spike_mv"
+      inputs_sha256: "none: read from the text"
+    used_by: [validation/kc_sparseness.yaml]
+
+  - id: sister_pn_coupling
+    quantity: "coupling coefficient between ipsilateral homotypic projection neurons, hyperpolarizing steps"
+    value: 0.013
+    unit: "dimensionless (voltage ratio)"
+    status: measured
+    method: "paired whole-cell recordings of DM6 PNs; 0.011 in Cd2+"
+    uncertainty: "read from the bar height of Fig 7d; error bar not transcribed"
+    source:
+      citation: "Kazama & Wilson 2009, Nat Neurosci 12:1136"
+      doi: "10.1038/nn.2376"
+      license: unknown
+      locator: "Fig 7d"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: unknown
+      stage: adult
+    cell:
+      type: "DM6 PN pairs"
+      maps_to: "every ALPN type, same side, in MaleCNS v1.0"
+      mapping_uncertainty: "measured in one glomerulus and applied to all"
+    transfer_limits: "one glomerulus; somatic coefficient"
+    transformation:
+      code: "flymsg.kc_sparseness.measured_gap: symmetric c / (1 - c)"
+      inputs_sha256: "none: read from a figure"
+    used_by: [validation/kc_sparseness.yaml]
+
+  - id: kc_odor_sparseness
+    quantity: "share of Kenyon cells that spike to an odor"
+    value:
+      mean: 0.06
+      sd: 0.05
+      n: 71
+    unit: "fraction of Kenyon cells"
+    status: measured
+    method: "whole-cell recordings of Kenyon cells to odors"
+    uncertainty: "SD 5% across cells (n = 71)"
+    source:
+      citation: "Turner, Bazhenov & Laurent 2008, J Neurophysiol 99:734"
+      doi: "10.1152/jn.01283.2007"
+      license: unknown
+      locator: "Fig 2A"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: unknown
+      stage: adult
+    cell:
+      type: "Kenyon cells"
+      maps_to: "every ^KC type in MaleCNS v1.0"
+      mapping_uncertainty: "pooled over KC classes"
+    transfer_limits: "odors differ from the DoOR odors the model is driven with"
+    transformation:
+      code: "flymsg.kc_sparseness decides: sparse_min = mean - sd"
+      inputs_sha256: "none: read from a figure"
+    used_by: [validation/kc_sparseness.yaml]
+
+  - id: medulla_t4_input_voltages
+    quantity: "in vivo membrane potential ranges of T4's medulla inputs to 30 deg/s ON and OFF edges"
+    value:
+      Mi1:
+        n: 24
+        dark: -65.2
+        lowest: -69.2
+        highest: -41.3
+      Tm3:
+        n: 12
+        dark: -64.4
+        lowest: -69.4
+        highest: -42.5
+      Mi4:
+        n: 19
+        dark: -65.1
+        lowest: -66.7
+        highest: -52.3
+      Mi9:
+        n: 29
+        dark: -58.0
+        lowest: -62.5
+        highest: -50.4
+      C3:
+        n: 16
+        dark: -66.8
+        lowest: -74.0
+        highest: -46.9
+    unit: mV
+    status: measured
+    method: "whole-cell recordings, 1 kHz, -1 pA holding current; per type the mean over cells of each sweep, dark = mean of the first second of the ON sweep, lowest and highest = extremes of the two mean sweeps, rounded to 0.1 mV"
+    uncertainty: "cell means; extremes of mean traces understate single-cell ranges"
+    source:
+      citation: "Groschner, Malis, Zuidinga & Borst 2022, Nature 603:119; data Edmond doi:10.17617/3.8G v1.0"
+      doi: "10.1038/s41586-022-04428-3"
+      license: "CC BY 4.0"
+      locator: "Fig 3a; fig3_<type>.npy"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: unknown
+      stage: adult
+    cell:
+      type: "Mi1, Tm3, Mi4, Mi9, C3"
+      maps_to: "the same cell types in MaleCNS v1.0"
+      mapping_uncertainty: "type names shared between the light-microscopy lines and the connectome"
+    transfer_limits: "holding current shifts the potential; T5's inputs (Tm1, Tm2, Tm4, Tm9) have no measured voltage in mV"
+    transformation:
+      code: "flymsg.medulla.ranges"
+      inputs_sha256:
+        Mi1: 351e9e791a30d1c5bac329165934fbc05dbcfbb038b4b6e940e2531de1d61cce
+        Tm3: 07797ccd2ce72d3ea89c9ca01ba641c7c92d3d6dd198d6324596f2cf16b0fb82
+        Mi4: 9309bb6deadcb8bf5c9a52267ef6564c314a04212af81c129b0754cf4de1f791
+        Mi9: 3d5909c9b6c42776ff5e56d7219eacd002758a24b3cf5b7cecf30a07b8bf5c83
+        C3: b9118e32cfb0d22acd4da41aee6931923ea33e4dda258df2abd26fd252e21be6
+    used_by: [validation/t4t5.yaml]
