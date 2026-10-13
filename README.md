@@ -112,7 +112,8 @@ recorded on the linked page. Negative results stay in the
 | Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                              | [comparison](docs/comparison.md#engine-check)                                                          |
 | Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not    | [dimorphism](docs/dimorphism.md)                                                                       |
 | Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                 | [benchmarks](docs/benchmarks.md)                                                                       |
-| Kenyon cell sparseness v1–v4               | dense or silent, never sparse                                | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                |
+| Kenyon cell sparseness v7                  | within only with the variant eLN set (lLN2T+lLN1_bc)         | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
 | KC → MBON11 depression v1                  | inconsistent: both odors go silent                           | [model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
 | One-bit looming jump                       | silence fails                                                | [behavior](docs/behavior.md#result-2026-10-11)                                                         |
 | Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                              | [behavior](docs/behavior.md#residual-partner-scan)                                                     |
@@ -172,7 +173,7 @@ the final path. A clean committed worktree is required. See
 | `partner-followup [--run]`                                      | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                          |
 | `mb-plasticity [--run]`                                         | the locked dopamine-gated KC → MBON11 depression (#85), applied between trials                          |
 | `weight-rule [--areas] [--run]`                                 | the locked count-vs-density comparison on Liu et al. 2022's PN → LHN uEPSPs (#139)                      |
-| `kc-sparseness [--run]`                                         | the locked Kenyon-cell sparseness diagnostic (#95), v1–v5: recurrence, antennal lobe, odors, coupling   |
+| `kc-sparseness [--run]`                                         | the locked Kenyon-cell sparseness diagnostic (#95), v1–v7: recurrence, antennal lobe, odors, coupling   |
 | `jump3d [--run]`                                                | the locked TTM-driven jump: TTMn spikes → measured twitch → NeuroMechFly in MuJoCo (#90, #94)           |
 | `t4t5 [--run]`                                                  | the locked T4/T5 test: ON/OFF edges moving through the measured eye; polarity and direction (#84)       |
 | `odor NAME`                                                     | a DoOR odorant as a response per MaleCNS ORN type (fetched, CC BY-SA)                                   |
