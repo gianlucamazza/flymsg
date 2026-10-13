@@ -88,8 +88,11 @@ def _read_checked(path):
             )
         records.append(record)
     if fragment:
-        if not records and not fragment.startswith(
-            b'{"_record_schema": "flymsg.draw-record/v1"'
+        header = b'{"_record_schema": "flymsg.draw-record/v1"'
+        # A kill during the first write leaves a prefix of that header. It is this
+        # format's torn record, so it is discarded. Anything else is not resumed.
+        if not records and not (
+            fragment.startswith(header) or header.startswith(fragment)
         ):
             raise CheckpointMismatch(
                 f"unidentified legacy/incomplete checkpoint: {path}"

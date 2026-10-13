@@ -141,7 +141,9 @@ def execute(a, neurons, edges, command, prepared):
     identity, paths, doc = prepared
     # Detect changes while data.load was reading, before creating outputs or computing.
     runstore.verify_execution(identity, paths)
+    had_out = hasattr(a, "out")
     original_out = getattr(a, "out", None)
+    had_checkpoint = hasattr(a, "checkpoint")
     original_checkpoint = getattr(a, "checkpoint", None)
     with runstore.Run(base_path(a, doc), identity) as run:
         if run.completed:
@@ -191,7 +193,8 @@ def execute(a, neurons, edges, command, prepared):
                 print(f"completed execution {run.id}: {run.output}")
                 return result
         finally:
-            a.out = original_out
-            if hasattr(a, "checkpoint"):
+            if had_out:
+                a.out = original_out
+            if had_checkpoint:
                 a.checkpoint = original_checkpoint
             del a._run, a._dataset_snapshot

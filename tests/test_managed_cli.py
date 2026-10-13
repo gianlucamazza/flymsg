@@ -1,5 +1,6 @@
 """Public CLI journeys: actual synthetic simulation, cache reuse, rejection and exit status."""
 
+import argparse
 import json
 
 import pandas as pd
@@ -165,6 +166,25 @@ def test_legacy_checkpoint_is_not_imported_into_a_new_run(
             legacy,
         )
     assert legacy.read_text() == "historical checkpoint\n"
+
+
+def test_execute_does_not_invent_an_out_or_checkpoint(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(runstore, "verify_execution", lambda *args: None)
+    args = argparse.Namespace(cmd="kc-sparseness", dataset="synthetic")
+    identity = {"schema": runstore.SCHEMA, "source": "fixture", "inputs": {}}
+
+    def command(a, neurons, edges):
+        assert not hasattr(a, "out") and not hasattr(a, "checkpoint")
+        (a._run.output / "manifest.json").write_text(
+            json.dumps({"schema": manifest.SCHEMA})
+        )
+        return "ok"
+
+    assert (
+        managed.execute(args, [], [], command, (identity, {}, {"version": 1})) == "ok"
+    )
+    assert not hasattr(args, "out") and not hasattr(args, "checkpoint")
 
 
 def test_sister_writer_policy_is_explicit_and_complete():
