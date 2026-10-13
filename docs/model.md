@@ -102,6 +102,13 @@ glutamatergic, which only matters where they synapse onto central neurons.
 - `--rate` is the rate of the Poisson input; stimulated neurons fire at that rate (minus the
   ~`rate · dt` share lost to the reset, see above).
 - `--stim-ms` stops the input early, which lets you measure decay and self-sustained activity.
+- **Graded input.** `sim.run(..., kicks=K)` takes the input per step and stimulated neuron
+  in units of the Poisson kick (`poisson_scale · w_syn` mV). `K` may be real, not only a
+  count: the kernel adds `kick · K[t, s]` in float64 at the same phase as Poisson input, so
+  integer values given as floats reproduce the Poisson run spike for spike (tested), and a
+  fraction per step integrates like a current. The eye uses it for photoreceptors
+  (`eye.photoreceptor_kicks`). `CpuRuntime` and the native executor accept integer counts
+  only and refuse anything else.
 - Results are binned (default 10 ms). `sim` reports per type the stimulus-window rate with all
   neurons of the type counted (silent ones included), the share of seeds where the type fired
   (`p_active`), the across-seed SD, the latency of its earliest neuron, and the post-stimulus

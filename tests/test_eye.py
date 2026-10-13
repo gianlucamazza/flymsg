@@ -3,8 +3,9 @@
 import numpy as np
 import pandas as pd
 import pytest
+from scipy import sparse
 
-from flymsg import eye
+from flymsg import eye, sim
 
 
 def test_hex_to_pq_uses_the_published_origin():
@@ -131,3 +132,23 @@ def test_looming_radius_grows_to_collision():
     assert r[0] < r[1] < r[2] < 90
     assert r[0] == pytest.approx(np.degrees(np.arctan(40 / 500)))
     assert r[3] == r[4] == 90
+
+
+def test_photoreceptor_kicks_follow_the_light_left():
+    coverage = np.array([[0.0, 0.5], [1.0, np.nan]])
+    k = eye.photoreceptor_kicks(coverage, np.array([0, 1, -1]), 0.2)
+    np.testing.assert_allclose(k, [[0.2, 0.1, 0.0], [0.0, 0.0, 0.0]])
+
+
+def test_real_kicks_reproduce_integer_kicks_and_integrate_fractions():
+    W = sparse.csc_matrix((2, 2), dtype=np.float32)
+    ints = sim.poisson_kicks(0, 500.0, 0.1, 200, 1)
+    a = sim.run(W, np.array([0]), duration_ms=20.0, kicks=ints, bin_ms=10.0)
+    b = sim.run(
+        W, np.array([0]), duration_ms=20.0, kicks=ints.astype(float), bin_ms=10.0
+    )
+    assert np.array_equal(a.counts, b.counts)
+    # one Poisson kick is far above threshold; a tenth per step must sum up before a spike
+    tenth = np.full((200, 1), 0.01)
+    r = sim.run(W, np.array([0]), duration_ms=20.0, kicks=tenth, bin_ms=10.0)
+    assert 0 < r.counts[:, 0].sum() < 200
