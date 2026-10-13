@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import rdata
+from scipy import stats
 
 from flymsg import data
 
@@ -196,3 +197,43 @@ def check(cols: pd.DataFrame, receptors: pd.DataFrame) -> dict:
         "dorsal_rim_elevation_deg": float(m.loc[rim, "elevation_deg"].median()),
         "other_r7_r8_elevation_deg": float(m.loc[rest, "elevation_deg"].median()),
     }
+
+
+def angular_distance_deg(az1, el1, az2, el2) -> np.ndarray:
+    """Great-circle angle between directions given as azimuth and elevation in degrees."""
+    a1, e1, a2, e2 = (
+        np.radians(np.asarray(v, dtype=float)) for v in (az1, el1, az2, el2)
+    )
+    cos = np.sin(e1) * np.sin(e2) + np.cos(e1) * np.cos(e2) * np.cos(a1 - a2)
+    return np.degrees(np.arccos(np.clip(cos, -1.0, 1.0)))
+
+
+def disk_coverage(
+    cols: pd.DataFrame,
+    azimuth_deg: float,
+    elevation_deg: float,
+    radius_deg: float,
+    acceptance_deg: float,
+) -> np.ndarray:
+    """Share of each column's acceptance profile covered by a dark disk of angular radius
+    `radius_deg` centred at (azimuth, elevation). The profile is a circular Gaussian of
+    full width at half maximum `acceptance_deg` around the column's direction; in the
+    small-angle limit the covered share is the Rice CDF at the disk radius. NaN where a
+    column has no direction."""
+    sigma = acceptance_deg / (2 * np.sqrt(2 * np.log(2)))
+    d = angular_distance_deg(
+        cols["azimuth_deg"], cols["elevation_deg"], azimuth_deg, elevation_deg
+    )
+    if radius_deg <= 0:
+        return np.where(np.isnan(d), np.nan, 0.0)
+    return stats.rice.cdf(radius_deg / sigma, d / sigma)
+
+
+def looming_radius_deg(t_ms, collision_ms: float, l_over_v_ms: float) -> np.ndarray:
+    """Angular radius of an object approaching at constant speed: tan(theta/2) = l / (v t)
+    before collision, with l/v the half-size over speed; the classic looming stimulus of
+    von Reyn et al. 2014. Capped at 90 degrees from collision on."""
+    to_go = collision_ms - np.asarray(t_ms, dtype=float)
+    with np.errstate(divide="ignore"):
+        half = np.degrees(np.arctan(l_over_v_ms / np.where(to_go > 0, to_go, np.nan)))
+    return np.where(to_go > 0, np.minimum(half, 90.0), 90.0)

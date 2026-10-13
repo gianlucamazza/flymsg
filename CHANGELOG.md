@@ -22,6 +22,9 @@
 
 ### Eye
 
+- **Looming per column:** `eye.looming_radius_deg` (constant-speed approach, von Reyn et al. 2014) and `eye.disk_coverage` (share of each column's Gaussian acceptance profile covered
+  by a dark disk, exact in the small-angle limit). The acceptance angle is an argument for
+  the lock to source, not a default.
 - **`flymsg eye`** (#84): every MaleCNS optic-lobe column gets a measured viewing direction
   from the Zhao et al. 2025 eye map (fetched at run time, GPL-3.0, not redistributed) through
   the published hex convention; nothing is fitted. 843 of 892 right and 835 of 875 left

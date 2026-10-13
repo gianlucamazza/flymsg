@@ -176,8 +176,18 @@ assumptions: the left eye is the right eye mirrored; a male optic lobe is read t
 female eye; columns without a lens (mostly the anterior edge) get no direction. Expected
 error is about one column (≈ 5°) inside the eye, worse at its margins.
 
-Next ([#84](https://github.com/gianlucamazza/flymsg/issues/84)): a looming stimulus
-computed per column, then graded photoreceptor input with a single, locked gain.
+**A looming stimulus per column.** `eye.looming_radius_deg` gives the angular radius of an
+object approaching at constant speed (tan θ/2 = l/(v·t), the stimulus of von Reyn et al.
+2014), and `eye.disk_coverage` the share of each column's acceptance profile the dark disk
+covers: a circular Gaussian of a given full width at half maximum around the column's
+direction, exact in the small-angle limit (Rice CDF). The acceptance angle is an argument,
+not a default; the value and its source go into the lock of the first run. With 5°, a disk
+centred at 90° to the right covers more than half the profile of 5 right-eye columns at a
+radius of 5°, 138 at 30° and 462 at 60°, and no left-eye column.
+
+Next ([#84](https://github.com/gianlucamazza/flymsg/issues/84)): graded photoreceptor input
+fed by that coverage, with a single, locked gain, judged on T4/T5 direction selectivity and
+the giant fiber's size/velocity split.
 
 ### M1 jump body (v0.8.34, #33)
 
