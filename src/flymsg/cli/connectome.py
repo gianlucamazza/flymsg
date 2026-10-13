@@ -1,7 +1,9 @@
-"""Commands that read the connectome itself: lookups, paths, audits, sex comparisons."""
+"""Commands that read the connectome itself: lookups, paths, audits, sex comparisons, and
+the locked weight-rule comparison."""
 
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -12,10 +14,12 @@ from flymsg import (
     dimorphism,
     graph,
     homology,
+    managed,
     manifest,
     quality,
     sim,
     validate,
+    weight_rule,
 )
 from flymsg.cli.common import label, ng_link, stamp
 
@@ -250,3 +254,45 @@ def cmd_dimorphism(a, neurons, edges):
         {"seeds": a.seeds, "null": a.null},
         datetime.now(UTC),
     )
+
+
+def cmd_weight_rule(a, neurons, edges):
+    """The frozen count-vs-density comparison on Liu et al. 2022's uEPSPs (issue #139)."""
+    started = datetime.now(UTC)
+    doc = weight_rule.assert_locked()
+    print(weight_rule.summary(doc))
+    areas = pd.read_csv(a.data / weight_rule.AREAS)
+    out = weight_rule.run(doc, neurons, edges, areas)
+    path = managed.output(a, Path("runs/weight-rule") / f"v{doc['version']}")
+    path.mkdir(parents=True, exist_ok=True)
+    out["primary_table"].to_csv(path / "pairs.csv", index=False)
+    out["sensitivity_table"].to_csv(path / "sensitivity_pairs.csv", index=False)
+    lines = [
+        f"{name}: "
+        + ", ".join(
+            f"{k} {v:.4g}" if isinstance(v, float) else f"{k} {v}"
+            for k, v in out[name].items()
+        )
+        for name in ("primary", "measured_only", "sensitivity")
+    ]
+    lines.append(f"density fit r2 (Pearson): {out['density_fit_r2']:.3f}")
+    lines.append(f"missing areas: {out['missing_areas'] or 'none'}")
+    lines.append(f"verdict: {out['verdict']}")
+    text = "\n".join(lines)
+    print(text)
+    (path / "report.txt").write_text(text + "\n")
+    stamp(
+        path,
+        "weight-rule --run",
+        a,
+        neurons,
+        edges,
+        {
+            "weight_rule_version": doc["version"],
+            "weight_rule_sha256": doc["content_sha256"],
+        },
+        {"bootstrap": [doc["protocol"]["seed"]]},
+        started,
+        extra={"verdict": out["verdict"]},
+    )
+    print(f"report -> {path / 'report.txt'}")

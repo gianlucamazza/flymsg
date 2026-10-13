@@ -26,6 +26,7 @@ from flymsg import (
     t4t5,
     validate,
     viz,
+    weight_rule,
     workbench,
 )
 from flymsg.cli.body import cmd_behavior, cmd_jump, cmd_jump3d, cmd_loop, cmd_muscles
@@ -38,6 +39,7 @@ from flymsg.cli.connectome import (
     cmd_homology,
     cmd_info,
     cmd_path,
+    cmd_weight_rule,
 )
 from flymsg.cli.experiments import (
     cmd_confirm,
@@ -102,6 +104,7 @@ COMMANDS = {
     "t4t5": cmd_t4t5,
     "jump3d": cmd_jump3d,
     "kc-sparseness": cmd_kc_sparseness,
+    "weight-rule": cmd_weight_rule,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
     "experiment": cmd_experiment,
@@ -132,6 +135,7 @@ MALECNS_ONLY = (
     "t4t5",
     "jump3d",
     "kc-sparseness",
+    "weight-rule",
     "trace",
     "sensitivity",
     "experiment",
@@ -182,6 +186,14 @@ def main() -> None:
             return print(kc_sparseness.summary())
         if a.cmd == "t4t5" and not a.run:
             return print(t4t5.summary())
+        if a.cmd == "weight-rule" and a.areas:
+            if a.run:
+                p.error("weight-rule takes --areas or --run, not both")
+            neurons, _ = data.load(a.data, a.dataset)
+            out = weight_rule.fetch_areas(weight_rule.assert_locked(), neurons, a.data)
+            return print(f"areas -> {out}")
+        if a.cmd == "weight-rule" and not a.run:
+            return print(weight_rule.summary())
         if a.cmd == "jump3d" and not a.run:
             return print(jump3d_lock.summary())
         if a.cmd == "behavior" and not a.run:

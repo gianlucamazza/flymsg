@@ -1,0 +1,286 @@
+# Synapse weight: count against density on measured PN -> LHN unitary EPSPs (issue 139).
+# Version 1, fixed 2026-10-13 before any MaleCNS count or area between these neurons was
+# computed. Changing a locked field requires incrementing `version` and updating
+# `content_sha256` and flymsg.weight_rule.VERSION_HASHES. `flymsg weight-rule` prints it.
+version: 1
+content_sha256: 87a33e5fbc589f4445386618275c46bf88c18d7f97d46e1b02e82ff4535ef79d
+issue: 139
+question: "Across measured PN -> LHN unitary EPSPs, does the MaleCNS synapse count onto a neuron rank the amplitudes better or worse when divided by the postsynaptic surface area (density) than when used as it is (count)?"
+seen_before_lock: "Liu et al. 2022's Table S3 in full (156 pairs: 29 measured, 106 at 0 mV, 21 omitted), their Table S2 (hemibrain types per LHN), and in MaleCNS only which PN and LHN types exist and how many neurons each has. No MaleCNS synapse count between these PNs and LHNs, no surface area of these LHNs and no correlation of anything with the amplitudes has been computed. Liu et al. report a density fit (r2 0.77 over 135 pairs) and no count-only statistic."
+sources:
+  physiology: "Liu, Davoudian, Lizbinski & Jeanne 2022, Curr Biol 32:559, doi:10.1016/j.cub.2021.11.056, Table S3 (Document S1, https://ars.els-cdn.com/content/image/1-s2.0-S0960982221016420-mmc1.pdf, sha256 f7c693deb13c8f7522a0ee58cd39e703d40661ee3c59fd090f2cc08a85afbf28): mean somatic uEPSP per PN-LHN pair, 0 mV where no response was evident"
+  types: "Liu et al. 2022 Table S2 (mmc2.xlsx, https://ars.els-cdn.com/content/image/1-s2.0-S0960982221016420-mmc2.xlsx, sha256 c1797bb29fa7aa2a9617b623aabf0e6debf453c4b35fd4b1005a22f6bede4e87): hemibrain type(s) of each LHN name"
+  licence: "Elsevier open archive (user licence); values transcribed here with their source, the file is not redistributed"
+  pn_rule: "one uniglomerular PN of the anterodorsal or lateral lineage per glomerulus, as in Liu et al.; DM1 and VC1 are lPN, the others adPN"
+protocol:
+  pn_types: [DA4l_adPN, DC1_adPN, DL4_adPN, DL5_adPN, DM1_lPN, DM4_adPN, DP1m_adPN, VA2_adPN, VA6_adPN, VC1_lPN, VL2a_adPN, VL2p_adPN]
+  count: "per pair and side: mean over the LHN neurons of the type on that side of the summed synapse count from the glomerulus's PN on that side; then the mean over the sides that have both"
+  area: "per LHN type: mean surface area of its neurons' published MaleCNS meshes at full resolution (scripts/mesh_area.mjs), fetched before the run into data/weight_rule/areas.csv"
+  rules:
+    count: "prediction = count"
+    density: "prediction = count / area"
+  statistic: "Spearman rank correlation (average ranks for ties) of prediction against uEPSP, for each rule"
+  difference: "delta = rho_density - rho_count, with a 95% percentile interval from 10000 paired bootstrap resamples of the pairs"
+  seed: 139
+matched_types:
+  L1: [LHAD1a1]
+  L15: [LHPV5c1_d]
+  ML9: [LHPD2a1]
+  V2: [LHAV2b2_a, LHAV2b2_b]
+  local2: [LHPV4a11]
+  local5: [LHAV2m1]
+partial_types:
+  ML3: [LHAD1b2_b]
+  V3: [LHAV1a1]
+pairs:
+  - pair: DA4l/L1
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DL4/L1
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DL5/L1
+    uepsp_mv: 0.8422698
+    hemibrain_count: 0.0
+  - pair: DM1/L1
+    uepsp_mv: 1.61617573
+    hemibrain_count: 9.0
+  - pair: DM4/L1
+    uepsp_mv: 1.20671994
+    hemibrain_count: 5.0
+  - pair: VA6/L1
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VC1/L1
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VL2a/L1
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VL2p/L1
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DA4l/L15
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DC1/L15
+    uepsp_mv: 1.01693282
+    hemibrain_count: 1.5
+  - pair: DL4/L15
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DL5/L15
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DM1/L15
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DM4/L15
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DP1m/L15
+    uepsp_mv: 0
+    hemibrain_count: 1.0
+  - pair: VA2/L15
+    uepsp_mv: 0.9789831
+    hemibrain_count: 0.0
+  - pair: VA6/L15
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VL2p/L15
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DA4l/ML9
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DC1/ML9
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DL4/ML9
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DL5/ML9
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DM1/ML9
+    uepsp_mv: 3.91653936
+    hemibrain_count: 39.0
+  - pair: DP1m/ML9
+    uepsp_mv: 1.14060981
+    hemibrain_count: 13.2
+  - pair: VA2/ML9
+    uepsp_mv: 0
+    hemibrain_count: 5.2
+  - pair: VA6/ML9
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VC1/ML9
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VL2a/ML9
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DA4l/V2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DC1/V2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DL4/V2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DL5/V2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DM1/V2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DM4/V2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VA2/V2
+    uepsp_mv: 0
+    hemibrain_count: 0.25
+  - pair: VA6/V2
+    uepsp_mv: 0
+    hemibrain_count: 6.5
+  - pair: VC1/V2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VL2a/V2
+    uepsp_mv: 2.46240283
+    hemibrain_count: 13.75
+  - pair: DA4l/local2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DC1/local2
+    uepsp_mv: 0
+    hemibrain_count: 1.5
+  - pair: DL4/local2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DL5/local2
+    uepsp_mv: 3.27651952
+    hemibrain_count: 65.5
+  - pair: DM1/local2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DM4/local2
+    uepsp_mv: 0
+    hemibrain_count: 4.0
+  - pair: DP1m/local2
+    uepsp_mv: 0
+    hemibrain_count: 26.0
+  - pair: VA2/local2
+    uepsp_mv: 0
+    hemibrain_count: 0.5
+  - pair: VA6/local2
+    uepsp_mv: 0
+    hemibrain_count: 5.0
+  - pair: VC1/local2
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DA4l/local5
+    uepsp_mv: 0.65942807
+    hemibrain_count: 2.5
+  - pair: DL4/local5
+    uepsp_mv: 0
+    hemibrain_count: 2.0
+  - pair: DM4/local5
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VA2/local5
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VA6/local5
+    uepsp_mv: 6.62604114
+    hemibrain_count: 104.0
+  - pair: VC1/local5
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: VL2a/local5
+    uepsp_mv: 2.104459
+    hemibrain_count: 95.0
+  - pair: VL2p/local5
+    uepsp_mv: 0.61719868
+    hemibrain_count: 0.0
+sensitivity_pairs:
+  - pair: DA4l/ML3
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DC1/ML3
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DL4/ML3
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DM1/ML3
+    uepsp_mv: 0
+    hemibrain_count: 1.142857
+  - pair: DM4/ML3
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DP1m/ML3
+    uepsp_mv: 0
+    hemibrain_count: 2.285714
+  - pair: VC1/ML3
+    uepsp_mv: 1.18859636
+    hemibrain_count: 6.857143
+  - pair: VL2p/ML3
+    uepsp_mv: 0.71611048
+    hemibrain_count: 9.571429
+  - pair: DC1/V3
+    uepsp_mv: 0
+    hemibrain_count: 0.5
+  - pair: DL4/V3
+    uepsp_mv: 1.75984939
+    hemibrain_count: 19.0
+  - pair: DL5/V3
+    uepsp_mv: 0
+    hemibrain_count: 4.75
+  - pair: DM1/V3
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DM4/V3
+    uepsp_mv: 0
+    hemibrain_count: 0.0
+  - pair: DP1m/V3
+    uepsp_mv: 0
+    hemibrain_count: 0.75
+  - pair: VA2/V3
+    uepsp_mv: 0
+    hemibrain_count: 0.5
+  - pair: VA6/V3
+    uepsp_mv: 1.92217112
+    hemibrain_count: 5.0
+  - pair: VC1/V3
+    uepsp_mv: 0
+    hemibrain_count: 3.25
+  - pair: VL2a/V3
+    uepsp_mv: 1.60422109
+    hemibrain_count: 22.25
+  - pair: VL2p/V3
+    uepsp_mv: 1.41590037
+    hemibrain_count: 21.25
+decides:
+  primary: "the pairs listed under pairs: every pair of the six matched LHN types with a reliable estimate, zero amplitudes included, as in Liu et al.'s main fit"
+  verdict: "density if the interval lies above 0, count if below 0, undecided otherwise"
+  not_testable: "fewer than 10 pairs with a MaleCNS count or fewer than 4 LHN types with an area, or any listed LHN type without a mesh"
+reported:
+  measured_only:
+    decides: false
+    what: "the same statistics on the pairs with a uEPSP above 0 mV"
+  sensitivity:
+    decides: false
+    what: "the same statistics with the sensitivity_pairs added, ML3 and V3 represented by the only subtype MaleCNS has"
+  density_fit:
+    decides: false
+    what: "Pearson r2 of uEPSP against density, next to Liu et al.'s 0.77 (their area model, hemibrain)"
+compensations:
+  - "Different animals and datasets: Liu et al. measured physiology in female flies and counted synapses in the female hemibrain v1.1; the counts here are from the male MaleCNS v1.0."
+  - "The two rules rank pairs identically within one LHN type; they differ only across the six matched types, so the test has little power."
+  - "Area is the whole neuron's mesh surface, one value per type; Liu et al. used a cylinder model of the whole neuron, about 8% smaller than meshes, and neither is dendrite-only."
+  - "Holes in a published mesh are not closed."
+  - "Somatic uEPSPs of a cable neuron against a point model: the axo-axonic VL2a -> local5 connection, smaller than its density predicts in Liu et al., stays in the primary set as in their main fit."
+  - "Amplitudes below Liu et al.'s 0.2 mV detection floor are 0 mV."
+defaults_changed: false
