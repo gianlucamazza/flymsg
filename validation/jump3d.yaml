@@ -1,0 +1,56 @@
+# TTM-driven jump of the NeuroMechFly body (issues 90, 94). Version 1, fixed 2026-10-13
+# before any run. Changing a locked field requires incrementing `version` and updating
+# `content_sha256` and flymsg.jump3d_lock.VERSION_HASHES. `flymsg jump3d` prints this file.
+version: 1
+content_sha256: c93eeebd796df1913769f3625ec033745a0ff29ae188bcced938d0b9bab9e8d2
+
+issues: [90, 94]
+question: "Driven by the TTMn spikes the connectome model produces for a looming stimulus from both eyes, through the measured TTM twitch, how far does the NeuroMechFly body jump, against the distance measured in wingless females?"
+
+sources:
+  twitch: "Zumstein et al. 2004, J Exp Biol 207:3515, doi:10.1242/jeb.01181: TTM peak force 101 +/- 4.4 uN at the mesothoracic leg, 8.2 ms to peak (wild-type females)"
+  latency: "Allen & Murphey 2007, doi:10.1111/j.1460-9568.2007.05686.x, Table 1: giant fiber to TTM 0.85 ms"
+  distance: "Zumstein et al. 2004: wingless wild-type females jump 28.6 +/- 0.7 and 30.2 +/- 1.0 mm; 20% of the takeoff energy goes to air resistance"
+  body: "FlyGym v2.1.0 (NeLy-EPFL/flygym ca65a51), NeuroMechFly from a micro-CT of a female fly (Wang-Chen et al. 2024)"
+  anatomy: "Azevedo et al. 2024: the tergotrochanteral muscle extends the coxa-trochanter joint"
+
+neural:
+  stimulus: LC4
+  stimulus_n: 126
+  rate_hz: 100.0
+  stim_ms: 300.0
+  duration_ms: 300.0
+  motor:
+    lm: TTMn_L
+    rm: TTMn_R
+  seeds: [110, 111, 112]
+
+body:
+  replay_ms: 150.0
+  settle_ms: 200.0
+  posture_kp: 45.0
+  timestep_s: 0.0001
+
+decides:
+  range_min_mm: 28.6
+  range_max_mm: 37.75
+  bounds_from: "the lower measured mean (with air resistance) and the higher one without it: 30.2 / 0.8, since range scales with energy and 20% goes to the air"
+  verdict: "consistent if the mean drag-free range over seeds lies within the bounds; short or long otherwise; no_takeoff if a seed does not leave the ground"
+
+compensations:
+  - "Open loop: the body does not feed back to the neural model."
+  - "Posture of the other leg joints held by FlyGym's position actuators at its demo gain (kp 45)."
+  - "The TTM's moment arm is fixed at the stance posture, from the Jacobian at the distal active tarsal segment."
+  - "Twitch shape (alpha function) and linear summation are not measured; only the peak and its time are."
+  - "Only the TTM acts; the femur-tibia extensor and the other legs do not push."
+  - "Female body, male connectome."
+
+reported:
+  takeoff_ms:
+    decides: false
+  ttmn_spikes:
+    decides: false
+  velocity:
+    decides: false
+
+defaults_changed: false

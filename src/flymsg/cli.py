@@ -21,6 +21,7 @@ from flymsg import (
     homology,
     intervention,
     jump,
+    jump3d_lock,
     kc_sparseness,
     loop,
     manifest,
@@ -1075,6 +1076,39 @@ def cmd_t4t5(a, neurons, edges):
     print(f"report -> {path / 'report.txt'}")
 
 
+def cmd_jump3d(a, neurons, edges):
+    """The frozen TTM-driven jump of the NeuroMechFly body (issues #90, #94)."""
+    started = datetime.now(UTC)
+    doc = jump3d_lock.assert_matches_code()
+    print(jump3d_lock.summary(doc))
+    out = jump3d_lock.run(neurons, edges)
+    path = Path("runs/jump3d") / f"v{doc['version']}"  # never overwrite
+    path.mkdir(parents=True, exist_ok=True)
+    out["table"].to_json(path / "seeds.json", orient="records", indent=2)
+    text = out["table"].to_string(index=False) + f"\nverdict: {out['verdict']}"
+    print(text)
+    (path / "report.txt").write_text(text + "\n")
+    n = doc["neural"]
+    _stamp(
+        path,
+        "jump3d --run",
+        a,
+        neurons,
+        edges,
+        {
+            "jump3d_version": doc["version"],
+            "jump3d_sha256": doc["content_sha256"],
+            "rate_hz": n["rate_hz"],
+            "stim_ms": n["stim_ms"],
+            "body": "flygym 2.1.0 NeuroMechFly",
+        },
+        {"all": list(n["seeds"])},
+        started,
+        extra={"verdict": out["verdict"]},
+    )
+    print(f"report -> {path / 'report.txt'}")
+
+
 def cmd_benchmarks(a, neurons, edges):
     """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
@@ -1472,6 +1506,7 @@ COMMANDS = {
     "eye": cmd_eye,
     "odor": cmd_odor,
     "t4t5": cmd_t4t5,
+    "jump3d": cmd_jump3d,
     "kc-sparseness": cmd_kc_sparseness,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
@@ -1500,6 +1535,7 @@ MALECNS_ONLY = (
     "eye",
     "odor",
     "t4t5",
+    "jump3d",
     "kc-sparseness",
     "trace",
     "sensitivity",
@@ -1676,6 +1712,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the frozen Kenyon cell sparseness diagnostic (issue #95), or run it",
     )
     s.add_argument("--run", action="store_true", help="run the frozen diagnostic")
+    s = sub.add_parser(
+        "jump3d",
+        help="print the frozen TTM-driven NeuroMechFly jump (#90, #94), or run it",
+    )
+    s.add_argument("--run", action="store_true", help="run the frozen jump")
     s = sub.add_parser(
         "t4t5",
         help="print the frozen T4/T5 direction-selectivity test (#84), or run it",
@@ -1989,6 +2030,8 @@ def main() -> None:
             return print(kc_sparseness.summary())
         if a.cmd == "t4t5" and not a.run:
             return print(t4t5.summary())
+        if a.cmd == "jump3d" and not a.run:
+            return print(jump3d_lock.summary())
         if a.cmd == "behavior" and not a.run:
             return print(behavior.summary())
         if a.cmd == "benchmarks" and a.run and a.corners:
@@ -2027,6 +2070,8 @@ def main() -> None:
     except kc_sparseness.SparsenessError as err:
         sys.exit(f"flymsg: {err}")
     except t4t5.T4T5Error as err:
+        sys.exit(f"flymsg: {err}")
+    except jump3d_lock.Jump3DError as err:
         sys.exit(f"flymsg: {err}")
     except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")
