@@ -63,3 +63,46 @@ def test_n1_seeds_stay_the_locked_ones():
     doc = prereg.load()
     assert doc["n1"]["shuffle_seed"] == wiring.SHUFFLE_SEED == 0
     assert doc["n1"]["seeds"] == wiring.N1_SEEDS == 3
+
+
+LEGACY = """\
+note: "issue #20 is reopened"
+items:
+  - "Open loop: no feedback"
+"""
+
+
+def test_subset_1_keeps_the_registered_parse():
+    doc = prereg.load_yaml(LEGACY)
+    assert doc["note"] == '"issue'
+    assert doc["items"] == [{'"Open loop': 'no feedback"'}]
+
+
+def test_subset_2_reads_quotes():
+    doc = prereg.load_yaml("yaml_subset: 2\n" + LEGACY + "tail: x # cut\n")
+    assert doc["note"] == "issue #20 is reopened"
+    assert doc["items"] == ["Open loop: no feedback"]
+    assert doc["tail"] == "x"
+
+
+def test_only_registered_locks_depend_on_subset_1():
+    """A new lock that subset 1 misreads must declare yaml_subset: 2 (#159)."""
+    legacy = {
+        "jump3d.yaml",
+        "kc_sparseness.yaml",
+        "mb_plasticity.yaml",
+        "motor_map.yaml",
+        "silence_scan.yaml",
+        "t4t5.yaml",
+        "weight_rule.yaml",
+    }
+    misread = set()
+    for path in sorted((prereg.ROOT / "validation").rglob("*.yaml")):
+        text = path.read_text(encoding="utf-8")
+        if "yaml_subset: 2" in text.splitlines():
+            continue
+        quoted = prereg.load_yaml("yaml_subset: 2\n" + text)
+        quoted.pop("yaml_subset")
+        if prereg.load_yaml(text) != quoted:
+            misread.add(path.name)
+    assert misread <= legacy
