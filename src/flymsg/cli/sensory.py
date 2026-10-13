@@ -5,7 +5,17 @@ from pathlib import Path
 
 import pandas as pd
 
-from flymsg import data, eye, kc_sparseness, managed, odors, plasticity, progress, t4t5
+from flymsg import (
+    data,
+    eye,
+    kc_sparseness,
+    managed,
+    medulla,
+    odors,
+    plasticity,
+    progress,
+    t4t5,
+)
 from flymsg.cli.common import stamp
 
 
@@ -66,10 +76,19 @@ def cmd_t4t5(a, neurons, edges):
     out = t4t5.run(
         neurons, edges, a.data, steps, progress.Progress(t4t5.n_runs(doc), "t4t5")
     )
-    for name in ("table", "metrics", "pathway", "lmc", "configurations"):
-        out[name].to_csv(
-            path / f"{'spikes' if name == 'table' else name}.csv", index=False
-        )
+    for name in (
+        "table",
+        "metrics",
+        "pathway",
+        "lmc",
+        "configurations",
+        "medulla",
+        "t5",
+    ):
+        if name in out:
+            out[name].to_csv(
+                path / f"{'spikes' if name == 'table' else name}.csv", index=False
+            )
     text = "\n".join(
         [
             f"window columns: {out['window_columns']}",
@@ -80,6 +99,20 @@ def cmd_t4t5(a, neurons, edges):
             .round(2)
             .to_string(),
             out["pathway"].groupby("config").sum(numeric_only=True).to_string(),
+            *(
+                [
+                    out["medulla"]
+                    .groupby(["config", "type"])[
+                        ["settled_mv", "lowest_mv", "highest_mv"]
+                    ]
+                    .median()
+                    .round(2)
+                    .to_string(),
+                    out["t5"].to_string(index=False),
+                ]
+                if "medulla" in out
+                else []
+            ),
             f"verdict: {out['verdict']}",
         ]
     )
@@ -98,6 +131,11 @@ def cmd_t4t5(a, neurons, edges):
             "speed_deg_s": proto["speed_deg_s"],
             "acceptance_deg": proto["acceptance_deg"],
             "envelope": proto["envelope"],
+            **(
+                {"medulla_files_sha256": {k: v[1] for k, v in medulla.FILES.items()}}
+                if "graded_medulla" in proto
+                else {}
+            ),
         },
         {"all": [proto["seed"]]},
         started,

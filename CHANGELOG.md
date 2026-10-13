@@ -12,6 +12,11 @@
 
 ### Validation
 
+- **T4/T5 v3 lock** (#140): T4's medulla inputs Mi1, Tm3, Mi4, Mi9 and C3 become graded over
+  the potentials Groschner et al. 2022 recorded in vivo (Edmond, CC BY 4.0, fetched by
+  sha256 by `flymsg.medulla`); the LMC and medulla release rates are scanned (25
+  configurations, seed 94) and the verdict is on the four T4 subtypes, since T5's inputs have
+  no measured voltage in mV. No run.
 - **Kenyon cell sparseness v6 lock** (#85, #95): the eLNs are the types Eckstein et al. 2024
   liken to the cholinergic krasavietz LNs (lLN2T_a/b/c, 13 neurons; with lLN1_bc as a
   variant set), not the whole cholinergic ALLN class; every other cholinergic local neuron

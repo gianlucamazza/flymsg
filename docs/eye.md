@@ -104,3 +104,17 @@ over the eight stimuli; at 25–100 Hz the whole medulla stage is silent. In the
 are graded and the medulla inputs differ in timing (Behnia et al. 2014; [leads](leads.md));
 here they are spiking point neurons at rest, which disinhibition from the lamina does not
 lift, the outcome the lock's prior names. Outputs: `results/t4t5/v2/`.
+
+**Version 3 (locked 2026-10-13, no run; #140).** T4's medulla inputs Mi1, Tm3, Mi4, Mi9 and
+C3 become graded over the potentials Groschner et al. 2022 recorded in vivo to the same
+30°/s edges (Edmond doi:10.17617/3.8G, CC BY 4.0; `flymsg.medulla` fetches the five files by
+sha256 and the run recomputes the ranges). Per type, the mean dark potential stands at the
+model's rest, release is 0 at the lowest mean potential and saturates at the highest: Mi1
+−69.2 to −41.3 mV around a dark level of −65.2, Tm3 −69.4 to −42.5 (−64.4), Mi4 −66.7 to
+−52.3 (−65.1), Mi9 −62.5 to −50.4 (−58.0, an OFF cell releasing in darkness), C3 −74.0 to
+−46.9 (−66.8). The release rate of the medulla and of L1–L3 is not measured: both are scanned
+over 25–400 Hz (25 configurations, seed 94) at the middle photoreceptor and LMC ranges. T5's
+inputs Tm1, Tm2, Tm4 and Tm9 have no voltage in mV in any source found (Behnia et al. 2014,
+Kohn et al. 2021, Yang et al. 2016), so they stay spiking and v3 decides on the four T4
+subtypes; T5 is reported. Per-type timing (Mi1 71 ms against Tm3 53 ms, Behnia et al. 2014)
+is not set: the model has one membrane time constant.

@@ -9,8 +9,8 @@ from flymsg import cli, t4t5
 
 def test_locked_to_the_sourced_values():
     doc = t4t5.assert_matches_code()
-    assert doc["version"] == 2
-    assert t4t5.content_hash(doc) == t4t5.VERSION_HASHES[2]
+    assert doc["version"] == 3
+    assert t4t5.content_hash(doc) == t4t5.VERSION_HASHES[3]
     assert doc["protocol"]["acceptance_deg"] == 8.23
     assert doc["protocol"]["preferred"] == {
         "a": "front_to_back",
@@ -18,11 +18,28 @@ def test_locked_to_the_sourced_values():
         "c": "upward",
         "d": "downward",
     }
-    assert doc["supersedes"]["verdict"] == "neither"
+    assert doc["supersedes"]["verdict"] == "robust: neither"
+    assert doc["protocol"]["graded_medulla"] == ["Mi1", "Tm3", "Mi4", "Mi9", "C3"]
+    assert t4t5.n_runs(doc) == 200
 
 
-def test_the_envelope_has_17_configurations_over_the_measured_ranges():
+def test_version_3_scans_both_unmeasured_rates_at_the_middle_ranges():
     grid = t4t5.configurations(t4t5.load())
+    assert len(grid) == 25
+    assert {(c["photoreceptor_mv"], c["lmc_mv"]) for c in grid} == {(52.5, 32.5)}
+    assert {(c["lmc_rate_hz"], c["medulla_rate_hz"]) for c in grid} == {
+        (r, m) for r in t4t5.LMC_RATE_HZ for m in t4t5.MEDULLA_RATE_HZ
+    }
+
+
+def test_the_version_2_envelope_has_17_configurations():
+    doc = t4t5.load()
+    doc["protocol"] = {
+        k: v
+        for k, v in doc["protocol"].items()
+        if k not in ("graded_medulla", "medulla_mv")
+    }
+    grid = t4t5.configurations(doc)
     assert len(grid) == 17
     assert {c["lmc_mv"] for c in grid} == set(t4t5.LMC_MV)
     assert {c["photoreceptor_mv"] for c in grid} == set(t4t5.PHOTORECEPTOR_MV)
@@ -36,9 +53,49 @@ def test_an_envelope_outside_the_sources_is_refused():
     with pytest.raises(t4t5.T4T5Error, match="sourced"):
         t4t5.assert_matches_code(doc)
     doc = t4t5.load()
-    doc["protocol"]["seed"] = 91
-    with pytest.raises(t4t5.T4T5Error, match="spent"):
+    for seed in (91, 93):
+        doc["protocol"]["seed"] = seed
+        with pytest.raises(t4t5.T4T5Error, match="spent"):
+            t4t5.assert_matches_code(doc)
+
+
+def test_medulla_ranges_must_be_the_measured_types_and_contain_the_dark_level():
+    doc = t4t5.load()
+    doc["protocol"]["medulla_mv"]["Mi1"]["dark"] = -70.0
+    with pytest.raises(t4t5.T4T5Error, match="outside"):
         t4t5.assert_matches_code(doc)
+    doc = t4t5.load()
+    doc["protocol"]["graded_medulla"] = ["Mi1", "Tm3"]
+    with pytest.raises(t4t5.T4T5Error, match="measured"):
+        t4t5.assert_matches_code(doc)
+    doc = t4t5.load()
+    doc["decides"]["subtypes"] = ["T4a", "T5a"]
+    with pytest.raises(t4t5.T4T5Error, match="T4 subtypes"):
+        t4t5.assert_matches_code(doc)
+
+
+def test_medulla_curve_anchors_the_dark_potential_at_rest():
+    from flymsg import sim
+
+    p = sim.Params()
+    doc = t4t5.load()
+    mv = doc["protocol"]["medulla_mv"]
+    cfg = {
+        "photoreceptor_mv": 52.5,
+        "lmc_mv": 32.5,
+        "lmc_rate_hz": 100.0,
+        "medulla_rate_hz": 50.0,
+    }
+    g = t4t5.graded_spec(
+        np.array([0]), np.array([1]), cfg, 900.0, p, {"Mi9": np.array([2, 3])}, mv
+    )
+    assert g.idx.tolist() == [0, 1, 2, 3]
+    assert g.v_lo[2:] == pytest.approx(p.v_rest - (-58.0 - -62.5))
+    assert g.span[2:] == pytest.approx(-50.4 - -62.5)
+    assert g.rate_hz.tolist() == [900.0, 100.0, 50.0, 50.0]
+    # in darkness Mi9 releases the measured share of its range below the dark level
+    share = (p.v_rest - g.v_lo[2]) / g.span[2]
+    assert share == pytest.approx(4.5 / 12.1)
 
 
 def test_photoreceptor_gain_holds_the_response_at_steady_state():
@@ -111,7 +168,9 @@ def test_prints_the_protocol_without_data(monkeypatch, capsys, tmp_path):
     monkeypatch.setattr(cli.data, "load", boom)
     monkeypatch.setattr("sys.argv", ["flymsg", "--data", str(tmp_path), "t4t5"])
     cli.main()
-    assert "ON/OFF edges, 4 directions" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "ON/OFF edges, 4 directions" in out
+    assert "graded Mi1/Tm3/Mi4/Mi9/C3" in out and "decides on T4a/T4b/T4c/T4d" in out
 
 
 def test_vector_sum_and_angle_error():
@@ -163,3 +222,26 @@ def test_decide(t4, t5, expected):
     out = t4t5.decide(_table(t4, t5), doc["protocol"]["preferred"])
     assert out["verdict"] == expected
     assert out["metrics"]["polarity_ok"].all()
+
+
+def test_decide_on_t4_only():
+    doc = t4t5.load()
+    out = t4t5.decide(
+        _table(True, False),
+        doc["protocol"]["preferred"],
+        ["T4a", "T4b", "T4c", "T4d"],
+        3,
+    )
+    assert out["verdict"] == "both"
+    assert out["metrics"]["subtype"].tolist() == ["T4a", "T4b", "T4c", "T4d"]
+
+
+def test_medulla_ranges_of_a_trace():
+    from flymsg import medulla
+
+    traces = np.full((2, 2, 8000), -60.0)
+    traces[0, :, :1000] = [[-66.0], [-64.0]]
+    traces[0, 0, 4000] = -40.0
+    traces[1, 1, 5000] = -80.0
+    got = medulla.ranges_of(traces)
+    assert got == {"n": 2, "dark_mv": -65.0, "lowest_mv": -70.0, "highest_mv": -50.0}
