@@ -193,3 +193,7 @@ reported); no active T4/T5 or KC process was observed at final inspection. The o
 checkpoint directories and worktrees remain untouched. Neither an incomplete checkpoint
 nor the original lock-only format is promoted to a verified completed run. The twelve
 open issues retain the evidence/hardware acceptance requirements listed above.
+
+Attempt provenance also records host, kernel and OS when each attempt starts, preserving
+those fields across process-death recovery. These are diagnostic metadata; they do not
+change execution identity or retrospectively fill historical attempt records.
