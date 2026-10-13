@@ -117,6 +117,15 @@ directions). Both are GPL-3.0. `flymsg eye` downloads them into `data/raw/eyemap
 use; flymsg does not redistribute them or anything derived from them. See
 [embodiment](embodiment.md#eye-geometry-84).
 
+## Odor responses (`flymsg odor`)
+
+Odorant responses come from the Database of Odorant Responses (DoOR; Münch & Galizia 2016,
+Sci Rep 6:21841, doi:10.1038/srep21841), repository `ropensci/DoOR.data` at `db323a4`:
+`door_response_matrix.csv` (consensus response per odorant and receptor, normalised to
+[0, 1]), `door_mappings.csv` (receptor → glomerulus) and `odor.csv` (names, InChIKeys).
+They are CC BY-SA 4.0. `flymsg odor` downloads them into `data/raw/door/` on first use;
+flymsg does not redistribute them or anything derived from them.
+
 ## Female brain: FlyWire FAFB v783 (`--dataset fafb`)
 
 `flymsg --dataset fafb fetch` and `build` write the female brain to `data/fafb/` in the same
