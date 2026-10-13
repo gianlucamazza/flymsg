@@ -251,6 +251,26 @@ default, KC → KC without fast effect, cholinergic local neuron → PN removed,
 verdict lists the arms within the measured bounds. Named caveat: Huang et al. 2010 report a
 chemical component as well, and the lateral local neurons' transmitter is a prediction.
 
+**Result of version 2 (2026-10-13): within E, F — but by undershoot.** Run from `374309e`.
+
+| Arm                                     | KCs responding, odor 1 / 2 | Shared | PNs spiking |
+| --------------------------------------- | -------------------------- | ------ | ----------- |
+| A default                               | 25.2% / 25.4%              | 95%    | 73–74%      |
+| B KC → KC without fast effect           | 17.5% / 17.2%              | 95%    | 73%         |
+| E cholinergic local neuron → PN removed | 0.2% / 0%                  | 0      | 4.4–4.7%    |
+| F both                                  | 0.3% / 0%                  | 0      | 4.4–4.8%    |
+
+The antennal-lobe spread is found: without the cholinergic local neurons' chemical contacts
+onto projection neurons, which are electrical in the fly, one ORN type drives 4.5% of the PNs
+instead of 73%. The verdict lists E and F because they meet the upper bounds, but they do so
+by almost silencing the Kenyon cells (0.2% against the measured 6 ± 5%): the lock had no
+lower bound, a weakness stated here. Read together: the overlap came from the antennal lobe,
+and once it is gone a single ORN type at 100 Hz no longer drives Kenyon cells, which in the
+fly integrate about ten PNs (Turner et al. 2008). Real odors activate many receptor types;
+[#96](https://github.com/gianlucamazza/flymsg/issues/96) (odors as measured receptor vectors)
+is the test that can tell. The default model is unchanged. Outputs:
+`results/kc-sparseness/v2/`.
+
 ## Recording neuron states
 
 `flymsg trace STIM --neurons ...` (module `flymsg.tracing`) records, for chosen neurons, the

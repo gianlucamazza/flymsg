@@ -23,6 +23,7 @@ DIRS = (
     "silence-scan/v3",
     "mb-plasticity/v1",
     "kc-sparseness/v1",
+    "kc-sparseness/v2",
     "jump/intact",
     "jump/dnp01",
     "loop",
