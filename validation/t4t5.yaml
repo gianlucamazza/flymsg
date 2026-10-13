@@ -4,7 +4,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.t4t5.VERSION_HASHES. `flymsg t4t5` prints this file.
 version: 3
-content_sha256: e7a3bf42657983d910547530b9123a75bf60e13b663ce666d03bcaff15271793
+content_sha256: 84b3c1edfad1417b7cc78ad14d1e07310d3fdfec4b6c72d5e6fe130fc03e8f54
 
 issue: 140
 supersedes:
@@ -15,7 +15,7 @@ question: "With graded photoreceptors and L1-L3 as in version 2 and T4's medulla
 
 prior: "Lappalainen et al. 2024 (doi:10.1038/s41586-024-07939-3, Fig 2d): untrained connectome models with signs predict contrast preference well but direction selectivity poorly. Polarity is expected if contrast crosses the lamina; direction is the open question. The medulla neurons downstream of the lamina (Mi1, Tm3, Mi4, Mi9, Tm1, Tm2, Tm4, Tm9) stay spiking and silent at rest, so disinhibition alone may not reach them."
 
-seen_before_lock: "Versions 1 and 2 (results/t4t5/v1, seeds 90-92; results/t4t5/v2, seed 93, 17 configurations, robust: neither, with spikes per pathway type). Before this lock the Groschner et al. 2022 traces were read (cell counts, mean dark potential, lowest and highest mean values per type, the photodiode trace and the authors' notebook) and Behnia et al. 2014, Kohn et al. 2021 and Yang et al. 2016 were read for OFF-pathway voltages (none in mV). No simulation with graded medulla neurons has been run."
+seen_before_lock: "Versions 1 and 2 (results/t4t5/v1, seeds 90-92; results/t4t5/v2, seed 93, 17 configurations, robust: neither, with spikes per pathway type). Before this lock the Groschner et al. 2022 traces were read (cell counts, mean dark potential, lowest and highest mean values per type, the photodiode trace and the authors' notebook) and Behnia et al. 2014, Kohn et al. 2021 and Yang et al. 2016 were read for OFF-pathway voltages (none in mV). An engineering smoke run of the v3 code (first configuration, 0.3 deg of travel, 10 ms settle) was checked for output shapes only; no full-length moving edge has been run with graded medulla neurons."
 
 sources:
   subtypes: "Maisak et al. 2013, Nature, doi:10.1038/nature12320: T4 respond to ON edges, T5 to OFF edges; subtypes a-d prefer front-to-back, back-to-front, upward, downward (Shinomiya et al. 2019, eLife 8:e40025, Fig 3B)"
