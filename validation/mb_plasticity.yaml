@@ -1,0 +1,79 @@
+# Dopamine-gated depression at Kenyon cell -> MBON-γ1pedc synapses (issue 85). Version 1,
+# fixed 2026-10-13 before any run. Optional and off by default: sim.Params and every other
+# protocol are unchanged; only `flymsg mb-plasticity` applies the rule. Changing a locked
+# field requires incrementing `version` and updating `content_sha256` and
+# flymsg.plasticity.VERSION_HASHES. `flymsg mb-plasticity` prints this file and does not
+# simulate.
+version: 1
+content_sha256: ca75a5247ff4f5081f1034bbbf939636181829f5dcb2ad11fae6f1fb13610b50
+
+issue: 85
+question: "With the depression measured by Hige et al. 2015 applied to the Kenyon cell synapses onto MBON11 (MBON-γ1pedc>α/β), does the model's MBON11 response to the paired odor drop as in the fly, and the unpaired odor's not as much?"
+
+source:
+  paper: "Hige, Aso, Modi, Rubin, Turner 2015, Neuron 88:985, doi:10.1016/j.neuron.2015.11.003"
+  pairing: "1 s odor (CS+); four 1 ms light pulses to PPL1-γ1pedc at 2 Hz from 0.2 s after odor onset (Fig 1C); one pulse at 0.8 s also suffices (Fig S6F); DAN activation before the odor has no effect (Fig 1G-J)"
+  epsc_charge_change: -0.90
+  epsc_charge_sem: 0.037
+  epsc_n: 5
+  cs_plus_spike_change: -0.80
+  cs_plus_spike_sem: 0.057
+  cs_minus_spike_change: -0.27
+  cs_minus_spike_sem: 0.071
+  spike_n: 7
+  persistence: "at least 40 min with only a small sign of recovery (Fig S4)"
+  compartment: "no spillover to MBON-γ2α′1 (Fig 5)"
+
+rule:
+  pre: "^KC"
+  post: MBON11
+  post_n: 2
+  dan: PPL101
+  dan_n: 2
+  factor: 0.10
+  factor_from: "1 + epsc_charge_change: the KC -> MBON11 charge after pairing is 10% of before"
+  pulses_ms: [200.0, 700.0, 1200.0, 1700.0]
+  eligible: "a Kenyon cell that spikes in the window (pulse - 800 ms, pulse] of at least one pulse"
+  window_ms: 800.0
+  persistence: whole_test
+
+compensations:
+  - "Eligibility: a KC spike up to 800 ms before a pulse (the longest forward lag measured, Fig S6F) makes all its synapses onto MBON11 depressed; the shape of the window is not measured."
+  - "Whole-response charge as a per-synapse factor: the 90% charge drop is applied to every synapse of an eligible KC."
+  - "All or none: one pulse in the window suffices; the dose dependence on DAN spikes is not measured for this synapse."
+  - "Both sides: PPL101_L and PPL101_R are pulsed together, and both MBON11 neurons are depressed."
+  - "No recovery, no potentiation, no reversal by DAN alone: none was measured synaptically for γ1pedc."
+  - "The DAN is not simulated as a stimulus: dopamine has no fast effect in the model (sign 0), so its pulses act only as the rule's trigger times."
+  - "Odors are ORN types, not OCT and MCH: the receptor map of those odors is not in the dataset."
+
+protocol:
+  cs_plus: ORN_VA1d
+  cs_plus_n: 132
+  cs_minus: ORN_DL3
+  cs_minus_n: 103
+  odor_rule: "the two ORN types with the most neurons that carry no fru/dsx annotation and are not in the held-out manifest (ORN_DM1, ORN_V)"
+  rate_hz: 100.0
+  odor_ms: 1000.0
+  test_duration_ms: 1000.0
+  pairing_duration_ms: 1800.0
+  statistic: "MBON11 spikes (both neurons) during the 1 s odor"
+  min_response: 3.0
+  seeds: [50, 51, 52]
+  order: "per seed: CS+ and CS- tests before, the pairing run with CS+, the rule, CS+ and CS- tests after, all on the same seed"
+
+decides:
+  undetermined: "the MBON11 response before pairing is below min_response spikes per seed on average for CS+ or CS-"
+  consistent: "the CS+ response drops by at least 0.498, the CS- response by at most 0.646, and the CS+ drop exceeds the CS- drop"
+  inconsistent: "any other outcome"
+  bounds_from: "measured mean -/+ 2 SD with SD = SEM x sqrt(n): 0.80 - 2 x 0.057 x sqrt(7) = 0.498; 0.27 + 2 x 0.071 x sqrt(7) = 0.646"
+
+reported:
+  eligible_kcs:
+    decides: false
+  kc_overlap:
+    decides: false
+    what: "Kenyon cells spiking in the CS+ and in the CS- test before pairing, and in both"
+  per_seed_counts:
+    decides: false
+
+defaults_changed: false

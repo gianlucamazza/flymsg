@@ -24,6 +24,7 @@ from flymsg import (
     manifest,
     nulls,
     partner_followup,
+    plasticity,
     prereg,
     quality,
     sensitivity,
@@ -913,6 +914,46 @@ def cmd_partner_followup(a, neurons, edges):
     print(f"report -> {path / 'report.txt'}")
 
 
+def cmd_mb_plasticity(a, neurons, edges):
+    """The frozen KC -> MBON11 depression protocol (issue #85). No flag changes the rule."""
+    started = datetime.now(UTC)
+    doc = plasticity.assert_matches_code()
+    print(plasticity.summary(doc))
+    out = plasticity.run(neurons, edges)
+    path = Path("runs/mb-plasticity") / f"v{doc['version']}"  # never overwrite
+    path.mkdir(parents=True, exist_ok=True)
+    out["table"].to_csv(path / "counts.csv", index=False)
+    text = "\n".join(
+        [
+            out["table"].to_string(index=False),
+            f"CS+ drop: {out['cs_plus_drop']:.3f}",
+            f"CS- drop: {out['cs_minus_drop']:.3f}",
+            f"verdict: {out['verdict']}",
+        ]
+    )
+    print(text)
+    (path / "report.txt").write_text(text + "\n")
+    proto = doc["protocol"]
+    _stamp(
+        path,
+        "mb-plasticity --run",
+        a,
+        neurons,
+        edges,
+        {
+            "plasticity_version": doc["version"],
+            "plasticity_sha256": doc["content_sha256"],
+            "factor": doc["rule"]["factor"],
+            "rate_hz": proto["rate_hz"],
+            "odor_ms": proto["odor_ms"],
+        },
+        {"all": list(proto["seeds"])},
+        started,
+        extra={"verdict": out["verdict"]},
+    )
+    print(f"report -> {path / 'report.txt'}")
+
+
 def cmd_benchmarks(a, neurons, edges):
     """The frozen held-out cases. No flag chooses a weight that is not in the manifest."""
     started = datetime.now(UTC)
@@ -1306,6 +1347,7 @@ COMMANDS = {
     "behavior": cmd_behavior,
     "silence-scan": cmd_silence_scan,
     "partner-followup": cmd_partner_followup,
+    "mb-plasticity": cmd_mb_plasticity,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
     "experiment": cmd_experiment,
@@ -1329,6 +1371,7 @@ MALECNS_ONLY = (
     "behavior",
     "silence-scan",
     "partner-followup",
+    "mb-plasticity",
     "trace",
     "sensitivity",
     "experiment",
@@ -1499,6 +1542,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="JSON-lines file; an interrupted run resumes from it",
     )
+    s = sub.add_parser(
+        "mb-plasticity",
+        help="print the frozen KC -> MBON11 depression protocol (issue #85), or run it",
+    )
+    s.add_argument("--run", action="store_true", help="run the frozen protocol")
     sub.add_parser("fetch", help="download raw tables (malecns ~1.1 GB, fafb ~135 MB)")
     sub.add_parser("build", help="compact raw tables to data/*.parquet")
     s = sub.add_parser(
@@ -1788,6 +1836,8 @@ def main() -> None:
             return print(silence_scan.summary())
         if a.cmd == "partner-followup" and not a.run:
             return print(partner_followup.summary())
+        if a.cmd == "mb-plasticity" and not a.run:
+            return print(plasticity.summary())
         if a.cmd == "behavior" and not a.run:
             return print(behavior.summary())
         if a.cmd == "benchmarks" and a.run and a.corners:
@@ -1820,6 +1870,8 @@ def main() -> None:
     except silence_scan.ScanError as err:
         sys.exit(f"flymsg: {err}")
     except partner_followup.FollowupError as err:
+        sys.exit(f"flymsg: {err}")
+    except plasticity.PlasticityError as err:
         sys.exit(f"flymsg: {err}")
     except ValueError as err:  # bad argument combinations reaching the model
         sys.exit(f"flymsg: {err}")

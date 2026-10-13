@@ -42,8 +42,9 @@ experiments. `flymsg calibrate` runs the same battery over a parameter grid. Cod
   parameter that transfers into this LIF without being tuned on the behaviour it would
   explain. The silence failure is not a missing giant-fiber gap junction. `TTMn_R` still
   fires, so some other partner still drives it, and that partner is not named.
-  Neuromodulation and associative learning are closed as blocked: the evidence is absent,
-  and no module is added.
+  Neuromodulation and associative learning were closed as blocked: the evidence was
+  absent. On 2026-10-13 one measured rule, the dopamine-gated depression at Kenyon cell →
+  MBON11 (Hige et al. 2015), was added as an optional protocol, locked before its run (#85).
 - **No held-out behavior remains eligible** (2026-10-11). The frozen partition already
   assigned every mapped behavior to calibration, or listed it as exploratory and
   disqualified it in the same note. The one-bit loop is not that protocol and failed

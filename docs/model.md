@@ -168,6 +168,29 @@ signal is specified. A network-wide STDP rule is not the task. A body is not req
 The missing piece is the evidence. #11 depends on #10 only if that modulator is the
 reinforcement signal, and #10 added none.
 
+## Dopamine-gated depression at Kenyon cell to MBON11 synapses (optional, 2026-10-13)
+
+The evidence #11 lacked exists for one synapse set. Hige et al. 2015
+(doi:10.1016/j.neuron.2015.11.003) paired a 1 s odor with four 1 ms pulses to the
+PPL1-γ1pedc dopamine neurons at 2 Hz from 0.2 s after odor onset. The Kenyon cell input to
+MBON-γ1pedc>α/β fell by 90 ± 3.7% in charge (n = 5), and the odor response by 80 ± 5.7% in
+spikes (n = 7, 118 → 24), against 27 ± 7.1% for the unpaired odor. Pairing with the dopamine
+pulses before the odor did nothing, and the depression lasted at least 40 min.
+
+`flymsg.plasticity` applies that measurement and nothing else, locked in
+[`validation/mb_plasticity.yaml`](../validation/mb_plasticity.yaml) before any run
+([#85](https://github.com/gianlucamazza/flymsg/issues/85)). The depression outlasts a trial,
+so it acts between trials: a pairing run records which Kenyon cells spike up to 800 ms before
+a pulse, their synapses onto both MBON11 neurons (41,460 synapses from 3,623 Kenyon cells,
+88–89% of MBON11's input) are scaled by 0.10 in the weight matrix, and the test runs use
+that matrix. The kernel, `sim.Params` and every other protocol are unchanged; only
+`flymsg mb-plasticity` applies the rule. The lock names seven compensations, among them the
+shape of the eligibility window, all-or-none induction, both sides together, and no
+recovery. Its test asks whether the model's MBON11 response to the paired odor drops by at
+least 49.8% and the unpaired one by at most 64.6% (the measured means ∓ 2 SD), with
+`ORN_VA1d` and `ORN_DL3` as the two odors by a stated rule. It is a model-side consistency
+check of one rule, not a learning model of the mushroom body.
+
 ## Recording neuron states
 
 `flymsg trace STIM --neurons ...` (module `flymsg.tracing`) records, for chosen neurons, the

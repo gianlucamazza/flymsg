@@ -36,6 +36,11 @@
 
 ### Pre-registration
 
+- **Dopamine-gated depression at KC → MBON11, v1** (#85): the one plasticity measured on an
+  identified synapse (Hige et al. 2015: −90% charge, forward pairing only, ≥ 40 min) as an
+  optional rule applied between trials to the weight matrix; the kernel and the defaults are
+  unchanged. Seven compensations named; the test asks whether the paired odor's MBON11
+  response drops ≥ 49.8% and the unpaired ≤ 64.6%. `flymsg mb-plasticity`.
 - **Residual partner follow-up v1** (#76): two model-side tests of the scan v3 naming,
   locked before any run on fresh seeds 40–42. Left: the scan arm mirrored (`LC4_L` →
   `TTMn_L`), testing only DNp02 and DNp06 with the scan's null. Drive: `DNp02_R`, `DNp06_R`
