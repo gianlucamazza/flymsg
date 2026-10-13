@@ -14,7 +14,7 @@ directory a doc cites is added to the table below in the same commit.
 | `loop/`                       | `flymsg loop --sim LC4_R …` (M2)                                 |
 | `sensitivity/v1/`             | `flymsg sensitivity --run` (#28)                                 |
 | `mb-plasticity/v1/`           | `flymsg mb-plasticity --run` (#85)                               |
-| `kc-sparseness/v1/` … `v4/`   | `flymsg kc-sparseness --run` (#95); `docs/img/kc-sparseness.svg` |
+| `kc-sparseness/v1/` … `v5/`   | `flymsg kc-sparseness --run` (#95); `docs/img/kc-sparseness.svg` |
 | `jump3d/v1/`                  | `flymsg jump3d --run` (#90, #94); `docs/img/jump-range.svg`      |
 | `t4t5/v1/`                    | `flymsg t4t5 --run` (#84)                                        |
 | `partner-followup/v1/`        | `flymsg partner-followup --run` (#76), every null draw           |
