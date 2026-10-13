@@ -1,0 +1,17 @@
+name: Bug
+description: Wrong output, a crash, or docs that disagree with the code
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened and what was expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduce
+      description: Command, flymsg version or commit, dataset (malecns or fafb).
+    validations:
+      required: true

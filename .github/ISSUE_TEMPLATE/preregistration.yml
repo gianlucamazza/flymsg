@@ -1,0 +1,35 @@
+name: Pre-registered experiment
+description: A question the model can answer, locked before any run
+labels: [preregistration]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: One sentence. Model-side unless an animal measurement is attached.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: DOI and figure/table for every value the lock uses. Nothing invented.
+    validations:
+      required: true
+  - type: textarea
+    id: protocol
+    attributes:
+      label: Protocol and verdicts
+      description: Stimulus, arms, seeds (fresh, not spent by an earlier version), null, thresholds, the outcomes that decide and the failure rule.
+    validations:
+      required: true
+  - type: textarea
+    id: seen
+    attributes:
+      label: Seen before the lock
+      description: Any exploratory run or listing already looked at, so the lock can disclose it.
+  - type: textarea
+    id: compensations
+    attributes:
+      label: Compensations
+      description: Every unmeasured choice, named, with its reason.
