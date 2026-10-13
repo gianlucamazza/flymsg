@@ -325,6 +325,11 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: TTM-driven NeuroMechFly jump v1, short.** Seeds 110–112. Takeoff at 28–32 ms,
+0.05 m/s, range 0.3–0.5 mm against 28.6–37.75 mm: only the right TTMn fires before takeoff,
+one twitch is below the force a jump needs, and the TLM is absent. Report:
+`results/jump3d/v1/`.
+
 **2026-10-13: T4/T5 through the eye v1, neither.** Seeds 90–92, edges at 30°/s. No T4/T5
 spike: photoreceptors fire, but their inhibitory (histaminergic) synapses cannot move silent
 spiking lamina neurons; the fly's lamina is graded and tonically active. Report:
