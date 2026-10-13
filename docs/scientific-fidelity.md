@@ -4,7 +4,7 @@ Status: proposed, 2026-10-13. Documentation-only; no changes to scored results o
 
 ## Scientific baseline
 
-The calibrated battery passes 29/29, but held-out ORN_DM1 fails. T4/T5 v2 does not activate T4/T5, Kenyon cell sparseness v1–v5 is dense or silent, and the NeuroMechFly jump is short. The scored motor map remains unmapped even though 406 of 708 motor neurons have a MANC muscle annotation. Numerical agreement does not imply biological validity.
+The calibrated battery passes [29/29](validation.md#current-status), but held-out [ORN_DM1](benchmarks.md) fails. [T4/T5 v2](eye.md#t4t5-version-2-graded-photoreceptors-and-lamina-lock-2026-10-13-84-97) does not activate T4/T5, [Kenyon cell sparseness v1–v5](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13) is dense or silent, and the [NeuroMechFly jump](embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94) is short. The [scored motor map](../validation/motor_map.yaml) remains unmapped even though [406 of 708 motor neurons](embodiment.md#existing-evidence-and-blockers) have a MANC muscle annotation. Numerical agreement does not imply biological validity.
 
 ## Evidence contract
 
