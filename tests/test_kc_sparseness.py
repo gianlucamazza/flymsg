@@ -10,11 +10,11 @@ from flymsg import cli, kc_sparseness
 
 def test_locked_to_the_measured_bounds_and_the_plasticity_odors():
     doc = kc_sparseness.assert_matches_code()
-    assert doc["version"] == 4
-    assert kc_sparseness.content_hash(doc) == kc_sparseness.VERSION_HASHES[4]
+    assert doc["version"] == 5
+    assert kc_sparseness.content_hash(doc) == kc_sparseness.VERSION_HASHES[5]
     assert list(doc["arms"]) == ["A", "E", "F"]
     assert doc["supersedes"]["verdict"] == "none"
-    assert len(kc_sparseness.coupled_arms(doc)) == 12
+    assert len(kc_sparseness.coupled_arms(doc)) == 8
     assert doc["protocol"]["odors"] == ["3-octanol", "4-methylcyclohexanol"]
     assert doc["decides"]["sparse_min"] == 0.01
     assert doc["defaults_changed"] is False
@@ -45,11 +45,12 @@ def test_prints_the_protocol_without_data(monkeypatch, capsys, tmp_path):
     )
     cli.main()
     out = capsys.readouterr().out
-    assert "E ach_ln_pn" in out and "DoOR" in out and "12 coupled arms" in out
+    assert "E ach_ln_pn" in out and "DoOR" in out and "8 coupled arms" in out
 
 
 @pytest.mark.parametrize(
-    ("seeds", "spent"), [([60, 61, 62], 1), ([70, 71, 72], 2), ([80, 81, 82], 3)]
+    ("seeds", "spent"),
+    [([60, 61, 62], 1), ([70, 71, 72], 2), ([80, 81, 82], 3), ([83, 84, 85], 4)],
 )
 def test_v3_refuses_spent_seeds(seeds, spent):
     doc = kc_sparseness.load()
@@ -65,13 +66,25 @@ def test_v3_uses_hige_odors():
         kc_sparseness.assert_matches_code(doc)
 
 
-def test_the_sister_coefficient_is_the_measured_one():
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("sister_cc", 0.05),
+        ("eln_to_pn_cc", 0.0083),
+        ("pn_to_eln_cc", 0.0),
+        ("eln_spike_mv", 10.0),
+    ],
+)
+def test_the_coupling_is_the_measured_one(key, value):
     doc = kc_sparseness.load()
-    doc["coupling"]["sister_cc"] = 0.05
+    doc["coupling"][key] = value
     with pytest.raises(kc_sparseness.SparsenessError, match="sourced"):
         kc_sparseness.assert_matches_code(doc)
+
+
+def test_spikelet_durations_start_at_none():
     doc = kc_sparseness.load()
-    doc["coupling"]["eln_pn"] = [0.1, 1.0]
+    doc["coupling"]["spike_ms"] = [0.5, 1.0]
     with pytest.raises(kc_sparseness.SparsenessError, match="start at 0"):
         kc_sparseness.assert_matches_code(doc)
 
@@ -99,43 +112,22 @@ def test_gap_pairs_join_chemical_partners_and_ipsilateral_sisters():
     assert sisters.values.tolist() == [[2, 3]]
 
 
-def test_gap_for_scales_the_median_pn_total_to_the_grid_value():
+def test_measured_gap_couples_each_side_and_lets_only_eln_spikes_cross():
+    from flymsg import sim
+
     neurons, edges, idx = _antennal_lobe()
-    eln = kc_sparseness.gap_for(
-        *kc_sparseness.gap_pairs(neurons, edges, idx), 0.3, 0.013
-    )
-    totals = {}
-    for i, j, c in zip(eln.i, eln.j, eln.coupling, strict=True):
-        if i in (0, 1):
-            totals[j] = totals.get(j, 0.0) + c
-    # PN totals 10 and 55 synapses: median 32.5 -> 0.3
-    assert np.median(list(totals.values())) == pytest.approx(0.3)
-    assert eln.coupling[-1] == pytest.approx(0.013 / 0.987)
-    only_sisters = kc_sparseness.gap_for(
-        *kc_sparseness.gap_pairs(neurons, edges, idx), 0.0, 0.013
-    )
-    assert only_sisters.i.tolist() == [2]
-
-
-def test_least_coupling_is_the_smallest_within_arm():
-    doc = kc_sparseness.load()
-    rows = []
-    for name, _base, k in kc_sparseness.coupled_arms(doc):
-        good = name.startswith("E") and k >= 0.1
-        f = 0.06 if good else 0.3
-        rows.append(
-            {
-                "arm": name,
-                "fraction_1": f,
-                "fraction_2": f,
-                "shared_of_1": 0.3,
-                "shared_of_2": 0.3,
-            }
-        )
-    assert kc_sparseness.least_coupling(pd.DataFrame(rows), doc) == {
-        "E": 0.1,
-        "F": None,
-    }
+    eln, sisters = kc_sparseness.gap_pairs(neurons, edges, idx)
+    gap = kc_sparseness.measured_gap(eln, sisters, 5, idx["ACH_LN"], 1.0)
+    assert gap.i.tolist() == [2, 3, 3, 2] and gap.j.tolist() == [0, 0, 1, 3]
+    assert gap.coupling[:3] == pytest.approx([0.0021 / 0.9979] * 3)
+    assert gap.coupling_back[:3] == pytest.approx([0.0039 / 0.9961] * 3)
+    assert gap.coupling[3] == gap.coupling_back[3] == pytest.approx(0.013 / 0.987)
+    assert gap.spike_mv.tolist() == [40.0, 40.0, 0.0, 0.0, 0.0] and gap.spike_ms == 1.0
+    nodes, *_, width, amp = sim.gap_arrays(gap, 5, sim.Params())
+    assert nodes.tolist() == [0, 1, 2, 3] and width == 10
+    assert amp.tolist() == [40.0, 40.0, 0.0, 0.0]
+    passive = kc_sparseness.measured_gap(eln, sisters, 5, idx["ACH_LN"], 0.0)
+    assert passive.spike_mv is None and passive.spike_ms is None
 
 
 def test_the_lower_bound_rejects_a_silent_arm():
@@ -212,8 +204,7 @@ def test_kc_recurrence_spreads_an_odor_and_arm_b_removes_it():
     coupled = {**doc, "decides": base["decides"]}
     out = kc_sparseness.protocol(W, idx, coupled)
     t = out["table"].set_index("arm")
-    assert t.loc["F+gap0", "responders_1"] == t.loc["F", "responders_1"] == 1
-    assert out["prediction"]["F"] == 0.0
+    assert t.loc["F+spike0ms", "responders_1"] == t.loc["F", "responders_1"] == 1
 
 
 def test_an_interrupted_run_resumes_to_the_same_table(tmp_path):
