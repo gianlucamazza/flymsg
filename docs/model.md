@@ -138,8 +138,9 @@ fire once per input spike.
 **Other weight rules (optional, 2026-10-13).** `sim.weight_matrix(..., post_scale=...)`
 multiplies every weight onto a neuron by that neuron's value, so a lock can state a rule
 other than count × `w_syn`; without it the weights are unchanged. `sim.density_scale(area,
-ref)` gives the rule of Liu et al. (2022), where a unitary EPSP follows synapse density on
-the postsynaptic neuron (count over surface area) better than count: `ref / area`, with the
+ref)` gives the rule of Liu et al. (2022), where a unitary EPSP increases linearly with
+synapse density on the postsynaptic neuron (count over surface area; they report no
+count-only comparison): `ref / area`, with the
 reference area stated by the lock. `scripts/mesh_area.mjs BODYID ...` measures a neuron's
 surface area from its published mesh at full resolution with the viewer's own readers and
 Draco decoder (DNp01_R, bodyId 10001: about 59,800 µm² over 45 M triangles); holes in a
