@@ -286,6 +286,24 @@ on seeds 80–82, the same four arms, and the lower bound v2 lacked: between 1% 
 the verdict: the share of shared responders against the 30% (OCT) and 33% (MCH) that Hige et
 al. 2015 measured for exactly these odors.
 
+**Result of version 3 (2026-10-13): none.** Run from `c1cf896`.
+
+| Arm                                     | KCs responding, OCT / MCH | Shared, of OCT / MCH | PNs spiking |
+| --------------------------------------- | ------------------------- | -------------------- | ----------- |
+| A default                               | 36% / 30%                 | 82% / 99%            | 75–79%      |
+| B KC → KC without fast effect           | 22.5% / 19.6%             | 84% / 97%            | 75–79%      |
+| E cholinergic local neuron → PN removed | 0.2% / 0.2%               | 0                    | 8–12%       |
+| F both                                  | 0.2% / 0.2%               | 0                    | 8–12%       |
+
+With real odors the model has two regimes and the fly's lies between them: with the
+lateral excitation of the antennal lobe as fast chemical synapses, Kenyon cells respond
+densely and the two odors share 82–99% of them (Hige et al.: 30–33%); without it, projection
+neurons still respond but no longer recruit Kenyon cells. One global synaptic weight with no
+gap junctions cannot produce the sparse code, and tuning it is not allowed. What would: the
+measured electrical coupling of excitatory local neurons to projection neurons, the evidence
+[#85](https://github.com/gianlucamazza/flymsg/issues/85) already asks for. The default model
+is unchanged. Outputs: `results/kc-sparseness/v3/`.
+
 ## Recording neuron states
 
 `flymsg trace STIM --neurons ...` (module `flymsg.tracing`) records, for chosen neurons, the

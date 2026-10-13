@@ -1,0 +1,66 @@
+{
+  "command": "kc-sparseness --run",
+  "config": {
+    "odor_ms": 1000.0,
+    "odor_source": "door",
+    "rate_hz": 100.0,
+    "sparseness_sha256": "0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2",
+    "sparseness_version": 3
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "data_dir": "data",
+    "verdict": "none"
+  },
+  "git": {
+    "commit": "c1cf89671a1e532d6dee1487bd11d38f067acef6",
+    "dirty": false
+  },
+  "packages": {
+    "flymsg": "0.8.42",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "pyarrow": "25.0.1",
+    "scipy": "1.18.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.8-arch1-2-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.8-arch1-2",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "content_sha256": "fe54f4512b024a37d3c8602c1fe9944f89f500675c1bbc01aa456bda657cafa8",
+    "version": 1
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "all": [
+      80,
+      81,
+      82
+    ]
+  },
+  "timestamps": {
+    "finished_at": "2026-10-13T01:56:48.856187+00:00",
+    "started_at": "2026-10-13T01:50:51.863393+00:00"
+  }
+}

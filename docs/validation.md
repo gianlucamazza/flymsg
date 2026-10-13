@@ -325,6 +325,12 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: Kenyon cell sparseness v3, none.** Hige et al. 2015's odors from DoOR, seeds
+80–82, bounds 1–17% and ≤ 64.6% shared. Default: 36% / 30% of Kenyon cells, 82–99% shared;
+without fast KC → KC: 22.5% / 19.6%; without the cholinergic local neuron → PN chemical
+contacts: 0.2%. Dense or silent, never sparse: the antennal-lobe electrical coupling the model
+lacks is the missing piece. Report: `results/kc-sparseness/v3/`.
+
 **2026-10-13: partner follow-up v1.** Seeds 40–42, locked before the run. Left mirror:
 `replicates` (DNp02 p 0.001, DNp06 p 0.003). Direct drive at 200 Hz without LC4:
 `single_sufficient: DNp06_R` (0 / 3–6 / 8–11 `TTMn_R` spikes for DNp02, DNp06, pair; matched
