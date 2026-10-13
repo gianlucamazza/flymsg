@@ -171,7 +171,7 @@ the final path. A clean committed worktree is required. See
 | `silence-scan [--run]`                                          | the locked residual `TTMn_R` partner scan (#20); prints the protocol without `--run`                    |
 | `partner-followup [--run]`                                      | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                          |
 | `mb-plasticity [--run]`                                         | the locked dopamine-gated KC → MBON11 depression (#85), applied between trials                          |
-| `kc-sparseness [--run]`                                         | the locked Kenyon-cell sparseness diagnostic (#95), v1–v4: recurrence, antennal lobe, odors, coupling   |
+| `kc-sparseness [--run]`                                         | the locked Kenyon-cell sparseness diagnostic (#95), v1–v5: recurrence, antennal lobe, odors, coupling   |
 | `jump3d [--run]`                                                | the locked TTM-driven jump: TTMn spikes → measured twitch → NeuroMechFly in MuJoCo (#90, #94)           |
 | `t4t5 [--run]`                                                  | the locked T4/T5 test: ON/OFF edges moving through the measured eye; polarity and direction (#84)       |
 | `odor NAME`                                                     | a DoOR odorant as a response per MaleCNS ORN type (fetched, CC BY-SA)                                   |

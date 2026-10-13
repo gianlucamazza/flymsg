@@ -4,6 +4,12 @@
 
 ### Result
 
+- **Kenyon cell sparseness v5: none** (#95, #85). With the measured asymmetric eLN ↔ PN
+  coupling, sister PNs at 0.013 and eLN spikes crossing as 40 mV spikelets of 0–2 ms, every
+  coupled arm stays silent (0.22–0.30% of Kenyon cells, floor 1%), as without coupling, and
+  the spikelet duration does not change it. At the measured coefficients the coupling is not
+  the missing excitation. Run from the lock commit `00aff9c`, resumed once from saved arms.
+
 - **Kenyon cell sparseness v4: none** (#95, #85). With the cholinergic local neuron → PN
   contacts as electrical synapses (coupling 0–1, sister PNs at Kazama & Wilson's 0.013), no
   arm is sparse: Kenyon cells stay at ≤ 0.3% and fall silent as coupling grows. Coupling

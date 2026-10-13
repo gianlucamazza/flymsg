@@ -7,7 +7,7 @@ Reads results/ (tracked; filled from runs/ by scripts/archive_results.py, manife
   results/jump/{intact,dnp01}/  flymsg jump --sim LC4_R [--silence DNp01]
   results/loop/               flymsg loop --sim LC4_R ...
   results/sensitivity/v1/     flymsg sensitivity --run
-  results/kc-sparseness/v1/ … v4/  flymsg kc-sparseness --run
+  results/kc-sparseness/v1/ … v5/  flymsg kc-sparseness --run
   results/jump3d/v1/          flymsg jump3d --run
   validation/homology/        flymsg homology
 and reruns one exploratory simulation (the scored ORN_DM1 corner, seed 0) for the Kenyon
@@ -133,8 +133,8 @@ def sens() -> str:
 
 
 # Arms named by each version's result: the default, v1's recurrence-off arm, the
-# silent cholinergic-local-neuron arm, and the two ends of the v4 coupling scan
-# (0.2% down to 0%). Not a new comparison.
+# silent cholinergic-local-neuron arm, the two ends of the v4 coupling scan (0.2% down
+# to 0%), and the two ends of the v5 spikelet scan (0 and 2 ms). Not a new comparison.
 KC_ARMS = (
     (1, "A"),
     (1, "B"),
@@ -145,6 +145,9 @@ KC_ARMS = (
     (4, "A"),
     (4, "E+gap0"),
     (4, "E+gap1"),
+    (5, "A"),
+    (5, "E+spike0ms"),
+    (5, "E+spike2ms"),
 )
 
 

@@ -1,67 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="780" height="314" viewBox="0 0 780 314" font-family="system-ui, sans-serif" font-size="10">
-<rect width="780" height="314" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="380" viewBox="0 0 780 380" font-family="system-ui, sans-serif" font-size="10">
+<rect width="780" height="380" fill="#ffffff"/>
 <text x="12" y="18" font-size="12">Kenyon cell sparseness: dense, or silent</text>
-<rect x="108" y="36" width="280" height="198" fill="none" stroke="#999"/>
+<rect x="108" y="36" width="280" height="264" fill="none" stroke="#999"/>
 <text x="108" y="30" font-size="11">Responding, odor 1</text>
-<line x1="108.0" x2="108.0" y1="234" y2="237" stroke="#999"/><text x="108.0" y="248" text-anchor="middle">0</text>
-<line x1="167.3" x2="167.3" y1="234" y2="237" stroke="#999"/><text x="167.3" y="248" text-anchor="middle">25</text>
-<line x1="226.6" x2="226.6" y1="234" y2="237" stroke="#999"/><text x="226.6" y="248" text-anchor="middle">50</text>
-<line x1="286.0" x2="286.0" y1="234" y2="237" stroke="#999"/><text x="286.0" y="248" text-anchor="middle">75</text>
-<line x1="345.3" x2="345.3" y1="234" y2="237" stroke="#999"/><text x="345.3" y="248" text-anchor="middle">100</text>
-<text x="248.0" y="262" text-anchor="middle">% of Kenyon cells</text>
+<line x1="108.0" x2="108.0" y1="300" y2="303" stroke="#999"/><text x="108.0" y="314" text-anchor="middle">0</text>
+<line x1="167.3" x2="167.3" y1="300" y2="303" stroke="#999"/><text x="167.3" y="314" text-anchor="middle">25</text>
+<line x1="226.6" x2="226.6" y1="300" y2="303" stroke="#999"/><text x="226.6" y="314" text-anchor="middle">50</text>
+<line x1="286.0" x2="286.0" y1="300" y2="303" stroke="#999"/><text x="286.0" y="314" text-anchor="middle">75</text>
+<line x1="345.3" x2="345.3" y1="300" y2="303" stroke="#999"/><text x="345.3" y="314" text-anchor="middle">100</text>
+<text x="248.0" y="328" text-anchor="middle">% of Kenyon cells</text>
 <rect x="108.0" y="41.2" width="60.5" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
 <text x="172.5" y="51.0" fill="#2b6cb0" text-anchor="start">25.5%</text>
 <text x="100.0" y="51.0" fill="#222" text-anchor="end">v1 A</text>
-<rect x="108.0" y="63.0" width="41.3" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
-<text x="153.3" y="72.7" fill="#2b6cb0" text-anchor="start">17.4%</text>
-<text x="100.0" y="72.7" fill="#222" text-anchor="end">v1 B</text>
-<rect x="108.0" y="84.7" width="59.9" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
-<text x="171.9" y="94.5" fill="#2b6cb0" text-anchor="start">25.2%</text>
-<text x="100.0" y="94.5" fill="#222" text-anchor="end">v2 A</text>
-<rect x="108.0" y="106.5" width="0.5" height="13.5" fill="#888888" fill-opacity="0.85"/>
-<text x="112.5" y="116.2" fill="#888888" text-anchor="start">0.2%</text>
-<text x="100.0" y="116.2" fill="#222" text-anchor="end">v2 E</text>
-<rect x="108.0" y="128.3" width="86.3" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
-<text x="198.3" y="138.0" fill="#2b6cb0" text-anchor="start">36.4%</text>
-<text x="100.0" y="138.0" fill="#222" text-anchor="end">v3 A</text>
-<rect x="108.0" y="150.0" width="0.5" height="13.5" fill="#888888" fill-opacity="0.85"/>
-<text x="112.5" y="159.8" fill="#888888" text-anchor="start">0.2%</text>
-<text x="100.0" y="159.8" fill="#222" text-anchor="end">v3 E</text>
-<rect x="108.0" y="171.8" width="87.5" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
-<text x="199.5" y="181.5" fill="#2b6cb0" text-anchor="start">36.9%</text>
-<text x="100.0" y="181.5" fill="#222" text-anchor="end">v4 A</text>
-<rect x="108.0" y="193.5" width="0.5" height="13.5" fill="#888888" fill-opacity="0.85"/>
-<text x="112.5" y="203.3" fill="#888888" text-anchor="start">0.2%</text>
-<text x="100.0" y="203.3" fill="#222" text-anchor="end">v4 E+gap0</text>
-<rect x="108.0" y="215.3" width="0.0" height="13.5" fill="#888888" fill-opacity="0.85"/>
-<text x="112.0" y="225.0" fill="#888888" text-anchor="start">0.0%</text>
-<text x="100.0" y="225.0" fill="#222" text-anchor="end">v4 E+gap1</text>
-<text x="108.0" y="282.0" fill="#888888" text-anchor="start">Grey is below 1% of Kenyon cells, the lock's sparse floor: silent. Blue is dense.</text>
-<text x="108.0" y="296.0" fill="#888888" text-anchor="start">Shared is the share of odor 1's responders. On a silent arm that is a handful of cells. Odor 2 is not averaged in.</text>
-<rect x="468" y="36" width="280" height="198" fill="none" stroke="#999"/>
+<rect x="108.0" y="63.1" width="41.3" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="153.3" y="72.8" fill="#2b6cb0" text-anchor="start">17.4%</text>
+<text x="100.0" y="72.8" fill="#222" text-anchor="end">v1 B</text>
+<rect x="108.0" y="84.9" width="59.9" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="171.9" y="94.6" fill="#2b6cb0" text-anchor="start">25.2%</text>
+<text x="100.0" y="94.6" fill="#222" text-anchor="end">v2 A</text>
+<rect x="108.0" y="106.7" width="0.5" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="112.5" y="116.5" fill="#888888" text-anchor="start">0.2%</text>
+<text x="100.0" y="116.5" fill="#222" text-anchor="end">v2 E</text>
+<rect x="108.0" y="128.5" width="86.3" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="198.3" y="138.3" fill="#2b6cb0" text-anchor="start">36.4%</text>
+<text x="100.0" y="138.3" fill="#222" text-anchor="end">v3 A</text>
+<rect x="108.0" y="150.3" width="0.5" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="112.5" y="160.1" fill="#888888" text-anchor="start">0.2%</text>
+<text x="100.0" y="160.1" fill="#222" text-anchor="end">v3 E</text>
+<rect x="108.0" y="172.1" width="87.5" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="199.5" y="181.9" fill="#2b6cb0" text-anchor="start">36.9%</text>
+<text x="100.0" y="181.9" fill="#222" text-anchor="end">v4 A</text>
+<rect x="108.0" y="194.0" width="0.5" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="112.5" y="203.7" fill="#888888" text-anchor="start">0.2%</text>
+<text x="100.0" y="203.7" fill="#222" text-anchor="end">v4 E+gap0</text>
+<rect x="108.0" y="215.8" width="0.0" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="112.0" y="225.5" fill="#888888" text-anchor="start">0.0%</text>
+<text x="100.0" y="225.5" fill="#222" text-anchor="end">v4 E+gap1</text>
+<rect x="108.0" y="237.6" width="88.0" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="200.0" y="247.4" fill="#2b6cb0" text-anchor="start">37.1%</text>
+<text x="100.0" y="247.4" fill="#222" text-anchor="end">v5 A</text>
+<rect x="108.0" y="259.4" width="0.6" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="112.6" y="269.2" fill="#888888" text-anchor="start">0.2%</text>
+<text x="100.0" y="269.2" fill="#222" text-anchor="end">v5 E+spike0ms</text>
+<rect x="108.0" y="281.2" width="0.6" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="112.6" y="291.0" fill="#888888" text-anchor="start">0.3%</text>
+<text x="100.0" y="291.0" fill="#222" text-anchor="end">v5 E+spike2ms</text>
+<text x="108.0" y="348.0" fill="#888888" text-anchor="start">Grey is below 1% of Kenyon cells, the lock's sparse floor: silent. Blue is dense.</text>
+<text x="108.0" y="362.0" fill="#888888" text-anchor="start">Shared is the share of odor 1's responders. On a silent arm that is a handful of cells. Odor 2 is not averaged in.</text>
+<rect x="468" y="36" width="280" height="264" fill="none" stroke="#999"/>
 <text x="468" y="30" font-size="11">Shared by both odors, of odor 1</text>
-<line x1="468.0" x2="468.0" y1="234" y2="237" stroke="#999"/><text x="468.0" y="248" text-anchor="middle">0</text>
-<line x1="527.3" x2="527.3" y1="234" y2="237" stroke="#999"/><text x="527.3" y="248" text-anchor="middle">25</text>
-<line x1="586.6" x2="586.6" y1="234" y2="237" stroke="#999"/><text x="586.6" y="248" text-anchor="middle">50</text>
-<line x1="646.0" x2="646.0" y1="234" y2="237" stroke="#999"/><text x="646.0" y="248" text-anchor="middle">75</text>
-<line x1="705.3" x2="705.3" y1="234" y2="237" stroke="#999"/><text x="705.3" y="248" text-anchor="middle">100</text>
-<text x="608.0" y="262" text-anchor="middle">% of odor-1 responders</text>
+<line x1="468.0" x2="468.0" y1="300" y2="303" stroke="#999"/><text x="468.0" y="314" text-anchor="middle">0</text>
+<line x1="527.3" x2="527.3" y1="300" y2="303" stroke="#999"/><text x="527.3" y="314" text-anchor="middle">25</text>
+<line x1="586.6" x2="586.6" y1="300" y2="303" stroke="#999"/><text x="586.6" y="314" text-anchor="middle">50</text>
+<line x1="646.0" x2="646.0" y1="300" y2="303" stroke="#999"/><text x="646.0" y="314" text-anchor="middle">75</text>
+<line x1="705.3" x2="705.3" y1="300" y2="303" stroke="#999"/><text x="705.3" y="314" text-anchor="middle">100</text>
+<text x="608.0" y="328" text-anchor="middle">% of odor-1 responders</text>
 <rect x="468.0" y="41.2" width="225.1" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
 <text x="697.1" y="51.0" fill="#2b6cb0" text-anchor="start">94.9%</text>
-<rect x="468.0" y="63.0" width="225.2" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
-<text x="697.2" y="72.7" fill="#2b6cb0" text-anchor="start">94.9%</text>
-<rect x="468.0" y="84.7" width="226.6" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
-<text x="698.6" y="94.5" fill="#2b6cb0" text-anchor="start">95.5%</text>
-<rect x="468.0" y="106.5" width="0.0" height="13.5" fill="#888888" fill-opacity="0.85"/>
-<text x="472.0" y="116.2" fill="#888888" text-anchor="start">0.0%</text>
-<rect x="468.0" y="128.3" width="194.4" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
-<text x="666.4" y="138.0" fill="#2b6cb0" text-anchor="start">81.9%</text>
-<rect x="468.0" y="150.0" width="0.0" height="13.5" fill="#888888" fill-opacity="0.85"/>
-<text x="472.0" y="159.8" fill="#888888" text-anchor="start">0.0%</text>
-<rect x="468.0" y="171.8" width="193.3" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
-<text x="665.3" y="181.5" fill="#2b6cb0" text-anchor="start">81.4%</text>
-<rect x="468.0" y="193.5" width="26.4" height="13.5" fill="#888888" fill-opacity="0.85"/>
-<text x="498.4" y="203.3" fill="#888888" text-anchor="start">11.1%</text>
-<rect x="468.0" y="215.3" width="0.0" height="13.5" fill="#888888" fill-opacity="0.85"/>
-<text x="472.0" y="225.0" fill="#888888" text-anchor="start">0.0%</text>
+<rect x="468.0" y="63.1" width="225.2" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="697.2" y="72.8" fill="#2b6cb0" text-anchor="start">94.9%</text>
+<rect x="468.0" y="84.9" width="226.6" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="698.6" y="94.6" fill="#2b6cb0" text-anchor="start">95.5%</text>
+<rect x="468.0" y="106.7" width="0.0" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="472.0" y="116.5" fill="#888888" text-anchor="start">0.0%</text>
+<rect x="468.0" y="128.5" width="194.4" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="666.4" y="138.3" fill="#2b6cb0" text-anchor="start">81.9%</text>
+<rect x="468.0" y="150.3" width="0.0" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="472.0" y="160.1" fill="#888888" text-anchor="start">0.0%</text>
+<rect x="468.0" y="172.1" width="193.3" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="665.3" y="181.9" fill="#2b6cb0" text-anchor="start">81.4%</text>
+<rect x="468.0" y="194.0" width="26.4" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="498.4" y="203.7" fill="#888888" text-anchor="start">11.1%</text>
+<rect x="468.0" y="215.8" width="0.0" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="472.0" y="225.5" fill="#888888" text-anchor="start">0.0%</text>
+<rect x="468.0" y="237.6" width="189.3" height="13.5" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="661.3" y="247.4" fill="#2b6cb0" text-anchor="start">79.8%</text>
+<rect x="468.0" y="259.4" width="0.0" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="472.0" y="269.2" fill="#888888" text-anchor="start">0.0%</text>
+<rect x="468.0" y="281.2" width="21.6" height="13.5" fill="#888888" fill-opacity="0.85"/>
+<text x="493.6" y="291.0" fill="#888888" text-anchor="start">9.1%</text>
 </svg>

@@ -331,7 +331,7 @@ In the fly the eLN → PN lateral excitation is driven by eLN spikes, which cros
 as spikelets (Yaksi & Wilson 2010). This run's junctions pass only subthreshold potentials:
 the lock sets no spike term, and a LIF reset draws none. The missing waveform is a candidate explanation, not a cause isolated by this finite
 grid and its explicit first-order integrator. v4 did not test the later implementations. Outputs:
-`results/kc-sparseness/v4/`. Figure: [v1–v4, dense or silent](img/kc-sparseness.svg).
+`results/kc-sparseness/v4/`. Figure: [v1–v5, dense or silent](img/kc-sparseness.svg).
 
 **Version 5 (lock, 2026-10-13, #85).** The coupling is no longer scanned: Yaksi & Wilson
 2010 (Fig. 4C/4F, 37 pairs) give eLN → PN 0.0021 and PN → eLN 0.0039 for hyperpolarizing
@@ -340,6 +340,19 @@ between sister PNs; each side of a junction couples at c / (1 − c) of the coef
 towards it. The depolarizing coupling the fly shows (0.0083) comes with eLN spikes of about
 40 mV, which now cross the junction as spikelets ([electrical synapses](#electrical-synapses-optional-2026-10-13)); their duration is not measured,
 so arms E and F run with 0, 0.5, 1 and 2 ms (8 coupled arms, seeds 86–88) under v3's bounds.
+
+**Result of version 5 (2026-10-13): none.** Run from `00aff9c`, the lock commit, with
+boundary-only refractory reset as registered; interrupted once and resumed from its saved
+arms (the manifest lists them). No coupled arm is within: all eight stay silent, 0.22–0.30%
+of Kenyon cells (9–12 cells) against the 1% floor, as E and F without coupling (0.22–0.27%).
+Spiking PNs fall slightly, from 11% / 8% in E to 10% / 6–7% coupled. The spikelet duration
+does not change the answer: 0 ms and 2 ms differ by one or two Kenyon cells. The default
+arm A stays dense (37% / 30%). At the measured coefficients the junctions are too weak to
+carry lateral excitation, with or without spikelets of up to 2 ms, so the eLN → PN coupling
+as modelled here is not the missing excitation. Untested: rectifying junctions, a larger
+coupling at the junction than at the soma, and the chemical cholinergic component (Huang et
+al. 2010) that arm E removes. Outputs: `results/kc-sparseness/v5/`. Figure:
+[v1–v5, dense or silent](img/kc-sparseness.svg).
 
 ## Electrical synapses (optional, 2026-10-13)
 

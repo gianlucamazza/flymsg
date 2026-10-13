@@ -343,6 +343,12 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: Kenyon cell sparseness v5, none.** Seeds 86–88. Measured asymmetric eLN ↔ PN
+coupling (0.0021 / 0.0039), sister PNs at 0.013, eLN spikelets of 40 mV for 0–2 ms: every
+coupled arm is silent (0.22–0.30% of Kenyon cells), as without coupling, whatever the
+spikelet duration. At the measured coefficients the coupling is not the missing excitation.
+Report: `results/kc-sparseness/v5/`. Figure: [v1–v5](img/kc-sparseness.svg).
+
 **2026-10-13: TTM-driven NeuroMechFly jump v1, short.** Seeds 110–112. Takeoff at 28–32 ms,
 0.05 m/s, range 0.3–0.5 mm against 28.6–37.75 mm: only the right TTMn fires before takeoff,
 one twitch is below the force a jump needs, and the TLM is absent. Report:
@@ -357,7 +363,7 @@ spiking lamina neurons; the fly's lamina is graded and tonically active. Report:
 PN contacts as electrical synapses, coupling 0–1, sister PNs at 0.013: every coupled arm is
 silent (≤ 0.3% of Kenyon cells), quieter as coupling grows; subthreshold coupling without
 spikelets drains active PNs. Report: `results/kc-sparseness/v4/`. Figure:
-[v1–v4](img/kc-sparseness.svg).
+[v1–v5](img/kc-sparseness.svg).
 
 **2026-10-13: Kenyon cell sparseness v3, none.** Hige et al. 2015's odors from DoOR, seeds
 80–82, bounds 1–17% and ≤ 64.6% shared. Default: 36% / 30% of Kenyon cells, 82–99% shared;
