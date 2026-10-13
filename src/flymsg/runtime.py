@@ -138,9 +138,14 @@ class CpuRuntime:
         self._gap_system = electrical.generators(
             gap, self._gap[0], self._gap[1], self._p
         )
-        self._semantics = (
-            (SEMANTICS + "+" + electrical.SEMANTICS) if self._gap[0].size else SEMANTICS
-        )
+        self._electrical_mode = gap.refractory_mode if gap is not None else "none"
+        self._semantics = SEMANTICS
+        if self._gap[0].size:
+            self._semantics += "+" + (
+                electrical.BOUNDARY_SEMANTICS
+                if self._electrical_mode == "boundary"
+                else electrical.SEMANTICS
+            )
         self._state = {
             "v": np.full(n, self._p.v_rest, dtype=np.float32),
             "g": np.zeros(n, dtype=np.float32),
@@ -160,6 +165,9 @@ class CpuRuntime:
             self._state["graded_vsum"] = np.zeros(
                 (steps // per_bin, ng), dtype=np.float64
             )
+        if self._gap[0].size:
+            # steps left of each coupled neuron's spike term (sim.Gap)
+            self._state["gap_pulse"] = np.zeros(self._gap[0].size, dtype=np.int32)
         config = json.dumps(
             {
                 "semantics": self._semantics,
@@ -179,11 +187,22 @@ class CpuRuntime:
             self._silent,
             self._trace,
             *(self._graded if ng else ()),
-            *(self._gap if self._gap[0].size else ()),
-            *(self._gap_system if self._gap[0].size else ()),
+            *(
+                (
+                    *self._gap[:5],
+                    np.array([self._gap[5]], dtype=np.int64),
+                    self._gap[6],
+                )
+                if self._gap[0].size
+                else ()
+            ),
         ):
             digest.update(str((array.shape, array.dtype.str)).encode())
             digest.update(array.tobytes())
+        if self._gap[0].size:
+            for array in self._gap_system:
+                digest.update(str((array.shape, array.dtype.str)).encode())
+                digest.update(array.tobytes())
         digest.update(str(self._stim_steps).encode())
         self._identity = digest.hexdigest()
         self._state["input_counts"] = self._kicks
@@ -195,6 +214,7 @@ class CpuRuntime:
         )
         self._graded_new = np.zeros(ng, dtype=np.float32)
         self._gap_buf = np.zeros(self._gap[0].size, dtype=np.float32)
+        self._no_pulse = np.zeros(0, dtype=np.int32)
         self._gap_current = self._gap[2].copy()
         self._gap_mask = np.zeros(self._gap[0].size, dtype=np.bool_)
 
@@ -254,8 +274,10 @@ class CpuRuntime:
             g_ring,
             self._graded_new,
             g_vsum,
-            *self._gap,
+            *self._gap[:4],
             self._gap_buf,
+            *self._gap[4:],
+            s.get("gap_pulse", self._no_pulse),
             *self._gap_system,
             self._gap_current,
             self._gap_mask,
@@ -390,6 +412,11 @@ class CpuRuntime:
                 raise ValueError("invalid temporal state")
             if np.any(state["input_counts"] < 0):
                 raise ValueError("invalid input counts")
+            if "gap_pulse" in state and (
+                np.any(state["gap_pulse"] < 0)
+                or np.any(state["gap_pulse"] > self._gap[5])
+            ):
+                raise ValueError("invalid spike terms")
             if meta.get("state_sha256") != _state_digest(
                 state, self._identity, step, input_end
             ):

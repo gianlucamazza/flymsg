@@ -142,3 +142,17 @@ Open evidence/hardware issues remain governed by the table above. KC v4 and T4/T
 remain tied to their original implementations. No new scored electrical result has been
 manufactured under v4's old first-order lock. A prospective numerical replication needs
 an explicit new lock/classification and computational budget before execution.
+
+Concurrent integration: #122 and #123 were merged while this implementation was being
+validated. The integration preserves graded native execution, asymmetric junctions and
+explicit spike waveforms. A prescribed waveform remains distinct from the refractory
+membrane clamp. The native fixed-map backend has a formal all-free admission condition;
+refractory electrical fixtures are refused and listed as unsupported in qualification
+reports. Previously qualified boundary-reset fixtures are historical evidence, not proof
+of native continuous clamps. No native/GPU/console gate is closed on that basis.
+
+Protocol compatibility is explicit: already registered boundary-reset models retain a
+named numerical mode and their original native qualification. New Gap configurations
+use continuous clamps by default. There is no automatic substitution when the native
+backend cannot run a continuous refractory mask; it refuses that mode. This preserves
+concurrently registered protocols rather than changing their physics retrospectively.

@@ -58,14 +58,25 @@ inline void write_words(const std::filesystem::path &path,
   std::filesystem::rename(temporary, path);
 #endif
 }
+inline double word_double(const std::vector<uint32_t> &words, uint64_t at) {
+  return std::bit_cast<double>(uint64_t(words[at]) | uint64_t(words[at + 1])
+                                                         << 32);
+}
 class Runtime {
 public:
   std::vector<uint32_t> input, state;
   uint32_t step = 0;
+  // Version 2 extension (graded neurons, electrically coupled groups); offsets
+  // into `input` and `state`, all zero for version 1 fixtures.
+  uint64_t ng = 0, nc = 0, ncomp = 0, nmat = 0, width = 0;
+  uint64_t x_gcol = 0, x_lo = 0, x_span = 0, x_scale = 0, x_gpos = 0,
+           x_nodes = 0, x_off = 0, x_moff = 0, x_mat = 0, x_amp = 0;
+  uint64_t s_ring = 0, s_new = 0, s_vsum = 0, s_buf = 0, s_pulse = 0;
   explicit Runtime(std::vector<uint32_t> fixture) : input(std::move(fixture)) {
     require(std::endian::native == std::endian::little,
             "little endian host required");
-    require(input.size() >= 40 && input[0] == fixture_magic && input[1] == 1,
+    require(input.size() >= 40 && input[0] == fixture_magic &&
+                (input[1] == 1 || input[1] == 2),
             "incompatible fixture");
     const uint64_t n = input[2], steps = input[3], per = input[4], d = input[5],
                    ns = input[7], nt = input[8];
@@ -84,6 +95,28 @@ public:
       cursor += sizes[k - 16];
       require(cursor <= input.size(), "input range overflow");
     }
+    if (input[1] == 2) {
+      require(input[37] == cursor && cursor + 5 <= input.size(),
+              "invalid extension offset");
+      ng = input[cursor];
+      nc = input[cursor + 1];
+      ncomp = input[cursor + 2];
+      nmat = input[cursor + 3];
+      width = input[cursor + 4];
+      require(ng <= n && nc <= n && ncomp <= nc && (ng || nc),
+              "invalid extension dimensions");
+      cursor += 5;
+      const uint64_t ext_sizes[] = {n,  ng,        ng,        ng,       n,
+                                    nc, ncomp + 1, ncomp + 1, nmat * 2, nc * 2};
+      uint64_t *ext_offsets[] = {&x_gcol,  &x_lo,  &x_span, &x_scale, &x_gpos,
+                                 &x_nodes, &x_off, &x_moff, &x_mat,   &x_amp};
+      for (int k = 0; k < 10; ++k) {
+        *ext_offsets[k] = cursor;
+        cursor += ext_sizes[k];
+        require(cursor <= input.size(), "extension range overflow");
+      }
+    } else
+      require(input[37] == 0 && input[38] == 0, "unexpected extension");
     require(cursor == input.size(), "unexpected fixture tail");
     const uint64_t state_sizes[] = {
         n, n, n, n, d * n, (steps / per) * n, n, steps * nt, n};
@@ -91,6 +124,15 @@ public:
     for (uint32_t k = 25; k <= 33; ++k) {
       require(input[k] == cursor, "invalid state offset");
       cursor += state_sizes[k - 25];
+    }
+    if (input[1] == 2) {
+      require(input[38] == cursor, "invalid extension state offset");
+      s_ring = cursor;
+      s_new = s_ring + d * ng;
+      s_vsum = s_new + ng;
+      s_buf = s_vsum + 2 * (steps / per) * ng;
+      s_pulse = s_buf + nc;
+      cursor = s_pulse + nc;
     }
     require(cursor == input[35], "invalid state size");
     for (uint32_t k = 9; k < 16; ++k)
@@ -144,11 +186,61 @@ public:
                   count <= 9007199254740992.0 && std::floor(count) == count,
               "invalid kick count");
     }
+    if (input[1] == 2)
+      validate_extension(n);
     state.resize(input[35], 0);
     for (uint32_t i = 0; i < n; ++i) {
       state[input[25] + i] = input[13];
       state[input[31] + i] = uint32_t(-1);
     }
+  }
+  void validate_extension(uint64_t n) const {
+    std::vector<bool> seen(ng, false);
+    for (uint64_t i = 0; i < n; ++i) {
+      const auto k = int32_t(input[x_gcol + i]);
+      require(k >= -1 && (k < 0 || uint64_t(k) < ng), "graded column range");
+      if (k >= 0) {
+        require(!seen[k], "duplicate graded column");
+        seen[k] = true;
+      }
+    }
+    require(std::all_of(seen.begin(), seen.end(), [](bool v) { return v; }),
+            "incomplete graded map");
+    for (uint64_t k = 0; k < ng; ++k) {
+      const float lo = std::bit_cast<float>(input[x_lo + k]),
+                  span = std::bit_cast<float>(input[x_span + k]),
+                  scale = std::bit_cast<float>(input[x_scale + k]);
+      require(std::isfinite(lo) && std::isfinite(span) && span > 0 &&
+                  std::isfinite(scale) && scale >= 0,
+              "invalid graded parameters");
+    }
+    for (uint64_t k = 0; k < nc; ++k) {
+      const auto i = input[x_nodes + k];
+      require(i < n && int32_t(input[x_gpos + i]) == int32_t(k),
+              "invalid coupled neuron map");
+    }
+    uint64_t coupled = 0;
+    for (uint64_t i = 0; i < n; ++i)
+      coupled += int32_t(input[x_gpos + i]) >= 0;
+    require(coupled == nc && input[x_off] == 0 && input[x_off + ncomp] == nc &&
+                input[x_moff] == 0 && input[x_moff + ncomp] == nmat,
+            "invalid coupled groups");
+    for (uint64_t c = 0; c < ncomp; ++c) {
+      const uint64_t m = input[x_off + c + 1] - input[x_off + c];
+      require(input[x_off + c + 1] > input[x_off + c] &&
+                  input[x_moff + c + 1] - input[x_moff + c] == 3 * m * m,
+              "invalid coupled group size");
+    }
+    for (uint64_t q = 0; q < nmat; ++q)
+      require(std::isfinite(word_double(input, x_mat + 2 * q)),
+              "nonfinite step matrix");
+    bool crossing = false;
+    for (uint64_t k = 0; k < nc; ++k) {
+      const double a = word_double(input, x_amp + 2 * k);
+      require(std::isfinite(a) && a >= 0, "invalid spike amplitude");
+      crossing = crossing || a > 0;
+    }
+    require((width > 0) == crossing, "invalid spike term");
   }
   float get(uint32_t slot, uint32_t i) const {
     return std::bit_cast<float>(state[input[slot] + i]);
@@ -160,7 +252,35 @@ public:
   void advance_to(uint32_t target) {
     require(target >= step && target <= input[3], "invalid advance boundary");
     const uint32_t n = input[2], d = input[5];
+    const double rest = double(constant(13));
     for (; step < target; ++step) {
+      // exact step of each coupled group from the state before the update, in
+      // float64: potentials relative to rest, then conductances of
+      // non-refractory neurons
+      for (uint64_t c = 0; c < ncomp; ++c) {
+        const uint64_t a = input[x_off + c], m = input[x_off + c + 1] - a;
+        for (uint64_t r = 0; r < m; ++r) {
+          const uint64_t row = input[x_moff + c] + r * 3 * m;
+          double acc = 0.0;
+          for (uint64_t q = 0; q < m; ++q)
+            acc += word_double(input, x_mat + 2 * (row + q)) *
+                   (double(get(25, input[x_nodes + a + q])) - rest);
+          for (uint64_t q = 0; q < m; ++q) {
+            const auto j = input[x_nodes + a + q];
+            if (state[input[28] + j] <= step)
+              acc += word_double(input, x_mat + 2 * (row + m + q)) *
+                     double(get(26, j));
+          }
+          for (uint64_t q = 0; q < m; ++q)
+            if (int32_t(state[s_pulse + a + q]) > 0)
+              acc += word_double(input, x_mat + 2 * (row + 2 * m + q)) *
+                     word_double(input, x_amp + 2 * (a + q));
+          state[s_buf + a + r] = std::bit_cast<uint32_t>(float(rest + acc));
+        }
+      }
+      for (uint64_t k = 0; k < nc; ++k)
+        if (int32_t(state[s_pulse + k]) > 0)
+          --state[s_pulse + k];
       for (uint32_t i = 0; i < n; ++i) {
         const bool frozen = state[input[28] + i] > step;
         float vi = (get(25, i) - constant(13)) * constant(9) +
@@ -169,9 +289,22 @@ public:
         set(25, i, frozen ? constant(13) : vi);
         if (!frozen)
           set(26, i, gi);
+        if (nc && int32_t(input[x_gpos + i]) >= 0 && !frozen)
+          state[input[25] + i] = state[s_buf + input[x_gpos + i]];
         set(27, i, get(27, i) * constant(12));
-        state[input[33] + i] =
-            (get(25, i) > constant(14) + get(27, i) && !input[input[20] + i]);
+        const int32_t k = ng ? int32_t(input[x_gcol + i]) : -1;
+        state[input[33] + i] = (get(25, i) > constant(14) + get(27, i) &&
+                                !input[input[20] + i] && k < 0);
+        if (k >= 0) {
+          float f = (get(25, i) - std::bit_cast<float>(input[x_lo + k])) /
+                    std::bit_cast<float>(input[x_span + k]);
+          f = std::max(0.0f, std::min(f, 1.0f));
+          const float release =
+              input[input[20] + i]
+                  ? 0.0f
+                  : f * std::bit_cast<float>(input[x_scale + k]);
+          state[s_new + k] = std::bit_cast<uint32_t>(release);
+        }
       }
       for (uint32_t i = 0; i < n; ++i) {
         float delivered = 0;
@@ -180,6 +313,26 @@ public:
             delivered += std::bit_cast<float>(input[input[18] + q]);
         if (state[input[28] + i] <= step)
           set(26, i, get(26, i) + delivered);
+        if (ng) {
+          // graded release from d steps ago, after the spikes, sources
+          // ascending
+          float released = 0;
+          bool touched = false;
+          for (auto q = input[input[16] + i]; q < input[input[16] + i + 1];
+               ++q) {
+            const auto k = int32_t(input[x_gcol + input[input[17] + q]]);
+            if (k < 0)
+              continue;
+            const float a =
+                std::bit_cast<float>(state[s_ring + (step % d) * ng + k]);
+            if (a == 0.0f)
+              continue;
+            released += std::bit_cast<float>(input[input[18] + q]) * a;
+            touched = true;
+          }
+          if (touched && state[input[28] + i] <= step)
+            set(26, i, get(26, i) + released);
+        }
         auto col = int32_t(input[input[23] + i]);
         if (col >= 0) {
           auto at = input[24] + (uint64_t(step) * input[7] + uint32_t(col)) * 2;
@@ -199,11 +352,26 @@ public:
           ++state[input[30] + (step / input[4]) * n + i];
           if (int32_t(state[input[31] + i]) < 0)
             state[input[31] + i] = step;
+          if (width && int32_t(input[x_gpos + i]) >= 0)
+            state[s_pulse + input[x_gpos + i]] = uint32_t(width);
           const auto col = int32_t(input[input[22] + i]);
           if (col >= 0)
             state[input[32] + uint64_t(step) * input[8] + uint32_t(col)] = 1;
         }
         state[input[29] + (step % d) * n + i] = emitted;
+      }
+      for (uint64_t k = 0; k < ng; ++k) {
+        state[s_ring + (step % d) * ng + k] = state[s_new + k];
+      }
+      for (uint32_t i = 0; ng && i < n; ++i) {
+        const int32_t k = int32_t(input[x_gcol + i]);
+        if (k < 0)
+          continue;
+        const uint64_t at = s_vsum + 2 * ((step / input[4]) * ng + k);
+        const double sum = word_double(state, at) + double(get(25, i));
+        const uint64_t bits = std::bit_cast<uint64_t>(sum);
+        state[at] = uint32_t(bits);
+        state[at + 1] = uint32_t(bits >> 32);
       }
     }
   }

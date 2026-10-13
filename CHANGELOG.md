@@ -12,6 +12,14 @@
 
 ### Model
 
+- **Spikelets and asymmetric junctions** (#85): `sim.Gap` takes a coupling per side of a
+  junction and, with `spike_mv` and `spike_ms`, lets a spike cross as a rectangular term
+  integrated exactly with the rest (third Van Loan block); CPU, NumPy reference, runtime
+  checkpoints and the native executor agree bit for bit (60 native acceptance cases).
+- **Native executor with graded neurons and electrical synapses**: fixture version 2 carries
+  both; the C++ executor matches the CPU runtime bit for bit, checkpoints included (60
+  acceptance cases); corrupt extensions are rejected; the DX12 lane refuses version 2 until
+  hardware qualifies it (#39).
 - **Exact electrical coupling**: each connected group of electrically coupled neurons is
   integrated exactly over a step (matrix exponential, Van Loan's block form for the synaptic
   input) instead of by an explicit first-order step.
@@ -20,12 +28,10 @@
   lock's hash, resume an interrupted run, and record the resumed steps in the manifest.
 - **Electrical synapses** (#85): `sim.Gap` couples pairs of neurons through their
   potentials (junction over leak conductance; a coupling coefficient c gives c / (1 − c)).
-  Bit-identical without them; exact parity of kernel, NumPy reference and `CpuRuntime`; the
-  native executor refuses them.
+  Bit-identical without them; exact parity of kernel, NumPy reference and `CpuRuntime`.
 - **Graded neurons** (#97): `sim.Graded` makes chosen neurons non-spiking, with a
   threshold-linear release curve stated by the caller (no defaults). Bit-identical without
-  them; exact parity of kernel, NumPy reference and `CpuRuntime` with them; the native
-  executor refuses them. `Result.graded_v` holds their mean potential per bin.
+  them; exact parity of kernel, NumPy reference and `CpuRuntime` with them. `Result.graded_v` holds their mean potential per bin.
 
 ### Validation
 

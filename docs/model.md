@@ -316,38 +316,41 @@ of the coupling the fly would need. It is a calibration of a free parameter agai
 sparseness, not a test: what would test it is a measured eLN → PN coupling.
 
 **Result of version 4 (2026-10-13): none.** Run from `b1116af` (coupling as an explicit
-first-order step, a compensation named in the lock). No scanned coupled arm meets the
-locked bounds: E and F stay nearly silent (0.2% of Kenyon cells) and coupling makes them
+first-order step, a compensation named in the lock). No scanned coupled arm meets the locked bounds: E and F stay silent (0.2% of Kenyon cells) and coupling makes them
 quieter, down to 0% at 1, while the share of spiking PNs falls from 11% / 8% to 5% / 1%.
 Symmetric subthreshold coupling ties active PNs to local neurons at rest and drains them.
 In the fly the eLN → PN lateral excitation is driven by eLN spikes, which cross the junction
 as spikelets (Yaksi & Wilson 2010); the model's junctions pass only subthreshold potentials,
-because a LIF spike is a reset. Missing spikelets are a candidate explanation, not a
-mechanism isolated by this scan: v4 establishes failure of its specified finite grid and
-implementation. It does not test the later exponential integrator or exclude other
-couplings. Outputs: `results/kc-sparseness/v4/`.
+because a LIF spike is a reset. The missing waveform is a candidate explanation, not a mechanism isolated by this finite
+grid with the old integrator. No later numerical implementation was tested by v4. Outputs: `results/kc-sparseness/v4/`.
 
 ## Electrical synapses (optional, 2026-10-13)
 
 `sim.Gap` (#85) couples pairs of neurons through their potentials. A coupled neuron follows
-τ_m dv/dt = v_rest − v + g + Σ_j coupling (v_j − v), where the coupling is the junction's
-conductance over the leak conductance, so a coupling coefficient c measured between two
-equal cells gives c / (1 − c) without a conductance in nS. Between spikes this is linear, so
-each connected group of coupled neurons is integrated exactly over a step: the matrix
-exponential of the group's membrane and coupling matrix, with the decaying synaptic input
-in Van Loan's block form, is computed once per run, and each step applies it in float64. A
-refractory neuron is held at rest with its conductance frozen, as without coupling, and its
-partners see the continuous clamp throughout the step. The reduced operator retains the
-sink from contacts to clamped cells. This implements the accepted
-[electrical ADR](adr-gap-refractory.md); [run integrity](run-integrity.md) records numerical
-semantics, checkpoint compatibility and validation. Junctions are symmetric and
-non-rectifying, and spikes do not cross
-them: a LIF spike is a reset, not a waveform.
+τ_m dv_i/dt = v_rest − v_i + g_i + Σ_j c_ij (v_j + s_j − v_i), where c_ij is the junction's
+conductance over i's leak conductance; a coupling coefficient c measured from j to i gives
+c / (1 − c), and the two sides of a junction may differ (cells of different input
+resistance). s_j is the spike a LIF reset does not draw: with `spike_mv` and `spike_ms`, a
+spike of j adds a rectangular `spike_mv` (one value, or one per neuron; 0 for neurons whose
+spikes do not cross) to the potential its partners see for `spike_ms`, so spikes cross the
+junction as spikelets. Junctions do not rectify.
+
+Between step boundaries the equation is linear, so each connected group is integrated
+exactly: the matrix exponential of the group's membrane, synaptic and spike terms (Van
+Loan's block form) is computed once per run, and each step applies it in float64. As
+everywhere in the model, discrete events act at step boundaries: spikes, resets,
+deliveries, kicks, the start and end of a spike term, and the refractory hold. Refractory membranes are continuously clamped at rest, with frozen
+chemical conductance; free partners retain the sink from their contacts. The accepted
+[electrical ADR](adr-gap-refractory.md) and [run integrity](run-integrity.md) document the
+reduced operators and execution identity.
 
 EM does not show gap junctions and few are measured (#85), so no electrical synapse is in
 the default model. Without them the engine is unchanged, bit for bit; with them `sim.run`,
 the NumPy reference and `CpuRuntime` agree exactly (`tests/test_gap.py`), two coupled cells
-relax as the exact solution and reproduce c / (1 + c), and the native executor refuses them.
+relax as the exact solution and reproduce c / (1 + c), the native C++ executor retains its explicitly named boundary-reset and all-free
+electrical paths; dynamic
+continuous clamps require a separately qualified native implementation and are refused.
+The GPU lane refuses electrical fixtures (#39).
 Until 2026-10-13 (`b1116af`, Kenyon cell v4) the coupling was an explicit first-order step
 added to the membrane update.
 
@@ -371,8 +374,9 @@ measured ranges instead of choosing a value (`validation/t4t5.yaml` version 2).
 Without graded neurons the engine is unchanged, bit for bit. With them, `sim.run`, the NumPy
 reference (`tests/reference_sim.py`) and `CpuRuntime` (chunks, checkpoints) give identical
 spikes and potentials (`tests/test_graded.py`); `Result.graded_v` holds the mean potential of
-the graded neurons per bin. The native executor refuses graded neurons until it implements
-them.
+the graded neurons per bin. The native C++ executor runs them from fixture version 2 and
+matches the CPU runtime bit for bit; the GPU lane refuses them until hardware qualifies it
+(#39).
 
 ## Recording neuron states
 

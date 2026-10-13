@@ -101,3 +101,44 @@ def test_fixture_requires_fresh_state_and_valid_output(tmp_path):
     runtime.advance_to(1)
     with pytest.raises(ValueError, match="fresh"):
         export_fixture(runtime, fixture)
+
+
+@pytest.mark.parametrize("word", ["offset", "ng", "span", "width"])
+def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word):
+    from flymsg import sim
+
+    W = sparse.csc_matrix(np.full((4, 4), 5.0, dtype=np.float32))
+    runtime = CpuRuntime(
+        W,
+        np.array([0]),
+        steps=100,
+        kicks=np.ones((100, 1), dtype=np.int64),
+        per_bin=100,
+        # This corruption fixture needs an exportable all-free electrical component.
+        graded=sim.Graded(
+            idx=np.array([1, 2, 3]), v_lo=-60.0, span=10.0, rate_hz=[0.0, 100.0, 0.0]
+        ),
+        gap=sim.Gap(i=np.array([1]), j=np.array([3]), coupling=0.5),
+    )
+    fixture, output = tmp_path / "fixture.bin", tmp_path / "out.bin"
+    export_fixture(runtime, fixture)
+    raw = bytearray(fixture.read_bytes())
+    ext = struct.unpack_from("<I", raw, 37 * 4)[0]
+    # extension: 5 header words, then the graded column of each of the 4 neurons, v_lo,
+    # span
+    at = {
+        "offset": 37 * 4,
+        "ng": ext * 4,
+        "span": (ext + 5 + 4 + 3) * 4,
+        "width": (ext + 4) * 4,  # a spike term without any amplitude
+    }[word]
+    value = {"offset": ext + 1, "ng": 5, "span": 0, "width": 5}[word]
+    struct.pack_into("<I", raw, at, value)
+    fixture.write_bytes(raw)
+    result = subprocess.run(
+        [str(native_exe), "--fixture", str(fixture), "--output", str(output)],
+        check=False,
+        capture_output=True,
+    )
+    assert result.returncode != 0
+    assert not output.exists()

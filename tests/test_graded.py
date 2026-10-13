@@ -128,19 +128,18 @@ def test_graded_runtime_chunks_and_checkpoints_match_the_run(tmp_path):
     assert "graded_ring" not in plain.snapshot()
 
 
-def test_native_refuses_graded_neurons(tmp_path):
+def test_native_fixtures_carry_graded_neurons_as_version_2(tmp_path):
     W = _network(200, 4000)
     p = sim.Params()
-    rt = CpuRuntime(
-        W,
-        np.array([0]),
-        steps=100,
-        kicks=np.zeros((100, 1), dtype=np.int64),
-        p=p,
-        graded=_graded(np.array([3, 4]), p),
+    kw = {"steps": 100, "kicks": np.zeros((100, 1), dtype=np.int64), "p": p}
+    plain = native.export_fixture(
+        CpuRuntime(W, np.array([0]), **kw), tmp_path / "a.bin"
     )
-    with pytest.raises(ValueError, match="graded"):
-        native.export_fixture(rt, tmp_path / "f.bin")
+    graded = native.export_fixture(
+        CpuRuntime(W, np.array([0]), graded=_graded(np.array([3, 4]), p), **kw),
+        tmp_path / "b.bin",
+    )
+    assert plain["schema"].endswith("/v1") and graded["schema"].endswith("/v2")
 
 
 @pytest.mark.parametrize(

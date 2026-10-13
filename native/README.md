@@ -25,6 +25,8 @@ Each of the 12 fixtures is checked after step 217 and after checkpoint/resume to
 
 All formats are little endian, versioned and reject incompatible dimensions/offsets. The 40-word fixture header is specified by the exporter and validated by the C++ reader. It carries precomputed float32 constants, stable incoming edges, masks, trace/stimulus columns and explicit double-valued integer kick counts. Count range is limited to exactly representable doubles (up to 2^53). Payload and state together are capped at 512 MiB for this qualification lane. The native representation uses delayed spike membership masks; it does not invent new event timestamps.
 
+Version 2 fixtures add graded neurons and electrically coupled groups (`sim.Graded`, `sim.Gap`). Header word 37 points to an extension block (graded and coupled counts, matrix size, spike-term length and amplitude, the per-neuron graded column and coupled position, release parameters, group offsets and the float64 step matrices [P | Q | S]); word 38 points to its state (release ring, this step's release, per-bin potential sums in float64, the coupled-group buffer, the steps left of each spike term). The C++ executor validates every extension field and reproduces the CPU runtime bit for bit, including checkpoint and resume; the acceptance runs each synthetic case without extension, with graded neurons, with coupling, with asymmetric coupling and spikelets, and with graded neurons and spikelets together (60 cases). The DX12 lane refuses version 2 fixtures: its float64 group step and graded release need hardware qualification first (#39).
+
 Native checkpoints bind the complete fixture and cursor with a noncryptographic integrity/compatibility token. They do not authenticate an untrusted artifact. The UWP worker wraps them with SHA-256 asset checks and binds backend, shader, source commit and package identity. A job does not resume across a different package or backend implicitly. The Python CPU checkpoint and native checkpoint are distinct formats; conversion is not implemented.
 
 The initial GPU host retains state across batches of up to 64 ticks within one `advance_gpu` call, uses barriers between each of the four phases and reads state at the requested endpoint or a requested lifecycle stop. A new call currently rebuilds/uploads the device state. Persistent device ownership across body/control calls, event-driven sparse dispatch, streaming recordings and complete body/environment checkpoints are subsequent optimizations, not claimed here.
@@ -50,3 +52,12 @@ Suspension requests a deferral and stops at a completed boundary, then writes ch
 ## Reuse and license
 
 UWP build/project/package patterns and placeholder package icons are adapted from `gianlucamazza/xbox-gpu-training` at `d067b325b0232e0f766512e4b6e2c3ed902d478e`, MIT, copyright 2026 Gianluca Mazza. The original trainer and its accepted campaigns are unchanged. These assets are packaging placeholders, not a FlyMSG visual identity. The runtime and HLSL implement FlyMSG semantics directly and do not depend on transformer operators.
+
+Continuous refractory clamps use a new Python electrical semantics. The native fixed-map
+path retains the explicit historical boundary-reset mode. For the new continuous mode
+it is equivalent only for coupled cells that cannot become refractory (graded, silenced,
+stimulated, or a model without a refractory hold). The fixture exporter proves that
+condition before admitting an electrical fixture; otherwise it raises
+`NativeCapabilityError`. The acceptance report preserves original fixtures in their named boundary mode, lists
+continuous refractory fixtures as unsupported, and separately qualifies all-free fixtures. This is not native
+qualification of dynamic continuous clamps or GPU hardware.

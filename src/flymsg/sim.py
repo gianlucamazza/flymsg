@@ -113,34 +113,47 @@ def graded_arrays(graded: Graded | None, n: int, dt: float) -> tuple:
 
 @dataclass(frozen=True)
 class Gap:
-    """Electrical synapses: symmetric, non-rectifying couplings between neurons `i[k]` and
-    `j[k]` of strength `coupling[k]`, the junction's conductance over the leak conductance
-    (dimensionless; a coupling coefficient c between two equal cells gives c / (1 - c)).
-    Coupled neurons follow tau_m dv/dt = v_rest - v + g + sum_j coupling (v_j - v), which is
-    linear between spikes, so each connected group is integrated exactly over a step by a
-    precomputed matrix exponential (Van Loan's block form for the decaying synaptic input).
+    """Electrical synapses between neurons `i[k]` and `j[k]`. `coupling[k]` is the junction's
+    conductance over i's leak conductance and `coupling_back[k]` over j's (default: the
+    same, a symmetric junction); a coupling coefficient c measured from j to i gives
+    c / (1 - c) for i. Coupled neurons follow tau_m dv_i/dt = v_rest - v_i + g_i +
+    sum_j coupling_ij (v_j + s_j - v_i), linear between spikes, so each connected group is
+    integrated exactly over a step by a precomputed matrix exponential (Van Loan's block
+    form for the decaying synaptic input and for the spike term).
 
-    Refractory membranes are continuously clamped at rest; their frozen chemical
-    conductance does not act. Free partners retain the sink from contacts to clamped
-    cells. The reduced linear system is integrated exactly for each refractory mask,
-    with a bounded cache of step maps. Spikes do not cross: a LIF spike is a reset,
-    not a waveform, so spikelets are absent."""
+    s_j is the spike a LIF reset does not draw: if `spike_mv` and `spike_ms` are given, a
+    spike of j adds a rectangular spike_mv[j] to the potential its partners see for the
+    `spike_ms` after it (rounded to steps), so spikes cross the junction as spikelets.
+    `spike_mv` is one value or one per neuron of the network (0: that neuron's spikes do not
+    cross). Without them spikes do not cross. Junctions do not rectify.
+
+    Refractory membranes are continuously clamped at rest, with chemical conductance
+    frozen. Free partners retain the sink from contacts to those membranes; an explicit
+    spike waveform is a separate prescribed input. Reduced step maps are exact for the
+    current refractory mask and cached under a bounded memory budget."""
 
     i: np.ndarray
     j: np.ndarray
     coupling: np.ndarray
+    coupling_back: np.ndarray | None = None
+    spike_mv: float | np.ndarray | None = None
+    spike_ms: float | None = None
+    refractory_mode: str = "continuous"
 
 
-# largest coupled group: its dense step matrix is m x 2m float64 and its exponential needs a
-# 2m x 2m block (4000 neurons: 256 MB for the block)
+# largest coupled group: its dense step matrix is m x 3m float64 and its exponential needs a
+# 3m x 3m block (4000 neurons: 1.2 GB for the block)
 MAX_GAP_COMPONENT = 4000
 
 
 def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
     """Kernel arrays of `gap`: the coupled neurons grouped by connected component (indices,
-    component offsets) and, per component of m neurons, the m x 2m float64 step matrix
-    [P | Q] with v(t + dt) - v_rest = P (v - v_rest) + Q g for free neurons, row-major, with
-    its offsets. Empty without electrical synapses."""
+    component offsets); per component of m neurons the m x 3m float64 step matrix
+    [P | Q | S], row-major, with its offsets, such that for free neurons
+    v(t + dt) - v_rest = P (v - v_rest) + Q g + S s with s the spike term of each member;
+    each neuron's position among the coupled ones (-1 if none); the spike term's length in
+    steps (0 when no coupled spike crosses); and each coupled neuron's spike amplitude in
+    mV."""
     from scipy.linalg import expm
     from scipy.sparse.csgraph import connected_components
 
@@ -149,9 +162,14 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
         np.zeros(1, dtype=np.int64),
         np.empty(0, dtype=np.float64),
         np.zeros(1, dtype=np.int64),
+        np.full(n, -1, dtype=np.int64),
+        0,
+        np.empty(0, dtype=np.float64),
     )
     if gap is None:
         return empty
+    if gap.refractory_mode not in {"continuous", "boundary"}:
+        raise ValueError("unknown electrical refractory mode")
     ends = []
     for x in (gap.i, gap.j):
         a = np.asarray(x)
@@ -164,40 +182,70 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
     if np.any(np.r_[i, j] < 0) or np.any(np.r_[i, j] >= n):
         raise ValueError("gap endpoints outside the network")
     c = np.broadcast_to(np.asarray(gap.coupling, dtype=np.float64), i.shape)
-    if not np.isfinite(c).all() or np.any(c < 0):
-        raise ValueError("gap couplings must be finite and nonnegative")
+    back = (
+        c
+        if gap.coupling_back is None
+        else np.broadcast_to(np.asarray(gap.coupling_back, dtype=np.float64), i.shape)
+    )
+    if not (np.isfinite(c).all() and np.isfinite(back).all()):
+        raise ValueError("gap couplings must be finite")
+    if np.any(c < 0) or np.any(back < 0) or np.any((c > 0) != (back > 0)):
+        raise ValueError(
+            "gap couplings must be nonnegative and zero on both sides or none"
+        )
+    if (gap.spike_mv is None) != (gap.spike_ms is None):
+        raise ValueError("spike transmission needs both spike_mv and spike_ms")
+    width, amp_all = 0, np.zeros(n)
+    if gap.spike_mv is not None:
+        width = round(gap.spike_ms / p.dt)
+        amp_all = np.broadcast_to(np.asarray(gap.spike_mv, dtype=np.float64), (n,))
+        if not (np.isfinite(amp_all).all() and np.all(amp_all >= 0) and width >= 1):
+            raise ValueError(
+                "spike_mv must be finite and nonnegative, spike_ms at least one step"
+            )
     keep = c > 0
-    i, j, c = i[keep], j[keep], c[keep]
+    i, j, c, back = i[keep], j[keep], c[keep], back[keep]
     if i.size == 0:
         return empty
     K = sparse.coo_matrix(
-        (np.r_[c, c], (np.r_[i, j], np.r_[j, i])), shape=(n, n)
+        (np.r_[c, back], (np.r_[i, j], np.r_[j, i])), shape=(n, n)
     ).tocsr()
     nodes = np.unique(np.r_[i, j])
     _, label = connected_components(K[nodes][:, nodes], directed=False)
     order = np.lexsort((nodes, label))
     nodes, label = nodes[order], label[order]
     off = np.r_[0, np.cumsum(np.bincount(label))].astype(np.int64)
-    mats, moff = [], [0]
     if np.diff(off).max() > MAX_GAP_COMPONENT:
         raise ValueError(
             f"an electrically coupled group exceeds {MAX_GAP_COMPONENT} neurons"
         )
+    mats, moff = [], [0]
     for a, b in pairwise(off):
         members = nodes[a:b]
         m = members.size
         Kc = K[members][:, members].toarray()
         A = (Kc - np.diag(1.0 + Kc.sum(axis=1))) / p.tau_m
-        block = np.zeros((2 * m, 2 * m))
+        block = np.zeros((3 * m, 3 * m))
         block[:m, :m] = A
-        block[:m, m:] = np.eye(m) / p.tau_m
-        block[m:, m:] = -np.eye(m) / p.tau_syn
+        block[:m, m : 2 * m] = np.eye(m) / p.tau_m
+        block[:m, 2 * m :] = Kc / p.tau_m  # constant spike term over the step
+        block[m : 2 * m, m : 2 * m] = -np.eye(m) / p.tau_syn
         E = expm(block * p.dt)
         if not np.isfinite(E).all():
             raise ValueError("gap couplings give a nonfinite step matrix")
-        mats.append(np.hstack([E[:m, :m], E[:m, m:]]).ravel())
-        moff.append(moff[-1] + 2 * m * m)
-    return nodes, off, np.concatenate(mats), np.asarray(moff, dtype=np.int64)
+        mats.append(E[:m].ravel())
+        moff.append(moff[-1] + 3 * m * m)
+    pos = np.full(n, -1, dtype=np.int64)
+    pos[nodes] = np.arange(nodes.size)
+    return (
+        nodes,
+        off,
+        np.concatenate(mats),
+        np.asarray(moff, dtype=np.int64),
+        pos,
+        width if np.any(amp_all[nodes] > 0) else 0,
+        np.ascontiguousarray(amp_all[nodes]),
+    )
 
 
 def network(
@@ -326,7 +374,9 @@ def run(
         keep_trace = traced
     d, ref_steps = _delays(p)
     g_idx, g_lo, g_span, g_scale, is_graded = graded_arrays(graded, n, p.dt)
-    gap_nodes, gap_off, gap_mat, gap_moff = gap_arrays(gap, n, p)
+    gap_nodes, gap_off, gap_mat, gap_moff, gap_pos, gap_width, gap_amp = gap_arrays(
+        gap, n, p
+    )
     gap_gen, gap_keys, gap_clock = electrical.generators(gap, gap_nodes, gap_off, p)
     counts, first, g_vsum = _kernel(
         W.indptr.astype(np.int64),
@@ -354,6 +404,9 @@ def run(
         gap_off,
         gap_mat,
         gap_moff,
+        gap_pos,
+        gap_width,
+        gap_amp,
         gap_gen,
         gap_keys,
         gap_clock,
@@ -432,6 +485,9 @@ def _kernel(
     gap_off,
     gap_mat,
     gap_moff,
+    gap_pos,
+    gap_width,
+    gap_amp,
     gap_gen,
     gap_keys,
     gap_clock,
@@ -447,8 +503,10 @@ def _kernel(
     Graded neurons skip 2 and 4; their release, computed at 2 from v, is delivered d steps
     later at 3, after the spikes, summed per target column by column (as scipy's CSC
     matrix-vector product). Electrically coupled neurons replace the update of 1 by their
-    component's exact step [P | Q] applied to the state before it (potentials relative to
-    rest, then conductances, zero for refractory neurons), summed in float64 in that order."""
+    component's exact step [P | Q | S] applied to the state before it (potentials relative
+    to rest, conductances of non-refractory neurons, then the spike term of members whose
+    spike is still crossing), summed in float64 in that order; a member's spike at 4 makes
+    its spike term its `gap_amp` for the next `gap_width` steps."""
     v = np.full(n, v_rest, dtype=np.float32)
     g = np.zeros(n, dtype=np.float32)
     th = np.zeros(n, dtype=np.float32)
@@ -465,6 +523,7 @@ def _kernel(
     g_new = np.zeros(g_idx.size, dtype=np.float32)
     g_vsum = np.zeros((counts.shape[0], g_idx.size), dtype=np.float64)
     gap_buf = np.zeros(gap_nodes.size, dtype=np.float32)
+    gap_pulse = np.zeros(gap_nodes.size, dtype=np.int32)
     gap_current = gap_mat.copy()
     gap_mask = np.zeros(gap_nodes.size, dtype=np.bool_)
     _advance(
@@ -516,6 +575,10 @@ def _kernel(
         gap_mat,
         gap_moff,
         gap_buf,
+        gap_pos,
+        gap_width,
+        gap_amp,
+        gap_pulse,
         gap_gen,
         gap_keys,
         gap_clock,
@@ -575,6 +638,10 @@ def _advance(
     gap_mat,
     gap_moff,
     gap_buf,
+    gap_pos,
+    gap_width,
+    gap_amp,
+    gap_pulse,
     gap_gen,
     gap_keys,
     gap_clock,
@@ -585,38 +652,44 @@ def _advance(
     rest64 = np.float64(v_rest)
     zero, one = np.float32(0.0), np.float32(1.0)
     for t in range(start_step, stop_step):
-        # A refractory mask is fixed for this entire step (integer deadlines).
+        # The refractory mask is constant for the full neural step.
         for comp in range(gap_off.size - 1):
             a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
             frozen_mask = np.empty(m, dtype=np.bool_)
-            any_frozen = False
-            changed = False
+            any_frozen, changed = False, False
             for q in range(m):
                 frozen_mask[q] = ref_until[gap_nodes[a + q]] > t
                 any_frozen = any_frozen or frozen_mask[q]
                 changed = changed or frozen_mask[q] != gap_mask[a + q]
             lo, hi = gap_moff[comp], gap_moff[comp + 1]
-            if changed:
+            if changed and gap_clock[3] == 0:
                 if any_frozen:
-                    start = lo // 2
-                    A = gap_gen[start : start + m * m].reshape(m, m)
+                    start = lo // 3 * 2
+                    G = gap_gen[start : start + 2 * m * m].reshape(m, 2 * m)
                     digest = gap_keys[comp]
                     with numba.objmode(reduced="float64[:,:]"):
                         reduced = electrical.clamped_map(
-                            A, frozen_mask, gap_clock, digest
+                            G, frozen_mask, gap_clock, digest
                         )
                     gap_current[lo:hi] = reduced.ravel()
                 else:
                     gap_current[lo:hi] = gap_mat[lo:hi]
                 gap_mask[a : a + m] = frozen_mask
-            M = gap_current[lo:hi].reshape(m, 2 * m)
+            M = gap_current[lo:hi].reshape(m, 3 * m)
             for r in range(m):
                 acc = 0.0
                 for q in range(m):
                     acc += M[r, q] * (np.float64(v[gap_nodes[a + q]]) - rest64)
                 for q in range(m):
-                    acc += M[r, m + q] * np.float64(g[gap_nodes[a + q]])
+                    if ref_until[gap_nodes[a + q]] <= t:
+                        acc += M[r, m + q] * np.float64(g[gap_nodes[a + q]])
+                for q in range(m):
+                    if gap_pulse[a + q] > 0:
+                        acc += M[r, 2 * m + q] * gap_amp[a + q]
                 gap_buf[a + r] = np.float32(rest64 + acc)
+        for k in range(gap_pulse.size):
+            if gap_pulse[k] > 0:
+                gap_pulse[k] -= 1
         # 1. state update (refractory: v stays at v_rest, g frozen), branch-free so that
         # it vectorises; the refractory lanes compute and discard
         for i in range(n):
@@ -694,6 +767,8 @@ def _advance(
             if first[i] < 0:
                 first[i] = t
             ring[slot, k] = i
+            if gap_width > 0 and gap_pos[i] >= 0:
+                gap_pulse[gap_pos[i]] = gap_width
             col = trace_col[i]
             if col >= 0:
                 traced[t, col] = 1

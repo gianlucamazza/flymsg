@@ -220,7 +220,7 @@ def execution(
         "source": source,
         "environment": environment(),
         "inputs": files(paths),
-        "electrical_semantics": electrical.SEMANTICS,
+        "default_electrical_semantics": electrical.SEMANTICS,
     }
 
 

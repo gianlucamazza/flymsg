@@ -64,9 +64,20 @@ The optional electrical path retains its all-free map and reuses the current map
 mask changes. Additional maps have a process-wide 64 MiB LRU budget. No-gap and zero-gap
 execution retain the original operations and neural checkpoint identity; nonzero-gap
 checkpoints carry `flymsg.gap/continuous-clamp-v1` and refuse previous electrical semantics.
+Asymmetric contacts and explicit spike waveforms merged concurrently are preserved: the
+waveform is prescribed forcing, distinct from the continuously clamped membrane.
+The separately named historical `boundary` numerical mode preserves already registered
+protocols and their native qualification. `continuous` is the default for new Gap
+configurations. The native fixed-map implementation accepts the new continuous mode only
+when coupled cells provably never enter refractory; otherwise `NativeCapabilityError`
+refuses that mode. Mode selection is explicit and recorded, never an automatic fallback.
+Qualification reports list unsupported cases explicitly rather than counting them as
+passed. Native dynamic clamps and physical GPU/console qualification remain open.
 
 Measured on 2026-10-13: the KC candidate topology has one 823-cell component; a full map
-occupies 10,837,264 bytes. A sampled reduced-map exponential took 1.81 s with one BLAS
+occupied 10,837,264 bytes before the separately merged spike-term column. The current
+three-term map occupies 16,255,896 bytes; `electrical.cache_info()` counts actual map
+hits, misses, evictions, bytes and build time in each process. A sampled reduced-map exponential took 1.81 s with one BLAS
 thread on the loaded host. This is setup cost, not a whole-run benchmark. The number of
 unique refractory masks determines actual cost; no real-time or full-connectome performance
 claim follows. Do not replace exact integration with an unqualified approximation to make

@@ -60,6 +60,10 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
                  const std::string &expected_adapter) {
   require(target >= runtime.step && target <= runtime.input[3],
           "invalid GPU target");
+  // The shader implements version 1 only: graded neurons and coupled groups
+  // would need hardware qualification of their float64 paths first (#39).
+  require(runtime.input[1] == 1,
+          "BLOCKED: graded and electrical synapses are not in the GPU lane");
   if (target == runtime.step)
     return;
   const auto groups = (uint64_t(runtime.input[2]) + 63) / 64;
