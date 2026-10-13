@@ -30,6 +30,7 @@ DIRS = (
     "kc-sparseness/v4",
     "kc-sparseness/v5",
     "t4t5/v1",
+    "t4t5/v2",
     "jump3d/v1",
     "partner-followup/v1",
     "jump/intact",

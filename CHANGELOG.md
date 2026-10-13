@@ -4,6 +4,11 @@
 
 ### Result
 
+- **T4/T5 through the eye v2: robust: neither** (#84, #97). With graded photoreceptors and
+  L1–L3 over 17 configurations of the measured voltage ranges, no T4 or T5 neuron spikes.
+  Contrast crosses the lamina (L1–L3 hyperpolarize by 14–33 mV under light) and stops in the
+  medulla: Mi1, Tm3 and Mi4 never fire, the OFF inputs only at LMC release rates of
+  200–400 Hz. Run from the lock commit `17173c2`, resumed once from saved configurations.
 - **Kenyon cell sparseness v5: none** (#95, #85). With the measured asymmetric eLN ↔ PN
   coupling, sister PNs at 0.013 and eLN spikes crossing as 40 mV spikelets of 0–2 ms, every
   coupled arm stays silent (0.22–0.30% of Kenyon cells, floor 1%), as without coupling, and

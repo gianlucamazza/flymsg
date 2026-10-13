@@ -91,3 +91,16 @@ stimulus and configuration. The decision per configuration is v1's; the test rep
 `robust: <verdict>` only if all 17 agree, and otherwise `depends` with the counts. The
 pathway's spikes per type (Mi1 to Tm9) and the LMC potentials are reported next to the
 measured ranges.
+
+**Result of version 2 (2026-10-13): robust: neither.** Run from `17173c2`, the lock commit,
+seed 93, 136 simulations; interrupted once after 8 configurations and resumed from saved ones
+(the manifest lists them). All 17 configurations give `neither`: no T4 or T5 neuron spikes
+for any edge, direction or polarity. Contrast now crosses the lamina: under light the graded
+L1–L3 receiving window photoreceptors hyperpolarize by 14–33 mV at their lowest (the measured
+range is 20–45 mV; the 20 mV configurations stay below it). It stops in the medulla. The ON
+inputs of T4 (Mi1, Tm3, Mi4) fire in no configuration. The OFF inputs (Tm1, Tm2, Tm4, Mi9)
+fire only when the LMC release rate is 200 or 400 Hz, with 7 to about 560,000 spikes per type
+over the eight stimuli; at 25–100 Hz the whole medulla stage is silent. In the fly Mi1 and Tm3
+are graded and the medulla inputs differ in timing (Behnia et al. 2014; [leads](leads.md));
+here they are spiking point neurons at rest, which disinhibition from the lamina does not
+lift, the outcome the lock's prior names. Outputs: `results/t4t5/v2/`.
