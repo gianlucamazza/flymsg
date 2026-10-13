@@ -12,6 +12,7 @@ from flymsg import (
     eye,
     jump3d_lock,
     kc_sparseness,
+    medulla,
     odors,
     partner_followup,
     plasticity,
@@ -89,6 +90,15 @@ def prepare(a):
             {f"eyemap/{name}": eye.raw_dir(a.data) / name for name in eye.EYEMAP_FILES}
         )
         paths["raw/annotations"] = a.data / "raw" / data.RAW["annotations"]
+        if "graded_medulla" in doc["protocol"]:
+            medulla.fetch(a.data)
+            paths.update(
+                {
+                    f"groschner2022/fig3_{name}.npy": medulla.raw_dir(a.data)
+                    / f"fig3_{name}.npy"
+                    for name in medulla.FILES
+                }
+            )
     if a.cmd == "weight-rule":
         # measured before the run by `flymsg weight-rule --areas`, frozen with the tables
         paths[weight_rule.AREAS] = a.data / weight_rule.AREAS

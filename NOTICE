@@ -22,6 +22,10 @@ derived from it.
 The odorant response database DoOR (ropensci/DoOR.data, CC BY-SA 4.0), used by `flymsg odor`,
 is downloaded at run time into data/raw/door and not redistributed.
 
+The in vivo voltage traces of Groschner et al. 2022 (Edmond doi:10.17617/3.8G, CC BY 4.0),
+used by `flymsg t4t5` version 3, are downloaded at run time into data/raw/groschner2022 and
+not redistributed.
+
 The FlyWire FAFB v783 connectome data (used via `--dataset fafb`) is licensed CC BY-NC 4.0
 (non-commercial). flymsg does not redistribute it. Users who download it must respect its
 terms: https://join.flywire.ai/guidelines
