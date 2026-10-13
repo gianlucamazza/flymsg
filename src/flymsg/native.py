@@ -26,7 +26,7 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
     n, steps, d = runtime._n, runtime._steps, runtime._d
     header = np.zeros(HEADER_WORDS, dtype="<u4")
     g_idx, g_lo, g_span, g_scale, _ = runtime._graded
-    gap_nodes, gap_off, gap_mat, gap_moff = runtime._gap
+    gap_nodes, gap_off, gap_mat, gap_moff, _, gap_width, gap_amp = runtime._gap
     extended = bool(g_idx.size or gap_nodes.size)
     header[:9] = [
         MAGIC,
@@ -88,7 +88,7 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
         graded_col[g_idx] = np.arange(ng)
         gap_pos = np.full(n, -1, dtype=np.int32)
         gap_pos[gap_nodes] = np.arange(nc)
-        ext = np.array([ng, nc, ncomp, gap_mat.size], dtype="<u4")
+        ext = np.array([ng, nc, ncomp, gap_mat.size, gap_width], dtype="<u4")
         chunks.append(ext.tobytes())
         cursor += ext.size
         for values, dtype in (
@@ -101,13 +101,15 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
             (gap_off, "<u4"),
             (gap_moff, "<u4"),
             (gap_mat, "<f8"),
+            (gap_amp, "<f8"),
         ):
             raw = np.asarray(values, dtype=dtype).tobytes()
             chunks.append(raw)
             cursor += len(raw) // 4
         bins = steps // runtime._per_bin
-        # graded release ring, release of this step, voltage sums (f64), gap buffer
-        state_cursor += d * ng + ng + 2 * bins * ng + nc
+        # graded release ring, release of this step, voltage sums (f64), gap buffer, steps
+        # left of each coupled neuron's spike term
+        state_cursor += d * ng + ng + 2 * bins * ng + nc + nc
     header[34:37] = [cursor, state_cursor, len(order)]
     if (cursor + state_cursor) * 4 > MAX_BYTES:
         raise ValueError("fixture exceeds native qualification memory cap")
@@ -164,4 +166,7 @@ def read_output(path: Path, fixture: Path) -> dict[str, np.ndarray | int]:
         out["graded_vsum"] = (
             state[at : at + 2 * bins * ng].view("<f8").reshape(bins, ng).copy()
         )
+        nc = int(words[int(h[37]) + 1])
+        at += 2 * bins * ng + nc
+        out["gap_pulse"] = state[at : at + nc].view("<i4").copy()
     return out

@@ -154,6 +154,9 @@ class CpuRuntime:
             self._state["graded_vsum"] = np.zeros(
                 (steps // per_bin, ng), dtype=np.float64
             )
+        if self._gap[0].size:
+            # steps left of each coupled neuron's spike term (sim.Gap)
+            self._state["gap_pulse"] = np.zeros(self._gap[0].size, dtype=np.int32)
         config = json.dumps(
             {
                 "semantics": SEMANTICS,
@@ -173,7 +176,15 @@ class CpuRuntime:
             self._silent,
             self._trace,
             *(self._graded if ng else ()),
-            *(self._gap if self._gap[0].size else ()),
+            *(
+                (
+                    *self._gap[:5],
+                    np.array([self._gap[5]], dtype=np.int64),
+                    self._gap[6],
+                )
+                if self._gap[0].size
+                else ()
+            ),
         ):
             digest.update(str((array.shape, array.dtype.str)).encode())
             digest.update(array.tobytes())
@@ -188,6 +199,7 @@ class CpuRuntime:
         )
         self._graded_new = np.zeros(ng, dtype=np.float32)
         self._gap_buf = np.zeros(self._gap[0].size, dtype=np.float32)
+        self._no_pulse = np.zeros(0, dtype=np.int32)
 
     @property
     def step(self) -> int:
@@ -245,8 +257,10 @@ class CpuRuntime:
             g_ring,
             self._graded_new,
             g_vsum,
-            *self._gap,
+            *self._gap[:4],
             self._gap_buf,
+            *self._gap[4:],
+            s.get("gap_pulse", self._no_pulse),
         )
         self._step = step
 
@@ -378,6 +392,11 @@ class CpuRuntime:
                 raise ValueError("invalid temporal state")
             if np.any(state["input_counts"] < 0):
                 raise ValueError("invalid input counts")
+            if "gap_pulse" in state and (
+                np.any(state["gap_pulse"] < 0)
+                or np.any(state["gap_pulse"] > self._gap[5])
+            ):
+                raise ValueError("invalid spike terms")
             if meta.get("state_sha256") != _state_digest(
                 state, self._identity, step, input_end
             ):

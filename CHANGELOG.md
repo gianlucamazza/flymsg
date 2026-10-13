@@ -12,8 +12,12 @@
 
 ### Model
 
+- **Spikelets and asymmetric junctions** (#85): `sim.Gap` takes a coupling per side of a
+  junction and, with `spike_mv` and `spike_ms`, lets a spike cross as a rectangular term
+  integrated exactly with the rest (third Van Loan block); CPU, NumPy reference, runtime
+  checkpoints and the native executor agree bit for bit (60 native acceptance cases).
 - **Native executor with graded neurons and electrical synapses**: fixture version 2 carries
-  both; the C++ executor matches the CPU runtime bit for bit, checkpoints included (48
+  both; the C++ executor matches the CPU runtime bit for bit, checkpoints included (60
   acceptance cases); corrupt extensions are rejected; the DX12 lane refuses version 2 until
   hardware qualifies it (#39).
 - **Exact electrical coupling**: each connected group of electrically coupled neurons is
