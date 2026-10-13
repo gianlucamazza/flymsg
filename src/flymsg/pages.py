@@ -54,6 +54,7 @@ PAGES = (
     ("architecture", "docs/architecture.md", "Architecture"),
     ("model", "docs/model.md", "Model"),
     ("embodiment", "docs/embodiment.md", "Embodiment"),
+    ("eye", "docs/eye.md", "Eye"),
     ("runtime", "docs/runtime.md", "Runtime"),
     ("validation", "docs/validation.md", "Validation"),
     ("benchmarks", "docs/benchmarks.md", "Benchmarks"),

@@ -152,11 +152,18 @@ density-scaled weight the plain model stays stable (zero self-sustained neurons 
 validation case). The adaptive threshold is therefore off by default and kept as an option;
 `--th-jump 2 --w-syn 0.275` restores the v0.3–v0.4 model.
 
-## Extensions not adopted (2026-10-11)
+## Decision of 2026-10-11 (default model)
 
 Issue #9 asks for one added mechanism only where a measured discrepancy comes with a
-parameter that transfers into this LIF. None of the four candidates has one. No variant
-is added. `w_syn` and `th_jump` stay at the default.
+parameter that transfers into this LIF. On that date none of the four candidates had one,
+and none entered the default model. `w_syn` and `th_jump` stay at the default.
+
+Three later mechanisms stay off unless a lock names them, and none of them changes
+`sim.Params`: `sim.Gap` (electrical synapses; a spike does not cross, because a LIF spike
+is a reset), `sim.Graded` (non-spiking release) and the dopamine-gated depression at
+Kenyon cell → MBON11. Each has its own section below. The table is the decision of
+2026-10-11. The gap-junction row is about the default model and the giant-fiber
+conductance, which is still not in the model.
 
 | Candidate                    | Discrepancy already on record                                                      | Why it is not added                                                                                                                                                         |
 | ---------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -168,9 +175,10 @@ is added. `w_syn` and `th_jump` stay at the default.
 The looming silence failure is not a reason to add a giant-fiber gap junction. Silencing
 `DNp01` removes that cell's output, chemical and electrical together. `TTMn_R` still
 reaches 3 spikes, so some other partner still drives it. A synapse that starts at `DNp01`
-cannot put those spikes back. Which partner is not named here: that would be a new
-measurement, and it is not this decision. Issue #20 records that limit. It does not
-name the partner and it does not run.
+cannot put those spikes back. Which partner is not named in this decision: naming it
+would have been a new measurement. Issue #20 recorded that limit and did not run. The
+scan that later named DNp02 and DNp06 is
+[behavior](behavior.md#residual-partner-scan).
 
 Issue #10 is closed as blocked (v0.8.9). Dopamine, octopamine and serotonin have sign 0.
 The sugar and bitter cases are stimulus identity, not a feeding state. No

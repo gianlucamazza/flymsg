@@ -3,7 +3,8 @@
 Small outputs of runs the docs cite, copied from `runs/` (ignored by git) by
 `scripts/archive_results.py`, each directory with its run manifest. Local paths are removed
 from the manifests; nothing else is edited. A directory here is never overwritten: a rerun
-is a new version. `scripts/build_figures.py` draws `docs/img/*.svg` from these files.
+is a new version. `scripts/build_figures.py` draws `docs/img/*.svg` from these files. A
+directory a doc cites is added to the table below in the same commit.
 
 | Directory                     | Command                                                  |
 | ----------------------------- | -------------------------------------------------------- |

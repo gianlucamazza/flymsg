@@ -45,6 +45,14 @@
   NeuroMechFly in 1 ms blocks at the 0.1 ms neural step and cuts the looming input at the
   first boundary after takeoff; before the cut the spikes equal the open-loop run (tested).
 
+### Documentation
+
+- **One status index.** The roadmap holds the verdict table, and the README points at it.
+  Validation's dated notes moved under a status log. The eye and the T4/T5 locks moved out
+  of the embodiment note into `docs/eye.md`. Provenance records the mechanisms added on
+  2026-10-13. Present-tense sentences describe the default model; a dated sentence stays
+  under its date.
+
 ## 0.8.44 — 2026-10-13
 
 ### Result
