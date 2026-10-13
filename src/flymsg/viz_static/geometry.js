@@ -179,3 +179,15 @@ export function skeletonLevels(vertices, edges, base, count) {
     }
   return { eps, levels, bounds: { min, max } };
 }
+
+/** Surface area of a triangle mesh: the sum of its triangles' areas, in squared position units. */
+export function meshArea(positions, index) {
+  let area = 0;
+  for (let t = 0; t < index.length; t += 3) {
+    const a = 3 * index[t], b = 3 * index[t + 1], c = 3 * index[t + 2];
+    const ux = positions[b] - positions[a], uy = positions[b + 1] - positions[a + 1], uz = positions[b + 2] - positions[a + 2];
+    const vx = positions[c] - positions[a], vy = positions[c + 1] - positions[a + 1], vz = positions[c + 2] - positions[a + 2];
+    area += Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2;
+  }
+  return area;
+}

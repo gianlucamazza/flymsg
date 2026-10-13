@@ -135,6 +135,16 @@ The median ratio (1.81, `w_syn` 0.152) fails sugar → MN9. Even a stimulated ne
 (`poisson_scale · w_syn` = 48.1 mV) stays far above the 7 mV gap, so stimulated neurons still
 fire once per input spike.
 
+**Other weight rules (optional, 2026-10-13).** `sim.weight_matrix(..., post_scale=...)`
+multiplies every weight onto a neuron by that neuron's value, so a lock can state a rule
+other than count × `w_syn`; without it the weights are unchanged. `sim.density_scale(area,
+ref)` gives the rule of Liu et al. (2022), where a unitary EPSP follows synapse density on
+the postsynaptic neuron (count over surface area) better than count: `ref / area`, with the
+reference area stated by the lock. `scripts/mesh_area.mjs BODYID ...` measures a neuron's
+surface area from its published mesh at full resolution with the viewer's own readers and
+Draco decoder (DNp01_R, bodyId 10001: about 59,800 µm² over 45 M triangles); holes in a
+published mesh are not closed. No rule other than count is used by any result.
+
 ## Adaptive threshold (optional; off by default since v0.5)
 
 With Shiu's FAFB weight (0.275) and no adaptation, the whole male CNS falls into

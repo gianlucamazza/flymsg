@@ -96,3 +96,13 @@ test("skeleton levels: a closed loop of degree-2 vertices is kept", () => {
   const { levels } = skeletonLevels(vertices, edges, 1, 2);
   assert.equal(levels.length, 1); // every corner matters at these tolerances
 });
+
+test("meshArea sums triangle areas: a unit cube has area 6", async () => {
+  const { meshArea } = await import("../../src/flymsg/viz_static/geometry.js");
+  // 8 corners, 12 triangles
+  const p = new Float64Array([0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1]);
+  const faces = [0,2,1, 0,3,2, 4,5,6, 4,6,7, 0,1,5, 0,5,4, 2,3,7, 2,7,6, 1,2,6, 1,6,5, 0,4,7, 0,7,3];
+  assert.equal(meshArea(p, faces), 6);
+  const scaled = p.map((x) => 16 * x); // the mesh transform scales area by its square
+  assert.equal(meshArea(scaled, faces), 6 * 256);
+});
