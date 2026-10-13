@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Result
+
+- **Synapse weight rule v1: undecided** (#139). On Liu et al. 2022's 57 PN → LHN pairs of
+  six matched LHN types, density (count over mesh area) ranks the measured amplitudes
+  barely better than count (Spearman 0.581 against 0.567; Δρ interval −0.011 to +0.054);
+  count stays the rule. MaleCNS counts rank the female amplitudes at ρ 0.81 on the 13 nonzero
+  pairs.
+
 ### Validation
 
 - **Synapse weight rule lock** (#139): `validation/weight_rule.yaml` v1 compares count

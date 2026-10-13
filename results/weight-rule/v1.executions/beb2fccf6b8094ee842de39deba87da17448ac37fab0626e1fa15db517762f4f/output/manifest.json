@@ -1,0 +1,1194 @@
+{
+  "command": "weight-rule --run",
+  "config": {
+    "weight_rule_sha256": "87a33e5fbc589f4445386618275c46bf88c18d7f97d46e1b02e82ff4535ef79d",
+    "weight_rule_version": 1
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "attempts": [
+      {
+        "finished_at": "2026-10-13T15:17:17.299283+00:00",
+        "host": "lenovo",
+        "id": "7f8e6eb89db54a92a4ef3748cf305b2b",
+        "kernel": "7.2.9-arch1-1",
+        "started_at": "2026-10-13T15:17:03.475182+00:00",
+        "status": "completed",
+        "system": "Linux"
+      }
+    ],
+    "data_dir": "data",
+    "execution": {
+      "command": "weight-rule",
+      "config": {
+        "areas": false,
+        "dataset": "malecns",
+        "run": true
+      },
+      "default_electrical_semantics": "flymsg.gap/continuous-clamp-v1",
+      "environment": {
+        "byteorder": "little",
+        "cpu": {
+          "cpu family": "6",
+          "flags": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid movdiri movdir64b fsrm avx512_vp2intersect md_clear ibt flush_l1d arch_capabilities",
+          "microcode": "0xbe",
+          "model": "140",
+          "model name": "11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz",
+          "stepping": "1",
+          "vendor_id": "GenuineIntel"
+        },
+        "machine": "x86_64",
+        "numerical_threads": {
+          "MKL_NUM_THREADS": null,
+          "NUMBA_NUM_THREADS": null,
+          "OMP_NUM_THREADS": null,
+          "OPENBLAS_NUM_THREADS": null
+        },
+        "packages": {
+          "absl-py": "2.5.1",
+          "asttokens": "3.0.2",
+          "contourpy": "1.4.0",
+          "cycler": "0.12.1",
+          "etils": "1.14.0",
+          "executing": "2.3.0",
+          "flygym": "2.1.0",
+          "flymsg": "0.8.45",
+          "fonttools": "4.66.1",
+          "fsspec": "2026.9.0",
+          "glfw": "2.10.2",
+          "imageio": "2.38.1",
+          "imageio-ffmpeg": "0.6.0",
+          "iniconfig": "2.3.0",
+          "ipython": "9.17.1",
+          "ipython_pygments_lexers": "1.1.1",
+          "jaxtyping": "0.3.7",
+          "jedi": "0.20.1",
+          "kiwisolver": "1.5.1",
+          "llvmlite": "0.50.0",
+          "loguru": "0.7.3",
+          "markdown": "3.11",
+          "matplotlib": "3.11.2",
+          "matplotlib-inline": "0.2.2",
+          "mediapy": "1.2.7",
+          "mujoco": "3.9.0",
+          "numba": "0.68.0",
+          "numpy": "2.5.3",
+          "packaging": "26.3",
+          "pandas": "3.0.6",
+          "parso": "0.8.7",
+          "pexpect": "4.9.0",
+          "pillow": "12.3.0",
+          "pluggy": "1.6.0",
+          "prompt_toolkit": "3.0.53",
+          "psutil": "7.2.2",
+          "ptyprocess": "0.7.0",
+          "pure_eval": "0.2.4",
+          "pyarrow": "25.0.1",
+          "pygments": "2.21.0",
+          "pyopengl": "3.1.10",
+          "pyparsing": "3.3.3",
+          "pytest": "9.1.1",
+          "python-dateutil": "2.9.0.post0",
+          "pyyaml": "6.0.3",
+          "rdata": "1.1.0",
+          "ruff": "0.16.10",
+          "scipy": "1.18.1",
+          "six": "1.17.0",
+          "stack-data": "0.6.3",
+          "tabulate": "0.9.0",
+          "traitlets": "5.16.1",
+          "typing_extensions": "4.16.0",
+          "wadler_lindig": "0.1.7",
+          "wcwidth": "0.9.2",
+          "xarray": "2026.9.0",
+          "zipp": "4.1.1"
+        },
+        "python": "3.13.9",
+        "system": "Linux"
+      },
+      "inputs": {
+        "edges.parquet": {
+          "bytes": 98482393,
+          "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+        },
+        "neurons.parquet": {
+          "bytes": 2375250,
+          "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+        },
+        "weight_rule/areas.csv": {
+          "bytes": 2593,
+          "sha256": "a59ec3b23f2ab482528e40700caf0c6c7eb69eee011aa38da1ed1976130f17ee"
+        }
+      },
+      "protocol": {
+        "compensations": [
+          {
+            "\"Different animals and datasets": "Liu et al. measured physiology in female flies and counted synapses in the female hemibrain v1.1; the counts here are from the male MaleCNS v1.0.\""
+          },
+          "The two rules rank pairs identically within one LHN type; they differ only across the six matched types, so the test has little power.",
+          "Area is the whole neuron's mesh surface, one value per type; Liu et al. used a cylinder model of the whole neuron, about 8% smaller than meshes, and neither is dendrite-only.",
+          "Holes in a published mesh are not closed.",
+          {
+            "\"Somatic uEPSPs of a cable neuron against a point model": "the axo-axonic VL2a -> local5 connection, smaller than its density predicts in Liu et al., stays in the primary set as in their main fit.\""
+          },
+          "Amplitudes below Liu et al.'s 0.2 mV detection floor are 0 mV."
+        ],
+        "content_sha256": "87a33e5fbc589f4445386618275c46bf88c18d7f97d46e1b02e82ff4535ef79d",
+        "decides": {
+          "not_testable": "fewer than 10 pairs with a MaleCNS count or fewer than 4 LHN types with an area, or any listed LHN type without a mesh",
+          "primary": "the pairs listed under pairs: every pair of the six matched LHN types with a reliable estimate, zero amplitudes included, as in Liu et al.'s main fit",
+          "verdict": "density if the interval lies above 0, count if below 0, undecided otherwise"
+        },
+        "defaults_changed": false,
+        "issue": 139,
+        "matched_types": {
+          "L1": [
+            "LHAD1a1"
+          ],
+          "L15": [
+            "LHPV5c1_d"
+          ],
+          "ML9": [
+            "LHPD2a1"
+          ],
+          "V2": [
+            "LHAV2b2_a",
+            "LHAV2b2_b"
+          ],
+          "local2": [
+            "LHPV4a11"
+          ],
+          "local5": [
+            "LHAV2m1"
+          ]
+        },
+        "pairs": [
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DA4l/L1",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL4/L1",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL5/L1",
+            "uepsp_mv": 0.8422698
+          },
+          {
+            "hemibrain_count": 9.0,
+            "pair": "DM1/L1",
+            "uepsp_mv": 1.61617573
+          },
+          {
+            "hemibrain_count": 5.0,
+            "pair": "DM4/L1",
+            "uepsp_mv": 1.20671994
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VA6/L1",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VC1/L1",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VL2a/L1",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VL2p/L1",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DA4l/L15",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 1.5,
+            "pair": "DC1/L15",
+            "uepsp_mv": 1.01693282
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL4/L15",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL5/L15",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DM1/L15",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DM4/L15",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 1.0,
+            "pair": "DP1m/L15",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VA2/L15",
+            "uepsp_mv": 0.9789831
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VA6/L15",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VL2p/L15",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DA4l/ML9",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DC1/ML9",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL4/ML9",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL5/ML9",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 39.0,
+            "pair": "DM1/ML9",
+            "uepsp_mv": 3.91653936
+          },
+          {
+            "hemibrain_count": 13.2,
+            "pair": "DP1m/ML9",
+            "uepsp_mv": 1.14060981
+          },
+          {
+            "hemibrain_count": 5.2,
+            "pair": "VA2/ML9",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VA6/ML9",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VC1/ML9",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VL2a/ML9",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DA4l/V2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DC1/V2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL4/V2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL5/V2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DM1/V2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DM4/V2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.25,
+            "pair": "VA2/V2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 6.5,
+            "pair": "VA6/V2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VC1/V2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 13.75,
+            "pair": "VL2a/V2",
+            "uepsp_mv": 2.46240283
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DA4l/local2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 1.5,
+            "pair": "DC1/local2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL4/local2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 65.5,
+            "pair": "DL5/local2",
+            "uepsp_mv": 3.27651952
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DM1/local2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 4.0,
+            "pair": "DM4/local2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 26.0,
+            "pair": "DP1m/local2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.5,
+            "pair": "VA2/local2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 5.0,
+            "pair": "VA6/local2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VC1/local2",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 2.5,
+            "pair": "DA4l/local5",
+            "uepsp_mv": 0.65942807
+          },
+          {
+            "hemibrain_count": 2.0,
+            "pair": "DL4/local5",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DM4/local5",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VA2/local5",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 104.0,
+            "pair": "VA6/local5",
+            "uepsp_mv": 6.62604114
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VC1/local5",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 95.0,
+            "pair": "VL2a/local5",
+            "uepsp_mv": 2.104459
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "VL2p/local5",
+            "uepsp_mv": 0.61719868
+          }
+        ],
+        "partial_types": {
+          "ML3": [
+            "LHAD1b2_b"
+          ],
+          "V3": [
+            "LHAV1a1"
+          ]
+        },
+        "protocol": {
+          "area": "per LHN type: mean surface area of its neurons' published MaleCNS meshes at full resolution (scripts/mesh_area.mjs), fetched before the run into data/weight_rule/areas.csv",
+          "count": "per pair and side: mean over the LHN neurons of the type on that side of the summed synapse count from the glomerulus's PN on that side; then the mean over the sides that have both",
+          "difference": "delta = rho_density - rho_count, with a 95% percentile interval from 10000 paired bootstrap resamples of the pairs",
+          "pn_types": [
+            "DA4l_adPN",
+            "DC1_adPN",
+            "DL4_adPN",
+            "DL5_adPN",
+            "DM1_lPN",
+            "DM4_adPN",
+            "DP1m_adPN",
+            "VA2_adPN",
+            "VA6_adPN",
+            "VC1_lPN",
+            "VL2a_adPN",
+            "VL2p_adPN"
+          ],
+          "rules": {
+            "count": "prediction = count",
+            "density": "prediction = count / area"
+          },
+          "seed": 139,
+          "statistic": "Spearman rank correlation (average ranks for ties) of prediction against uEPSP, for each rule"
+        },
+        "question": "Across measured PN -> LHN unitary EPSPs, does the MaleCNS synapse count onto a neuron rank the amplitudes better or worse when divided by the postsynaptic surface area (density) than when used as it is (count)?",
+        "reported": {
+          "density_fit": {
+            "decides": false,
+            "what": "Pearson r2 of uEPSP against density, next to Liu et al.'s 0.77 (their area model, hemibrain)"
+          },
+          "measured_only": {
+            "decides": false,
+            "what": "the same statistics on the pairs with a uEPSP above 0 mV"
+          },
+          "sensitivity": {
+            "decides": false,
+            "what": "the same statistics with the sensitivity_pairs added, ML3 and V3 represented by the only subtype MaleCNS has"
+          }
+        },
+        "seen_before_lock": "Liu et al. 2022's Table S3 in full (156 pairs: 29 measured, 106 at 0 mV, 21 omitted), their Table S2 (hemibrain types per LHN), and in MaleCNS only which PN and LHN types exist and how many neurons each has. No MaleCNS synapse count between these PNs and LHNs, no surface area of these LHNs and no correlation of anything with the amplitudes has been computed. Liu et al. report a density fit (r2 0.77 over 135 pairs) and no count-only statistic.",
+        "sensitivity_pairs": [
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DA4l/ML3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DC1/ML3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DL4/ML3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 1.142857,
+            "pair": "DM1/ML3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DM4/ML3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 2.285714,
+            "pair": "DP1m/ML3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 6.857143,
+            "pair": "VC1/ML3",
+            "uepsp_mv": 1.18859636
+          },
+          {
+            "hemibrain_count": 9.571429,
+            "pair": "VL2p/ML3",
+            "uepsp_mv": 0.71611048
+          },
+          {
+            "hemibrain_count": 0.5,
+            "pair": "DC1/V3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 19.0,
+            "pair": "DL4/V3",
+            "uepsp_mv": 1.75984939
+          },
+          {
+            "hemibrain_count": 4.75,
+            "pair": "DL5/V3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DM1/V3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.0,
+            "pair": "DM4/V3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.75,
+            "pair": "DP1m/V3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 0.5,
+            "pair": "VA2/V3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 5.0,
+            "pair": "VA6/V3",
+            "uepsp_mv": 1.92217112
+          },
+          {
+            "hemibrain_count": 3.25,
+            "pair": "VC1/V3",
+            "uepsp_mv": 0
+          },
+          {
+            "hemibrain_count": 22.25,
+            "pair": "VL2a/V3",
+            "uepsp_mv": 1.60422109
+          },
+          {
+            "hemibrain_count": 21.25,
+            "pair": "VL2p/V3",
+            "uepsp_mv": 1.41590037
+          }
+        ],
+        "sources": {
+          "licence": "Elsevier open archive (user licence); values transcribed here with their source, the file is not redistributed",
+          "physiology": "Liu, Davoudian, Lizbinski & Jeanne 2022, Curr Biol 32:559, doi:10.1016/j.cub.2021.11.056, Table S3 (Document S1, https://ars.els-cdn.com/content/image/1-s2.0-S0960982221016420-mmc1.pdf, sha256 f7c693deb13c8f7522a0ee58cd39e703d40661ee3c59fd090f2cc08a85afbf28): mean somatic uEPSP per PN-LHN pair, 0 mV where no response was evident",
+          "pn_rule": "one uniglomerular PN of the anterodorsal or lateral lineage per glomerulus, as in Liu et al.; DM1 and VC1 are lPN, the others adPN",
+          "types": "Liu et al. 2022 Table S2 (mmc2.xlsx, https://ars.els-cdn.com/content/image/1-s2.0-S0960982221016420-mmc2.xlsx, sha256 c1797bb29fa7aa2a9617b623aabf0e6debf453c4b35fd4b1005a22f6bede4e87): hemibrain type(s) of each LHN name"
+        },
+        "version": 1
+      },
+      "schema": "flymsg.execution/v1",
+      "source": {
+        "commit": "78f06737ebe4e6f520d018161182eaac33cef0ad",
+        "dirty": false
+      }
+    },
+    "execution_sha256": "beb2fccf6b8094ee842de39deba87da17448ac37fab0626e1fa15db517762f4f",
+    "verdict": "undecided"
+  },
+  "git": {
+    "commit": "78f06737ebe4e6f520d018161182eaac33cef0ad",
+    "dirty": false
+  },
+  "packages": {
+    "absl-py": "2.5.1",
+    "asttokens": "3.0.2",
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "etils": "1.14.0",
+    "executing": "2.3.0",
+    "flygym": "2.1.0",
+    "flymsg": "0.8.45",
+    "fonttools": "4.66.1",
+    "fsspec": "2026.9.0",
+    "glfw": "2.10.2",
+    "imageio": "2.38.1",
+    "imageio-ffmpeg": "0.6.0",
+    "iniconfig": "2.3.0",
+    "ipython": "9.17.1",
+    "ipython_pygments_lexers": "1.1.1",
+    "jaxtyping": "0.3.7",
+    "jedi": "0.20.1",
+    "kiwisolver": "1.5.1",
+    "llvmlite": "0.50.0",
+    "loguru": "0.7.3",
+    "markdown": "3.11",
+    "matplotlib": "3.11.2",
+    "matplotlib-inline": "0.2.2",
+    "mediapy": "1.2.7",
+    "mujoco": "3.9.0",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pandas": "3.0.6",
+    "parso": "0.8.7",
+    "pexpect": "4.9.0",
+    "pillow": "12.3.0",
+    "pluggy": "1.6.0",
+    "prompt_toolkit": "3.0.53",
+    "psutil": "7.2.2",
+    "ptyprocess": "0.7.0",
+    "pure_eval": "0.2.4",
+    "pyarrow": "25.0.1",
+    "pygments": "2.21.0",
+    "pyopengl": "3.1.10",
+    "pyparsing": "3.3.3",
+    "pytest": "9.1.1",
+    "python-dateutil": "2.9.0.post0",
+    "pyyaml": "6.0.3",
+    "rdata": "1.1.0",
+    "ruff": "0.16.10",
+    "scipy": "1.18.1",
+    "six": "1.17.0",
+    "stack-data": "0.6.3",
+    "tabulate": "0.9.0",
+    "traitlets": "5.16.1",
+    "typing_extensions": "4.16.0",
+    "wadler_lindig": "0.1.7",
+    "wcwidth": "0.9.2",
+    "xarray": "2026.9.0",
+    "zipp": "4.1.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.9-arch1-1-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.9-arch1-1",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "compensations": [
+      {
+        "\"Different animals and datasets": "Liu et al. measured physiology in female flies and counted synapses in the female hemibrain v1.1; the counts here are from the male MaleCNS v1.0.\""
+      },
+      "The two rules rank pairs identically within one LHN type; they differ only across the six matched types, so the test has little power.",
+      "Area is the whole neuron's mesh surface, one value per type; Liu et al. used a cylinder model of the whole neuron, about 8% smaller than meshes, and neither is dendrite-only.",
+      "Holes in a published mesh are not closed.",
+      {
+        "\"Somatic uEPSPs of a cable neuron against a point model": "the axo-axonic VL2a -> local5 connection, smaller than its density predicts in Liu et al., stays in the primary set as in their main fit.\""
+      },
+      "Amplitudes below Liu et al.'s 0.2 mV detection floor are 0 mV."
+    ],
+    "content_sha256": "87a33e5fbc589f4445386618275c46bf88c18d7f97d46e1b02e82ff4535ef79d",
+    "decides": {
+      "not_testable": "fewer than 10 pairs with a MaleCNS count or fewer than 4 LHN types with an area, or any listed LHN type without a mesh",
+      "primary": "the pairs listed under pairs: every pair of the six matched LHN types with a reliable estimate, zero amplitudes included, as in Liu et al.'s main fit",
+      "verdict": "density if the interval lies above 0, count if below 0, undecided otherwise"
+    },
+    "defaults_changed": false,
+    "issue": 139,
+    "matched_types": {
+      "L1": [
+        "LHAD1a1"
+      ],
+      "L15": [
+        "LHPV5c1_d"
+      ],
+      "ML9": [
+        "LHPD2a1"
+      ],
+      "V2": [
+        "LHAV2b2_a",
+        "LHAV2b2_b"
+      ],
+      "local2": [
+        "LHPV4a11"
+      ],
+      "local5": [
+        "LHAV2m1"
+      ]
+    },
+    "pairs": [
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DA4l/L1",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL4/L1",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL5/L1",
+        "uepsp_mv": 0.8422698
+      },
+      {
+        "hemibrain_count": 9.0,
+        "pair": "DM1/L1",
+        "uepsp_mv": 1.61617573
+      },
+      {
+        "hemibrain_count": 5.0,
+        "pair": "DM4/L1",
+        "uepsp_mv": 1.20671994
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VA6/L1",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VC1/L1",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VL2a/L1",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VL2p/L1",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DA4l/L15",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 1.5,
+        "pair": "DC1/L15",
+        "uepsp_mv": 1.01693282
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL4/L15",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL5/L15",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DM1/L15",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DM4/L15",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 1.0,
+        "pair": "DP1m/L15",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VA2/L15",
+        "uepsp_mv": 0.9789831
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VA6/L15",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VL2p/L15",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DA4l/ML9",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DC1/ML9",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL4/ML9",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL5/ML9",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 39.0,
+        "pair": "DM1/ML9",
+        "uepsp_mv": 3.91653936
+      },
+      {
+        "hemibrain_count": 13.2,
+        "pair": "DP1m/ML9",
+        "uepsp_mv": 1.14060981
+      },
+      {
+        "hemibrain_count": 5.2,
+        "pair": "VA2/ML9",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VA6/ML9",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VC1/ML9",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VL2a/ML9",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DA4l/V2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DC1/V2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL4/V2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL5/V2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DM1/V2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DM4/V2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.25,
+        "pair": "VA2/V2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 6.5,
+        "pair": "VA6/V2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VC1/V2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 13.75,
+        "pair": "VL2a/V2",
+        "uepsp_mv": 2.46240283
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DA4l/local2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 1.5,
+        "pair": "DC1/local2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL4/local2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 65.5,
+        "pair": "DL5/local2",
+        "uepsp_mv": 3.27651952
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DM1/local2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 4.0,
+        "pair": "DM4/local2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 26.0,
+        "pair": "DP1m/local2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.5,
+        "pair": "VA2/local2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 5.0,
+        "pair": "VA6/local2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VC1/local2",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 2.5,
+        "pair": "DA4l/local5",
+        "uepsp_mv": 0.65942807
+      },
+      {
+        "hemibrain_count": 2.0,
+        "pair": "DL4/local5",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DM4/local5",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VA2/local5",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 104.0,
+        "pair": "VA6/local5",
+        "uepsp_mv": 6.62604114
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VC1/local5",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 95.0,
+        "pair": "VL2a/local5",
+        "uepsp_mv": 2.104459
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "VL2p/local5",
+        "uepsp_mv": 0.61719868
+      }
+    ],
+    "partial_types": {
+      "ML3": [
+        "LHAD1b2_b"
+      ],
+      "V3": [
+        "LHAV1a1"
+      ]
+    },
+    "protocol": {
+      "area": "per LHN type: mean surface area of its neurons' published MaleCNS meshes at full resolution (scripts/mesh_area.mjs), fetched before the run into data/weight_rule/areas.csv",
+      "count": "per pair and side: mean over the LHN neurons of the type on that side of the summed synapse count from the glomerulus's PN on that side; then the mean over the sides that have both",
+      "difference": "delta = rho_density - rho_count, with a 95% percentile interval from 10000 paired bootstrap resamples of the pairs",
+      "pn_types": [
+        "DA4l_adPN",
+        "DC1_adPN",
+        "DL4_adPN",
+        "DL5_adPN",
+        "DM1_lPN",
+        "DM4_adPN",
+        "DP1m_adPN",
+        "VA2_adPN",
+        "VA6_adPN",
+        "VC1_lPN",
+        "VL2a_adPN",
+        "VL2p_adPN"
+      ],
+      "rules": {
+        "count": "prediction = count",
+        "density": "prediction = count / area"
+      },
+      "seed": 139,
+      "statistic": "Spearman rank correlation (average ranks for ties) of prediction against uEPSP, for each rule"
+    },
+    "question": "Across measured PN -> LHN unitary EPSPs, does the MaleCNS synapse count onto a neuron rank the amplitudes better or worse when divided by the postsynaptic surface area (density) than when used as it is (count)?",
+    "reported": {
+      "density_fit": {
+        "decides": false,
+        "what": "Pearson r2 of uEPSP against density, next to Liu et al.'s 0.77 (their area model, hemibrain)"
+      },
+      "measured_only": {
+        "decides": false,
+        "what": "the same statistics on the pairs with a uEPSP above 0 mV"
+      },
+      "sensitivity": {
+        "decides": false,
+        "what": "the same statistics with the sensitivity_pairs added, ML3 and V3 represented by the only subtype MaleCNS has"
+      }
+    },
+    "seen_before_lock": "Liu et al. 2022's Table S3 in full (156 pairs: 29 measured, 106 at 0 mV, 21 omitted), their Table S2 (hemibrain types per LHN), and in MaleCNS only which PN and LHN types exist and how many neurons each has. No MaleCNS synapse count between these PNs and LHNs, no surface area of these LHNs and no correlation of anything with the amplitudes has been computed. Liu et al. report a density fit (r2 0.77 over 135 pairs) and no count-only statistic.",
+    "sensitivity_pairs": [
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DA4l/ML3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DC1/ML3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DL4/ML3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 1.142857,
+        "pair": "DM1/ML3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DM4/ML3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 2.285714,
+        "pair": "DP1m/ML3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 6.857143,
+        "pair": "VC1/ML3",
+        "uepsp_mv": 1.18859636
+      },
+      {
+        "hemibrain_count": 9.571429,
+        "pair": "VL2p/ML3",
+        "uepsp_mv": 0.71611048
+      },
+      {
+        "hemibrain_count": 0.5,
+        "pair": "DC1/V3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 19.0,
+        "pair": "DL4/V3",
+        "uepsp_mv": 1.75984939
+      },
+      {
+        "hemibrain_count": 4.75,
+        "pair": "DL5/V3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DM1/V3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.0,
+        "pair": "DM4/V3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.75,
+        "pair": "DP1m/V3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 0.5,
+        "pair": "VA2/V3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 5.0,
+        "pair": "VA6/V3",
+        "uepsp_mv": 1.92217112
+      },
+      {
+        "hemibrain_count": 3.25,
+        "pair": "VC1/V3",
+        "uepsp_mv": 0
+      },
+      {
+        "hemibrain_count": 22.25,
+        "pair": "VL2a/V3",
+        "uepsp_mv": 1.60422109
+      },
+      {
+        "hemibrain_count": 21.25,
+        "pair": "VL2p/V3",
+        "uepsp_mv": 1.41590037
+      }
+    ],
+    "sources": {
+      "licence": "Elsevier open archive (user licence); values transcribed here with their source, the file is not redistributed",
+      "physiology": "Liu, Davoudian, Lizbinski & Jeanne 2022, Curr Biol 32:559, doi:10.1016/j.cub.2021.11.056, Table S3 (Document S1, https://ars.els-cdn.com/content/image/1-s2.0-S0960982221016420-mmc1.pdf, sha256 f7c693deb13c8f7522a0ee58cd39e703d40661ee3c59fd090f2cc08a85afbf28): mean somatic uEPSP per PN-LHN pair, 0 mV where no response was evident",
+      "pn_rule": "one uniglomerular PN of the anterodorsal or lateral lineage per glomerulus, as in Liu et al.; DM1 and VC1 are lPN, the others adPN",
+      "types": "Liu et al. 2022 Table S2 (mmc2.xlsx, https://ars.els-cdn.com/content/image/1-s2.0-S0960982221016420-mmc2.xlsx, sha256 c1797bb29fa7aa2a9617b623aabf0e6debf453c4b35fd4b1005a22f6bede4e87): hemibrain type(s) of each LHN name"
+    },
+    "version": 1
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "bootstrap": [
+      139
+    ]
+  },
+  "timestamps": {
+    "finished_at": "2026-10-13T15:17:17.171942+00:00",
+    "started_at": "2026-10-13T15:17:03.463829+00:00"
+  }
+}

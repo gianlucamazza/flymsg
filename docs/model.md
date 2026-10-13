@@ -148,6 +148,16 @@ published mesh are not closed. No rule other than count is used by any result.
 `validation/weight_rule.yaml` (#139) locks the comparison of the two rules on Liu et al.'s
 measured pairs before any MaleCNS count or area between those neurons is computed.
 
+**Result of version 1 (2026-10-13): undecided.** Run from `78f0673`; 56 LHN meshes measured
+before the run, none missing. On the 57 primary pairs Spearman ρ is 0.567 for count and 0.581
+for density: Δρ = +0.015, 95% paired-bootstrap interval −0.011 to +0.054, so neither rule
+wins and the default (count) stays. The measured-only pairs (13) give 0.813 and 0.841
+(interval −0.073 to +0.168), the sensitivity set (76) 0.582 and 0.591. Pearson r² of the
+amplitudes against MaleCNS density is 0.80, next to Liu et al.'s 0.77 on the hemibrain:
+synapse counts from a different (male) animal rank the measured female amplitudes well, with
+or without the area. As the lock states, the two rules differ only across six LHN types, so
+the test has little power. Outputs: `results/weight-rule/v1.executions/…/output/`.
+
 ## Adaptive threshold (optional; off by default since v0.5)
 
 With Shiu's FAFB weight (0.275) and no adaptation, the whole male CNS falls into
