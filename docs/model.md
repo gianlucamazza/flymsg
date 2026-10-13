@@ -210,7 +210,7 @@ the held-out ORN_DM1 failure: excitatory Kenyon cell to Kenyon cell synapses, wh
 LIF turns into a self-sustaining loop ([benchmarks](benchmarks.md)). Nothing is retuned.
 Outputs: `results/mb-plasticity/v1/`.
 
-## Kenyon cell sparseness: the KC → KC synapses (diagnostic, 2026-10-13)
+## Kenyon cell sparseness (diagnostic, 2026-10-13)
 
 73.4% of the excitatory synapses onto Kenyon cells come from other Kenyon cells (1,153,845
 of 1,572,610), and the model makes each of them a fast excitatory input. The only functional
@@ -224,6 +224,22 @@ of Kenyon cells that respond to an odor and the share shared between two odors, 
 measured 6 ± 5% (Turner et al. 2008), at most 17% in single flies (Honegger et al. 2011),
 and 64.6% shared for similar odors (Campbell et al. 2013). It diagnoses; the default model
 does not change with its result.
+
+**Result of version 1 (2026-10-13): not_recurrence.** Run from `b096b4a` on `main`, 11 min.
+
+| Arm                           | KCs responding, odor 1 / 2 | Shared, of odor 1 / 2 |
+| ----------------------------- | -------------------------- | --------------------- |
+| A default                     | 25.5% / 25.1%              | 95% / 96%             |
+| B KC → KC without fast effect | 17.4% / 17.3%              | 95% / 96%             |
+| C APL → KC removed            | 99% / 100%                 | 100% / 99%            |
+| D both                        | 79% / 79%                  | 99% / 99%             |
+
+Removing the fast KC → KC excitation cuts the recruited Kenyon cells by a third, to just
+above the 17% bound, but the two odors still share 95% of them. The recurrence makes the code
+denser; it does not make two odors look alike. The overlap comes from upstream: two ORN
+types already reach the same Kenyon cells. The APL control moves as Lin et al. 2014 predict.
+Next ([#95](https://github.com/gianlucamazza/flymsg/issues/95)): how far one ORN type
+spreads in the antennal lobe, PN type by PN type. Outputs: `results/kc-sparseness/v1/`.
 
 ## Recording neuron states
 
