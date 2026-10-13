@@ -1,0 +1,94 @@
+{
+  "command": "t4t5 --run",
+  "config": {
+    "acceptance_deg": 8.23,
+    "envelope": {
+      "grid": "every lmc_hyperpolarisation_mv x lmc_rate_hz at photoreceptor_response_mv 52.5 (15 configurations), plus photoreceptor_response_mv 40 and 65 at 32.5 mV and 100 Hz (2): 17 configurations",
+      "lmc_hyperpolarisation_mv": [
+        20.0,
+        32.5,
+        45.0
+      ],
+      "lmc_rate_hz": [
+        25.0,
+        50.0,
+        100.0,
+        200.0,
+        400.0
+      ],
+      "photoreceptor_response_mv": [
+        40.0,
+        52.5,
+        65.0
+      ],
+      "ranges_from": "photoreceptor and LMC voltage ranges: the measured Drosophila ranges and their midpoints (Juusola et al. 2016); lmc_rate_hz has no measurement and spans four doublings around the 100 Hz input rate of every flymsg protocol"
+    },
+    "speed_deg_s": 30.0,
+    "t4t5_sha256": "d25bcbd7ecd6e01f383c00703995164d29cc57fc11192be15234b19314b0e390",
+    "t4t5_version": 2
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "data_dir": "data",
+    "resumed_steps": [
+      "config00",
+      "config01",
+      "config02",
+      "config03",
+      "config04",
+      "config05",
+      "config06",
+      "config07"
+    ],
+    "verdict": "robust: neither"
+  },
+  "git": {
+    "commit": "17173c2cba50db104d8b4d3195d1307dd573e921",
+    "dirty": false
+  },
+  "packages": {
+    "flymsg": "0.8.44",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "pyarrow": "25.0.1",
+    "scipy": "1.18.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.9-arch1-1-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.9-arch1-1",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "content_sha256": "fe54f4512b024a37d3c8602c1fe9944f89f500675c1bbc01aa456bda657cafa8",
+    "version": 1
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "all": [
+      93
+    ]
+  },
+  "timestamps": {
+    "finished_at": "2026-10-13T13:31:05.052503+00:00",
+    "started_at": "2026-10-13T11:19:48.234316+00:00"
+  }
+}

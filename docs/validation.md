@@ -343,6 +343,12 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-13: T4/T5 through the eye v2, robust: neither.** Seed 93, 17 configurations of
+graded photoreceptors and L1–L3 over the measured voltage ranges. No T4/T5 spike in any
+configuration. The lamina now carries contrast (L1–L3 hyperpolarize by 14–33 mV under light);
+Mi1, Tm3 and Mi4 never fire, and the OFF inputs fire only at LMC release rates of 200–400 Hz.
+The signal stops at the spiking medulla. Report: `results/t4t5/v2/`.
+
 **2026-10-13: Kenyon cell sparseness v5, none.** Seeds 86–88. Measured asymmetric eLN ↔ PN
 coupling (0.0021 / 0.0039), sister PNs at 0.013, eLN spikelets of 40 mV for 0–2 ms: every
 coupled arm is silent (0.22–0.30% of Kenyon cells), as without coupling, whatever the
