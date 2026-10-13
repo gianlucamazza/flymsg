@@ -215,3 +215,38 @@ GL=gl node scripts/shoot.mjs "http://127.0.0.1:8000/?bench=110" out.png 115
 ```
 
 `GL=vulkan` uses ANGLE on Vulkan, the default `GL=swiftshader` software rendering.
+
+### Baseline of the live scenes (issue #24)
+
+Same laptop and backend, 1400 × 900, `scripts/bench_viewer.py` at commit `2574001`: five
+complete runs on 2026-10-13, each scene opened for 30 s in a fresh profile and then reloaded
+(warm cache). A pass counts when other processes used at most one core on average during it;
+23 of the 30 warm passes did. Ranges over those passes (minimum–maximum):
+
+| scene             | passes | fps p50   | GPU frame p50 | first surface | all represented |
+| ----------------- | ------ | --------- | ------------- | ------------- | --------------- |
+| looming           | 4      | 13.3–27.5 | 21–45 ms      | 2.54–3.77 s   | 19.55–25.07 s   |
+| song              | 4      | 29.2–39.1 | 20–27 ms      | 1.12–3.09 s   | 2.03–5.56 s     |
+| anatomy           | 4      | –         | 21–22 ms      | 1.29–1.91 s   | 0.51–0.52 s     |
+| looming-bilateral | 3      | 15.5–15.8 | 28–32 ms      | 2.54–2.88 s   | –               |
+| dnp01-vs-dnp02    | 4      | 13.6–34.1 | 24–42 ms      | 1.19–3.62 s   | 10.52–26.09 s   |
+| right-vs-left     | 4      | 13.8–16.8 | 25–35 ms      | 2.04–2.84 s   | –               |
+
+The frame rate of one scene varies up to 2.5× between idle passes drawing the same
+triangles, with the GPU time following it: the noise is the laptop GPU's, not the load of
+other processes, so no tolerance narrower than these ranges can be stated from this machine.
+anatomy redraws only on change, so its passes hold one frame interval, not a frame rate;
+looming-bilateral and right-vs-left do not finish loading every neuron within 30 s. Cold
+passes include the download and are not part of the baseline. The runs are in
+[`docs/evidence/viewer-bench-2026-10-13/`](https://github.com/gianlucamazza/flymsg/tree/main/docs/evidence/viewer-bench-2026-10-13). Compare a new
+run with them:
+
+```bash
+GL=gl uv run python scripts/bench_viewer.py --cooldown 3600
+uv run python scripts/bench_check.py runs/viewer-bench/<time>.jsonl
+```
+
+`bench_check.py` exits 1 when an fps p50 falls below the range or a load mark lands after
+it. With three or four passes per scene that is a reason to look, not proof of a
+regression: an interrupted run from the same day already fell outside the ranges, on the
+better side. A physical phone has not been measured yet.
