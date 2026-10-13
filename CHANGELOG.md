@@ -17,6 +17,15 @@
   and what would unblock it. New issues #84 (eye encoder) and #85 (electrical synapses and
   neuromodulation, evidence audit).
 
+### Eye
+
+- **`flymsg eye`** (#84): every MaleCNS optic-lobe column gets a measured viewing direction
+  from the Zhao et al. 2025 eye map (fetched at run time, GPL-3.0, not redistributed) through
+  the published hex convention; nothing is fitted. 843 of 892 right and 835 of 875 left
+  columns have one. Photoreceptors are assigned to columns by their strongest output; the
+  dorsal-rim R7d/R8d land at a median elevation of 67.7° against 3.7° for the other R7/R8.
+  New dependency `rdata` (MIT) to read the R files.
+
 ### 3D view
 
 - **Whole-CNS layer:** every soma in the volume (140,024 of 165,122 neurons) drawn as a point

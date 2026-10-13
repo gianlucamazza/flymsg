@@ -108,6 +108,15 @@ on the left while both GF and TTMn totals are symmetric, an asymmetry it cannot 
 **Rule:** a result that hinges on a flagged neuron must say so; where a bilateral pair is
 flagged, flymsg reads the side that is not.
 
+## Eye map (`flymsg eye`)
+
+The viewing direction of each lens comes from Zhao et al. 2025
+(doi:10.1038/s41586-025-09276-5), repository `reiserlab/eyemap_T4` at commit `99d2a43`:
+`data/eyemap.RData` (lens hex coordinates) and `data/microCT/20240701.RData` (lens
+directions). Both are GPL-3.0. `flymsg eye` downloads them into `data/raw/eyemap/` on first
+use; flymsg does not redistribute them or anything derived from them. See
+[embodiment](embodiment.md#eye-geometry-84).
+
 ## Female brain: FlyWire FAFB v783 (`--dataset fafb`)
 
 `flymsg --dataset fafb fetch` and `build` write the female brain to `data/fafb/` in the same

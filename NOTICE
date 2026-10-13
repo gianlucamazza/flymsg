@@ -11,6 +11,14 @@ This license covers the flymsg code. It does not cover:
 - the UWP packaging pattern and placeholder icons in native/uwp/, adapted from the author's
   xbox-gpu-training repository (MIT).
 
+The eye map of Zhao et al. 2025 (reiserlab/eyemap_T4, GPL-3.0), used by `flymsg eye`, is
+downloaded at run time into data/raw/eyemap. flymsg does not redistribute it or the tables
+derived from it.
+
+The eye map of Zhao et al. 2025 (reiserlab/eyemap_T4, GPL-3.0), used by `flymsg eye`, is
+downloaded at run time into data/raw/eyemap. flymsg does not redistribute it or the tables
+derived from it.
+
 The FlyWire FAFB v783 connectome data (used via `--dataset fafb`) is licensed CC BY-NC 4.0
 (non-commercial). flymsg does not redistribute it. Users who download it must respect its
 terms: https://join.flywire.ai/guidelines

@@ -150,6 +150,35 @@ failed held-out and silence checks are not evidence for this encoder. Before E2 
 needs LC4/LPLC2 tuning data with uncertainty, a map from samples to MaleCNS sensory bodyIds,
 and a comparison with the constant-rate Poisson drive and a time-shuffled control.
 
+### Eye geometry (#84)
+
+`flymsg eye` joins the MaleCNS optic-lobe columns to measured viewing directions. Each
+column has hex coordinates (`assignedOlHex1/2`, Nern et al. 2025, doi:10.1038/s41586-025-08746-0);
+with p = hex2 − 19 and q = hex1 − 18 they are the (p, q) of the eye map of Zhao et al. 2025
+(doi:10.1038/s41586-025-09276-5), whose lens directions come from a micro-CT of one female
+head. Mi1 columns and lenses share (p, q) in all 778 of Zhao's pairs, so the registration is
+the identity on the hex grid; nothing is fitted. The map is fetched from
+`reiserlab/eyemap_T4` at `99d2a43` (GPL-3.0) into `data/raw/eyemap/` and never committed;
+`data/eye/columns.parquet` and `photoreceptors.parquet` stay local.
+
+|                               |      Left |     Right |
+| ----------------------------- | --------: | --------: |
+| Columns (one L1 each)         |       875 |       892 |
+| With a viewing direction      |       835 |       843 |
+| R1–R6 assigned to a cartridge |       498 |       888 |
+| R7 / R8 assigned to a column  | 541 / 624 | 687 / 698 |
+
+Photoreceptors carry no hex label; each takes the column that receives most of its
+synapses among column-assigned neurons. Many R1–R6 bodies are out-of-scope fragments,
+more on the left. **Check, independent of the map:** the dorsal-rim photoreceptors (R7d,
+R8d) land on columns with a median elevation of 67.7°, the other R7/R8 at 3.7°. Named
+assumptions: the left eye is the right eye mirrored; a male optic lobe is read through a
+female eye; columns without a lens (mostly the anterior edge) get no direction. Expected
+error is about one column (≈ 5°) inside the eye, worse at its margins.
+
+Next ([#84](https://github.com/gianlucamazza/flymsg/issues/84)): a looming stimulus
+computed per column, then graded photoreceptor input with a single, locked gain.
+
 ### M1 jump body (v0.8.34, #33)
 
 `flymsg.jump.JumpBody` is a point mass over a rigid floor: gravity, an actuator force along
