@@ -209,10 +209,11 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
   differences cannot be separated from reconstruction differences. `flymsg audit` flags
   incompletely reconstructed bilateral neurons (3.2 % of types, including MN9_R).
 - **Wiring only, by default.** The default model has no gap junctions, no graded release and
-  no neuromodulation. `sim.Gap` (electrical synapses; spikes do not cross) and `sim.Graded` exist
-  and stay off unless a lock names them. One optional plasticity rule (KC → MBON11) changes
-  nothing unless called. Transmitters are machine predictions, and 2.6% of synapses carry no
-  sign. What of the brain is in the model is counted in
+  no neuromodulation. `sim.Gap` and `sim.Graded` exist and stay off unless a lock names
+  them. A spike crosses a junction only when that lock sets `spike_mv` and `spike_ms`
+  ([model](docs/model.md#electrical-synapses-optional-2026-10-13)). One optional plasticity
+  rule (KC → MBON11) changes nothing unless called. Transmitters are machine predictions,
+  and 2.6% of synapses carry no sign. What of the brain is in the model is counted in
   [roadmap](docs/roadmap.md#brain-coverage). The Giant Fiber behaves like a `shak-B²` mutant
   lacking its electrical synapse.
 - **Qualitative rates.** Use the model to rank which circuits a stimulus recruits and in what

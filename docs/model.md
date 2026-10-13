@@ -159,10 +159,10 @@ parameter that transfers into this LIF. On that date none of the four candidates
 and none entered the default model. `w_syn` and `th_jump` stay at the default.
 
 Three later mechanisms stay off unless a lock names them, and none of them changes
-`sim.Params`: `sim.Gap` (electrical synapses; a spike does not cross, because a LIF spike
-is a reset), `sim.Graded` (non-spiking release) and the dopamine-gated depression at
-Kenyon cell → MBON11. Each has its own section below. The table is the decision of
-2026-10-11. The gap-junction row is about the default model and the giant-fiber
+`sim.Params`: `sim.Gap` (electrical synapses; a spike crosses only when that lock sets
+`spike_mv` and `spike_ms`), `sim.Graded` (non-spiking release) and the dopamine-gated
+depression at Kenyon cell → MBON11. Each has its own section below. The table is the
+decision of 2026-10-11. The gap-junction row is about the default model and the giant-fiber
 conductance, which is still not in the model.
 
 | Candidate                    | Discrepancy already on record                                                      | Why it is not added                                                                                                                                                         |
@@ -329,9 +329,10 @@ predicts no coupling: E and F stay silent (0.2% of Kenyon cells) and coupling ma
 quieter, down to 0% at 1, while the share of spiking PNs falls from 11% / 8% to 5% / 1%.
 Symmetric subthreshold coupling ties active PNs to local neurons at rest and drains them.
 In the fly the eLN → PN lateral excitation is driven by eLN spikes, which cross the junction
-as spikelets (Yaksi & Wilson 2010); the model's junctions pass only subthreshold potentials,
-because a LIF spike is a reset. So v4 says that coupling without spikelets cannot be the
-missing excitation, not that the coupling is absent. Outputs: `results/kc-sparseness/v4/`.
+as spikelets (Yaksi & Wilson 2010). This run's junctions pass only subthreshold potentials:
+the lock sets no spike term, and a LIF reset draws none. So v4 says that coupling without
+spikelets cannot be the missing excitation, not that the coupling is absent. Outputs:
+`results/kc-sparseness/v4/`.
 
 ## Electrical synapses (optional, 2026-10-13)
 
