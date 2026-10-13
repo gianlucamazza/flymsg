@@ -214,3 +214,31 @@ def test_kc_recurrence_spreads_an_odor_and_arm_b_removes_it():
     t = out["table"].set_index("arm")
     assert t.loc["F+gap0", "responders_1"] == t.loc["F", "responders_1"] == 1
     assert out["prediction"]["F"] == 0.0
+
+
+def test_an_interrupted_run_resumes_to_the_same_table(tmp_path):
+    from flymsg import progress
+
+    n = 4
+    W = sparse.csc_matrix(
+        (np.full(2, 60.0, dtype=np.float32), ([2, 3], [0, 1])), shape=(n, n)
+    )
+    idx = {
+        "stimuli": {
+            "3-octanol": (np.array([0]), np.array([100.0])),
+            "4-methylcyclohexanol": (np.array([1]), np.array([100.0])),
+        },
+        "APL": np.array([], dtype=int),
+        "KC": np.array([2, 3]),
+        "PN": np.array([], dtype=int),
+        "ACH_LN": np.array([], dtype=int),
+    }
+    doc = {k: v for k, v in kc_sparseness.load().items() if k != "coupling"}
+    whole = kc_sparseness.protocol(W, idx, doc)["table"]
+    steps = progress.Steps(tmp_path, doc["content_sha256"])
+    kc_sparseness.protocol(W, idx, doc, steps)
+    (tmp_path / "arm-E" / "done").unlink()  # E did not finish
+    again = progress.Steps(tmp_path, doc["content_sha256"])
+    resumed = kc_sparseness.protocol(W, idx, doc, again)["table"]
+    assert again.resumed == ["arm-A", "arm-F"]
+    pd.testing.assert_frame_equal(resumed, whole)

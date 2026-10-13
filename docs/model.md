@@ -317,18 +317,23 @@ sparseness, not a test: what would test it is a measured eLN → PN coupling.
 
 ## Electrical synapses (optional, 2026-10-13)
 
-`sim.Gap` (#85) couples pairs of neurons through their potentials: each step adds
-coupling · (v_j − v_i) · dt / τ_m to neuron i and the opposite to j, from the potentials
-before the membrane update. The coupling is the junction's conductance over the leak
-conductance, so a coupling coefficient c measured between two equal cells gives c / (1 − c)
-without a conductance in nS. Junctions are symmetric and non-rectifying, and spikes do not
-cross them: a LIF spike is a reset, not a waveform. Couplings whose sum on one neuron would
-move more than half the potential difference in one step are refused.
+`sim.Gap` (#85) couples pairs of neurons through their potentials. A coupled neuron follows
+τ_m dv/dt = v_rest − v + g + Σ_j coupling (v_j − v), where the coupling is the junction's
+conductance over the leak conductance, so a coupling coefficient c measured between two
+equal cells gives c / (1 − c) without a conductance in nS. Between spikes this is linear, so
+each connected group of coupled neurons is integrated exactly over a step: the matrix
+exponential of the group's membrane and coupling matrix, with the decaying synaptic input
+in Van Loan's block form, is computed once per run, and each step applies it in float64. A
+refractory neuron is held at rest with its conductance frozen, as without coupling, and its
+partners see it at rest. Junctions are symmetric and non-rectifying, and spikes do not cross
+them: a LIF spike is a reset, not a waveform.
 
 EM does not show gap junctions and few are measured (#85), so no electrical synapse is in
 the default model. Without them the engine is unchanged, bit for bit; with them `sim.run`,
 the NumPy reference and `CpuRuntime` agree exactly (`tests/test_gap.py`), two coupled cells
-reproduce c / (1 + c), and the native executor refuses them.
+relax as the exact solution and reproduce c / (1 + c), and the native executor refuses them.
+Until 2026-10-13 (`b1116af`, Kenyon cell v4) the coupling was an explicit first-order step
+added to the membrane update.
 
 ## Graded (non-spiking) neurons (optional, 2026-10-13)
 

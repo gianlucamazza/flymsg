@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import data, eye, locks, odors, plasticity, prereg, sim
+from flymsg import data, eye, locks, odors, plasticity, prereg, progress, sim
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "kc_sparseness.yaml"
@@ -220,11 +220,11 @@ def within(
     )
 
 
-def decide(
+def within_arms(
     table: pd.DataFrame, sparse_max: float, overlap_max: float, sparse_min: float = 0.0
-) -> str:
-    """The arms whose two odors are within the measured bounds, or `none`."""
-    ok = [
+) -> list[str]:
+    """The arms whose two odors are within the measured bounds, in table order."""
+    return [
         row["arm"]
         for _, row in table.iterrows()
         if within(
@@ -235,12 +235,28 @@ def decide(
             sparse_min,
         )
     ]
+
+
+def decide(
+    table: pd.DataFrame, sparse_max: float, overlap_max: float, sparse_min: float = 0.0
+) -> str:
+    """`within: <arms>`, or `none`."""
+    ok = within_arms(table, sparse_max, overlap_max, sparse_min)
     return "within: " + ", ".join(ok) if ok else "none"
 
 
-def protocol(W, idx: dict, doc: dict) -> dict:
+def protocol(
+    W,
+    idx: dict,
+    doc: dict,
+    steps: progress.Steps | None = None,
+    report: progress.Progress | None = None,
+) -> dict:
+    """Every arm; `steps` stores each finished arm so an interrupted run resumes, `report`
+    counts simulations."""
     proto = doc["protocol"]
     p = sim.Params()
+    steps = steps or progress.Steps(None, doc["content_sha256"])
     kcs, pns = idx["KC"], idx["PN"]
     bins = round(proto["odor_ms"] / 10.0)
     rows = []
@@ -249,7 +265,9 @@ def protocol(W, idx: dict, doc: dict) -> dict:
     for name, base, k in coupled_arms(doc):
         gap = gap_for(idx["eln"], idx["sisters"], k, doc["coupling"]["sister_cc"])
         runs.append((name, weights[base], gap))
-    for arm, Wx, gap in runs:
+    per_arm = len(proto["odors"]) * len(proto["seeds"])
+
+    def one_arm(arm, Wx, gap) -> dict[str, pd.DataFrame]:
         resp, pn_share = [], []
         for odor in proto["odors"]:
             per_seed, pn_seed = [], []
@@ -261,6 +279,8 @@ def protocol(W, idx: dict, doc: dict) -> dict:
                 )
                 per_seed.append(r.counts[:bins, kcs].sum(axis=0))
                 pn_seed.append(r.counts[:bins, pns].sum(axis=0))
+                if report is not None:
+                    report.step(note=f"{arm} {odor} seed {seed}")
             resp.append(responders(per_seed, 2))
             pn_share.append(float(responders(pn_seed, 2).mean()) if pns.size else 0.0)
         n1, n2, both = (
@@ -268,21 +288,32 @@ def protocol(W, idx: dict, doc: dict) -> dict:
             int(resp[1].sum()),
             int((resp[0] & resp[1]).sum()),
         )
-        rows.append(
-            {
-                "arm": arm,
-                "responders_1": n1,
-                "responders_2": n2,
-                "shared": both,
-                "fraction_1": n1 / kcs.size,
-                "fraction_2": n2 / kcs.size,
-                "shared_of_1": both / n1 if n1 else 0.0,
-                "shared_of_2": both / n2 if n2 else 0.0,
-                "pn_spiking_1": pn_share[0],
-                "pn_spiking_2": pn_share[1],
-            }
+        row = pd.DataFrame(
+            [
+                {
+                    "arm": arm,
+                    "responders_1": n1,
+                    "responders_2": n2,
+                    "shared": both,
+                    "fraction_1": n1 / kcs.size,
+                    "fraction_2": n2 / kcs.size,
+                    "shared_of_1": both / n1 if n1 else 0.0,
+                    "shared_of_2": both / n2 if n2 else 0.0,
+                    "pn_spiking_1": pn_share[0],
+                    "pn_spiking_2": pn_share[1],
+                }
+            ]
         )
-    table = pd.DataFrame(rows)
+        return {"arm": row}
+
+    for arm, Wx, gap in runs:
+        got, fresh = steps.get(
+            f"arm-{arm}", lambda a=arm, w=Wx, g=gap: one_arm(a, w, g)
+        )
+        if not fresh and report is not None:
+            report.step(per_arm, note=f"{arm} resumed")
+        rows.append(got["arm"])
+    table = pd.concat(rows, ignore_index=True)
     d = doc["decides"]
     verdict = decide(table, d["sparse_max"], d["overlap_max"], d.get("sparse_min", 0.0))
     out = {"table": table, "verdict": verdict}
@@ -296,9 +327,7 @@ def least_coupling(table: pd.DataFrame, doc: dict) -> dict:
     the model's prediction of the coupling the fly would need."""
     d = doc["decides"]
     ok = set(
-        decide(table, d["sparse_max"], d["overlap_max"], d.get("sparse_min", 0.0))
-        .removeprefix("within: ")
-        .split(", ")
+        within_arms(table, d["sparse_max"], d["overlap_max"], d.get("sparse_min", 0.0))
     )
     out = {}
     for base in doc["coupling"]["bases"]:
@@ -330,8 +359,19 @@ def stimuli(neurons: pd.DataFrame, proto: dict, data_dir: Path | None) -> dict:
     return out
 
 
+def n_runs(doc: dict) -> int:
+    """Simulations of the locked protocol: arms x odors x seeds."""
+    proto = doc["protocol"]
+    arms_n = len(doc["arms"]) + len(coupled_arms(doc))
+    return arms_n * len(proto["odors"]) * len(proto["seeds"])
+
+
 def run(
-    neurons: pd.DataFrame, edges: pd.DataFrame, data_dir: Path | None = None
+    neurons: pd.DataFrame,
+    edges: pd.DataFrame,
+    data_dir: Path | None = None,
+    steps: progress.Steps | None = None,
+    report: progress.Progress | None = None,
 ) -> dict:
     doc = assert_matches_code()
     proto = doc["protocol"]
@@ -356,4 +396,4 @@ def run(
     )
     if "coupling" in doc:
         idx["eln"], idx["sisters"] = gap_pairs(neurons, edges, idx)
-    return protocol(sim.network(neurons, edges, sim.Params()), idx, doc)
+    return protocol(sim.network(neurons, edges, sim.Params()), idx, doc, steps, report)

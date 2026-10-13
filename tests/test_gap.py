@@ -11,7 +11,7 @@ from flymsg import native, sim
 from flymsg.runtime import CpuRuntime
 
 
-def _gap(n=1200, m=3000, seed=4, coupling=0.3):
+def _gap(n=1200, m=400, seed=4, coupling=0.3):
     rng = np.random.default_rng(seed)
     i, j = rng.integers(0, n, m), rng.integers(0, n, m)
     keep = i != j
@@ -75,7 +75,9 @@ def test_two_coupled_cells_give_the_coupling_coefficient():
         gap=sim.Gap(i=np.array([0]), j=np.array([1]), coupling=c),
     )
     d0, d1 = r.graded_v[-1] - p.v_rest
-    assert d1 / d0 == pytest.approx(c / (1 + c), rel=1e-2)
+    # the drive arrives as a kick at the end of each step, which the partner sees one step
+    # later: the ratio is c / (1 + c) up to that discretisation of the input
+    assert d1 / d0 == pytest.approx(c / (1 + c), rel=5e-3)
 
 
 def test_gap_runtime_chunks_and_checkpoints_match_the_run(tmp_path):
@@ -110,9 +112,34 @@ def test_gap_runtime_chunks_and_checkpoints_match_the_run(tmp_path):
         {"i": np.array([1]), "j": np.array([2]), "coupling": -0.1},
         {"i": np.array([1]), "j": np.array([2]), "coupling": np.inf},
         {"i": np.array([1.0]), "j": np.array([2]), "coupling": 0.1},
-        {"i": np.array([1]), "j": np.array([2]), "coupling": 200.0},
     ],
 )
 def test_gap_parameters_are_checked(bad):
     with pytest.raises(ValueError):
         sim.gap_arrays(sim.Gap(**bad), 5, sim.Params())
+
+
+def test_coupled_potentials_follow_the_exact_solution():
+    # two free cells, one kicked once: the mean relaxes with tau_m and the difference with
+    # tau_m / (1 + 2c), whatever the coupling strength
+    p = sim.Params()
+    W = sparse.csc_matrix((2, 2), dtype=np.float32)
+    g = sim.Graded(idx=np.array([0, 1]), v_lo=0.0, span=1.0, rate_hz=0.0)
+    for c in (0.1, 5.0):
+        kick = 20.0 / (p.poisson_scale * p.w_syn)
+        r = sim.run(
+            W,
+            np.array([0]),
+            duration_ms=20,
+            p=p,
+            kicks=np.r_[[[kick]], np.zeros((199, 1))],
+            graded=g,
+            gap=sim.Gap(i=np.array([0]), j=np.array([1]), coupling=c),
+            bin_ms=0.1,
+        )
+        t = (np.arange(200) + 1) * p.dt - p.dt  # potentials at the end of each step
+        d = r.graded_v - p.v_rest
+        mean = 10.0 * np.exp(-t / p.tau_m)
+        diff = 20.0 * np.exp(-t * (1 + 2 * c) / p.tau_m)
+        assert np.allclose(d[:, 0], mean + diff / 2, atol=1e-4)
+        assert np.allclose(d[:, 1], mean - diff / 2, atol=1e-4)

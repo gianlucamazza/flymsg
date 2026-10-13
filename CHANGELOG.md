@@ -4,6 +4,12 @@
 
 ### Model
 
+- **Exact electrical coupling**: each connected group of electrically coupled neurons is
+  integrated exactly over a step (matrix exponential, Van Loan's block form for the synaptic
+  input) instead of by an explicit first-order step.
+- **Resumable long runs**: `t4t5 --run` and `kc-sparseness --run` print measured progress
+  and ETA, store each finished configuration or arm under the run directory bound to the
+  lock's hash, resume an interrupted run, and record the resumed steps in the manifest.
 - **Electrical synapses** (#85): `sim.Gap` couples pairs of neurons through their
   potentials (junction over leak conductance; a coupling coefficient c gives c / (1 − c)).
   Bit-identical without them; exact parity of kernel, NumPy reference and `CpuRuntime`; the

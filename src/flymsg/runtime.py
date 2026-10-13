@@ -187,7 +187,7 @@ class CpuRuntime:
             np.empty(n, dtype=np.int32),
         )
         self._graded_new = np.zeros(ng, dtype=np.float32)
-        self._gap_inc = np.zeros(n, dtype=np.float32)
+        self._gap_buf = np.zeros(self._gap[0].size, dtype=np.float32)
 
     @property
     def step(self) -> int:
@@ -246,7 +246,7 @@ class CpuRuntime:
             self._graded_new,
             g_vsum,
             *self._gap,
-            self._gap_inc,
+            self._gap_buf,
         )
         self._step = step
 
