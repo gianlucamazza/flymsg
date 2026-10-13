@@ -36,6 +36,18 @@ add `?neuropils=1`, so the 114 brain and VNC shells outline the whole CNS around
 activity; without it a replay starts with the shells hidden. The shells stream in after the
 neurons and cost GPU time while the replay plays.
 
+## Legend and caption
+
+Under the clock a caption says what the scene is, from its run manifest: the stimulated
+types with their input rate and window, silenced types and seed (`input: LC4_R at 100 Hz for
+300 of 600 ms · seed 0 · model replay`), or the cell types of an anatomy scene. A comparison
+has its own panel instead. The legend follows the colouring with the same precedence: a
+selection's roles, then a comparison's difference classes (more or fewer spikes in B, same,
+in one export only), then the colour mode. By group, each group shows its neuron count and
+its largest instances (`stimulus (55): LC4_R ×55`), so the stimulated side is visible. In a
+replay a line states that the glow is spikes per bin of the model, not a recording; while
+the soma layer is shown, its region colours are listed.
+
 ## Selecting a neuron
 
 A click, the `select` field of the panel, or `?select=<bodyId|instance|type>` selects a

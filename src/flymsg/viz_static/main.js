@@ -26,13 +26,11 @@ import {
 } from "./precomputed.js";
 import { priorityOf, select } from "./lod.js";
 import {
-  DIMORPHISM_COLORS,
   FOCUS_COLORS,
-  FRU_DSX_COLORS,
-  NT_COLORS,
-  PALETTE,
+  REGION_COLORS,
   colourOf as colourIn,
   isShown as shownIn,
+  legendEntries,
 } from "./colors.js";
 import {
   applyChrome,
@@ -51,6 +49,7 @@ import {
   vertsPerTri,
 } from "./budget.js";
 import { activityAt } from "./activity.js";
+import { sceneCaption } from "./caption.js";
 import {
   compareClass,
   difference,
@@ -997,7 +996,6 @@ const neuropilsListed = (async () => {
 // voxels, then a uint8 region code each. The site serves it next to the scenes; a local
 // export has none unless ?somata=<url>. ?somata=0 hides the layer. Context only: points are
 // neither picked nor coloured by activity.
-const REGION_COLOURS = ["#4f7fd0", "#d09a4f", "#5fae66", "#b866c4", "#c45f5f", "#8a8a8a"];
 const somataQuery = query.get("somata");
 const somata = {
   visible: somataQuery !== "0",
@@ -1031,7 +1029,7 @@ const somataLoaded = (async () => {
   const codes = new Uint8Array(buf, 12 * n, n);
   const pos = new Float32Array(3 * n);
   const col = new Float32Array(3 * n);
-  const palette = REGION_COLOURS.map((c) => new THREE.Color(c));
+  const palette = Object.values(REGION_COLORS).map((c) => new THREE.Color(c));
   for (let i = 0; i < n; i++) {
     for (let a = 0; a < 3; a++) pos[3 * i + a] = vox[3 * i + a] * scale0.resolution[a];
     const c = palette[Math.min(codes[i], palette.length - 1)];
@@ -1045,6 +1043,7 @@ const somataLoaded = (async () => {
   somata.count = n;
   perf.count("somata", buf.byteLength);
   data.add(somata.points);
+  renderLegend();
   invalidate();
 })();
 
@@ -1138,23 +1137,45 @@ function refreshColours() {
   }
   skelColour.needsUpdate = true;
   skeletonsDirty = true;
-  const entries = view.focus
-    ? Object.entries(FOCUS_COLORS)
-    : view.colorBy === "group"
-      ? groups.map((g, i) => [g, PALETTE[i % PALETTE.length]])
-      : view.colorBy === "transmitter"
-        ? [...new Set(meta.neurons.map((n) => n.nt))].map((t) => [
-            t,
-            NT_COLORS[t] ?? NT_COLORS.unknown,
-          ])
-        : view.colorBy === "dimorphism"
-          ? Object.entries(DIMORPHISM_COLORS)
-          : view.colorBy === "fru/dsx"
-            ? Object.entries(FRU_DSX_COLORS)
-            : [["coloured by cell type", "#d8dee9"]];
-  document.getElementById("legend").innerHTML = entries
-    .map(([l, col]) => `<span><i style="background:${col}"></i>${l}</span>`)
-    .join("");
+  renderLegend();
+}
+
+// The legend names what is on screen: the neuron colours (same precedence as colourOf), what
+// the glow means in a replay, and the soma layer's regions while it is shown. Labels come from
+// the scene, so they are set as text.
+function swatches(entries) {
+  const row = document.createElement("div");
+  for (const [label, colour] of entries) {
+    const span = document.createElement("span");
+    const dot = document.createElement("i");
+    dot.style.background = colour;
+    span.append(dot, label);
+    row.append(span);
+  }
+  return row;
+}
+// A comparison describes its two runs in its own panel; a single scene says what it is here.
+if (!comparison)
+  fetch("manifest.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((m) => (document.getElementById("caption").textContent = sceneCaption(m)))
+    .catch(() => {});
+
+function renderLegend() {
+  const rows = [swatches(legendEntries(view, groups, neurons))];
+  if (replay) {
+    const glow = document.createElement("div");
+    glow.className = "muted";
+    glow.textContent = `glow: spikes per ${meta.activity.bin_ms} ms bin (model replay, not a recording)`;
+    rows.push(glow);
+  }
+  if (somata.points?.visible) {
+    const row = swatches(Object.entries(REGION_COLORS));
+    row.className = "muted";
+    row.prepend("somata: ");
+    rows.push(row);
+  }
+  document.getElementById("legend").replaceChildren(...rows);
 }
 refreshColours();
 
@@ -1659,7 +1680,12 @@ if (showChrome(location.search)) {
   somataLoaded.then(() => {
     if (!somata.points) return;
     const f = gui.addFolder(`Whole CNS (${somata.count.toLocaleString()} somata)`).close();
-    f.add(somata.points, "visible").name("show").onChange(invalidate);
+    f.add(somata.points, "visible")
+      .name("show")
+      .onChange(() => {
+        renderLegend();
+        invalidate();
+      });
     f.add(somataMaterial, "opacity", 0, 1).onChange(invalidate);
     f.add(somataMaterial, "size", 0.5, 6).name("point px").onChange(invalidate);
   });

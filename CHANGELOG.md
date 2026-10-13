@@ -61,6 +61,12 @@
 
 ### Viewer
 
+- **Legend and caption.** A caption under the clock names the scene's input (types, rate,
+  window, silenced types, seed) from its manifest, or an anatomy scene's types. By group the
+  legend gives each group's neuron count and largest instances (`stimulus (55): LC4_R ×55`);
+  it also explains the glow and lists the soma regions while that layer is shown. Fixed: in
+  a comparison's difference view the legend showed the group colours instead of the
+  difference classes the neurons were drawn with.
 - **Phones and tablets.** Up to 600 px wide the control panel starts closed and the
   performance readout is hidden; the site's page links scroll in one row. Touch screens get
   touch hints, a 12 px tap slop, the clear button instead of Esc and 44 px buttons; panels
