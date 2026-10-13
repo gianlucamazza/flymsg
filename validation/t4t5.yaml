@@ -1,0 +1,54 @@
+# T4/T5 direction selectivity through the eye (issue 84). Version 1, fixed 2026-10-13 before
+# any run. Changing a locked field requires incrementing `version` and updating
+# `content_sha256` and flymsg.t4t5.VERSION_HASHES. `flymsg t4t5` prints this file.
+version: 1
+content_sha256: bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8
+
+issue: 84
+question: "Driven through the measured eye by moving ON and OFF edges, do the model's T4 and T5 subtypes respond to the right contrast polarity, and with the preferred directions measured in the fly?"
+
+prior: "Lappalainen et al. 2024 (doi:10.1038/s41586-024-07939-3, Fig 2d): untrained connectome models with signs predict contrast preference well but direction selectivity poorly. Polarity is expected; direction is the open question."
+
+sources:
+  subtypes: "Maisak et al. 2013, Nature, doi:10.1038/nature12320: T4 respond to ON edges, T5 to OFF edges; subtypes a-d prefer front-to-back, back-to-front, upward, downward (Shinomiya et al. 2019, eLife 8:e40025, Fig 3B)"
+  dsi: "Haag, Mishra & Borst 2017, eLife (PMC5582866), Fig 4c-d: DSI = (PD - ND) / (PD + ND) about 0.8 in calcium for gratings and edges; gratings at 30 deg/s"
+  acceptance: "Gonzalez-Bellido, Wardill & Juusola 2011, PNAS 108:4224, Fig 3A: acceptance angle 8.23 deg (FWHM, Gaussian)"
+
+protocol:
+  speed_deg_s: 30.0
+  window_deg: 30.0
+  window_note: "columns within 30 deg of each eye's median viewing direction; each eye is stimulated in its own frame"
+  travel_deg: 60.0
+  acceptance_deg: 8.23
+  directions: [front_to_back, back_to_front, upward, downward]
+  polarities: [on, off]
+  gain: 0.01
+  gain_from: "kicks per step at full light: the mean input of the 100 Hz Poisson stimulus of every flymsg protocol (100 Hz x 0.1 ms); graded photoreceptor transduction has no measured value for a spiking model"
+  seeds: [90, 91, 92]
+  subtypes: [T4a, T4b, T4c, T4d, T5a, T5b, T5c, T5d]
+  preferred:
+    a: front_to_back
+    b: back_to_front
+    c: upward
+    d: downward
+
+compensations:
+  - "Photoreceptors spike in the model; in the fly they are graded."
+  - "Only photoreceptors assigned to a column with a viewing direction are driven; many R1-R6 bodies are fragments, so about a third of cartridges receive light."
+  - "Point neurons with one time constant: direction selectivity in the fly relies on delay differences between inputs (Mi1/Tm3 against Mi4/Mi9) that the model does not set per type."
+  - "CT1 is one point neuron per side; in the fly it is compartmentalised per column."
+  - "The left eye is the right eye mirrored; spike counts are compared with calcium measurements."
+
+decides:
+  polarity: "every T4 subtype fires more, summed over directions, to ON than to OFF edges, and every T5 subtype more to OFF than to ON"
+  direction: "for at least 6 of the 8 subtypes, the vector sum of responses to their preferred polarity points within 45 deg of the measured preferred direction"
+  verdict: "both, polarity only, direction only, or neither"
+
+reported:
+  dsi:
+    decides: false
+    what: "DSI = (R_PD - R_ND) / (R_PD + R_ND) per subtype, next to the 0.8 measured in calcium"
+  responses:
+    decides: false
+
+defaults_changed: false

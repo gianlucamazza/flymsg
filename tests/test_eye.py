@@ -152,3 +152,19 @@ def test_real_kicks_reproduce_integer_kicks_and_integrate_fractions():
     tenth = np.full((200, 1), 0.01)
     r = sim.run(W, np.array([0]), duration_ms=20.0, kicks=tenth, bin_ms=10.0)
     assert 0 < r.counts[:, 0].sum() < 200
+
+
+def test_edge_crosses_columns_in_order_and_mirrors_between_eyes():
+    cols = pd.DataFrame(
+        {
+            "side": ["R", "R", "L", "L"],
+            "azimuth_deg": [10.0, 40.0, -10.0, -40.0],
+            "elevation_deg": [0.0, 0.0, 0.0, 0.0],
+        }
+    )
+    c = eye.edge_coverage(cols, "front_to_back", 15.0, 5.0)
+    # 15 deg after starting at the frontmost column of each eye: the 10 deg columns are
+    # crossed, the 40 deg ones not yet, on both sides
+    assert c[0] > 0.99 and c[1] < 0.01 and c[2] > 0.99 and c[3] < 0.01
+    back = eye.edge_coverage(cols, "back_to_front", 15.0, 5.0)
+    assert back[1] > 0.99 and back[0] < 0.01

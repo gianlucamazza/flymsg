@@ -230,6 +230,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 | `partner-followup [--run]`                                      | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                          |
 | `mb-plasticity [--run]`                                         | the locked dopamine-gated KC → MBON11 depression (#85), applied between trials                          |
 | `kc-sparseness [--run]`                                         | the locked diagnostic of why an odor recruits 25% of Kenyon cells (#95): KC → KC and APL arms           |
+| `t4t5 [--run]`                                                  | the locked T4/T5 test: ON/OFF edges moving through the measured eye; polarity and direction (#84)       |
 | `odor NAME`                                                     | a DoOR odorant as a response per MaleCNS ORN type (fetched, CC BY-SA)                                   |
 | `eye`                                                           | optic-lobe column → viewing direction (Zhao 2025 eye map, fetched) and photoreceptor → column           |
 | `experiment FILE [--check]` · `runs`                            | run an exploratory config into an immutable directory; index every run manifest with its label          |

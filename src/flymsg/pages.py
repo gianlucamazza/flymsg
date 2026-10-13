@@ -43,6 +43,7 @@ EXTERNAL = {
     "../results/README.md": f"{BLOB}/results/README.md",
     "../validation/mb_plasticity.yaml": f"{BLOB}/validation/mb_plasticity.yaml",
     "../validation/kc_sparseness.yaml": f"{BLOB}/validation/kc_sparseness.yaml",
+    "../validation/t4t5.yaml": f"{BLOB}/validation/t4t5.yaml",
 }
 
 # (output stem, source path, nav label). Order is the site nav.
