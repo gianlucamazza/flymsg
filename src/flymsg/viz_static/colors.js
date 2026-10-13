@@ -104,3 +104,61 @@ export function isShown(n, view) {
     (!view.filter || n.type.toLowerCase().includes(view.filter))
   );
 }
+
+// Whole-CNS soma layer: region code -> name and colour, in the order of somata.json "regions"
+// (scripts/build_somata.py).
+export const REGION_COLORS = {
+  "optic lobe": "#4f7fd0",
+  "central brain": "#d09a4f",
+  "ventral nerve cord": "#5fae66",
+  descending: "#b866c4",
+  ascending: "#c45f5f",
+  other: "#8a8a8a",
+};
+
+// Labels for the difference view of two runs.
+const COMPARE_LABELS = {
+  more: "more spikes in B",
+  less: "fewer spikes in B",
+  same: "same",
+  "not exported": "in one export only",
+};
+
+/** "LC4_R ×55, LC4_L ×53": a group's instances, largest first, at most `max`, then "+n more". */
+export function groupMembers(neurons, group, max = 3) {
+  const counts = new Map();
+  for (const n of neurons)
+    if (n.group === group) {
+      const name = n.instance || n.type || String(n.bodyId);
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+  const sorted = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const shown = sorted.slice(0, max).map(([name, c]) => `${name} ×${c}`);
+  if (sorted.length > max) shown.push(`+${sorted.length - max} more`);
+  return shown.join(", ");
+}
+
+/** [label, colour] pairs for what the neurons show now; the same precedence as colourOf. */
+export function legendEntries(view, groups, neurons) {
+  if (view.focus) return Object.entries(FOCUS_COLORS);
+  if (view.compare)
+    return Object.entries(COMPARE_COLORS).map(([k, c]) => [COMPARE_LABELS[k], c]);
+  switch (view.colorBy) {
+    case "group":
+      return groups.map((g, i) => [
+        `${g} (${neurons.filter((n) => n.group === g).length}): ${groupMembers(neurons, g)}`,
+        PALETTE[i % PALETTE.length],
+      ]);
+    case "transmitter":
+      return [...new Set(neurons.map((n) => n.nt))].map((t) => [
+        t || "unknown",
+        NT_COLORS[t] ?? NT_COLORS.unknown,
+      ]);
+    case "dimorphism":
+      return Object.entries(DIMORPHISM_COLORS);
+    case "fru/dsx":
+      return Object.entries(FRU_DSX_COLORS);
+    default:
+      return [["one colour per cell type", "#d8dee9"]];
+  }
+}
