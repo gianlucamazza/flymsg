@@ -336,15 +336,21 @@ missing excitation, not that the coupling is absent. Outputs: `results/kc-sparse
 ## Electrical synapses (optional, 2026-10-13)
 
 `sim.Gap` (#85) couples pairs of neurons through their potentials. A coupled neuron follows
-τ_m dv/dt = v_rest − v + g + Σ_j coupling (v_j − v), where the coupling is the junction's
-conductance over the leak conductance, so a coupling coefficient c measured between two
-equal cells gives c / (1 − c) without a conductance in nS. Between spikes this is linear, so
-each connected group of coupled neurons is integrated exactly over a step: the matrix
-exponential of the group's membrane and coupling matrix, with the decaying synaptic input
-in Van Loan's block form, is computed once per run, and each step applies it in float64. A
-refractory neuron is held at rest with its conductance frozen, as without coupling, and its
-partners see it at rest. Junctions are symmetric and non-rectifying, and spikes do not cross
-them: a LIF spike is a reset, not a waveform.
+τ_m dv_i/dt = v_rest − v_i + g_i + Σ_j c_ij (v_j + s_j − v_i), where c_ij is the junction's
+conductance over i's leak conductance; a coupling coefficient c measured from j to i gives
+c / (1 − c), and the two sides of a junction may differ (cells of different input
+resistance). s_j is the spike a LIF reset does not draw: with `spike_mv` and `spike_ms`, a
+spike of j adds a rectangular `spike_mv` (one value, or one per neuron; 0 for neurons whose
+spikes do not cross) to the potential its partners see for `spike_ms`, so spikes cross the
+junction as spikelets. Junctions do not rectify.
+
+Between step boundaries the equation is linear, so each connected group is integrated
+exactly: the matrix exponential of the group's membrane, synaptic and spike terms (Van
+Loan's block form) is computed once per run, and each step applies it in float64. As
+everywhere in the model, discrete events act at step boundaries: spikes, resets,
+deliveries, kicks, the start and end of a spike term, and the refractory hold (a refractory
+neuron starts each step at rest with its conductance frozen and is set back to rest at its
+end).
 
 EM does not show gap junctions and few are measured (#85), so no electrical synapse is in
 the default model. Without them the engine is unchanged, bit for bit; with them `sim.run`,

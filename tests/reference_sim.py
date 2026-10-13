@@ -51,7 +51,10 @@ def run_reference(
     if silence is not None:
         silent[silence] = True
     gi, g_lo, g_span, g_scale, is_graded = graded_arrays(graded, n, p.dt)
-    gap_nodes, gap_off, gap_mat, gap_moff = gap_arrays(gap, n, p)
+    gap_nodes, gap_off, gap_mat, gap_moff, gap_pos, gap_width, gap_amp = gap_arrays(
+        gap, n, p
+    )
+    gap_pulse = np.zeros(gap_nodes.size, dtype=np.int64)
     rest64 = np.float64(np.float32(p.v_rest))
     g_flight = [np.zeros(gi.size, dtype=np.float32)] * d  # release in flight
     g_vsum = np.zeros((-(-steps // per_bin), gi.size))
@@ -83,12 +86,18 @@ def run_reference(
         for c in range(gap_off.size - 1):
             nodes = gap_nodes[gap_off[c] : gap_off[c + 1]]
             m = nodes.size
-            M = gap_mat[gap_moff[c] : gap_moff[c + 1]].reshape(m, 2 * m)
+            M = gap_mat[gap_moff[c] : gap_moff[c + 1]].reshape(m, 3 * m)
             x = np.r_[
                 v[nodes].astype(np.float64) - rest64,
                 np.where(frozen[nodes], 0.0, g[nodes].astype(np.float64)),
+                np.where(
+                    gap_pulse[gap_off[c] : gap_off[c + 1]] > 0,
+                    gap_amp[gap_off[c] : gap_off[c + 1]],
+                    0.0,
+                ),
             ]
             exact.append((M * x).cumsum(axis=1)[:, -1])
+        gap_pulse[gap_pulse > 0] -= 1
         v -= p.v_rest
         v *= em
         v += g * gv
@@ -128,6 +137,9 @@ def run_reference(
         counts[t // per_bin, spiking] += 1
         first[spiking[first[spiking] < 0]] = t
         in_flight[t % d] = spiking
+        if gap_width:
+            pulsing = gap_pos[spiking]
+            gap_pulse[pulsing[pulsing >= 0]] = gap_width
         g_vsum[t // per_bin] += v[gi]
         if rec is not None:
             for k, x in (("v", v), ("g", g), ("th", th)):
