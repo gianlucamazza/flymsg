@@ -123,10 +123,11 @@ three stay off unless a lock names them.
 
 ## Blocked on hardware
 
-| Issue                                                       | Blocked by                                                  | Ready                                               |
-| ----------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------- |
-| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1 | GPU parity needs a D3D12 hardware adapter; CI has only WARP | The HLSL shader, DX12 host and fixtures build in CI |
-| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2 | A physical Series S console                                 | The UWP worker, job assets, runbook                 |
+| Issue                                                            | Blocked by                                                          | Ready                                                                                       |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | GPU parity needs a D3D12 hardware adapter; CI has only WARP         | The HLSL shader, DX12 host and fixtures build in CI                                         |
+| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | A physical Series S console                                         | The UWP worker, job assets, runbook                                                         |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md)) |
 
 ## What an animal test could check
 

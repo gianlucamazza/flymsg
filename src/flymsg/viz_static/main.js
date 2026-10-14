@@ -63,6 +63,7 @@ import { findNeuron, focusRoles, panelLines, selectParam } from "./partners.js";
 import { binAt, rasterRows, selectionExport, selectionRows } from "./raster.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
+import { installXrObserver } from "./xr.js";
 
 const SEG = "v1.0/segmentation";
 const MESHES = `${SEG}/multi-res-meshes`;
@@ -1062,9 +1063,12 @@ controls.addEventListener("change", () => {
 
 function eyeView() {
   const eye = data.worldToLocal(camera.position.clone()).toArray();
+  // in XR the canvas keeps its desktop CSS size; the drawing buffer is one eye's pixels
+  const heightPx = renderer.xr.isPresenting
+    ? renderer.getSize(new THREE.Vector2()).y
+    : renderer.domElement.clientHeight;
   const pxPerUnit =
-    renderer.domElement.clientHeight /
-    (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+    heightPx / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
   return { eye, pxPerUnit };
 }
 
@@ -1347,6 +1351,7 @@ const pickLineMaterial = new THREE.ShaderMaterial({
 });
 
 function pickAt(x, y) {
+  if (renderer.xr.isPresenting) return null; // the stereo cameras own the view in XR
   const w = renderer.domElement.clientWidth,
     h = renderer.domElement.clientHeight;
   camera.setViewOffset(
@@ -1867,6 +1872,7 @@ controls.update();
 fitClip();
 
 addEventListener("resize", () => {
+  if (renderer.xr.isPresenting) return; // XR runtime owns the stereo framebuffer size
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
@@ -1925,12 +1931,19 @@ document.addEventListener("visibilitychange", () => {
 });
 renderer.setAnimationLoop(() => {
   const dt = timer.getDelta();
-  const moved = controls.update(); // damping keeps moving after the pointer is released
+  const inXR = renderer.xr.isPresenting;
+  const moved = inXR ? false : controls.update(); // XR headset owns its camera pose
+  if (inXR) {
+    // head motion moves the camera without OrbitControls events: refine as the view
+    // changes, at the selection's own rate
+    selectionDirty = true;
+    lastMove = performance.now();
+  }
   const playing = replay && clock.playing;
   if (playing) clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
   if (replay && clock.t !== shownT) updateActivity(clock.t);
-  const live = interacting || moved || playing;
-  tuneQuality(live);
+  const live = inXR || interacting || moved || playing;
+  if (!inXR) tuneQuality(live); // desktop adaptive compositor is not XR-qualified
   const now = performance.now();
   // the index rebuild walks every drawn segment: coalesce streaming updates
   if (skeletonsDirty && now - lastSkeletonBuild >= IDLE_REDRAW_MS) {
@@ -1939,10 +1952,44 @@ renderer.setAnimationLoop(() => {
   }
   if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
   flushInstanceTextures();
-  fitClip();
-  perf.begin();
-  composer.render();
-  perf.end();
+  if (inXR) {
+    // Three.js supplies the two eye cameras; never run desktop postprocessing
+    // against the XR framebuffer. One existing animation loop owns both modes.
+    renderer.render(world, camera);
+  } else {
+    fitClip();
+    perf.begin();
+    composer.render();
+    perf.end();
+  }
   sceneDirty = false;
   lastRender = now;
 });
+
+// ?xr=1 with the chrome shown: installed after the loop starts, so a slow XR runtime never
+// delays the first frame. The observer transforms only the presentation root; neural
+// activity, manifests, scientific frames and simulation state are untouched.
+const xrOptions = {
+  search: location.search,
+  renderer,
+  root,
+  camera,
+  controls,
+  extentUm: extent,
+  onTransition: () => {
+    selectionDirty = true;
+    invalidate();
+    if (!renderer.xr.isPresenting) {
+      // the desktop may have been resized while the headset owned its framebuffer
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.setScissor(0, 0, innerWidth, innerHeight);
+      composer.setSize(innerWidth, innerHeight);
+    }
+  },
+};
+if (showChrome(location.search))
+  installXrObserver(xrOptions).catch((error) =>
+    console.warn("XR observer not installed:", error),
+  );

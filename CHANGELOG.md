@@ -32,6 +32,11 @@
 
 ### Viewer
 
+- **Optional WebXR observer** (`?xr=1`, experimental): an Enter VR button where the browser
+  supports `immersive-vr`; the session shows the existing replay in stereo, scaled to about
+  1.2 m, without bloom or MSAA, and its end restores the scene, the desktop camera and the
+  controls. Installed after the first frame; no selection in XR. Unqualified on any headset
+  (#177); the decision is `docs/adr-virtual-experimental-environment.md`.
 - **Graded neurons in the 3D replay**: `flymsg viz --eye POLARITY DIRECTION [--eye-config N]
 [--eye-top N]` replays one edge of the locked T4/T5 protocol and writes `graded.bin`, each
   non-spiking neuron's potential per bin relative to rest (or its dark anchor); the page lets

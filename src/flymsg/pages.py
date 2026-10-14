@@ -78,6 +78,11 @@ PAGES = (
     ("integrity-audit", "docs/integrity-audit-2026-10-13.md", "Integrity audit"),
     ("adr-gap-refractory", "docs/adr-gap-refractory.md", "Electrical ADR"),
     ("adr-run-integrity", "docs/adr-run-integrity.md", "Run integrity ADR"),
+    (
+        "adr-virtual-experimental-environment",
+        "docs/adr-virtual-experimental-environment.md",
+        "WebXR ADR",
+    ),
     ("run-integrity", "docs/run-integrity.md", "Run integrity"),
     ("changelog", "CHANGELOG.md", "Changelog"),
 )
