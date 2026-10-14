@@ -55,8 +55,8 @@
   state as a truncated Taylor series whose remainder is bounded by the float64 unit
   roundoff, instead of building a dense map per refractory mask. On the Kenyon cell
   couplings (688 and 726 cells) it gives the dense solver's spikes neuron for neuron in
-  3.6–4.9 s against 1,412–1,655 s per 50 ms; a 1,000 ms odor takes 14.7 s. Proposed in the
-  [electrical ADR](docs/adr-gap-refractory.md); KC locks may name it once accepted.
+  3.6–4.9 s against 1,412–1,655 s per 50 ms; a 1,000 ms odor takes 14.7 s. Decided in the
+  [electrical ADR](docs/adr-gap-refractory.md), accepted 2026-10-14; new locks may name it.
 
 - **Lock parser, subset 2** (#159): the lock parser cut ` #` inside quoted strings and read
   a quoted list item holding `:` as a one-key map. A lock with the top-level line
