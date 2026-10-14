@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.46 — 2026-10-14
 
 ### Result
 
@@ -94,11 +94,19 @@
 
 ### Viewer
 
-- **Baseline of the live scenes** (#24): five runs of six of the live pages (the gallery scenes and the heaviest comparisons) on one laptop GPU,
-  their ranges in `docs/viz.md` and the runs in `docs/evidence/viewer-bench-2026-10-13/`.
-  `scripts/bench_viewer.py` judges a pass by the CPU other processes used during it (not
-  the load its own browser makes) and waits (`--cooldown`) for an idle machine;
-  `scripts/bench_check.py` compares a new run with the baseline ranges.
+- **Baseline of the live scenes** (#24): five runs of six of the live pages (the gallery scenes
+  and the heaviest comparisons) on one laptop GPU, their ranges in `docs/viz.md` and the runs
+  in `docs/evidence/viewer-bench-2026-10-13/`. `scripts/bench_viewer.py` judges a pass by the
+  CPU other processes used during it (not the load its own browser makes) and waits
+  (`--cooldown`) for an idle machine; `scripts/bench_check.py` compares a new run with the
+  baseline ranges.
+
+### Documentation
+
+- **Drift audit** (#166): every page checked against code, locks, results and issue states;
+  README, roadmap, model, approximations, leads, runtime, architecture, provenance and others
+  aligned. The runtime ADR is accepted (#167): R0 and the native CPU executor are done, GPU
+  parity and the console stay open.
 
 ## 0.8.45 — 2026-10-13
 
