@@ -168,15 +168,13 @@ about the fly.
 
 ## Completion plan
 
-The [sensorimotor environment completion plan](sensorimotor-environment-plan.md)
-sets engineering, biological-interface and independent-prediction gates. It
-reuses the existing embodiment runtime and keeps the VR observer independent;
-this is a plan, not a new experimental result.
-
-Status on 2026-10-14 (after v0.8.45). flymsg is complete when a model prediction passes an
+Status on 2026-10-14 (after v0.8.46). flymsg is complete when a model prediction passes an
 independent held-out benchmark (M4, [#36](https://github.com/gianlucamazza/flymsg/issues/36));
 everything else serves that. An open problem closes with a measurement, a lock and a run,
-never with a chosen value, so the order follows the evidence that exists.
+never with a chosen value, so the order follows the evidence that exists. The
+[sensorimotor environment plan](sensorimotor-environment-plan.md) sets the gates a headless
+closed-loop experiment needs on the way ([#176](https://github.com/gianlucamazza/flymsg/issues/176));
+it is a plan, not a result.
 
 **1. Now: nothing outside is needed.**
 
