@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Engineering
+
+- **B6 v2 pose contract** (G1, #178): `flymsg.pose` (`flymsg.embodiment/v2`) types world,
+  body, eye and eye-map frames in SI units with (w, x, y, z) quaternions, a body state with
+  velocities, eye mounts read from FlyGym 2.1.0, a no-future-pose clock lookup, actuators by
+  compiled MuJoCo id that still refuse through the motor map, and a canonical JSON trace. No
+  body is wired; M0 v1 is unchanged. FlyGym's default `fusestatic` compile moves both eye
+  cameras 0.44 mm to the thorax origin; the mounts are read without it.
+
 ## 0.8.47 — 2026-10-14
 
 ### Result

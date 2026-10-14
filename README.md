@@ -264,7 +264,7 @@ under its date.
 | [benchmarks](docs/benchmarks.md)                                                      | held-out partition, the ORN_DM1 failure, both corners fail                                                      |
 | [behavior](docs/behavior.md)                                                          | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated                                    |
 | [architecture](docs/architecture.md)                                                  | module layers, the six contracts and their tests, migration order                                               |
-| [embodiment](docs/embodiment.md)                                                      | M0 contract, M1/M2 engineering bodies, NeuroMechFly jump v1 (short); FlyBody unselected                         |
+| [embodiment](docs/embodiment.md)                                                      | M0 contract, B6 v2 pose types, M1/M2 engineering bodies, NeuroMechFly jump v1 (short); FlyBody unselected       |
 | [eye](docs/eye.md)                                                                    | column directions, column stimuli, T4/T5 v1–v3 (neither), v4 locked                                             |
 | [runtime](docs/runtime.md)                                                            | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                                             |
 | [nulls](docs/nulls.md)                                                                | pre-registered null families, scores, draw counts, methods                                                      |
