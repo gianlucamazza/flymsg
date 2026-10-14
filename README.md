@@ -170,6 +170,7 @@ the final path. A clean committed worktree is required. See
 | `trace STIM --neurons N…`                                       | record v, g, threshold, spikes and input of chosen neurons; model states, not recordings                |
 | `viz-compare A B --labels … --status …`                         | pair two replay exports; refuses mismatched datasets or time bases; no simulation                       |
 | `sensitivity [--run]`                                           | the locked w_syn × th_jump grid around the defaults: every cell, spreads, a figure; a report            |
+| `convergence [--run]`                                           | the locked timestep convergence check (SF2): the battery's responses at 0.1, 0.05 and 0.025 ms          |
 | `benchmarks [--run \| --corners]`                               | the frozen held-out manifest, scored with `--run`                                                       |
 | `silence-scan [--run]`                                          | the locked residual `TTMn_R` partner scan (#20); prints the protocol without `--run`                    |
 | `partner-followup [--run]`                                      | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                          |

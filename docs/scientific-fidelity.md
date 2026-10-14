@@ -28,7 +28,9 @@ measured status without value and unit. A field the source does not state is wri
 `yaml_subset: 2` (all locks after #159) must name its records in `evidence`; historical
 locks keep their prose `sources`, unchanged. The first records are the coupling, spike and
 sparseness values of Kenyon cell sparseness v5–v7 and the medulla voltages of T4/T5 v3;
-the test suite checks them against the values the locks and the code use.
+the test suite checks them against the values the locks and the code use. A numerical lock
+that uses only the live defaults writes `evidence: none` with an `evidence_none` reason
+(the timestep convergence check of SF2 is the first).
 
 ## Model and execution contracts
 

@@ -338,6 +338,19 @@ Parameter spread exceeds seed spread for most rates (looming TTMn: 17–87 Hz ac
 larger than the range of its medians. Figure: [rate per cell](img/sensitivity-rate.svg); files
 in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from this grid.
 
+## Timestep convergence (SF2, a check, not a score)
+
+`validation/convergence.yaml` v1 (#148), locked 2026-10-14 before any run at another
+timestep. The six cases of the sensitivity grid run with the default parameters at
+dt = 0.1 ms (the default), 0.05 and 0.025 ms, seeds 0–4; delay and refractory period stay
+whole numbers of steps at each. A response (case and target) converges at a timestep when
+its holds verdict (the v4 floor) equals the finest timestep's and its seed-median target
+rate differs from the finest seed median by at most the finest seed range. The verdict is
+`converged` if every response converges at 0.1 ms. Numerical error is judged against seed
+variability, so no tolerance is chosen; Poisson input is drawn per step, so runs compare as
+seed statistics, not spike for spike. `flymsg convergence --run` writes every cell, the
+judgement and a report. No run yet.
+
 ## Findings log
 
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
