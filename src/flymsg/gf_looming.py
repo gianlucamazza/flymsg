@@ -35,7 +35,7 @@ REACH = 0.95  # a peak's time: the first sample at 95% of the window maximum
 NEAR_END_MS = 20.0  # a peak this soon after the expansion stops follows the stimulus
 
 VERSION_HASHES: dict[int, str] = {
-    1: "2b9eb8f2fb22a6cdb149e52815d9e73daf78f98101adf67f272839c91a028d90",
+    1: "e055f37cb28f755f852aad30488a6696f7dc9fc86c1e85f9fd203046fc872589",
 }
 
 

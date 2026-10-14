@@ -2,7 +2,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.gf_looming.VERSION_HASHES. `flymsg gf-looming` prints this file; `--run` executes it.
 version: 1
-content_sha256: 2b9eb8f2fb22a6cdb149e52815d9e73daf78f98101adf67f272839c91a028d90
+content_sha256: e055f37cb28f755f852aad30488a6696f7dc9fc86c1e85f9fd203046fc872589
 yaml_subset: 2
 evidence: [dombrovski_gf_looming, jang_looming_protocol]
 
@@ -12,7 +12,7 @@ claim:
   scored: true
   what: "How long before a looming disc's virtual collision the giant fiber (DNp01) peaks, as a function of r/v: by a threshold-angle model the time is alpha * r/v - delta, and alpha = 1 / tan(theta_thr / 2) fixes the angular size the response follows. Predicted by the connectome with LC4 and LPLC2 driven by engineered transducers, against the giant fiber's whole-cell recordings (Dombrovski et al. 2025)."
   scope: "Timing only. No amplitude is scored: the LIF's millivolts are not the recorded ones, and the transducer gains are not measured, so they are scanned as an envelope and never chosen."
-  held_out: "The recordings were never used to build, calibrate or tune flymsg. Apart from the two files named in seen_before_lock, they are downloaded after this lock is merged and opened only after the model has run and passed its no-go."
+  held_out: "The recordings were never used to build, calibrate or tune flymsg. Apart from what seen_before_lock records, they are downloaded after this lock is merged and opened only after the model has run and passed its no-go."
 
 seen_before_lock: "During the 2026-10-14 literature search an agent opened one control file (DipE_Null_cont_fly22_trial01.mat: 80000 x 4, resting about -73 to -76, peak minus baseline 4.7 to 7.1 over the four r/v, units assumed mV) and noted that its peak timing is consistent with a 10 to 63 degree disc (no peak time was recorded), which partly confirms the inferred protocol from the data; it also downloaded and opened the deposited xlsx (r/v column order, 20 kHz, stimulus at 2 s, and per-fly values behind Fig. 3 and Extended Data Fig. 8, whose columns were not reported to the lock's author, so they may include peak latencies) and the structure of the Fig. 1 file. No other file was opened. The scored quantity is the slope of peak time over r/v across ten flies; no slope was computed before the lock."
 
@@ -107,7 +107,7 @@ no_go:
   why: "a quarter of the grid, as song's min_scored; a slope from fewer graded cells says little about the circuit"
 
 score:
-  statistic: "alpha per responding cell against the data's interval of the median alpha"
+  statistic: "alpha per scored (responding and graded) cell against the data's interval of the median alpha"
   stimulus_locked: "a trace that only follows the stimulus gives a slope whatever the circuit: the locked readout (filter, reach, window, fit) applied to theta and dtheta/dt, raw and through tau_syn, tau_m and both (sim.Params), at the model's and the data's dt, gives a band (about 1.73 to 2.01), and a peak at onset gives 1 / tan(start_deg / 2) (about 11.43); if the flies' interval overlaps the band or holds the onset slope, the timing cannot separate the circuit from the stimulus. Each scored cell's distance from the band is reported: only that part of its slope is the circuit's"
   verdict:
     pass: "every scored cell's alpha lies inside the interval"
