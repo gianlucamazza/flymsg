@@ -48,6 +48,25 @@ class ToyBody:
         self.t += dt_us
         return self._state(), (("ground", 0.0 if self.z > 0 else 1e-5),)
 
+    def snapshot(self, path):
+        path.write_text(json.dumps([self.t, self.z, self.v]))
+
+    def restore(self, path):
+        self.t, self.z, self.v = json.loads(path.read_text())
+
+
+class Crash(ToyBody):
+    """Dies once its clock reaches `at_us`, as a killed process would."""
+
+    def __init__(self, at_us):
+        super().__init__()
+        self.at_us = at_us
+
+    def step(self, commands, dt_us):
+        if self.t >= self.at_us:
+            raise RuntimeError("killed")
+        return super().step(commands, dt_us)
+
 
 def runtime(duration_us=40_000, silence=None):
     edges, sign, n = chain([400])
@@ -331,3 +350,28 @@ def test_spikes_out_of_order_or_off_grid_refuse():
         ticks[k] = dataclasses.replace(ticks[k], spikes=(bad,))
         with pytest.raises(ContractError, match="spike out of place"):
             dataclasses.replace(record, ticks=tuple(ticks)).validate()
+
+
+def test_a_resumed_run_equals_the_uninterrupted_one(tmp_path):
+    whole = run()
+    with pytest.raises(ContractError, match="killed"):
+        run(body=Crash(23_500), checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    assert sorted(p.name for p in tmp_path.iterdir()) == [
+        "body-20000.npz",
+        "loop.json",
+        "neural-20000.npz",
+    ]
+    body = ToyBody()
+    resumed = run(body=body, checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    assert "reset" not in body.calls
+    assert resumed == whole
+    # another run's checkpoint, or a changed part, refuses
+    with pytest.raises(ContractError, match="another run"):
+        run("disconnected", checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    # the resumed run went on writing checkpoints; corrupt the current body part
+    (current,) = tmp_path.glob("body-*.npz")
+    current.write_text("[0, 0.0, 0.0]")
+    with pytest.raises(ContractError, match="does not match its hash"):
+        run(checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    with pytest.raises(ContractError, match="control ticks"):
+        run(checkpoint_dir=tmp_path / "x", checkpoint_every_us=1500)

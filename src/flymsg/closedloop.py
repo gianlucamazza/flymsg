@@ -20,15 +20,17 @@ body is an adapter passed in, and the tests use a toy one. M0 v1, B6 v2, M2 (`lo
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, fields
+from pathlib import Path
 from typing import Protocol
 
 import numpy as np
 
-from flymsg import pose
+from flymsg import optics, pose, runstore
 from flymsg.embodiment import Clock, ContractError, SpikeEvent, integer
 from flymsg.runtime import CpuRuntime
 
@@ -239,6 +241,19 @@ def _state(d: dict) -> pose.BodyState:
     )
 
 
+def _tick(t: dict) -> Tick:
+    return Tick(
+        t["time_us"],
+        tuple(tuple(c) for c in t["commands"]),
+        _state(t["state"]),
+        tuple(t["stimulus"]),
+        tuple(tuple(r) for r in t["input_counts"]),
+        tuple(SpikeEvent(**s) for s in t["spikes"]),
+        _state(t["stepped"]),
+        tuple(tuple(c) for c in t["contacts"]),
+    )
+
+
 def from_json(text: str) -> Record:
     """Parse a closed-loop record; another schema, an unknown or missing field refuses."""
     try:
@@ -258,19 +273,7 @@ def from_json(text: str) -> Record:
             tuple(d["input_ids"]),
             tuple(d["traced_ids"]),
             tuple(d["silenced_ids"]),
-            tuple(
-                Tick(
-                    t["time_us"],
-                    tuple(tuple(c) for c in t["commands"]),
-                    _state(t["state"]),
-                    tuple(t["stimulus"]),
-                    tuple(tuple(r) for r in t["input_counts"]),
-                    tuple(SpikeEvent(**s) for s in t["spikes"]),
-                    _state(t["stepped"]),
-                    tuple(tuple(c) for c in t["contacts"]),
-                )
-                for t in d["ticks"]
-            ),
+            tuple(_tick(t) for t in d["ticks"]),
             d["schema"],
         )
         record.validate()
@@ -296,6 +299,39 @@ def _held(state: pose.BodyState, time_us: int) -> pose.BodyState:
     return pose.BodyState(time_us, state.pose, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
 
 
+def optical(
+    columns: optics.Columns,
+    registration: pose.Registration,
+    mounts: tuple[pose.EyeMount, pose.EyeMount],
+    spheres: tuple[optics.Sphere, ...],
+    acceptance_deg: float,
+) -> tuple[Callable[[int, pose.BodyState], tuple[float, ...]], str]:
+    """The ADR's stimulus step on `optics.sample`, and its configuration hash.
+
+    Per column with a lens, the largest single-sphere coverage of its acceptance profile:
+    `optics` does not subtract overlapping silhouettes, so where they overlap this is a
+    lower bound on the dark share. Columns without a lens are left out, the same ones at
+    every tick. The world is read at the time of the state given, so the stimulus is a pure
+    function of (time, state).
+    """
+    config = optics.config_sha256(
+        columns, registration, mounts, spheres, acceptance_deg
+    )
+    has = np.isfinite(columns.direction).all(axis=1)
+
+    def stimulus(time_us: int, state: pose.BodyState) -> tuple[float, ...]:
+        if state.time_us != time_us:
+            raise ContractError("the stimulus is read at the state's own time")
+        sample = optics.sample(
+            columns, registration, mounts, state, spheres, acceptance_deg
+        )
+        if sample.config_sha256 != config:
+            raise ContractError("the optics configuration changed during the run")
+        return tuple(float(v) for v in sample.coverage[:, has].max(axis=0))
+
+    return stimulus, config
+
+
 def run(
     runtime: CpuRuntime,
     body: Body,
@@ -316,6 +352,8 @@ def run(
     run_identity_sha256: str,
     silenced_ids: tuple[int, ...] = (),
     replay: Record | None = None,
+    checkpoint_dir: Path | None = None,
+    checkpoint_every_us: int | None = None,
 ) -> Record:
     """One arm of a closed loop in the ADR order.
 
@@ -327,6 +365,13 @@ def run(
     the caller declared). `stimulus` must be a pure function of the time and state it is
     given; `transducer` returns one rate in Hz per input; `decoder` turns delivered spikes
     into actuator commands.
+
+    With `checkpoint_dir`, the loop writes a checkpoint every `checkpoint_every_us` at a
+    control tick (runtime, body and loop state, bound by their hashes) and, if the directory
+    holds one, resumes from it: the caller passes a fresh runtime and a body of the same
+    construction, and the arguments must be those of the checkpointed run. A resumed run's
+    record equals the uninterrupted one. The body must offer `snapshot(path)` and
+    `restore(path)`.
     """
     require(evidence, mode)
     provenance.validate()
@@ -362,18 +407,58 @@ def run(
         # the open-loop stimuli in a seeded random order (as in `loop`)
         order = np.random.default_rng(provenance.seed + 1).permutation(n_ticks)
 
-    last = _adapter(body.reset)
-    if not isinstance(last, pose.BodyState) or last.time_us != 0:
-        raise ContractError("a body starts at time 0")
-    initial = last
-    spikes: list[SpikeEvent] = []
-    delivered = 0
-    ticks = []
+    identity = runstore.digest(
+        {
+            "schema": SCHEMA,
+            "clock": asdict(clock),
+            "duration_us": duration_us,
+            "arm": arm,
+            "mode": mode,
+            "evidence": sorted(evidence.items()),
+            "provenance": asdict(provenance),
+            "ids": [list(input_ids), list(traced_ids), list(silenced_ids)],
+            "hashes": [optics_config_sha256, run_identity_sha256],
+            "replay": None if replay is None else runstore.digest(replay.to_json()),
+        }
+    )
+    if checkpoint_dir is not None:
+        integer(checkpoint_every_us, "checkpoint_every_us", 1)
+        if checkpoint_every_us % clock.control_us:
+            raise ContractError("checkpoints fall on control ticks")
+        checkpoint_dir = Path(checkpoint_dir)
+    resumed = (
+        _resume(checkpoint_dir, identity, runtime, body)
+        if checkpoint_dir is not None and (checkpoint_dir / LOOP).exists()
+        else None
+    )
+    if resumed is None:
+        last = _adapter(body.reset)
+        if not isinstance(last, pose.BodyState) or last.time_us != 0:
+            raise ContractError("a body starts at time 0")
+        initial, spikes, delivered, ticks, begin = last, [], 0, [], 0
+    else:
+        initial, last, spikes, delivered, ticks, rng_state, begin = resumed
+        rng.bit_generator.state = rng_state
     commands: tuple[Command, ...] = ()
     for step in steps:
         t = step.time_us
         k = t // clock.body_us
+        if t < begin:
+            continue
         if step.phase == "command":
+            if (
+                checkpoint_dir is not None
+                and t > begin
+                and t % checkpoint_every_us == 0
+            ):
+                _checkpoint(
+                    checkpoint_dir,
+                    identity,
+                    runtime,
+                    body,
+                    t,
+                    (initial, last, spikes, delivered, ticks, rng.bit_generator.state),
+                )
             eligible = delivered
             while (
                 eligible < len(spikes)
@@ -455,6 +540,79 @@ def run(
     )
     record.validate()
     return record
+
+
+LOOP = "loop.json"
+
+
+def _sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _checkpoint(directory, identity, runtime, body, time_us, loop) -> None:
+    """Write the runtime and body under names of this tick, then the loop state that binds
+    them by hash; the older files go only after the new loop state is in place."""
+    initial, last, spikes, delivered, ticks, rng_state = loop
+    directory.mkdir(parents=True, exist_ok=True)
+    neural, physics = (
+        directory / f"neural-{time_us}.npz",
+        directory / f"body-{time_us}.npz",
+    )
+    _adapter(runtime.checkpoint, neural, what="runtime")
+    _adapter(body.snapshot, physics)
+    runstore.atomic_json(
+        directory / LOOP,
+        {
+            "schema": SCHEMA + "/checkpoint",
+            "identity": identity,
+            "time_us": time_us,
+            "files": {
+                "neural": [neural.name, _sha256_file(neural)],
+                "body": [physics.name, _sha256_file(physics)],
+            },
+            "initial": asdict(initial),
+            "last": asdict(last),
+            "spikes": [asdict(s) for s in spikes],
+            "delivered": delivered,
+            "ticks": [asdict(t) for t in ticks],
+            "rng": rng_state,
+        },
+    )
+    for old in directory.glob("*.npz"):
+        if old not in (neural, physics):
+            old.unlink()
+
+
+def _resume(directory, identity, runtime, body):
+    try:
+        d = json.loads((directory / LOOP).read_text())
+        if d.get("schema") != SCHEMA + "/checkpoint" or d.get("identity") != identity:
+            raise ContractError("the checkpoint belongs to another run")
+        paths = {}
+        for key, (name, digest) in d["files"].items():
+            paths[key] = directory / name
+            if _sha256_file(paths[key]) != digest:
+                raise ContractError(f"the {key} checkpoint does not match its hash")
+        _adapter(runtime.restore, paths["neural"], what="runtime")
+        _adapter(body.restore, paths["body"])
+        last = _state(d["last"])
+        time_us = d["time_us"]
+        integer(time_us, "checkpoint time")
+        if last.time_us != time_us or runtime.step * runtime.tick_us != time_us:
+            raise ContractError("the checkpoint parts disagree on its time")
+        return (
+            _state(d["initial"]),
+            last,
+            [SpikeEvent(**s) for s in d["spikes"]],
+            d["delivered"],
+            [_tick(t) for t in d["ticks"]],
+            d["rng"],
+            time_us,
+        )
+    except ContractError:
+        raise
+    except (AttributeError, KeyError, TypeError, ValueError, OSError) as err:
+        raise ContractError(f"malformed checkpoint: {err!r}") from err
 
 
 def _commands(raw, compiled: dict[str, int], mode: str) -> tuple[Command, ...]:

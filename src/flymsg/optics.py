@@ -148,7 +148,8 @@ def _matrix(q: pose.Quat) -> np.ndarray:
 SAGITTAL_TOL = 1e-12
 
 
-def _config(columns, registration, mounts, spheres, acceptance_deg) -> str:
+def config_sha256(columns, registration, mounts, spheres, acceptance_deg) -> str:
+    """The configuration hash every `Sample` of these inputs carries."""
     doc = {
         "schema": SCHEMA,
         "columns": columns.source_sha256,
@@ -247,7 +248,7 @@ def sample(
         hit[i] = np.where(has & (disc >= 0) & (t > 0), t, np.inf)
     first = np.argmin(hit, axis=0)
     nearest = np.where(np.isfinite(hit.min(axis=0)), first, -1)
-    config = _config(columns, registration, mounts, spheres, acceptance_deg)
+    config = config_sha256(columns, registration, mounts, spheres, acceptance_deg)
     return Sample(
         state.time_us,
         config,

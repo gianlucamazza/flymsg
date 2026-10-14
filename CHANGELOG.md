@@ -36,6 +36,12 @@
     `flymsg.closedloop/v1` record.
   - A biological run refuses unless registration, transducer, motor map and body are all
     measured; none is today. Tested on a toy circuit and body only.
+- **G5 adapters and checkpoints** (#180): `closedloop.optical` turns `optics.sample` into the
+  per-column stimulus; `flymsg.flygym_body` puts NeuroMechFly behind the closed-loop body
+  adapter (SI units at the boundary, contacts per fly body); runs checkpoint and resume, and
+  a resumed run equals the uninterrupted one, also on NeuroMechFly. Synthetic only.
+  `optics.config_sha256` is public. Architecture note aligned (modules, solved pain points,
+  B6).
 
 ### Documentation
 
