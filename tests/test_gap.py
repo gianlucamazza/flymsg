@@ -458,6 +458,7 @@ def test_taylor_solver_matches_the_dense_reference(tmp_path):
     resumed = CpuRuntime(W, np.arange(30), **kw)
     resumed.restore(tmp_path / "c.npz")
     assert rt._semantics.endswith("flymsg.gap/continuous-clamp-taylor-v1")
+    assert rt._gap[2].size == 0  # no dense step matrix is built
     for r in (rt, resumed):
         r.advance_to(steps)
         assert ref.counts.sum() > 0

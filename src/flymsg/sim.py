@@ -221,7 +221,8 @@ MAX_GAP_COMPONENT = 4000
 
 def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
     """Kernel arrays of `gap`: the coupled neurons grouped by connected component (indices,
-    component offsets); per component of m neurons the m x 3m float64 step matrix
+    component offsets); per component of m neurons the m x 3m float64 step matrix (none for
+    the Taylor solver, whose offsets still count it)
     [P | Q | S], row-major, with its offsets, such that for free neurons
     v(t + dt) - v_rest = P (v - v_rest) + Q g + S s with s the spike term of each member;
     each neuron's position among the coupled ones (-1 if none); the spike term's length in
@@ -300,6 +301,9 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
     for a, b in pairwise(off):
         members = nodes[a:b]
         m = members.size
+        moff.append(moff[-1] + 3 * m * m)
+        if gap.solver == "taylor":
+            continue  # the Taylor action reads the generators; no dense step matrix
         Kc = K[members][:, members].toarray()
         A = (Kc - np.diag(1.0 + Kc.sum(axis=1))) / p.tau_m
         block = np.zeros((3 * m, 3 * m))
@@ -311,13 +315,12 @@ def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
         if not np.isfinite(E).all():
             raise ValueError("gap couplings give a nonfinite step matrix")
         mats.append(E[:m].ravel())
-        moff.append(moff[-1] + 3 * m * m)
     pos = np.full(n, -1, dtype=np.int64)
     pos[nodes] = np.arange(nodes.size)
     return (
         nodes,
         off,
-        np.concatenate(mats),
+        np.concatenate(mats) if mats else np.empty(0, dtype=np.float64),
         np.asarray(moff, dtype=np.int64),
         pos,
         width if np.any(amp_all[nodes] > 0) else 0,
