@@ -114,6 +114,7 @@ recorded on the linked page. Negative results stay in the
 | Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                 | [benchmarks](docs/benchmarks.md)                                                                       |
 | Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
 | Kenyon cell sparseness v7                  | within only with the variant eLN set (lLN2T+lLN1_bc)         | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| Kenyon cell sparseness v8                  | v7 replicates under the exact continuous clamp               | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
 | KC → MBON11 depression v1                  | inconsistent: both odors go silent                           | [model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
 | Synapse weight rule v1                     | undecided: density and count rank Liu et al.'s uEPSPs alike  | [model](docs/model.md#synapse-weight-scaled-for-synapse-density)                                       |
 | One-bit looming jump                       | silence fails                                                | [behavior](docs/behavior.md#result-2026-10-11)                                                         |

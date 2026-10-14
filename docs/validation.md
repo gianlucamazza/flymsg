@@ -343,6 +343,12 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-14: Kenyon cell sparseness v8, within only with the variant set; v7 replicates.**
+Seeds 95–97, v7 under the continuous clamp by the Taylor action. 8 of 10 arms of lLN2T+lLN1_bc
+within (2.0–2.3% / 1.4–1.7% of Kenyon cells), the two E arms out by overlap at 65–66% against
+64.6%; lLN2T alone dense (16–23%). Every arm within 19 cells of its v7 count; coupling moves no
+arm by more than 21 cells. Report: `results/kc-sparseness/v8.executions/c714d0a3…/output/`.
+
 **2026-10-14: T4/T5 v3, robust: neither.** Seed 94, 25 configurations of LMC × medulla release
 rate, with Mi1, Tm3, Mi4, Mi9 and C3 graded over Groschner et al. 2022's in vivo voltages. No
 T4 spike in any configuration. The edge reaches the medulla at ≤1.4 mV, at most about 5% of the
