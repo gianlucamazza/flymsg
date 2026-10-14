@@ -63,6 +63,7 @@ import { findNeuron, focusRoles, panelLines, selectParam } from "./partners.js";
 import { binAt, rasterRows, selectionExport, selectionRows } from "./raster.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
+import { installXrObserver } from "./xr.js";
 
 const SEG = "v1.0/segmentation";
 const MESHES = `${SEG}/multi-res-meshes`;
@@ -1866,7 +1867,31 @@ controls.target.set(0, 0, 0);
 controls.update();
 fitClip();
 
+// The XR observer transforms only the presentation root. Neural activity,
+// manifests, scientific coordinate frames and simulation state are untouched.
+await installXrObserver({
+  search: location.search,
+  renderer,
+  root,
+  camera,
+  controls,
+  extentUm: extent,
+  onTransition: () => {
+    selectionDirty = true;
+    invalidate();
+    if (!renderer.xr.isPresenting) {
+      // Desktop may have been resized while the headset owned its framebuffer.
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.setScissor(0, 0, innerWidth, innerHeight);
+      composer.setSize(innerWidth, innerHeight);
+    }
+  },
+});
+
 addEventListener("resize", () => {
+  if (renderer.xr.isPresenting) return; // XR runtime owns the stereo framebuffer size
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
@@ -1925,12 +1950,13 @@ document.addEventListener("visibilitychange", () => {
 });
 renderer.setAnimationLoop(() => {
   const dt = timer.getDelta();
-  const moved = controls.update(); // damping keeps moving after the pointer is released
+  const inXR = renderer.xr.isPresenting;
+  const moved = inXR ? false : controls.update(); // XR headset owns its camera pose
   const playing = replay && clock.playing;
   if (playing) clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
   if (replay && clock.t !== shownT) updateActivity(clock.t);
-  const live = interacting || moved || playing;
-  tuneQuality(live);
+  const live = inXR || interacting || moved || playing;
+  if (!inXR) tuneQuality(live); // desktop adaptive compositor is not XR-qualified
   const now = performance.now();
   // the index rebuild walks every drawn segment: coalesce streaming updates
   if (skeletonsDirty && now - lastSkeletonBuild >= IDLE_REDRAW_MS) {
@@ -1939,10 +1965,16 @@ renderer.setAnimationLoop(() => {
   }
   if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
   flushInstanceTextures();
-  fitClip();
-  perf.begin();
-  composer.render();
-  perf.end();
+  if (inXR) {
+    // Three.js supplies the two eye cameras; never run desktop postprocessing
+    // against the XR framebuffer. One existing animation loop owns both modes.
+    renderer.render(world, camera);
+  } else {
+    fitClip();
+    perf.begin();
+    composer.render();
+    perf.end();
+  }
   sceneDirty = false;
   lastRender = now;
 });
