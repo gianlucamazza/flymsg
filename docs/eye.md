@@ -146,7 +146,7 @@ below its measured dark level, and the edge moved the graded medulla by at most 
 4 (`validation/t4t5.yaml` v4, seed 98, 12 configurations) changes three things and nothing
 else. Each graded medulla neuron's measured range is anchored at its own settled potential
 after 200 ms of darkness with every graded release on (six passes; the median change between the last
-them is reported), so the dark state, tonic lamina input included, stands for the measured dark
+two is reported), so the dark state, tonic lamina input included, stands for the measured dark
 potential. Every synapse from L1–L3 onto the five graded medulla types is multiplied by 1, 4 or
 16 (16 brings v3's largest swing to the order of the measured 12–28 mV), at LMC and medulla
 release rates of 50 and 200 Hz; the gain is scanned, not chosen. Behnia et al. 2014's two
