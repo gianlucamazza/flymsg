@@ -463,6 +463,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="with --eye: the locked configuration to replay (index, as in its report)",
     )
+    s.add_argument(
+        "--eye-top",
+        type=int,
+        default=300,
+        help="with --eye: neurons shown per class (graded classes and spiking pathway)",
+    )
     s.add_argument("--out", type=Path, default=Path("runs/viz"))
     s = sub.add_parser(
         "viz-compare",

@@ -213,11 +213,12 @@ def cmd_calibrate(a, neurons, edges):
 
 
 def eye_replay(a, neurons, edges):
-    """One edge of the locked T4/T5 protocol at one of its configurations, for the 3D view:
-    the lit photoreceptors, every graded neuron whose potential moves by at least 1 mV, and
-    every spiking neuron that fires. Graded potentials are relative to rest, and to each
-    medulla neuron's dark anchor where the lock sets one; full glow is the configuration's
-    photoreceptor response, LMC range, or the medulla type's measured swing."""
+    """One edge of the locked T4/T5 protocol at one of its configurations, for the 3D view of
+    the right eye: per class (photoreceptors, L1-L3, graded medulla) the `--eye-top` neurons
+    whose potential moves most (at least 1 mV), the spiking neurons of the T4/T5 pathway
+    that fire most, and every T4/T5 that fires. Graded potentials are relative to rest, and
+    to each medulla neuron's dark anchor where the lock sets one; full glow is the
+    configuration's photoreceptor response, LMC range, or the medulla type's measured swing."""
     polarity, direction = a.eye
     doc = copy.deepcopy(t4t5.assert_matches_code())
     proto = doc["protocol"]
@@ -250,11 +251,23 @@ def eye_replay(a, neurons, edges):
         kind[cols] = "medulla (graded)"
         if got["anchor"] is not None:
             mv[:, cols] = r.graded_v[:, cols] - got["anchor"][name]
-    moving = np.abs(mv).max(axis=0) >= 1.0
-    lit = np.isin(order, got["stim"])
-    keep = moving | lit
+    right = (
+        neurons["somaSide"].eq("R") | neurons["instance"].fillna("").str.endswith("_R")
+    ).to_numpy()
+    swing = np.abs(mv).max(axis=0)
+    keep = np.zeros(order.size, dtype=bool)
+    for name in ("photoreceptor", "lamina (L1-L3)", "medulla (graded)"):
+        pool = np.flatnonzero((kind == name) & right[order] & (swing >= 1.0))
+        keep[pool[np.argsort(-swing[pool], kind="stable")][: a.eye_top]] = True
     rates = r.rate(0, r.stim_ms)
-    fired = np.setdiff1d(np.flatnonzero(rates > 0), order)
+    types = neurons["type"].fillna("").to_numpy()
+    t4t5_cells = np.isin(types, proto["subtypes"])
+    pathway = np.isin(types, t4t5.PATHWAY) | t4t5_cells
+    fired = np.flatnonzero(
+        (rates > 0) & right & pathway & ~np.isin(np.arange(len(neurons)), order)
+    )
+    top = fired[np.argsort(-rates[fired], kind="stable")][: a.eye_top]
+    fired = np.union1d(top, fired[t4t5_cells[fired]])
     idx = np.concatenate([order[keep], fired])
     groups = [*kind[keep], *["response (spiking)"] * fired.size]
     graded = {
@@ -268,6 +281,8 @@ def eye_replay(a, neurons, edges):
         "edge": [polarity, direction],
         "t4t5_version": doc["version"],
         "configuration": a.eye_config,
+        "selection": f"right eye; per class the {a.eye_top} neurons moving most (>= 1 mV); "
+        f"the {a.eye_top} T4/T5-pathway spiking neurons firing most, and every T4/T5 that fires",
         "seed": proto["seed"],
         **{k: v for k, v in cfg.items() if k != "config"},
     }
