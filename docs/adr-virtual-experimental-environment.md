@@ -11,12 +11,12 @@ Crucially, the current looming one-bit behavior fails its DNp01-silencing contro
 We need two orthogonal features:
 
 - A **headless, evidence-gated virtual experimental environment** generating measurable sensory inputs and controlled sensorimotor interactions.
-- An **optional immersive *observer*** of already-produced neuron anatomy and simulation replay, independent of the scientific engine.
+- An **optional immersive _observer_** of already-produced neuron anatomy and simulation replay, independent of the scientific engine.
 
 ## Decision
 
 1. Reuse the existing `StimulusFrame → SensoryEncoder → NeuralStepper → MotorDecoder → Body → Sensor` proposal and the accepted M0 contracts for all future VEE research. Do not introduce a second scheduler, physics integrator, experiment manifest, or neural simulation.
-2. The presentation layer is strictly downstream of immutable scene/replay outputs. The viewer must **never** synthesize spikes, rewrite a manifest, reconfigure `sim.Params`, select a hypothesis, or silently label engineered mappings as biological.
+2. The presentation layer is strictly downstream of immutable scene/replay outputs. The viewer must *_never_* synthesize spikes, rewrite a manifest, reconfigure `sim.Params`, select a hypothesis, or silently label engineered mappings as biological.
 3. Add a **small opt-in WebXR observer** to the existing three.js viewer (`?xr=1`). It uses the same geometry and replay timestamps as desktop. Support is feature-detected; immersive sessions require user action; desktop rendering remains the default.
 4. While immersive, render using Three.js's native stereo XR path; do not route an unqualified desktop EffectComposer through a headset. No invented stereo pipeline, display-to-neuron interpretation, controller locomotion, or hardware-specific claims.
 5. Build any future headless arena against independent evidence (verified optical geometry, sensory transfer, motor evidence and falsification datasets). Keep this research work gated until the relevant inputs are available.
@@ -34,13 +34,13 @@ We need two orthogonal features:
 
 ## Alternatives and decision
 
-| Alternative | Benefit | Problem | Verdict |
-| --- | --- | --- | --- |
-| Independent Unity/Unreal application | Rich tools | Duplicate data and rendering pipelines | Rejected |
-| Rebuild the CNS viewer in a VR framework | Native interactions | Geometry/LOD, shaders and CI duplicated | Rejected |
-| WebXR on existing Three.js viewer | Minimal duplication | Hardware must still be qualified | Adopt as opt-in observer |
-| Couple scene animation directly into the LIF motor loop | Easy-looking closed loop | Confuses animation with biological stimulus/actuation | Rejected |
-| Headless arena using existing M0/M2 contracts | Reproducibility and testable science | Sensory/motor evidence still required | Research direction, not asserted complete |
+| Alternative                                             | Benefit                              | Problem                                               | Verdict                                   |
+| ------------------------------------------------------- | ------------------------------------ | ----------------------------------------------------- | ----------------------------------------- |
+| Independent Unity/Unreal application                    | Rich tools                           | Duplicate data and rendering pipelines                | Rejected                                  |
+| Rebuild the CNS viewer in a VR framework                | Native interactions                  | Geometry/LOD, shaders and CI duplicated               | Rejected                                  |
+| WebXR on existing Three.js viewer                       | Minimal duplication                  | Hardware must still be qualified                      | Adopt as opt-in observer                  |
+| Couple scene animation directly into the LIF motor loop | Easy-looking closed loop             | Confuses animation with biological stimulus/actuation | Rejected                                  |
+| Headless arena using existing M0/M2 contracts           | Reproducibility and testable science | Sensory/motor evidence still required                 | Research direction, not asserted complete |
 
 ## Current PR boundary
 
