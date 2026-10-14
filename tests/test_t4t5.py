@@ -4,13 +4,26 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from flymsg import cli, t4t5
+from flymsg import cli, sim, t4t5
+
+
+def v3_doc() -> dict:
+    """The version 3 protocol: version 4 without its anchor, timing and gain."""
+    doc = t4t5.load()
+    p = doc["protocol"]
+    for key in ("dark_anchor_passes", "dark_anchor_note", "timing", "timing_rule"):
+        p.pop(key)
+    env = p["envelope"]
+    env.pop("lamina_medulla_gain")
+    env["lmc_rate_hz"] = list(t4t5.LMC_RATE_HZ)
+    env["medulla_rate_hz"] = list(t4t5.MEDULLA_RATE_HZ)
+    return doc
 
 
 def test_locked_to_the_sourced_values():
     doc = t4t5.assert_matches_code()
-    assert doc["version"] == 3
-    assert t4t5.content_hash(doc) == t4t5.VERSION_HASHES[3]
+    assert doc["version"] == 4
+    assert t4t5.content_hash(doc) == t4t5.VERSION_HASHES[4]
     assert doc["protocol"]["acceptance_deg"] == 8.23
     assert doc["protocol"]["preferred"] == {
         "a": "front_to_back",
@@ -20,11 +33,50 @@ def test_locked_to_the_sourced_values():
     }
     assert doc["supersedes"]["verdict"] == "robust: neither"
     assert doc["protocol"]["graded_medulla"] == ["Mi1", "Tm3", "Mi4", "Mi9", "C3"]
-    assert t4t5.n_runs(doc) == 200
+    assert t4t5.n_runs(doc) == 96
+    assert doc["evidence"] == ["medulla_t4_input_voltages", "medulla_filter_delays"]
+
+
+def test_version_4_scans_gain_and_two_rates_and_sets_behnias_delays():
+    doc = t4t5.load()
+    grid = t4t5.configurations(doc)
+    assert len(grid) == 12
+    assert {c["lamina_medulla_gain"] for c in grid} == set(t4t5.LAMINA_GAIN)
+    p = sim.Params()
+    for _after, delay in t4t5.DELAYS_MS.values():
+        ts = t4t5.delay_tau_syn(delay, p)
+        shift = t4t5.filter_peak_ms(p.tau_m, ts) - t4t5.filter_peak_ms(
+            p.tau_m, p.tau_syn
+        )
+        assert shift == pytest.approx(delay)
+    edited = t4t5.load()
+    edited["protocol"]["timing"]["Mi1"]["delay_ms"] = 20.0
+    with pytest.raises(t4t5.T4T5Error, match="Behnia"):
+        t4t5.assert_matches_code(edited)
+    edited = t4t5.load()
+    edited["protocol"]["envelope"]["lamina_medulla_gain"] = [1.0, 8.0]
+    with pytest.raises(t4t5.T4T5Error, match="gain"):
+        t4t5.assert_matches_code(edited)
+
+
+def test_timing_keeps_the_steady_gain_and_scale_block_hits_only_its_block():
+    p = sim.Params()
+    types = np.array(["Mi1", "Tm3", "Tm1", "Tm2"])
+    membrane, per_type = t4t5.timing(types, t4t5.load()["protocol"], p)
+    assert membrane.idx.tolist() == [0, 2]
+    for _cells, ts, scale in per_type.values():
+        slow = sim.Params(**{**vars(p), "tau_syn": ts})
+        assert t4t5.steady_gain(slow) * scale == pytest.approx(t4t5.steady_gain(p))
+    edges = pd.DataFrame({"pre": [0, 1, 0], "post": [1, 2, 2], "weight": [10, 10, 10]})
+    W = sim.weight_matrix(edges, np.ones(3, np.int8), 3, 1.0)
+    W2 = t4t5.scale_block(W, np.array([2]), np.array([1]), 4.0)
+    assert (W2 - W).toarray()[2].tolist() == [0.0, 30.0, 0.0]
+    W3 = t4t5.scale_block(W, np.array([2]), None, 0.5)
+    assert (W3 - W).toarray()[2].tolist() == [-5.0, -5.0, 0.0]
 
 
 def test_version_3_scans_both_unmeasured_rates_at_the_middle_ranges():
-    grid = t4t5.configurations(t4t5.load())
+    grid = t4t5.configurations(v3_doc())
     assert len(grid) == 25
     assert {(c["photoreceptor_mv"], c["lmc_mv"]) for c in grid} == {(52.5, 32.5)}
     assert {(c["lmc_rate_hz"], c["medulla_rate_hz"]) for c in grid} == {
@@ -33,7 +85,7 @@ def test_version_3_scans_both_unmeasured_rates_at_the_middle_ranges():
 
 
 def test_the_version_2_envelope_has_17_configurations():
-    doc = t4t5.load()
+    doc = v3_doc()
     doc["protocol"] = {
         k: v
         for k, v in doc["protocol"].items()

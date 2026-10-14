@@ -12,6 +12,11 @@
 
 ### Validation
 
+- **T4/T5 v4 lock** (#140): each graded medulla neuron's measured range anchored at its own
+  settled dark potential (six passes), a lamina → medulla gain scanned over 1, 4, 16 at LMC and
+  medulla rates of 50 and 200 Hz (12 configurations, seed 98), and Behnia et al. 2014's delays
+  (Mi1 18 ms after Tm3, Tm1 13 ms after Tm2) set through the synaptic time constant at
+  unchanged steady gain. Evidence record `medulla_filter_delays`. Decides on T4 as v3. No run.
 - **Timestep convergence lock** (SF2, #148): `validation/convergence.yaml` v1 runs the six
   sensitivity cases at dt 0.1, 0.05 and 0.025 ms (seeds 0–4) and judges a response
   converged when its holds verdict matches the finest step and its seed median lies within
@@ -69,7 +74,7 @@
 - **Evidence records** (SF1, #147): `validation/evidence.yaml` and `flymsg.evidence` record
   source, locator, organism, cell mapping, unit, uncertainty, status and transformation for
   each sourced quantity, fail closed on missing fields, and require every new lock
-  (`yaml_subset: 2`) to name its records. Six records cover the Kenyon cell coupling,
+  (`yaml_subset: 2`) to name its records. Six records (seven with `medulla_filter_delays`, added with T4/T5 v4) cover the Kenyon cell coupling,
   spike, sparseness and overlap values (`kc_odor_overlap` added with the v8 lock) and the T4/T5 v3 medulla voltages; unstated fields (license,
   sex) are recorded as unknown. `scripts/evidence_audit.py` prints the audit.
 

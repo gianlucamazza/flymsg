@@ -6,7 +6,10 @@ and the spikes of each T4/T5 subtype are summed per direction and polarity. Vers
 photoreceptors and L1-L3 graded (`sim.Graded`) and runs every configuration of the locked
 envelope of release parameters; nothing is tuned and the default model is unchanged.
 Version 3 (issue #140) also makes T4's medulla inputs graded over the voltages Groschner et al.
-2022 measured (`flymsg.medulla`), scans their release rate and decides on T4 only.
+2022 measured (`flymsg.medulla`), scans their release rate and decides on T4 only. Version 4
+anchors each graded medulla neuron's measured range at its own settled potential in darkness,
+scans a gain on lamina -> medulla synapses, and sets Behnia et al. 2014's two measured delays
+(Mi1 after Tm3, Tm1 after Tm2) through the synaptic time constant at unchanged steady gain.
 """
 
 from __future__ import annotations
@@ -15,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy import sparse
+from scipy import optimize, sparse
 
 from flymsg import data, eye, locks, medulla, prereg, progress, sim
 
@@ -27,14 +30,21 @@ VERSION_HASHES = {
     1: "bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8",  # ON/OFF edges, 4 directions, 30 deg/s, acceptance 8.23 deg, seeds 90-92
     2: "d25bcbd7ecd6e01f383c00703995164d29cc57fc11192be15234b19314b0e390",  # graded photoreceptors and L1-L3, 17-configuration envelope, settle 200 ms, seed 93
     3: "f19a2d7b82a0be9a3efb175813b165746161483b71b978115999816d00bc40b2",  # T4's medulla inputs graded over Groschner et al.'s voltages, 25 configurations, seed 94
+    4: "dc65228c3fdbc6c37e245235c329bbbf314121e09a0e2a3a372f82ae599ceabc",  # dark-anchored medulla, lamina -> medulla gain 1-16, Behnia delays, 12 configurations, seed 98
 }
-SPENT_SEEDS = (90, 91, 92, 93)
+SPENT_SEEDS = (90, 91, 92, 93, 94)
 # measured Drosophila ranges and their midpoints (Juusola et al. 2016), and the unmeasured
 # LMC release rate scanned in doublings around the 100 Hz protocol input
 PHOTORECEPTOR_MV = (40.0, 52.5, 65.0)
 LMC_MV = (20.0, 32.5, 45.0)
 LMC_RATE_HZ = (25.0, 50.0, 100.0, 200.0, 400.0)
 MEDULLA_RATE_HZ = LMC_RATE_HZ
+# version 4: two release rates per stage and a lamina -> medulla gain, both scanned
+V4_RATE_HZ = (50.0, 200.0)
+LAMINA_GAIN = (1.0, 4.0, 16.0)
+# Behnia et al. 2014 Fig 3B, 3E: filter peak delays (ms) of the slower cell over its partner
+DELAYS_MS = {"Mi1": ("Tm3", 18.0), "Tm1": ("Tm2", 13.0)}
+DARK_PASSES = 6
 PATHWAY = ("Mi1", "Tm3", "Mi4", "Mi9", "Tm1", "Tm2", "Tm4", "Tm9")
 ANGLE = {
     "front_to_back": 0.0,
@@ -70,14 +80,25 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     if set(p["directions"]) != set(ANGLE) or p["polarities"] != ["on", "off"]:
         raise T4T5Error("the stimulus set changed")
     env = p["envelope"]
+    v4 = "lamina_medulla_gain" in env
     if (
         tuple(env["photoreceptor_response_mv"]) != PHOTORECEPTOR_MV
         or tuple(env["lmc_hyperpolarisation_mv"]) != LMC_MV
-        or tuple(env["lmc_rate_hz"]) != LMC_RATE_HZ
+        or tuple(env["lmc_rate_hz"]) != (V4_RATE_HZ if v4 else LMC_RATE_HZ)
     ):
         raise T4T5Error("the envelope is not the sourced ranges")
+    if v4:
+        if tuple(env["lamina_medulla_gain"]) != LAMINA_GAIN:
+            raise T4T5Error("the lamina -> medulla gain scan changed")
+        timing = {k: (v["after"], v["delay_ms"]) for k, v in p["timing"].items()}
+        if timing != DELAYS_MS:
+            raise T4T5Error("the delays are not Behnia et al. 2014's")
+        if p["dark_anchor_passes"] != DARK_PASSES:
+            raise T4T5Error("the dark anchor changed")
     if p["graded_lmc"] != ["L1", "L2", "L3"] or p["settle_ms"] != 200.0:
         raise T4T5Error("the graded types or the settle period changed")
+    if v4 and "graded_medulla" not in p:
+        raise T4T5Error("version 4 needs the graded medulla")
     if "graded_medulla" in p:
         if p["graded_medulla"] != list(medulla.FILES) or list(p["medulla_mv"]) != list(
             medulla.FILES
@@ -85,7 +106,7 @@ def assert_matches_code(doc: dict | None = None) -> dict:
             raise T4T5Error("the graded medulla types are not the measured ones")
         if doc["decides"].get("subtypes") != ["T4a", "T4b", "T4c", "T4d"]:
             raise T4T5Error("version 3 decides on the T4 subtypes")
-        if tuple(env["medulla_rate_hz"]) != MEDULLA_RATE_HZ:
+        if tuple(env["medulla_rate_hz"]) != (V4_RATE_HZ if v4 else MEDULLA_RATE_HZ):
             raise T4T5Error("the medulla rate scan changed")
         for name, r in p["medulla_mv"].items():
             if not r["lowest"] <= r["dark"] <= r["highest"]:
@@ -127,6 +148,21 @@ def configurations(doc: dict) -> list[dict]:
     plus the two outer photoreceptor ranges at the middle LMC range and 100 Hz. Version 3:
     every LMC rate x medulla rate at the middle photoreceptor and LMC ranges."""
     mid_r, mid_l = PHOTORECEPTOR_MV[1], LMC_MV[1]
+    env = doc["protocol"]["envelope"]
+    if "lamina_medulla_gain" in env:
+        grid = [
+            {
+                "photoreceptor_mv": mid_r,
+                "lmc_mv": mid_l,
+                "lmc_rate_hz": r,
+                "medulla_rate_hz": m,
+                "lamina_medulla_gain": g,
+            }
+            for g in env["lamina_medulla_gain"]
+            for r in env["lmc_rate_hz"]
+            for m in env["medulla_rate_hz"]
+        ]
+        return [{"config": i, **c} for i, c in enumerate(grid)]
     if "graded_medulla" in doc["protocol"]:
         grid = [
             {
@@ -157,6 +193,62 @@ def steady_gain(p: sim.Params) -> float:
     em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
     gv = p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)
     return float(gv / ((1.0 - es) * (1.0 - em)))
+
+
+def filter_peak_ms(tau_m: float, tau_syn: float) -> float:
+    """Time to peak of the potential after one synaptic event (a difference of exponentials)."""
+    return tau_m * tau_syn * np.log(tau_m / tau_syn) / (tau_m - tau_syn)
+
+
+def delay_tau_syn(delay_ms: float, p: sim.Params) -> float:
+    """The synaptic time constant that delays a neuron's filter peak by `delay_ms` over a
+    neuron with the `Params` membrane, membrane time constant unchanged (version 4)."""
+    target = filter_peak_ms(p.tau_m, p.tau_syn) + delay_ms
+    return float(
+        optimize.brentq(
+            lambda ts: filter_peak_ms(p.tau_m, ts) - target,
+            p.tau_m + 1e-3,
+            10.0 * target,
+        )
+    )
+
+
+def timing(types: np.ndarray, proto: dict, p: sim.Params) -> tuple[sim.Membrane, dict]:
+    """Version 4: the slower cell of each measured pair gets the synaptic time constant of its
+    delay; its incoming weights are scaled so its steady gain stays that of `Params`.
+    Returns the membranes and, per type, (cells, tau_syn, weight scale)."""
+    idx, tau_syn, per_type = [], [], {}
+    for name, row in proto["timing"].items():
+        cells = np.flatnonzero(types == name)
+        ts = delay_tau_syn(row["delay_ms"], p)
+        scale = steady_gain(p) / steady_gain(sim.Params(**{**vars(p), "tau_syn": ts}))
+        per_type[name] = (cells, ts, scale)
+        idx.append(cells)
+        tau_syn.append(np.full(cells.size, ts))
+    idx = np.concatenate(idx)
+    return (
+        sim.Membrane(
+            idx=idx,
+            tau_m=np.full(idx.size, p.tau_m),
+            tau_syn=np.concatenate(tau_syn),
+            v_rest=np.full(idx.size, p.v_rest),
+            v_th=np.full(idx.size, p.v_th),
+        ),
+        per_type,
+    )
+
+
+def scale_block(
+    W: sparse.csc_matrix, rows: np.ndarray, cols: np.ndarray | None, factor: float
+) -> sparse.csc_matrix:
+    """W with the synapses onto `rows` (from `cols`, or from every neuron) times `factor`."""
+    W = W.tocsc(copy=True)
+    pre = np.repeat(np.arange(W.shape[1]), np.diff(W.indptr))
+    hit = np.isin(W.indices, rows)
+    if cols is not None:
+        hit &= np.isin(pre, cols)
+    W.data[hit] = (W.data[hit] * factor).astype(W.data.dtype)
+    return W
 
 
 def photoreceptor_gain(response_mv: float, p: sim.Params) -> float:
@@ -190,11 +282,13 @@ def graded_spec(
     p: sim.Params,
     medulla_cells: dict | None = None,
     medulla_mv: dict | None = None,
+    medulla_v_lo: dict | None = None,
 ) -> sim.Graded:
     """Photoreceptors: no release at rest, saturated `photoreceptor_mv` above. LMCs: half
     release at rest, none `lmc_mv` below, saturated `lmc_mv` above. Medulla types (version
     3): rest stands for the measured dark potential; no release at the lowest measured
-    potential, saturated at the highest."""
+    potential, saturated at the highest. Version 4 passes `medulla_v_lo`, each neuron's
+    no-release potential anchored at its own settled potential in darkness."""
     a, h = cfg["photoreceptor_mv"], cfg["lmc_mv"]
     nr, nl = receptors_all.size, lmc.size
     idx = [receptors_all, lmc]
@@ -204,7 +298,10 @@ def graded_spec(
     for name, cells in (medulla_cells or {}).items():
         r = medulla_mv[name]
         idx.append(cells)
-        v_lo.append(np.full(cells.size, p.v_rest - (r["dark"] - r["lowest"])))
+        if medulla_v_lo is not None:
+            v_lo.append(medulla_v_lo[name])
+        else:
+            v_lo.append(np.full(cells.size, p.v_rest - (r["dark"] - r["lowest"])))
         span.append(np.full(cells.size, r["highest"] - r["lowest"]))
         rate.append(np.full(cells.size, cfg["medulla_rate_hz"]))
     return sim.Graded(
@@ -370,28 +467,66 @@ def protocol(
         for polarity in proto["polarities"]
     }
     lit_neurons = np.unique(np.concatenate([v[0] for v in stimuli.values()]))
+    membrane, W_timed = None, W
+    if "timing" in proto:
+        membrane, per_type = timing(types, proto, p)
+        for cells, _ts, scale in per_type.values():
+            W_timed = scale_block(W_timed, cells, None, scale)
+    settle_steps = round(proto["settle_ms"] / p.dt)
+
+    def simulate(Wc, stim, n_steps, kicks, graded):
+        """Every run of a configuration, in darkness or with an edge, goes through here, so
+        the configuration's weights, membranes and release always travel together."""
+        return sim.run(
+            Wc,
+            stim,
+            duration_ms=n_steps * p.dt,
+            p=p,
+            seed=proto["seed"],
+            kicks=kicks,
+            graded=graded,
+            membrane=membrane,
+        )
+
+    def dark(Wc, graded) -> np.ndarray:
+        """Each graded neuron's mean potential over the last bin of settle_ms in darkness."""
+        kicks = np.zeros((settle_steps, 1), dtype=np.float32)
+        return simulate(Wc, receptors_all[:1], settle_steps, kicks, graded).graded_v[-1]
 
     def configuration(cfg: dict) -> dict[str, pd.DataFrame]:
         rate_r, receiving = photoreceptor_rate(W, lit_neurons, lmc, cfg["lmc_mv"], p)
-        graded = graded_spec(
-            receptors_all, lmc, cfg, rate_r, p, medulla_cells, proto.get("medulla_mv")
-        )
+        Wc = W_timed
+        if "lamina_medulla_gain" in cfg:
+            graded_cells = np.concatenate(list(medulla_cells.values()))
+            Wc = scale_block(Wc, graded_cells, lmc, cfg["lamina_medulla_gain"])
+        mv = proto.get("medulla_mv")
+        graded = graded_spec(receptors_all, lmc, cfg, rate_r, p, medulla_cells, mv)
         order = np.sort(graded.idx)
         watch = np.searchsorted(order, receiving)
         watch_medulla = {t: np.searchsorted(order, c) for t, c in medulla_cells.items()}
+        anchor, residual = None, {}
+        if "dark_anchor_passes" in proto:
+            # each neuron's measured range is anchored at its own settled potential in
+            # darkness; a second pass settles with the anchored release
+            previous = None
+            for _ in range(proto["dark_anchor_passes"]):
+                v_dark = dark(Wc, graded)
+                anchor = {t: v_dark[i] for t, i in watch_medulla.items()}
+                v_lo = {t: anchor[t] - (mv[t]["dark"] - mv[t]["lowest"]) for t in mv}
+                graded = graded_spec(
+                    receptors_all, lmc, cfg, rate_r, p, medulla_cells, mv, v_lo
+                )
+                if previous is not None:
+                    residual = {
+                        t: float(np.median(np.abs(anchor[t] - previous[t]))) for t in mv
+                    }
+                previous = anchor
         medulla_rows = []
         gain = photoreceptor_gain(cfg["photoreceptor_mv"], p)
         spikes, path_rows, lmc_rows = [], [], []
         for (direction, polarity), (stim, lit, n_steps, settle) in stimuli.items():
-            r = sim.run(
-                W,
-                stim,
-                duration_ms=n_steps * p.dt,
-                p=p,
-                seed=proto["seed"],
-                kicks=(gain * lit).astype(np.float32),
-                graded=graded,
-            )
+            kicks = (gain * lit).astype(np.float32)
+            r = simulate(Wc, stim, n_steps, kicks, graded)
             first_bin = round(settle * p.dt / r.bin_ms)
             total = r.counts[first_bin:].sum(axis=0)
             key = {
@@ -416,7 +551,7 @@ def protocol(
             )
             for t, cols_t in watch_medulla.items():
                 type_median = np.median(r.graded_v[:, cols_t] - p.v_rest, axis=1)
-                mv = proto["medulla_mv"][t]
+                m = proto["medulla_mv"][t]
                 medulla_rows.append(
                     {
                         **key,
@@ -424,8 +559,18 @@ def protocol(
                         "settled_mv": float(type_median[first_bin - 1]),
                         "lowest_mv": float(type_median[first_bin:].min()),
                         "highest_mv": float(type_median[first_bin:].max()),
-                        "measured_low_mv": round(mv["lowest"] - mv["dark"], 1),
-                        "measured_high_mv": round(mv["highest"] - mv["dark"], 1),
+                        "measured_low_mv": round(m["lowest"] - m["dark"], 1),
+                        "measured_high_mv": round(m["highest"] - m["dark"], 1),
+                        **(
+                            {
+                                "dark_anchor_mv": float(
+                                    np.median(anchor[t]) - p.v_rest
+                                ),
+                                "anchor_residual_mv": residual.get(t, np.nan),
+                            }
+                            if anchor is not None
+                            else {}
+                        ),
                     }
                 )
             if report is not None:
