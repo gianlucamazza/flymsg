@@ -106,20 +106,22 @@ command; M0 v1 above is frozen, and a v1 record never parses as v2 or the revers
 ## G5 groundwork: closed-loop schedule and record (#180)
 
 `flymsg.closedloop` implements the [body-wiring ADR](adr-body-wiring.md) (proposed) without a
-body ([#180](https://github.com/gianlucamazza/flymsg/issues/180)). Per control tick T it
-delivers the spikes of earlier periods whose time + latency ≤ T as actuator commands, reads
-the body state at T, projects the stimulus, draws seeded input counts for the period,
-advances `CpuRuntime`, then steps the body adapter in body ticks under the held command.
+body ([#180](https://github.com/gianlucamazza/flymsg/issues/180)), in the B6 v2 / M0 v1 clock
+order: at each control tick it delivers the spikes of earlier ticks whose time + latency ≤ T
+as held actuator commands; per body tick it reads the last stepped state, projects the
+stimulus, draws seeded input counts for the tick, advances `CpuRuntime`, then steps the body
+adapter.
 
 - **Evidence**: registration, transducer, motor map and body each carry `measured`,
   `engineered`, `unmapped` or `synthetic`. A biological run refuses before the body is reset
   unless all four are measured; a measured run still refuses through `motor_map.command`.
   Synthetic runs execute and say so in their record.
-- **Arms**: intact, disconnected (the body held at its initial pose), shuffled (the
-  disconnected stimuli in a seeded order), replay (recorded counts; `replay_parity` refuses
-  any spike difference) and silenced.
-- **Record** (`flymsg.closedloop/v1`): per tick the commands, sampled state, per-column
-  stimulus, input counts, spikes as bodyIds and each body step's state and contacts; once the
+- **Arms**: intact, disconnected (the open loop: the body held at its initial pose),
+  shuffled (the disconnected stimuli in a seeded order), replay (recorded counts;
+  `replay_parity` refuses any count or spike difference) and silenced (declared by the
+  caller, who silences the runtime).
+- **Record** (`flymsg.closedloop/v1`): per body tick the held commands, sampled state,
+  per-column stimulus, input counts, spikes as bodyIds, stepped state and contacts; once the
   arm, mode, evidence, clock, optics configuration hash and run identity. Canonical JSON that
   parses back identically and never as a B6 v1/v2 trace.
 

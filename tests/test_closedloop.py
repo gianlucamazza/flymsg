@@ -8,7 +8,6 @@ import pytest
 from test_core import chain
 
 from flymsg import closedloop, pose, sim
-from flymsg.closedloop import Step
 from flymsg.embodiment import Clock, ContractError
 from flymsg.pose import IDENTITY, ActuatorRef, BodyState, Pose, Provenance
 from flymsg.runtime import CpuRuntime
@@ -103,22 +102,16 @@ def run(arm="intact", mode="synthetic", evidence=None, body=None, **kw):
 
 def test_the_schedule_follows_the_adr_order():
     steps = closedloop.schedule(CLOCK, 2000)
-    assert [(s.phase, s.time_us) for s in steps[:7]] == [
+    # the B6 v2 / M0 v1 order: commands at control ticks, the rest per body tick
+    body_tick = ["sample", "stimulus", "input", "neural", "physics"]
+    assert [(s.phase, s.time_us) for s in steps] == [
         ("command", 0),
-        ("sample", 0),
-        ("stimulus", 0),
-        ("input", 0),
-        ("neural", 0),
-        ("physics", 0),
-        ("physics", 500),
+        *((p, 0) for p in body_tick),
+        *((p, 500) for p in body_tick),
+        ("command", 1000),
+        *((p, 1000) for p in body_tick),
+        *((p, 1500) for p in body_tick),
     ]
-    closedloop.check_order(steps, CLOCK)
-    swapped = (steps[1], steps[0], *steps[2:])
-    with pytest.raises(ContractError, match="ADR order"):
-        closedloop.check_order(swapped, CLOCK)
-    off = (*steps[:5], Step("physics", 100), *steps[6:])
-    with pytest.raises(ContractError, match="body grid"):
-        closedloop.check_order(off, CLOCK)
     with pytest.raises(ContractError, match="multiple"):
         closedloop.schedule(CLOCK, 1500)
 
@@ -157,8 +150,12 @@ def test_the_input_reads_the_state_at_the_start_of_its_period():
         return stimulus(t_us, state)
 
     record = run(stimulus=watch)
-    assert seen == [(k * 1000, k * 1000) for k in range(40)]
+    assert seen == [(k * 500, k * 500) for k in range(80)]
     assert all(t.state.time_us == t.time_us for t in record.ticks)
+    ticks = list(record.ticks)
+    ticks[5] = dataclasses.replace(ticks[5], state=ticks[6].state)
+    with pytest.raises(ContractError, match="state at its start"):
+        dataclasses.replace(record, ticks=tuple(ticks)).validate()
 
 
 def test_spikes_reach_the_body_one_control_period_later_at_the_earliest():
@@ -174,6 +171,7 @@ def test_spikes_reach_the_body_one_control_period_later_at_the_earliest():
             decoder=watch, clock=dataclasses.replace(CLOCK, latency_us=latency)
         )
         assert sum(len(t.spikes) for t in record.ticks) > 0
+        assert delivered[0] == ()  # nothing is delivered at T = 0
         for k, spikes in enumerate(delivered):
             assert all(s.time_us + latency <= k * 1000 for s in spikes)
         out = [s for batch in delivered for s in batch]
@@ -201,10 +199,15 @@ def test_a_replay_reproduces_the_recorded_spikes_exactly():
     again = run("replay", replay=closed)
     closedloop.replay_parity(closed, again)
     ticks = list(closed.ticks)
-    ticks[3] = dataclasses.replace(ticks[3], input_counts=((5,),) * 10)
+    ticks[3] = dataclasses.replace(ticks[3], input_counts=((5,),) * 5)
     tampered = dataclasses.replace(closed, ticks=tuple(ticks))
-    with pytest.raises(ContractError, match="differ"):
+    with pytest.raises(ContractError, match="input counts differ"):
         closedloop.replay_parity(tampered, again)
+    k = next(k for k, t in enumerate(again.ticks) if t.spikes)
+    ticks = list(again.ticks)
+    ticks[k] = dataclasses.replace(ticks[k], spikes=ticks[k].spikes[1:])
+    with pytest.raises(ContractError, match="spikes differ"):
+        closedloop.replay_parity(closed, dataclasses.replace(again, ticks=tuple(ticks)))
     with pytest.raises(ContractError, match="needs a recorded run"):
         run("replay")
 
@@ -278,3 +281,52 @@ class Broken(ToyBody):
 def test_a_failing_body_stops_the_run(fault, match):
     with pytest.raises(ContractError, match=match):
         run(body=Broken(fault))
+
+
+def test_a_short_runtime_stops_the_run_as_a_contract_error():
+    with pytest.raises(ContractError, match="runtime failed"):
+        run(runtime=runtime(duration_us=20_000))
+
+
+def _mutate(d, path, value):
+    *head, last = path
+    for key in head:
+        d = d[key]
+    d[last] = value
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("ticks", 2, "input_counts", 0, 0), 1.5),
+        (("ticks", 2, "input_counts", 0, 0), True),
+        (("ticks", 2, "contacts"), [["ground", -1.0]]),
+        (("ticks", 2, "contacts"), [["", 0.0]]),
+        (("ticks", 2, "contacts"), [["ground"]]),
+        (("evidence",), [["body", "synthetic"], ["body", "measured"]]),
+        (("evidence",), [["body", "synthetic", "x"]]),
+        (("ticks", 2, "commands"), [[5, -3, 1.0]]),
+        (("ticks", 2, "commands"), [["lift", 0]]),
+        (("ticks",), []),
+        (("ticks", 2, "stimulus"), []),
+        (("extra",), 1),
+        (("ticks", 2, "state", "time_us"), 1500),
+    ],
+)
+def test_a_malformed_record_refuses(path, value):
+    d = json.loads(run().to_json())
+    _mutate(d, path, value)
+    with pytest.raises(ContractError):
+        closedloop.from_json(json.dumps(d))
+
+
+def test_spikes_out_of_order_or_off_grid_refuse():
+    record = run()
+    k = next(k for k, t in enumerate(record.ticks) if t.spikes)
+    spike = record.ticks[k].spikes[0]
+    for moved in (spike.time_us + 1, spike.time_us + 500):
+        ticks = list(record.ticks)
+        bad = dataclasses.replace(spike, time_us=moved)
+        ticks[k] = dataclasses.replace(ticks[k], spikes=(bad,))
+        with pytest.raises(ContractError, match="spike out of place"):
+            dataclasses.replace(record, ticks=tuple(ticks)).validate()
