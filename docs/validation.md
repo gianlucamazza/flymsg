@@ -357,12 +357,12 @@ attempt (5 min, 4 workers). All ten responses converge at 0.1 ms, and at 0.05 ms
 verdicts are identical at every timestep (the bitter negative stays silent), and every
 seed-median target rate lies within the finest seed range of the finest median, the giant fiber
 → TTMn response exactly at it (16.7 against 10.0 Hz, range 6.7 Hz). What does not decide moves
-more: the first spike of weak pathways shifts with the step (TTMn under giant fiber output 35 →
-82 ms, MN9 under sugar 41 → 66 ms from 0.1 to 0.025 ms), and so do the neurons recruited by
-sugar (439 → 155); strong pathways' latencies agree within 0.5 ms. So the battery's rates and
-verdicts do not depend on the 0.1 ms step, and first-spike latencies and recruitment counts of
-weak pathways should not be read to better than the step's effect. Outputs:
-`results/convergence/v1.executions/be1ac274…/output/`.
+more. From 0.1 to 0.025 ms the first spike shifts for TTMn under giant fiber output (35 → 82
+ms), MN9 under sugar (40.5 → 66.4 ms) and dPR1 under pIP10 (12.9 → 7.4 ms), and the neurons
+recruited by sugar fall from 439 to 155; the looming and P1 latencies agree within 0.7 ms. So
+the battery's rates and verdicts do not depend on the 0.1 ms step, and first-spike latencies
+and recruitment counts of weak pathways should not be read to better than the step's effect.
+Outputs: `results/convergence/v1.executions/be1ac274…/output/`.
 
 ## Findings log
 
