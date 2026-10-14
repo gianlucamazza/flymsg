@@ -261,6 +261,7 @@ under its date.
 | [runtime](docs/runtime.md)                            | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                                       |
 | [nulls](docs/nulls.md)                                | pre-registered null families, scores, draw counts, methods                                                |
 | [scientific fidelity](docs/scientific-fidelity.md)    | numerical, physiological and behavioral validation gates; evidence records (SF1)                          |
+| [replication](docs/replication.md)                    | rerun an archived result; the replication index; the claims audit                                         |
 | [integrity audit](docs/integrity-audit-2026-10-13.md) | engineering audit of 2026-10-13 and its resolution ledger                                                 |
 | [ADR: gap refractory](docs/adr-gap-refractory.md)     | electrical coupling with refractory clamps; dense and Taylor solvers                                      |
 | [ADR: run integrity](docs/adr-run-integrity.md)       | immutable run identity, resumable steps, finalization                                                     |

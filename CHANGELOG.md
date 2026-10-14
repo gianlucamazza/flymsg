@@ -10,6 +10,17 @@
   the finest seed range; `flymsg convergence [--run]`. A numerical lock may declare
   `evidence: none` with a reason. No run.
 
+### Documentation
+
+- **Replication package** (SF5, #151): `docs/replication.md` tells an outside operator how to
+  rerun any archived result and what a match shows (parity, not validation), with the data
+  sources and licences and a claims audit by the scientific-fidelity taxonomy (no result is a
+  discovery). `scripts/replication_index.py` writes `docs/evidence/replication-index.json`:
+  per archived result its command, source commit, lock version and hash, input and output
+  sha256, seeds and verdict; the tests check it against the archive and every lock hash
+  against the registered versions. Four historical results ran from a modified tree and are
+  marked. The synapse weight rule v1, rerun here from its commit, gives byte-identical tables.
+
 ## 0.8.46 — 2026-10-14
 
 ### Result

@@ -1,0 +1,28 @@
+{
+ "dirty": false,
+ "execution_sha256": "beb2fccf6b8094ee842de39deba87da17448ac37fab0626e1fa15db517762f4f",
+ "identical": true,
+ "outputs": {
+  "pairs.csv": {
+   "archived": "7561fd97ebdd770653e28c601941cbd6eb51238b63f33788b0c73dffc83528ba",
+   "rerun": "7561fd97ebdd770653e28c601941cbd6eb51238b63f33788b0c73dffc83528ba"
+  },
+  "report.txt": {
+   "archived": "192b72339bb8914648a73abb23646eceab17f0ebf21000d48c1534a33400e2f7",
+   "rerun": "192b72339bb8914648a73abb23646eceab17f0ebf21000d48c1534a33400e2f7"
+  },
+  "sensitivity_pairs.csv": {
+   "archived": "46b7bbcea99fb7de7fee31d3cd24c4872f09214c709a124ac3bf93973e6dea54",
+   "rerun": "46b7bbcea99fb7de7fee31d3cd24c4872f09214c709a124ac3bf93973e6dea54"
+  }
+ },
+ "python": "3.13.9",
+ "rerun_at": {
+  "finished_at": "2026-10-14T08:37:00.820771+00:00",
+  "started_at": "2026-10-14T08:36:43.704157+00:00"
+ },
+ "same_execution_identity": true,
+ "source_commit": "78f06737ebe4e6f520d018161182eaac33cef0ad",
+ "verdict": "undecided",
+ "what": "Rerun of the archived weight-rule v1 result from its source commit in a clean detached worktree, as docs/replication.md asks an external operator to do; same machine, so it checks the procedure, not cross-platform equality."
+}
