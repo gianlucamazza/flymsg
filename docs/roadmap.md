@@ -10,6 +10,11 @@ immutable executions, checkpoint compatibility and explicit electrical numerical
 [Approximations](approximations.md) lists every simplification of the model with its status
 and what would remove it.
 
+The [sensorimotor environment completion plan](sensorimotor-environment-plan.md)
+sets engineering, biological-interface and independent-prediction gates. It
+reuses the existing embodiment runtime and keeps the VR observer independent;
+this is a plan, not a new experimental result.
+
 ## Results
 
 | Result                                     | Verdict                                                                 | Record                                                                                            |
