@@ -43,7 +43,7 @@ def test_version_4_scans_gain_and_two_rates_and_sets_behnias_delays():
     assert len(grid) == 12
     assert {c["lamina_medulla_gain"] for c in grid} == set(t4t5.LAMINA_GAIN)
     p = sim.Params()
-    for name, (_after, delay) in t4t5.DELAYS_MS.items():
+    for _after, delay in t4t5.DELAYS_MS.values():
         ts = t4t5.delay_tau_syn(delay, p)
         shift = t4t5.filter_peak_ms(p.tau_m, ts) - t4t5.filter_peak_ms(
             p.tau_m, p.tau_syn
