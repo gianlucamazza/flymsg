@@ -1,0 +1,86 @@
+{
+ "what": "Taylor action (flymsg.gap/continuous-clamp-taylor-v1) against the dense per-mask maps (flymsg.gap/continuous-clamp-v1) on the KC v7 couplings: arm E of each eLN set, 3-octanol at the lock's DoOR rates, 50 ms, seed 0 (used by no lock), spikelets 0 and 1 ms; then one 1000 ms odor under the Taylor solver. Engineering qualification, not a scored run. The host was also running T4/T5 v3 and the test suite.",
+ "source_commit": "4a5a093",
+ "script": "scripts/qualify_taylor.py",
+ "taylor_terms": 7,
+ "runs": [
+  {
+   "eln_set": "lLN2T",
+   "spike_ms": 0.0,
+   "seconds": {
+    "dense": 1412.1,
+    "taylor": 3.8
+   },
+   "spikes": {
+    "dense": 9798,
+    "taylor": 9798
+   },
+   "neurons_differing": 0,
+   "kc_spikes": {
+    "dense": 700,
+    "taylor": 700
+   },
+   "first_spike_equal": true
+  },
+  {
+   "eln_set": "lLN2T",
+   "spike_ms": 1.0,
+   "seconds": {
+    "dense": 1655.3,
+    "taylor": 3.8
+   },
+   "spikes": {
+    "dense": 9634,
+    "taylor": 9634
+   },
+   "neurons_differing": 0,
+   "kc_spikes": {
+    "dense": 608,
+    "taylor": 608
+   },
+   "first_spike_equal": true
+  },
+  {
+   "eln_set": "lLN2T+lLN1_bc",
+   "spike_ms": 0.0,
+   "seconds": {
+    "dense": 1549.3,
+    "taylor": 4.9
+   },
+   "spikes": {
+    "dense": 5299,
+    "taylor": 5299
+   },
+   "neurons_differing": 0,
+   "kc_spikes": {
+    "dense": 35,
+    "taylor": 35
+   },
+   "first_spike_equal": true
+  },
+  {
+   "eln_set": "lLN2T+lLN1_bc",
+   "spike_ms": 1.0,
+   "seconds": {
+    "dense": 1418.0,
+    "taylor": 3.6
+   },
+   "spikes": {
+    "dense": 5255,
+    "taylor": 5255
+   },
+   "neurons_differing": 0,
+   "kc_spikes": {
+    "dense": 28,
+    "taylor": 28
+   },
+   "first_spike_equal": true
+  }
+ ],
+ "full_odor": {
+  "eln_set": "lLN2T",
+  "spike_ms": 1.0,
+  "duration_ms": 1000.0,
+  "taylor_s": 14.7
+ }
+}
