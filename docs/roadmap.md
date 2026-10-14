@@ -1,6 +1,6 @@
 # Roadmap: what the model covers, and what waits on outside evidence
 
-Status on 2026-10-13. This page is the index. Each verdict is recorded on the linked page,
+Status on 2026-10-14. This page is the index. Each verdict is recorded on the linked page,
 and the table adds none. What remains open needs a measurement from an animal, a published
 map, hardware, or a lock that is written and not yet run.
 
@@ -36,7 +36,7 @@ and what would remove it.
 | Motor map                                  | every row `unmapped`                                                    | [`validation/motor_map.yaml`](../validation/motor_map.yaml)                                       |
 | Held-out behavior milestone                | no eligible case left in the frozen partition                           | [validation](validation.md)                                                                       |
 
-## Scientific fidelity programme (proposed, 2026-10-13)
+## Scientific fidelity programme (2026-10-13; SF1 done 2026-10-14)
 
 The [scientific fidelity architecture](scientific-fidelity.md) defines separate numerical, physiological and behavioral validation gates. This is a forward plan, not a change to any verdict above.
 
@@ -105,6 +105,9 @@ three stay off unless a lock names them.
 | NeuroMechFly jump v1 short; closed loop cuts input at takeoff           | [embodiment](embodiment.md)                                                                       |
 | R0 incremental CPU runtime; native executor matches the oracle          | [runtime](runtime.md)                                                                             |
 | Archived outputs; figures redraw from a clone                           | [`results/`](../results/README.md)                                                                |
+| Viewer baseline of the live scenes (#153)                               | [viz](viz.md)                                                                                     |
+| Evidence records for sourced parameters (SF1, #147)                     | [scientific fidelity](scientific-fidelity.md)                                                     |
+| Taylor solver for the continuous clamp (#155, ADR accepted 2026-10-14)  | [ADR](adr-gap-refractory.md)                                                                      |
 
 ## Blocked on evidence
 
@@ -141,8 +144,8 @@ about the fly.
 
 ## Open model-side
 
-- Integrity corrections are implemented under the accepted ADRs; the full validation
-  record is maintained in the [audit](integrity-audit-2026-10-13.md). Archived results and
+- Integrity corrections are implemented under the accepted ADRs; the baseline and the
+  corrections accepted on 2026-10-13 are recorded in the [audit](integrity-audit-2026-10-13.md). Archived results and
   already registered boundary-reset protocols preserve their original physics.
 
 - T4/T5 v3: robust neither ([eye](eye.md)). With Mi1, Tm3, Mi4, Mi9 and C3 graded, the edge
@@ -154,14 +157,15 @@ about the fly.
 - Kenyon cell sparseness v7: within only with the variant eLN set lLN2T+lLN1_bc
   ([model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)). With lLN2T alone Kenyon
   cells stay dense; the coupling moves no arm, so what the antennal lobe lacks is which
-  cholinergic local-neuron contacts onto PNs are chemical, a question EM types cannot answer.
-- [#24](https://github.com/gianlucamazza/flymsg/issues/24) viewer benchmark:
-  `scripts/bench_viewer.py` is ready and refuses a loaded machine; the baseline waits for an
-  idle one.
+  cholinergic local-neuron contacts onto PNs are chemical, a question EM types cannot answer. v8 (v7 under the continuous clamp by the Taylor
+  action, seeds 95–97, #155) is locked and not yet run.
+- [#24](https://github.com/gianlucamazza/flymsg/issues/24) viewer benchmark: the baseline of
+  the live scenes is committed ([viz](viz.md), `scripts/bench_check.py` compares a new run); a
+  physical phone stays open.
 
 ## Completion plan
 
-Status on 2026-10-13 (v0.8.45). flymsg is complete when a model prediction passes an
+Status on 2026-10-14 (after v0.8.45). flymsg is complete when a model prediction passes an
 independent held-out benchmark (M4, [#36](https://github.com/gianlucamazza/flymsg/issues/36));
 everything else serves that. An open problem closes with a measurement, a lock and a run,
 never with a chosen value, so the order follows the evidence that exists.
@@ -170,9 +174,9 @@ never with a chosen value, so the order follows the evidence that exists.
 
 | Issue                                                      | Work                                                                                                      | Exit                                                                           |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Viewer baseline on an idle host (`scripts/bench_viewer.py`)                                               | Baseline committed; regression thresholds from it; a physical phone stays open |
+| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Done: baseline of the live scenes (#153); `scripts/bench_check.py` compares a new run                     | Baseline committed; regression thresholds from it; a physical phone stays open |
 | [#139](https://github.com/gianlucamazza/flymsg/issues/139) | Done: v1 undecided (Δρ +0.015, interval −0.011 to +0.054); count stays                                    | More power needs measured pairs across more LHN types                          |
-| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Decide the 144 neurons whose MANC neuron-level match names another type than the type-level join          | A written rule, then a per-neuron muscle column if it holds                    |
+| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Done (#142): the muscle is the type's; neuron-level matches recorded (140 of 623 disagree)                | Muscle → body actuator (#19, #35) stays blocked on evidence                    |
 | [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Lock Pacheco et al. 2021 (song → neuropil responses, iav mutants as null) as the first held-out benchmark | Scoring rule fixed before the run                                              |
 
 **2. Next: the evidence exists and must be read and fixed in a lock.**
@@ -180,7 +184,7 @@ never with a chosen value, so the order follows the evidence that exists.
 | Issue                                                      | Work                                                                                                                                              |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v3 ran without per-type timing (robust neither); still open: timing from Behnia et al. 2014's two measured delays, Gruntman et al. held out |
-| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | Done: KC v7 within only with lLN2T+lLN1_bc; relational APL tests still open                                                                       |
+| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc; v8 (continuous clamp, Taylor) locked, not yet run; relational APL tests still open                          |
 | [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | An M2 transducer predicting the giant fiber potential (von Reyn et al. 2017), validated on the giant fiber                                        |
 | Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                                                           |
 

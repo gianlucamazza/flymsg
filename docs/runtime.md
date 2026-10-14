@@ -1,6 +1,6 @@
 # ADR: scientific semantics and replaceable execution backends
 
-Status: proposed; CPU foundation implemented in this change. Xbox GPU backend and hardware qualification remain planned. Related: architecture #30, workbench #27, embodiment #31 and sensory feedback #34.
+Status: proposed; CPU foundation and a native CPU fixture executor implemented; the HLSL shader, DX12 host and UWP worker build in CI; GPU parity and console qualification remain ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40)). Related: architecture #30, workbench #27, embodiment #31 and sensory feedback #34.
 
 ## Context
 
@@ -74,7 +74,7 @@ Use baseline DX12 functionality already demonstrated on the target. Enhanced bar
 
 ### Worker job and lifecycle requirements
 
-A future `flymsg.neural_job/v1` carries job ID, dataset release/hash, ordered topology hash, row/bodyId map hash, semantics version, parameter/config hash, horizon, tick duration, input/recording asset hashes and backend requirements. Artifact formats and compatibility are explicit; this ADR does not claim the wire protocol is implemented.
+`flymsg.neural_job/v1` (parsed by `native/uwp/Worker.cpp`) carries job ID, dataset release/hash, ordered topology hash, row/bodyId map hash, semantics version, parameter/config hash, horizon, tick duration, input/recording asset hashes and backend requirements. Artifact formats and compatibility are explicit; the protocol is unqualified on a console ([#40](https://github.com/gianlucamazza/flymsg/issues/40)).
 
 States: queued, validating, running, checkpointing, completed, failed, cancelled, suspended. One active job per console worker. Commands carry sequence IDs and expected job identity; submissions and recovery must be idempotent. On suspension or cancellation, checkpoint at a completed scientific boundary. Incomplete artifacts are not successful outputs. Recovery onto a different shader/package requires a compatibility decision and new evidence.
 
@@ -108,6 +108,6 @@ The incremental CPU API makes causality, state inspection and pause/resume testa
 | R3   | Sparse propagation optimization     | Separate backend version; declared precision/threshold gates and density-scaled benchmarks                      |
 | R4   | Full neuromechanical worker         | Whole-system checkpoint, validated timing, open/closed-loop controls and mapping gate                           |
 
-R0 is implemented here. Native implementation is tracked in [#39](https://github.com/gianlucamazza/flymsg/issues/39), and physical-console qualification in [#40](https://github.com/gianlucamazza/flymsg/issues/40). R1–R4 require additional implementation and R2 requires console access. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
+R0 is implemented here. Native implementation is tracked in [#39](https://github.com/gianlucamazza/flymsg/issues/39), and physical-console qualification in [#40](https://github.com/gianlucamazza/flymsg/issues/40). R1's CPU fixture executor exists and GPU parity needs a hardware adapter; R2 needs console access; R3–R4 need implementation. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
 
 Run `uv run pytest tests/test_runtime.py tests/test_core.py tests/test_embodiment.py`. Existing CI also checks all synthetic regressions, documentation links, formatting and browser modules.

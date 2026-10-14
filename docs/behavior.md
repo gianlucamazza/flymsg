@@ -174,7 +174,7 @@ Defaults are criterion v4 and `sim.Params`. `w_syn` is 0.19230769230769232 and
 | Jump bit      | first step at which `TTMn_R` has emitted 3 spikes                       | `validate.MIN_SPIKES`                  | 3 spikes are the v4 floor, not a measured muscle tension                                    |
 | Cut           | `LC4_R` kicks are zero on every step strictly after that step           | this protocol                          | the kick on the jump step itself is still the open-loop draw                                |
 | Silence set   | both `DNp01` neurons                                                    | the giant fiber pair                   | the contralateral fiber is included. The protocol does not test the right fiber alone       |
-| Gap junctions | absent, as in the rest of flymsg                                        | [model](model.md)                      | the giant fiber here is the chemical path                                                   |
+| Gap junctions | absent, as in the default model                                         | [model](model.md)                      | the giant fiber here is the chemical path                                                   |
 
 `LC4` has no `class` value in MaleCNS v1.0. Its superclass is
 `visual_projection`. The class-matched sensory control of criterion v4 is not a
