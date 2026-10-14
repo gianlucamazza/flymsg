@@ -21,6 +21,10 @@
 
 ### Validation
 
+- **Kenyon cell sparseness v8 lock** (#85, #95, #155): version 7 under the continuous clamp
+  by the Taylor action (`flymsg.gap/continuous-clamp-taylor-v1`) instead of the boundary
+  reset, seeds 95–97; arms, bounds and decision unchanged. First lock with `yaml_subset: 2`
+  and evidence records. No run.
 - **Evidence records** (SF1, #147): `validation/evidence.yaml` and `flymsg.evidence` record
   source, locator, organism, cell mapping, unit, uncertainty, status and transformation for
   each sourced quantity, fail closed on missing fields, and require every new lock

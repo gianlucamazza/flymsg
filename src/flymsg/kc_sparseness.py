@@ -46,6 +46,7 @@ VERSION_HASHES = {
     5: "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",  # measured asymmetric eLN-PN coupling, eLN spikelets 0-2 ms, seeds 86-88
     6: "bf1ae62f9b563e52df8523eefccbc7f3253c0ab457621969cf3e8ee77c1f6b9b",  # eLNs restricted to lLN2T (and lLN2T + lLN1_bc), seeds 89-91
     7: "de4274eb0bd689aefe8c9bcc9318eb40fbcdb688b9da61980a559f6c040896ef",  # v6 with the boundary reset of v5, qualified against the continuous clamp, seeds 92-94
+    8: "5f1a9e0d643da086353b6d987fa6b1220503a2b7b6cebafa325145f47aa12cbc",  # v7 under the continuous clamp by the Taylor action, seeds 95-97
 }
 # synapse classes without fast effect in each arm
 ARM_CLASSES = {
@@ -63,6 +64,7 @@ SPENT_SEEDS = {
     4: (83, 84, 85),
     5: (86, 87, 88),
     6: (89, 90, 91),
+    7: (92, 93, 94),
 }
 # MaleCNS types Eckstein et al. 2024 (STAR Methods, Fig S5F) liken to the cholinergic eLNs by
 # soma position and morphology (lLN2T_abc), and the neighbouring lLN1_bc
@@ -93,6 +95,7 @@ def electrical_semantics(doc: dict) -> str | None:
         4: "flymsg.gap/explicit-first-order-v1",
         5: electrical.BOUNDARY_SEMANTICS,
         6: electrical.SEMANTICS,
+        7: electrical.BOUNDARY_SEMANTICS,
     }
     return historical.get(doc["version"], doc.get("electrical_semantics"))
 
@@ -155,6 +158,12 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         and not doc.get("boundary_qualification")
     ):
         raise SparsenessError("the boundary reset needs its qualification")
+    if (
+        new_electrical
+        and named == electrical.TAYLOR_SEMANTICS
+        and not doc.get("taylor_qualification")
+    ):
+        raise SparsenessError("the Taylor action needs its qualification")
     for v, spent in SPENT_SEEDS.items():
         if v < doc["version"] and set(proto["seeds"]) & set(spent):
             raise SparsenessError(f"seeds must not reuse version {v}'s")
