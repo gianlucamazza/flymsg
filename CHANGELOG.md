@@ -14,7 +14,7 @@
 - **Graded neurons in the 3D replay**: `flymsg viz --eye POLARITY DIRECTION [--eye-config N]
 [--eye-top N]` replays one edge of the locked T4/T5 protocol and writes `graded.bin`, each
   non-spiking neuron's potential per bin relative to rest (or its dark anchor); the page lets
-  them glow by potential, in their colour when depolarized and blue when hyperpolarized. The
+  them glow by potential, in their colour when depolarized and violet when hyperpolarized. The
   site gains the `eye-on` scene (right eye, ON edge, v4 configuration 11).
 
 ### Result

@@ -71,7 +71,7 @@ them again ([v3](docs/img/silence-scan-v3.svg)).
 
 **An edge through the eye.** An ON edge moves front to back across the right eye under the
 locked T4/T5 v4 protocol at its strongest lamina gain (configuration 11). Photoreceptors,
-L1–L3 and the graded medulla glow by their potential, blue where they hyperpolarize, so the
+L1–L3 and the graded medulla glow by their potential, violet where they hyperpolarize, so the
 lamina's inversion of contrast is visible; spiking neurons of the T4/T5 pathway glow by spikes.
 A replay of one configuration, not the verdict, which is the locked run's
 ([eye](docs/eye.md)). [Open live](https://gianlucamazza.github.io/flymsg/live/eye-on/?t=600&paused).

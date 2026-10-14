@@ -417,7 +417,7 @@ const meshMaterial = new THREE.MeshStandardMaterial({
 });
 // glow of a hyperpolarized graded neuron (negative activity); depolarization keeps the
 // neuron's own colour
-const HYPER_GLSL = /* glsl */ `vec3(0.30, 0.60, 1.00)`;
+const HYPER_GLSL = /* glsl */ `vec3(0.62, 0.32, 1.00)`; // violet, apart from every group colour
 // 4x4 ordered dither for screen-door transparency: order independent, so every instance of the
 // one BatchedMesh draw, and every neuron in the one skeleton draw, can have its own opacity
 const BAYER4 = /* glsl */ `
@@ -1177,7 +1177,7 @@ function renderLegend() {
       g.className = "muted";
       g.textContent =
         "graded neurons: glow ∝ potential from rest (medulla: from its dark anchor), full at its " +
-        "measured range; own colour = depolarized, blue = hyperpolarized";
+        "measured range; own colour = depolarized, violet = hyperpolarized";
       rows.push(g);
     }
   }

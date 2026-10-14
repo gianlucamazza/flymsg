@@ -43,10 +43,10 @@ Non-spiking neurons do not glow by spikes. `flymsg viz --eye POLARITY DIRECTION 
 N]` replays one edge of the locked T4/T5 protocol (`validation/t4t5.yaml`) at one of its
 configurations and also writes `graded.bin`: per 10 ms bin, each graded neuron's potential
 relative to rest (and, for the graded medulla under a lock that anchors it, to its settled dark
-potential), as a signed step of its scale over 127. The scale, which reads as full glow, is the
+potential), as a signed step of its scale over 127. The scale, at which a neuron glows like one spike, is the
 configuration's photoreceptor response for photoreceptors, its LMC range for L1–L3, and the
 measured swing of the type (Groschner et al. 2022) for the medulla. A depolarized graded neuron
-glows in its own colour, a hyperpolarized one in blue, so the lamina's inversion of contrast is
+glows in its own colour, a hyperpolarized one in violet, so the lamina's inversion of contrast is
 visible. Spiking neurons glow by spikes as everywhere else. The scene is the right eye: per
 class the `--eye-top` (default 300) graded neurons whose potential moves most, at least 1 mV,
 and as many spiking neurons of the T4/T5 pathway (T4/T5 included) that fire most; the selection
