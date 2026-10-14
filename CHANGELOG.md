@@ -40,6 +40,10 @@
 
 ### Documentation
 
+- **Sensorimotor environment plan** (#176): `docs/sensorimotor-environment-plan.md` sets
+  three grades (VEE-0 geometry, VEE-1 biological interfaces, VEE-2 held-out prediction), gates
+  G0–G7 linked to their issues, a reuse inventory and no-go rules, subordinate to the roadmap's
+  completion plan. A plan, not a result.
 - **Replication package** (SF5, #151): `docs/replication.md` tells an outside operator how to
   rerun any archived result and what a match shows (parity, not validation), with the data
   sources and licences and a claims audit by the scientific-fidelity taxonomy (no result is a

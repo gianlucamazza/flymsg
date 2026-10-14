@@ -70,6 +70,11 @@ PAGES = (
     ("leads", "docs/leads.md", "Leads"),
     ("scientific-fidelity", "docs/scientific-fidelity.md", "Scientific fidelity"),
     ("replication", "docs/replication.md", "Replication"),
+    (
+        "sensorimotor-environment-plan",
+        "docs/sensorimotor-environment-plan.md",
+        "Sensorimotor plan",
+    ),
     ("integrity-audit", "docs/integrity-audit-2026-10-13.md", "Integrity audit"),
     ("adr-gap-refractory", "docs/adr-gap-refractory.md", "Electrical ADR"),
     ("adr-run-integrity", "docs/adr-run-integrity.md", "Run integrity ADR"),
