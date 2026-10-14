@@ -438,7 +438,7 @@ sit at 61–66%, across the bound, so which of them pass depends on the seeds. W
 no arm is within (16–23% / 14–20%, 80–82% / 92–96% shared). Every coupled arm stays within 21
 cells of its uncoupled base, and every arm within 19 cells of its version 7 count for each
 odor. The exact continuous clamp and fresh seeds therefore leave version 7's answer unchanged:
-the variant set is sparse by removing chemical cholinergic input onto PNs (41–43% / 38–39% of
+the variant set is sparse by removing chemical cholinergic input onto PNs (41–43% / 37–39% of
 PNs spike), and electrical coupling changes nothing. Outputs:
 `results/kc-sparseness/v8.executions/c714d0a3035c6d0842295f3e8057367fe9adbebb6e12fee4ac09eed6b31aee24/output/`.
 
