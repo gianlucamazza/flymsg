@@ -134,8 +134,7 @@ fiber's membrane potential to looming at four r/v values.
 
 Next (locked 2026-10-15 as `validation/gf_looming.yaml` v1, timing only): an M2 transducer can
 now be scored without a data request on the stage that ends at the giant fiber: an input shaped as Ache et al. 2019 drives the model's DNp01, judged against the
-deposited r/v series with a held-out set fixed in the lock. That calibrates gains against the
-giant fiber; it is not a measured LC4 or LPLC2 rate and must be named so.
+deposited r/v series with a held-out set fixed in the lock. The gains stay a scanned envelope, never fitted to the giant fiber; it is not a measured LC4 or LPLC2 rate and is named so.
 
 ### Muscle → body actuator (G4)
 

@@ -21,8 +21,10 @@
     scanned on a 4 × 4 grid). The model's DNp01 peak time before collision is fitted as
     α · r/v − δ, against the same fit of Dombrovski et al. 2025's giant-fiber recordings
     (Zenodo, CC BY 4.0) at r/v 10–80 ms.
-  - Timing only, never amplitude; a model-only no-go runs first. Two evidence records. Locked
-    before the files were downloaded; what an agent had seen is recorded. No run.
+  - Timing only, never amplitude; only cells where both model giant fibers stay graded are
+    scored, and a slope a stimulus-locked peak would give makes the run uninformative. A
+    model-only no-go runs first. Two evidence records. Locked before the files are downloaded,
+    except two an agent had opened (recorded). No run.
 
 ### Engineering
 

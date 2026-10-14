@@ -2,7 +2,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.gf_looming.VERSION_HASHES. `flymsg gf-looming` prints this file; `--run` executes it.
 version: 1
-content_sha256: 439b00d2360727596bd42e2d18b48c7f053c46f2e35fc101c3d49ef3a2024104
+content_sha256: e4dddf981c68c7495f5fb8ba4e3ccd4751a0036e48797c5fd297a5c562a1969c
 yaml_subset: 2
 evidence: [dombrovski_gf_looming, jang_looming_protocol]
 
@@ -12,9 +12,9 @@ claim:
   scored: true
   what: "How long before a looming disc's virtual collision the giant fiber (DNp01) peaks, as a function of r/v: by a threshold-angle model the time is alpha * r/v - delta, and alpha = 1 / tan(theta_thr / 2) fixes the angular size the response follows. Predicted by the connectome with LC4 and LPLC2 driven by engineered transducers, against the giant fiber's whole-cell recordings (Dombrovski et al. 2025)."
   scope: "Timing only. No amplitude is scored: the LIF's millivolts are not the recorded ones, and the transducer gains are not measured, so they are scanned as an envelope and never chosen."
-  held_out: "The recordings were never used to build, calibrate or tune flymsg; the files are downloaded after this lock is merged and opened only after the model has run and passed its no-go."
+  held_out: "The recordings were never used to build, calibrate or tune flymsg. Apart from the two files named in seen_before_lock, they are downloaded after this lock is merged and opened only after the model has run and passed its no-go."
 
-seen_before_lock: "During the 2026-10-14 literature search an agent opened one control file (DipE_Null_cont_fly22_trial01.mat: 80000 x 4, resting about -73 to -76, peak minus baseline 4.7 to 7.1 over the four r/v, units assumed mV) and noted that its peak timing is consistent with a 10 to 63 degree disc (no peak time was recorded); it also opened the deposited xlsx (r/v column order, 20 kHz, stimulus at 2 s, per-fly values behind Fig. 3 and Extended Data Fig. 8) and the structure of the Fig. 1 file. No other file was opened. The scored quantity is the slope of peak time over r/v across ten flies; the amplitudes seen do not enter it."
+seen_before_lock: "During the 2026-10-14 literature search an agent opened one control file (DipE_Null_cont_fly22_trial01.mat: 80000 x 4, resting about -73 to -76, peak minus baseline 4.7 to 7.1 over the four r/v, units assumed mV) and noted that its peak timing is consistent with a 10 to 63 degree disc (no peak time was recorded), which partly confirms the inferred protocol from the data; it also downloaded and opened the deposited xlsx (r/v column order, 20 kHz, stimulus at 2 s, and per-fly values behind Fig. 3 and Extended Data Fig. 8, whose columns were not reported to the lock's author, so they may include peak latencies) and the structure of the Fig. 1 file. No other file was opened. The scored quantity is the slope of peak time over r/v across ten flies; no slope was computed before the lock."
 
 inputs:
   zenodo_doi: "10.5281/zenodo.14983850"
@@ -63,11 +63,11 @@ drive:
   lc4_rate: "g4 * dtheta/dt, dtheta/dt in rad/s"
   lplc2_rate: "g2 * theta, theta in rad"
   forms_why: "Ache et al. 2019 (abstract): the giant fiber follows 'a linear function of angular velocity (provided by LC4) and a Gaussian function of angular size (provided by LPLC2)'; the Gaussian's parameters were not read from the paper, so size enters linearly; neither is a measured LC4 or LPLC2 spike rate"
-  cap_rule: "every rate is capped at 1000 / sim.Params.t_ref Hz, the most one LIF neuron can fire"
+  cap_rule: "every rate is capped at 1000 / sim.Params.t_ref Hz, and kicks pass a dead time of one refractory period (song.dead_time), since stimulated neurons are never refractory in the kernel: the delivered rate is at most lambda / (1 + lambda * t_ref)"
   g4_hz_per_rad_s: [0.0, 2.0, 5.0, 10.0]
   g2_hz_per_rad: [0.0, 50.0, 100.0, 200.0]
   grid_why: "engineered envelope: LC4 and LPLC2 spike rates to looming are not measured (docs/leads.md, G3). At r/v 10 ms dtheta/dt reaches about 55 rad/s at 63 degrees, so g4 spans no input to the cap; theta reaches 1.1 rad, so g2 spans no input to about 220 Hz. The cell with both gains 0 has no input and is left out: 15 cells."
-  kicks: "per neuron and neural step, Poisson counts at the rate of that step (as song.matched_kicks, without matching); one kick is about 48 mV"
+  kicks: "per neuron and neural step, Poisson counts at the rate of that step, then the dead time; one kick is about 48 mV. LPLC2's drive steps from 0 to g2 * 0.17 rad at onset, as the disc appears at 10 degrees"
 
 model:
   pre_ms: 200.0
@@ -75,20 +75,26 @@ model:
   post_why: "the window ends 150 ms after the expansion stops (Dombrovski et al. 2025 score 150 ms after onset in their Fig. 1); a later peak is no longer driven by expansion"
   seed0: 340
   seeds: 5
-  readout: "the mean membrane potential of DNp01(GF)_R and DNp01(GF)_L at every neural step (CpuRuntime.read), a step where one fires counted at v_th for that neuron; baseline the mean over pre_ms; the peak is the first maximum in the window from onset to the end of the expansion plus post_ms"
-  responding: "a cell responds when, in every seed and r/v, the peak exceeds the baseline by at least sim.Params.w_syn (one synapse's jump at rest)"
+  readout: "the membrane potential of DNp01(GF)_R and DNp01(GF)_L at every neural step (CpuRuntime.read), a sample standing at the end of its step, filtered as the data (data_rule.filter, the same frame in ms, since its lag grows with r/v and would otherwise bias alpha); per giant fiber the baseline is the mean over pre_ms and the peak time the first sample in the window (after onset to the end of the expansion plus post_ms) at reach of its window maximum above baseline; the run's peak time is the mean of the two"
+  reach: 0.95
+  reach_why: "a noisy plateau makes the time of the maximum itself arbitrary; the first time at 95% of it is defined the same way in model and data"
+  near_end_ms: 20.0
+  near_end_why: "a peak within 20 ms after the expansion stops follows the stimulus; the share of such peaks is reported per cell and per fly"
+  responding: "a cell responds when, in every seed and r/v, both giant fibers rise by at least sim.Params.w_syn (one synapse's jump at rest): a bar for a defined peak, not for strength"
+  graded: "a cell stays graded when neither giant fiber fires in the window in any seed and r/v; the recordings are subthreshold, so only responding and graded cells are scored, and the others are reported"
   fit: "per cell, y = collision time - peak time per seed and r/v; the median over seeds per r/v; ordinary least squares y = alpha * rv - delta over the four r/v"
+  timing: "a kick at a step reaches the potential at the next; with the sample at the end of its step this is a constant 0.1 to 0.2 ms, which enters delta only"
 
 data_rule:
   flies: control
   min_flies: 8
   min_flies_why: "eight of the ten control flies with both trials readable; with fewer the bootstrap interval rests on too few animals"
-  trace: "the one 2-D array of shape (80000, 4) in each file, columns in columns_rv_ms order; any other content refuses"
+  trace: "the one array of shape (80000, 4) in each file, columns in columns_rv_ms order; arrays of other shapes are ignored, and none or several of this shape refuse"
   trial_mean: "per fly and r/v, the mean of its two trials"
   baseline_s: 1.0
   baseline_source: "Jang et al. 2023: baseline the mean of the 1 s before stimulus onset"
   filter: "Savitzky-Golay, polynomial order 4, frame the expansion's duration / 10 in samples rounded up to odd (Jang et al. 2023: 'frame size is 1/10th the length of the stimulus')"
-  peak: "the first maximum of the filtered, baseline-subtracted trace in the window from onset to the end of the expansion plus post_ms"
+  peak: "the first time the filtered trace reaches reach of its maximum above baseline in the window after onset to the end of the expansion plus post_ms (model.reach); a peak on the window's last sample is counted and reported"
   fit: "per fly, ordinary least squares y = alpha * rv - delta over the four r/v"
   bootstrap: 10000
   bootstrap_seed: 34
@@ -96,25 +102,26 @@ data_rule:
   mutants: "not used"
 
 no_go:
-  min_responding_share: 0.5
-  rule: "computed on the model only, before any data file is opened: if fewer than half of the 15 cells respond, the run stops and is recorded as uninformative"
-  why: "a peak time is defined only where the giant fiber moves; a slope from a few responding cells says little about the circuit"
+  min_scored_cells: 4
+  rule: "computed on the model only, before any data file is opened (only their presence is checked before the model runs): if fewer than 4 of the 15 cells respond and stay graded, the run stops and is recorded as uninformative"
+  why: "a quarter of the grid, as song's min_scored; a slope from fewer graded cells says little about the circuit"
 
 score:
   statistic: "alpha per responding cell against the data's interval of the median alpha"
+  stimulus_locked: "a peak locked to the stimulus gives alpha = 1 / tan(end_deg / 2) (at the end of the expansion, about 1.63) or 1 / tan(start_deg / 2) (at onset, about 11.43) whatever the circuit; if the flies' interval holds either, the timing cannot separate the circuit from the stimulus"
   verdict:
-    pass: "every responding cell's alpha lies inside the interval"
-    partial: "some responding cells' alpha lie inside it"
+    pass: "every scored cell's alpha lies inside the interval"
+    partial: "some scored cells' alpha lie inside it"
     fail: "none does"
-    uninformative: "the no-go, or fewer than min_flies readable control flies"
-  reported: "delta per cell and from the data (secondary, decides nothing), the implied threshold angle 2 * atan(1 / alpha), and per cell whether the median peak times increase with r/v"
+    uninformative: "the no-go, fewer than min_flies readable control flies, no scored cell, or an interval that holds a stimulus-locked alpha"
+  reported: "delta per cell and from the data (secondary, decides nothing), the implied threshold angle 2 * atan(1 / alpha), per cell whether the median peak times increase with r/v, the share of peaks near the end of the expansion, edge peaks, and the cells that respond but fire"
 
 limits:
   - "Engineered transducers: LC4 and LPLC2 rates follow angular velocity and size linearly with scanned gains; no measured LC4 or LPLC2 rate exists."
   - "Both sides of LC4 and LPLC2 are driven and both giant fibers averaged: the recorded side and the disc's azimuth are not stated."
   - "The disc sizes of the 2025 recordings are inferred from the protocol they cite (Jang et al. 2023)."
   - "The control flies are genotype controls of DIP-epsilon experiments; their sex is not stated in the paper."
-  - "A spiking LIF giant fiber is compared with a graded recording: where the model fires, its peak is its first threshold crossing."
+  - "Only cells where the LIF giant fibers stay subthreshold are scored, since the recordings are graded; cells where they fire are reported, not scored."
   - "The scored quantity is a slope across four r/v per fly; one control file had been opened before the lock (seen_before_lock)."
 
 defaults_changed: false

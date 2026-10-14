@@ -4,11 +4,13 @@ The YAML file is the lock. A dark disc expands from 10 to 63 degrees at four r/v
 al. 2023's protocol, which Dombrovski et al. 2025 cite for their giant-fiber recordings).
 LC4 is driven in proportion to the disc's angular velocity and LPLC2 to its angular size,
 both sides, with gains scanned over an engineered grid: LC4 and LPLC2 spike rates to looming
-are not measured. The model's giant fiber (DNp01, mean of both) is read at every neural
-step, and its peak time before the virtual collision is fitted as alpha * r/v - delta per
-cell. The recordings give the same fit per fly; the score asks whether the model's slope
-alpha, which fixes the angular size the response follows, lies in the flies' interval.
-Amplitudes are never compared.
+are not measured. Each of the model's giant fibers (DNp01 R and L) is read at every neural
+step; a cell is scored only where both stay graded, as the recordings are. The peak time
+before the virtual collision is fitted as alpha * r/v - delta per cell. The recordings give
+the same fit per fly; the score asks whether the model's slope alpha, which fixes the
+angular size the response follows, lies in the flies' interval. If that interval holds the
+slope a peak locked to the stimulus would give whatever the circuit (at the expansion's end
+or onset), the run is uninformative. Amplitudes are never compared.
 
 The model runs and its no-go check finish before any data file is opened.
 """
@@ -23,15 +25,17 @@ import numpy as np
 import pandas as pd
 from scipy import io, signal
 
-from flymsg import draws, eye, locks, parallel, sim
+from flymsg import draws, eye, locks, parallel, sim, song
 from flymsg.runtime import CpuRuntime
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "gf_looming.yaml"
 GF = ("DNp01(GF)_R", "DNp01(GF)_L")
+REACH = 0.95  # a peak's time: the first sample at 95% of the window maximum
+NEAR_END_MS = 20.0  # a peak this soon after the expansion stops follows the stimulus
 
 VERSION_HASHES: dict[int, str] = {
-    1: "439b00d2360727596bd42e2d18b48c7f053c46f2e35fc101c3d49ef3a2024104",
+    1: "e4dddf981c68c7495f5fb8ba4e3ccd4751a0036e48797c5fd297a5c562a1969c",
 }
 
 
@@ -52,13 +56,15 @@ def assert_locked(doc: dict | None = None) -> dict:
 
 def assert_matches_code(doc: dict | None = None) -> dict:
     doc = assert_locked() if doc is None else doc
-    s, d = doc["stimulus"], doc["drive"]
+    s, d, m = doc["stimulus"], doc["drive"], doc["model"]
     if (s["start_deg"], s["end_deg"]) != (10.0, 63.0):
         raise LoomingError("the disc is not Jang et al.'s 10 to 63 degrees")
     if s["rv_ms"] != doc["inputs"]["columns_rv_ms"]:
         raise LoomingError("the model's r/v are not the data's columns")
     if 0.0 not in d["g4_hz_per_rad_s"] or 0.0 not in d["g2_hz_per_rad"]:
         raise LoomingError("the grid covers each population alone")
+    if (m["reach"], m["near_end_ms"]) != (REACH, NEAR_END_MS):
+        raise LoomingError("the peak rule differs from the code's")
     if doc["claim"]["scored"] is not True or doc.get("defaults_changed") is not False:
         raise LoomingError("a held-out benchmark is scored and changes no default")
     if len(doc["inputs"]["control_md5"]) != 20:
@@ -92,7 +98,7 @@ def summary(doc: dict | None = None) -> str:
 
 def expansion(rv_ms: float, doc: dict, dt_ms: float) -> dict:
     """Times (ms from the run's start) and the disc's full angle (rad) and its rate (rad/s)
-    at every neural step; onset, end of expansion and virtual collision in ms."""
+    at every step; onset, end of expansion and virtual collision in ms."""
     s, m = doc["stimulus"], doc["model"]
     to_start = rv_ms / math.tan(math.radians(s["start_deg"] / 2))
     to_end = rv_ms / math.tan(math.radians(s["end_deg"] / 2))
@@ -128,17 +134,19 @@ def drive(
     d = doc["drive"]
     lc4 = np.flatnonzero(neurons["type"].to_numpy() == d["lc4_type"])
     lplc2 = np.flatnonzero(neurons["type"].to_numpy() == d["lplc2_type"])
-    gf = np.array([np.flatnonzero(neurons["instance"].to_numpy() == g)[0] for g in GF])
     if (lc4.size, lplc2.size) != (d["lc4_neurons"], d["lplc2_neurons"]):
         raise LoomingError("the LC4 or LPLC2 count differs from the lock's")
-    return lc4, lplc2, gf
+    hits = [np.flatnonzero(neurons["instance"].to_numpy() == g) for g in GF]
+    if any(h.size != 1 for h in hits):
+        raise LoomingError("each giant fiber instance must name one neuron")
+    return lc4, lplc2, np.array([h[0] for h in hits])
 
 
 # --- model ------------------------------------------------------------------------------
 
 
 def respond(W, lc4, lplc2, gf, rv_ms, g4, g2, seed, doc, p) -> dict:
-    """One run: the giant fibers' mean potential each step, its baseline and peak time."""
+    """One run: each giant fiber's potential every step and the readout."""
     stim = expansion(rv_ms, doc, p.dt)
     r4, r2 = rates(stim, g4, g2, p)
     inputs = np.concatenate([lc4, lplc2])
@@ -147,7 +155,10 @@ def respond(W, lc4, lplc2, gf, rv_ms, g4, g2, seed, doc, p) -> dict:
         [np.repeat(r4[:, None], lc4.size, 1), np.repeat(r2[:, None], lplc2.size, 1)],
         axis=1,
     )[:, order] * (p.dt / 1000.0)
-    kicks = np.random.default_rng(seed).poisson(lam)
+    # stimulated neurons are never refractory in the kernel: kicks keep one refractory
+    # period apart, as in song
+    raw = np.random.default_rng(seed).poisson(lam)
+    kicks = song.dead_time(raw, round(p.t_ref / p.dt)).astype(np.int64)
     steps = kicks.shape[0]
     rt = CpuRuntime(
         W,
@@ -158,25 +169,51 @@ def respond(W, lc4, lplc2, gf, rv_ms, g4, g2, seed, doc, p) -> dict:
         per_bin=steps,  # one count bin: the readout is the traced potential, not counts
         trace=gf,
     )
-    v = np.empty(steps)
+    v = np.empty((steps, gf.size))
     for k in range(steps):
         rt.advance_to(k + 1)
-        now = rt.read(gf)["v"].astype(float)
-        fired = rt.traced_spikes(k, k + 1)[0].astype(bool)
-        v[k] = np.where(fired, p.v_th, now).mean()
-    return {"v": v, **peak(v, stim, p.dt, doc)}
+        v[k] = rt.read(gf)["v"]
+    fired = rt.traced_spikes(0, steps).astype(bool)
+    return {"v": v, **readout(v, fired, stim, p.dt, doc)}
 
 
-def peak(v: np.ndarray, stim: dict, dt_ms: float, doc: dict) -> dict:
-    t = stim["t"]
-    base = float(v[t < stim["onset"]].mean())
-    window = (t >= stim["onset"]) & (t <= stim["end"] + doc["model"]["post_ms"])
-    i = int(np.flatnonzero(window)[np.argmax(v[window])])
+def peak_time(x: np.ndarray, t: np.ndarray, window: np.ndarray, base: float) -> tuple:
+    """The first time the trace reaches REACH of its window maximum above baseline, the
+    rise, and whether that is the window's last sample (an edge peak)."""
+    idx = np.flatnonzero(window)
+    top = float(x[idx].max())
+    i = idx[np.flatnonzero(x[idx] >= base + REACH * (top - base))[0]]
+    return float(t[i]), top - base, bool(i == idx[-1])
+
+
+def smooth(x: np.ndarray, stim: dict, dt_ms: float) -> np.ndarray:
+    """Jang et al. 2023's Savitzky-Golay filter: order 4, a frame of a tenth of the
+    expansion, odd; the same in ms for model and data, since its lag grows with r/v."""
+    frame = math.ceil((stim["end"] - stim["onset"]) / 10 / dt_ms) // 2 * 2 + 1
+    return signal.savgol_filter(x, frame, 4)
+
+
+def readout(v, fired, stim, dt_ms, doc) -> dict:
+    """Per giant fiber its peak time on the filtered trace; the run's is their mean. A
+    sample read after a step stands at the end of that step."""
+    t = stim["t"] + dt_ms
+    window = (t > stim["onset"]) & (t <= stim["end"] + doc["model"]["post_ms"])
+    before = t <= stim["onset"]
+    times, rises, edge = [], [], False
+    for j in range(v.shape[1]):
+        x = smooth(v[:, j], stim, dt_ms)
+        when, rise, at_edge = peak_time(x, t, window, float(x[before].mean()))
+        times.append(when)
+        rises.append(rise)
+        edge |= at_edge
+    when = float(np.mean(times))
     return {
-        "baseline_mv": base,
-        "peak_mv": float(v[i]),
-        "peak_ms": float(t[i]),
-        "before_collision_ms": float(stim["collision"] - t[i]),
+        "depolarization_mv": float(min(rises)),
+        "peak_ms": when,
+        "before_collision_ms": float(stim["collision"] - when),
+        "spiked": bool(fired[window].any()),
+        "edge": edge,
+        "near_end": bool(stim["end"] <= when <= stim["end"] + NEAR_END_MS),
     }
 
 
@@ -216,11 +253,17 @@ def fit(rv: np.ndarray, y: np.ndarray) -> tuple[float, float]:
     return float(slope), float(-intercept)
 
 
+def threshold_deg(alpha: float) -> float:
+    return math.degrees(2 * math.atan(1 / alpha)) if alpha > 0 else float("nan")
+
+
 def model_fits(rows: pd.DataFrame, doc: dict) -> pd.DataFrame:
+    """Per cell: whether it responds and stays graded, and the fit over seed medians."""
     w = sim.Params.w_syn
     out = []
     for (g4, g2), c in rows.groupby(["g4", "g2"]):
-        responds = bool(((c.peak_mv - c.baseline_mv) >= w).all())
+        responds = bool((c.depolarization_mv >= w).all())
+        graded = not bool(c.spiked.any())
         med = c.groupby("rv_ms")["before_collision_ms"].median().sort_index()
         alpha, delta = fit(med.index.to_numpy(), med.to_numpy())
         out.append(
@@ -228,23 +271,35 @@ def model_fits(rows: pd.DataFrame, doc: dict) -> pd.DataFrame:
                 "g4": g4,
                 "g2": g2,
                 "responds": responds,
+                "graded": graded,
+                "scored": responds and graded,
                 "alpha": alpha,
                 "delta_ms": delta,
                 "theta_thr_deg": threshold_deg(alpha),
                 "increasing": bool(np.all(np.diff(med.to_numpy()) > 0)),
+                "near_end_share": float(c.near_end.mean()),
+                "edge_peaks": int(c.edge.sum()),
             }
         )
     return pd.DataFrame(out)
 
 
-def threshold_deg(alpha: float) -> float:
-    return math.degrees(2 * math.atan(1 / alpha)) if alpha > 0 else float("nan")
-
-
 def no_go(fits: pd.DataFrame, doc: dict) -> tuple[bool, str]:
-    share = float(fits["responds"].mean())
-    ok = share >= doc["no_go"]["min_responding_share"]
-    return ok, f"{int(fits['responds'].sum())} of {len(fits)} cells respond"
+    n = int(fits["scored"].sum())
+    return n >= doc["no_go"]["min_scored_cells"], (
+        f"{n} of {len(fits)} cells scored (responding and graded); "
+        f"{int(fits['responds'].sum())} respond, {int(fits['graded'].sum())} stay graded"
+    )
+
+
+def stimulus_locked(doc: dict) -> dict[str, float]:
+    """The slopes a peak locked to the stimulus gives whatever the circuit: at the end of
+    the expansion, or at its onset."""
+    s = doc["stimulus"]
+    return {
+        "end": 1 / math.tan(math.radians(s["end_deg"] / 2)),
+        "onset": 1 / math.tan(math.radians(s["start_deg"] / 2)),
+    }
 
 
 # --- data -------------------------------------------------------------------------------
@@ -256,6 +311,15 @@ def md5(path: Path) -> str:
         for block in iter(lambda: f.read(1 << 20), b""):
             h.update(block)
     return h.hexdigest()
+
+
+def inputs_present(data_dir: Path, doc: dict) -> Path:
+    """Before the model runs: every locked file exists (none is opened here)."""
+    directory = data_dir / Path(doc["inputs"]["directory"]).relative_to("data")
+    missing = [n for n in doc["inputs"]["control_md5"] if not (directory / n).is_file()]
+    if missing:
+        raise LoomingError(f"{len(missing)} control files missing in {directory}")
+    return directory
 
 
 def read_trace(path: Path, doc: dict) -> np.ndarray:
@@ -289,22 +353,25 @@ def data_fits(directory: Path, doc: dict) -> pd.DataFrame:
             continue
         mean = np.mean(traces, axis=0)
         t = (np.arange(mean.shape[0]) / fs - i["onset_s"]) * 1000.0  # ms from onset
-        ys = []
+        ys, edges, near = [], 0, 0
         for col, rv in enumerate(i["columns_rv_ms"]):
             stim = expansion(rv, doc, 1000.0 / fs)
             length = stim["end"] - stim["onset"]
-            frame = math.ceil(length / 10 * fs / 1000.0) // 2 * 2 + 1
-            x = signal.savgol_filter(mean[:, col], frame, 4)
-            x = x - x[(t >= -rule["baseline_s"] * 1000.0) & (t < 0)].mean()
-            window = (t >= 0) & (t <= length + doc["model"]["post_ms"])
-            k = int(np.flatnonzero(window)[np.argmax(x[window])])
-            ys.append(stim["collision"] - stim["onset"] - t[k])
+            x = smooth(mean[:, col], stim, 1000.0 / fs)
+            base = float(x[(t >= -rule["baseline_s"] * 1000.0) & (t < 0)].mean())
+            window = (t > 0) & (t <= length + doc["model"]["post_ms"])
+            when, _, at_edge = peak_time(x, t, window, base)
+            edges += at_edge
+            near += length <= when <= length + NEAR_END_MS
+            ys.append(stim["collision"] - stim["onset"] - when)
         alpha, delta = fit(np.asarray(i["columns_rv_ms"]), np.asarray(ys))
         rows.append(
             {
                 "fly": fly,
                 "alpha": alpha,
                 "delta_ms": delta,
+                "edge_peaks": edges,
+                "near_end": near,
                 **{
                     f"y_{rv:g}": y for rv, y in zip(i["columns_rv_ms"], ys, strict=True)
                 },
@@ -327,17 +394,30 @@ def judge(fits: pd.DataFrame, flies: pd.DataFrame, doc: dict) -> dict:
         return {"verdict": f"uninformative: {len(flies)} readable control flies"}
     lo, hi = interval(flies["alpha"].to_numpy(), doc)
     d_lo, d_hi = interval(flies["delta_ms"].to_numpy(), doc)
-    live = fits[fits.responds]
-    inside = int(((live.alpha >= lo) & (live.alpha <= hi)).sum())
-    verdict = "pass" if inside == len(live) else "partial" if inside else "fail"
-    return {
-        "verdict": verdict,
+    out = {
         "alpha_interval": [lo, hi],
         "theta_thr_interval_deg": [threshold_deg(hi), threshold_deg(lo)],
         "delta_interval_ms": [d_lo, d_hi],
-        "inside": f"{inside} of {len(live)} responding cells",
+        "stimulus_locked_alpha": stimulus_locked(doc),
         "flies": len(flies),
+        "fly_edge_peaks": int(flies.edge_peaks.sum()),
+        "fly_near_end_peaks": int(flies.near_end.sum()),
     }
+    locked = [k for k, a in stimulus_locked(doc).items() if lo <= a <= hi]
+    if locked:
+        out["verdict"] = (
+            "uninformative: the flies' slope does not separate the circuit from a peak "
+            f"locked to the stimulus {' and '.join(locked)}"
+        )
+        return out
+    live = fits[fits.scored]
+    if live.empty:
+        out["verdict"] = "uninformative: no scored cell"
+        return out
+    inside = int(((live.alpha >= lo) & (live.alpha <= hi)).sum())
+    out["inside"] = f"{inside} of {len(live)} scored cells"
+    out["verdict"] = "pass" if inside == len(live) else "partial" if inside else "fail"
+    return out
 
 
 def evaluate(rows: pd.DataFrame, data_dir: Path, doc: dict) -> dict:
@@ -347,8 +427,7 @@ def evaluate(rows: pd.DataFrame, data_dir: Path, doc: dict) -> dict:
     out = {"model": fits, "no_go": note, "verdict": "uninformative: no-go"}
     if not informative:
         return out
-    rel = Path(doc["inputs"]["directory"]).relative_to("data")
-    flies = data_fits(data_dir / rel, doc)
+    flies = data_fits(inputs_present(data_dir, doc), doc)
     out.update(judge(fits, flies, doc))
     out["flies_table"] = flies
     return out

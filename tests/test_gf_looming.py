@@ -60,9 +60,10 @@ def test_the_toy_giant_fiber_peaks_inside_the_window():
     W, lc4, lplc2, gf = toy()
     r = gf_looming.respond(W, lc4, lplc2, gf, 20.0, 10.0, 200.0, 7, DOC, P)
     s = gf_looming.expansion(20.0, DOC, P.dt)
-    assert r["baseline_mv"] == pytest.approx(P.v_rest)
-    assert r["peak_mv"] - r["baseline_mv"] >= P.w_syn
-    assert s["onset"] <= r["peak_ms"] <= s["end"] + DOC["model"]["post_ms"]
+    assert r["v"].shape[1] == 2
+    assert r["depolarization_mv"] >= P.w_syn
+    assert s["onset"] < r["peak_ms"] <= s["end"] + DOC["model"]["post_ms"] + P.dt
+    assert r["before_collision_ms"] == pytest.approx(s["collision"] - r["peak_ms"])
     again = gf_looming.respond(W, lc4, lplc2, gf, 20.0, 10.0, 200.0, 7, DOC, P)
     assert np.array_equal(r["v"], again["v"])
 
@@ -76,7 +77,16 @@ def test_fit_recovers_the_threshold_model():
     )
 
 
-def rows(alpha, respond=True):
+def test_the_peak_is_the_first_reach_of_its_maximum_and_edges_are_flagged():
+    t = np.arange(10.0)
+    window = t >= 2
+    x = np.array([0, 0, 1, 9.6, 9.7, 10, 9.8, 2, 1, 0], float)
+    assert gf_looming.peak_time(x, t, window, 0.0) == (3.0, 10.0, False)
+    rising = np.arange(10.0)
+    assert gf_looming.peak_time(rising, t, window, 0.0)[2] is True
+
+
+def rows(alpha, respond=True, spiked=False):
     out = []
     for g4, g2 in gf_looming.cells(DOC):
         for seed in range(3):
@@ -87,21 +97,26 @@ def rows(alpha, respond=True):
                         "g2": g2,
                         "seed": seed,
                         "rv_ms": rv,
-                        "baseline_mv": P.v_rest,
-                        "peak_mv": P.v_rest + (1.0 if respond else 0.0),
+                        "depolarization_mv": 1.0 if respond else 0.0,
                         "peak_ms": 0.0,
                         "before_collision_ms": alpha * rv - 10.0,
+                        "spiked": spiked,
+                        "edge": False,
+                        "near_end": False,
                     }
                 )
     return pd.DataFrame(out)
 
 
-def test_the_no_go_needs_half_the_cells_to_respond():
+def test_the_no_go_needs_four_responding_graded_cells():
     fits = gf_looming.model_fits(rows(2.0), DOC)
-    assert fits.responds.all() and fits.increasing.all()
+    assert fits.scored.all() and fits.increasing.all()
     assert fits.alpha.to_numpy() == pytest.approx(2.0)
     assert gf_looming.no_go(fits, DOC)[0]
     assert not gf_looming.no_go(gf_looming.model_fits(rows(2.0, False), DOC), DOC)[0]
+    spiking = gf_looming.model_fits(rows(2.0, spiked=True), DOC)
+    assert spiking.responds.all() and not spiking.scored.any()
+    assert not gf_looming.no_go(spiking, DOC)[0]
 
 
 def write_fly(directory, fly, alpha, delta, rng):
@@ -135,14 +150,19 @@ def synthetic(tmp_path, alphas, delta=20.0):
 
 
 def test_the_data_rule_recovers_each_flys_slope(tmp_path):
-    alphas = [1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4]
+    alphas = [2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4]
     doc = synthetic(tmp_path, alphas)
     flies = gf_looming.data_fits(tmp_path, doc)
     assert len(flies) == 10
-    assert flies.alpha.to_numpy() == pytest.approx(alphas, abs=0.03)
+    # the filter's lag grows with r/v and biases alpha a little; the model gets the same
+    assert flies.alpha.to_numpy() == pytest.approx(alphas, abs=0.05)
     assert flies.delta_ms.to_numpy() == pytest.approx(20.0, abs=1.5)
-    model = gf_looming.model_fits(rows(1.95), doc)
+    model = gf_looming.model_fits(rows(2.95), doc)
     assert gf_looming.judge(model, flies, doc)["verdict"] == "pass"
+    none = gf_looming.model_fits(rows(2.95, spiked=True), doc)
+    assert (
+        gf_looming.judge(none, flies, doc)["verdict"] == "uninformative: no scored cell"
+    )
     assert gf_looming.judge(gf_looming.model_fits(rows(5.0), doc), flies, doc)[
         "verdict"
     ] == ("fail")
@@ -163,3 +183,12 @@ def test_a_changed_or_odd_file_refuses_and_a_missing_one_drops_its_fly(tmp_path)
         gf_looming.data_fits(tmp_path, doc)
     with pytest.raises(LoomingError, match="trace array"):
         gf_looming.read_trace(tmp_path / "fly01_trial02.mat", doc)
+
+
+def test_a_stimulus_locked_slope_in_the_flies_interval_is_uninformative(tmp_path):
+    end = gf_looming.stimulus_locked(DOC)["end"]
+    assert end == pytest.approx(1 / math.tan(math.radians(31.5)))
+    doc = synthetic(tmp_path, [end - 0.1, end - 0.05, end, end + 0.05, end + 0.1] * 2)
+    flies = gf_looming.data_fits(tmp_path, doc)
+    verdict = gf_looming.judge(gf_looming.model_fits(rows(end), doc), flies, doc)
+    assert verdict["verdict"].startswith("uninformative: the flies' slope")

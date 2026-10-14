@@ -434,6 +434,7 @@ def cmd_gf_looming(a, neurons, edges):
     started = datetime.now(UTC)
     doc = gf_looming.assert_matches_code()
     print(gf_looming.summary(doc))
+    gf_looming.inputs_present(a.data, doc)  # present before hours of model; not opened
     rows = gf_looming.run(neurons, edges, a.workers, a.checkpoint)
     out = managed.output(a, Path("runs/gf_looming") / f"v{doc['version']}")
     out.mkdir(parents=True, exist_ok=True)
