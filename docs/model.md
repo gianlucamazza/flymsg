@@ -439,7 +439,9 @@ no arm is within (16–23% / 14–20%, 80–82% / 92–96% shared). Every couple
 cells of its uncoupled base, and every arm within 19 cells of its version 7 count for each
 odor. The exact continuous clamp and fresh seeds therefore leave version 7's answer unchanged:
 the variant set is sparse by removing chemical cholinergic input onto PNs (41–43% / 37–39% of
-PNs spike), and electrical coupling changes nothing. Outputs:
+PNs spike), and electrical coupling barely changes recruitment: it moves no arm by more than
+21 cells, though near the overlap bound that can flip an arm (E/lLN2T+lLN1_bc is out, three of
+its four coupled arms are in). Outputs:
 `results/kc-sparseness/v8.executions/c714d0a3035c6d0842295f3e8057367fe9adbebb6e12fee4ac09eed6b31aee24/output/`.
 
 ## Electrical synapses (optional, 2026-10-13)
