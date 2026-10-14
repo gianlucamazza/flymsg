@@ -2,7 +2,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.song.VERSION_HASHES. `flymsg song` prints this file; `--run` executes it.
 version: 1
-content_sha256: ad2065e6031e1c24cb8b1cf4d9a88741d67913ee6178108422ec2efbbeee54c6
+content_sha256: a346c59b6fa1729912015d0d32c8f017f7f0ae03cd18006e9a00f09c4d838db3
 yaml_subset: 2
 evidence: [pacheco_song_stimulus, pacheco_song_responses, malecns_primary_regions, yamakoshi_jo_ab_ratio]
 
@@ -30,8 +30,9 @@ drive:
   types: [JO-A, JO-B, JO-D]
   type_regex: "^JO-[ABD]"
   sides: both
+  neurons: 146
   why: "JO-A, JO-B and JO-D respond at song frequencies (Pacheco et al. 2021; Kamikouchi et al. 2009; Matsuo et al. 2014); JO-C and JO-E respond to static deflection. Annotations ending in -unclear keep their subgroup."
-  equal_spikes: "kicks pass a dead time of one refractory period (sim.Params.t_ref), then each neuron's kicks are subsampled to its smallest count across the three conditions, so every JO neuron gets the same number of kicks in pulse, sine and aperiodic; one kick (about 48 mV) fires a JO neuron at rest"
+  equal_kicks: "kicks pass a dead time of one refractory period (sim.Params.t_ref), then each neuron's kicks are subsampled to its smallest count across the three conditions, so every JO neuron gets the same number of kicks in pulse, sine and aperiodic; one kick (about 48 mV) fires a JO neuron at rest, but its spikes also depend on recurrent input, so spikes are reported, not forced equal"
   equal_mean_rate: "pulse and aperiodic kicks arrive at rate / duty during a pulse and none in a pause; sine at rate throughout"
 
 stimulus:
@@ -39,7 +40,9 @@ stimulus:
   pause_ms: 20.0
   train_ms: 10000.0
   source: "Pacheco et al. 2021, Supplementary Table 2, coarse tuning protocol (Pslow): 16 ms pulses, 20 ms pauses, 10 s trains; sine 150 Hz, 10 s"
-  aperiodic: "the pulse train's number of pulses at uniformly random non-overlapping onsets in the same 10 s: pulses without a period"
+  aperiodic: "the pulse train's number of pulses placed uniformly at random in the same 10 s with at least aperiodic_min_gap_ms between them: pulses without a period (and with irregular gaps)"
+  aperiodic_min_gap_ms: 4.4
+  aperiodic_min_gap_why: "two refractory periods (2 x sim.Params.t_ref), so no two pulses fuse into one longer pulse for a JO neuron"
 
 grid:
   rates_hz: [50.0, 100.0, 200.0]
@@ -47,7 +50,9 @@ grid:
   rate_why: "JO firing rates to song are not measured; the mean per-neuron rate is a free gain, scanned over 50, 100, 200 Hz (the battery's 100 Hz in the middle); the verdict is taken at 100 Hz and the other two are reported"
   seed0: 360
   seeds: 5
-  shuffles: 20
+  seeds_why: "the convergence and sensitivity locks' five seeds; a neuropil's sign is the seed median"
+  shuffles: 99
+  shuffles_why: "the smallest empirical p is 1/100, below alpha, so the shuffle test is not passed by its floor alone"
   shuffle_seed0: 3600
   duration_ms: 12000.0
   bin_ms: 100.0
@@ -222,24 +227,27 @@ score:
   excluded: [AMMC, SAD, WED, GNG]
   excluded_why: "receptor-near: JO axons project there and their pulse/sine sign is set by which JO subgroup stands for which song, not by the circuit; MaleCNS also has no AMMC outside SAD in primary regions"
   model_activity: "per neuropil, the spike counts over the 12 s run (10 s train and 2 s after, the paper's window) summed over neurons weighted by each neuron's synaptic connections in that neuropil (pre and post, MaleCNS primary_post, left and right pooled); the driven JO neurons are left out"
-  model_index: "(pulse - sine) / (pulse + sine) per seed; a neuropil is resolved when all seeds give the same nonzero sign"
+  model_index: "(pulse - sine) / (pulse + sine) per seed; the prediction is the sign of the seed median (0 where silent); a neuropil is resolved when every seed has that nonzero sign (used by the no-go only)"
   data_index: "per male ROI the paper's magnitude for pulse and for sine, (pulse - sine) / (pulse + sine); the median over each fly's ROIs, then per neuropil the sign shared by the flies"
-  scored_set: "neuropils with a data sign that the model resolves at the decision rate"
+  scored_set: "every scorable neuropil with a data sign; the real model, each shuffled connectome and the aperiodic train are scored on this same set by the same rule, and a sign 0 counts as wrong for all"
   min_scored: 8
+  min_scored_why: "a quarter of the 32 scorable neuropils; with fewer, balanced accuracy moves by a whole neuropil's share"
   statistic: "balanced accuracy of the model's sign against the data's (mean recall over pulse- and sine-preferring neuropils), so a constant prediction scores 0.5"
   permutations: 10000
   permutation_seed: 36
   alpha: 0.05
   verdict:
-    pass: "permutation p <= alpha (model signs permuted over the scored neuropils), degree-preserving shuffle p <= alpha (balanced accuracy of 20 shuffled connectomes, pulse vs sine, same seeds; an unresolved shuffled neuropil counts as wrong) and higher balanced accuracy than the aperiodic train against sine"
+    pass: "permutation p <= alpha (model signs permuted over the scored neuropils), degree-preserving shuffle p <= alpha (balanced accuracy of 99 shuffled connectomes, pulse vs sine, same seeds and rule) and higher balanced accuracy than the aperiodic train against sine"
     pass_burst_only: "both p <= alpha but the aperiodic train predicts as well: pulses matter, their period does not"
     fail: "otherwise"
     uninformative: "fewer than min_scored neuropils, a single data class, or the no-go"
 
 no_go:
   min_resolved_share: 0.5
-  rule: "computed on the model only, before the data file is opened: if fewer than half of the scorable neuropils resolve a sign over seeds at the decision rate, the run stops and is recorded as uninformative"
-  why: "LIF neurons with no intrinsic band-pass may smooth a 27.8 Hz envelope away; the test is meaningful only if the model distinguishes the conditions at all"
+  rule: "computed on the model only, before the data file is opened: if fewer than half of the scorable neuropils resolve a sign over seeds at the decision rate, or the resolved ones are all pulse- or all sine-preferring, the run stops and is recorded as uninformative"
+  why: "LIF neurons with no intrinsic band-pass may smooth a 27.8 Hz envelope away, and a constant prediction cannot beat balanced accuracy 0.5; the test is meaningful only if the model distinguishes the conditions in both directions"
+  min_resolved_share_why: "a majority of neuropils must carry a model sign that is not seed noise"
+  not_a_no_go: "pulse against the aperiodic train is scored (pass against pass_burst_only), not a no-go"
 
 data_rule:
   signal: median_z_scored_signal_per_roi
@@ -252,9 +260,11 @@ data_rule:
   min_flies: 4
   min_fly_share_num: 2
   min_fly_share_den: 3
+  min_fly_share_why: "the project's holds share (two thirds of seeds, here of flies); fewer flies agreeing leaves the neuropil without a sign"
+  percentile: "numpy linear interpolation; MATLAB prctile interpolates differently, a difference below one sample at 25 samples per window"
   sex: Male
   neuropil_index: "1-based into neuropil_full_names; 0 is a ROI outside every neuropil (41 names, values 0 to 41)"
-  source: "Pacheco et al. 2021 Methods (response magnitude: baseline -4 to -0.5 s, onset to 2 s after offset, 80th or 20th percentile of the baseline-subtracted signal whichever is larger in absolute value; neuropils counted with at least 4 flies). Z-scoring is linear per ROI, so the pulse/sine ratio is the same on dF/F."
+  source: "Pacheco et al. 2021 Methods (response magnitude: baseline -4 to -0.5 s, onset to 2 s after offset, 80th or 20th percentile of the baseline-subtracted signal whichever is larger in absolute value; neuropils counted with at least 4 flies). Z-scoring is linear per ROI, so the pulse/sine ratio is the same on dF/F (assumed per ROI over the recording, not per trial or stimulus; the readme does not say)."
 
 secondary:
   decides: false
@@ -272,7 +282,8 @@ limits:
   - "Spike counts against calcium: no GCaMP kernel; the model's 12 s count stands for the data's percentile magnitude."
   - "The model has no spontaneous activity, so its baseline is zero and inhibition below baseline is invisible; the data's magnitude counts inhibitory responses as well."
   - "Neuropil activity is a synapse-weighted sum of spike counts, a proxy for the calcium in a neuropil's neurites; left and right are pooled because the data has no hemisphere."
-  - "The JO rate is a free gain, scanned at three values."
+  - "The JO rate is a free gain, scanned at three values; the delivered rate is lower than the nominal one after the dead time and the matching, and is reported."
+  - "Neuropils share neurons, so their signs are not independent; the permutation test treats them as exchangeable and overstates the effective number of neuropils, which the degree-preserving shuffles partly offset."
   - "Neuropils absent from MaleCNS primary regions (mALT, GC, WEDC, iSADC, sSADC) are not scored; MB_VL and MB_ML pool the MaleCNS lobes."
   - "The 85% selectivity rule of the paper classifies response types; the per-neuropil sign here uses the magnitudes it is built on."
 

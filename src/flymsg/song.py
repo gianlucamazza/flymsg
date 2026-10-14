@@ -38,7 +38,7 @@ YAMAKOSHI = "Figure3_S7_Table6_Table7.zip"
 KINDS = ("pulse", "sine", "aperiodic")
 
 VERSION_HASHES: dict[int, str] = {
-    1: "ad2065e6031e1c24cb8b1cf4d9a88741d67913ee6178108422ec2efbbeee54c6",
+    1: "a346c59b6fa1729912015d0d32c8f017f7f0ae03cd18006e9a00f09c4d838db3",
 }
 
 
@@ -64,6 +64,8 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     s = doc["stimulus"]
     if (s["pulse_ms"], s["pause_ms"], s["train_ms"]) != (16.0, 20.0, 10000.0):
         raise SongError("the stimulus is not Pacheco et al.'s pulse train")
+    if abs(s["aperiodic_min_gap_ms"] - 2 * sim.Params.t_ref) > 1e-9:
+        raise SongError("the aperiodic gap is two refractory periods")
     if doc["claim"]["scored"] is not True or doc.get("defaults_changed") is not False:
         raise SongError("a held-out benchmark is scored and changes no default")
     labels = [row["label"] for row in doc["neuropils"]]
@@ -83,7 +85,7 @@ def summary(doc: dict | None = None) -> str:
     doc = assert_matches_code() if doc is None else doc
     g = doc["grid"]
     return (
-        f"song v{doc['version']} (issue #{doc['issue']}): JO {'/'.join(doc['drive']['types'])}, "
+        f"song v{doc['version']} (issue #{doc['issue']}): {'/'.join(doc['drive']['types'])}, "
         f"pulse {doc['stimulus']['pulse_ms']:g}/{doc['stimulus']['pause_ms']:g} ms vs sine, "
         f"rates {g['rates_hz']} Hz, seeds {g['seed0']}-{g['seed0'] + g['seeds'] - 1}, "
         f"{g['shuffles']} degree-preserving shuffles; held-out against Pacheco et al. 2021"
@@ -223,10 +225,12 @@ def envelope(kind: str, steps: int, dt: float, doc: dict, rng) -> np.ndarray:
     if kind != "aperiodic":
         raise SongError(f"unknown condition {kind}")
     n = int(np.count_nonzero(np.diff(np.r_[0, pulse.astype(int)]) == 1))
-    # at least one step between pulses, so no two merge into a longer one
-    slack = steps - n * on - (n - 1)
+    # pulses placed uniformly at random with at least `min_gap_ms` between them, so no
+    # two merge into one longer pulse for a JO neuron
+    gap = round(s["aperiodic_min_gap_ms"] / dt)
+    slack = steps - n * on - (n - 1) * gap
     gaps = np.sort(rng.integers(0, slack + 1, n))
-    starts = gaps + np.arange(n) * (on + 1)
+    starts = gaps + np.arange(n) * (on + gap)
     out = np.zeros(steps, bool)
     for a in starts:
         out[a : a + on] = True
@@ -360,6 +364,8 @@ def weighted_kicks(
 ) -> dict[str, np.ndarray]:
     """Secondary drive: in each condition thin the weaker of JO-A and JO-B so that their
     kick ratio is the measured response ratio A/B (JO-D untouched)."""
+    if not all(np.isfinite(r) and r > 0 for r in ratios.values()):
+        raise SongError(f"JO-A/JO-B ratios must be positive and finite: {ratios}")
     rng = np.random.default_rng(seed + 1_000_003)
     out = {}
     for kind, rho in (("pulse", ratios["pulse"]), ("sine", ratios["sine"])):
@@ -372,21 +378,27 @@ def weighted_kicks(
 
 
 def _job(job: tuple) -> list[dict]:
+    """A real job is one seed at one rate; a shuffle job is one shuffled connectome, built
+    once, run at the decision rate for every seed."""
     (neurons, edges, weights, doc, ratios), _checkpoint, _meta = parallel.context()
     family, rate, shuffle, seed = job
+    g = doc["grid"]
     p = sim.Params()
     e = edges if family == "real" else nulls.shuffle_degree_preserving(edges, shuffle)
     W = sim.network(neurons, e, p)
     stim = stimulated(neurons, doc)
-    kicks = matched_kicks(stim.size, rate, seed, doc, p)
-    kinds = KINDS if family == "real" else ("pulse", "sine")
-    if family == "real" and rate == doc["grid"]["decision_rate_hz"]:
-        sub = np.array([t[3] for t in neurons["type"].to_numpy()[stim]])
-        kicks |= weighted_kicks(kicks, sub, ratios, seed)
-        kinds = (*kinds, "pulse_w", "sine_w")
-    rows = _respond(W, stim, weights, kicks, doc, p, seed, kinds)
-    for row in rows:
-        row.update(family=family, rate_hz=rate, shuffle=shuffle, seed=seed)
+    seeds = [seed] if family == "real" else range(g["seed0"], g["seed0"] + g["seeds"])
+    rows = []
+    for s_ in seeds:
+        kicks = matched_kicks(stim.size, rate, s_, doc, p)
+        kinds = KINDS if family == "real" else ("pulse", "sine")
+        if family == "real" and rate == g["decision_rate_hz"]:
+            sub = np.array([t[3] for t in neurons["type"].to_numpy()[stim]])
+            kicks |= weighted_kicks(kicks, sub, ratios, s_)
+            kinds = (*kinds, "pulse_w", "sine_w")
+        for row in _respond(W, stim, weights, kicks, doc, p, s_, kinds):
+            row.update(family=family, rate_hz=rate, shuffle=shuffle, seed=s_)
+            rows.append(row)
     return rows
 
 
@@ -395,9 +407,8 @@ def jobs(doc: dict) -> list[tuple]:
     seeds = range(g["seed0"], g["seed0"] + g["seeds"])
     real = [("real", r, -1, s) for r in g["rates_hz"] for s in seeds]
     shuf = [
-        ("shuffle", g["decision_rate_hz"], g["shuffle_seed0"] + k, s)
+        ("shuffle", g["decision_rate_hz"], g["shuffle_seed0"] + k, -1)
         for k in range(g["shuffles"])
-        for s in seeds
     ]
     return real + shuf
 
@@ -411,6 +422,8 @@ def run(
     checkpoint: Path | None = None,
 ) -> tuple[pd.DataFrame, list[str]]:
     doc = assert_matches_code()
+    if stimulated(neurons, doc).size != doc["drive"]["neurons"]:
+        raise SongError("the JO-A/B/D count differs from the lock's")
     weights, labels = label_weights(regions, neurons, doc)
     meta = {"version": doc["version"], "sha256": doc["content_sha256"]}
     rows = draws.map_jobs(
@@ -441,45 +454,50 @@ def model_indices(
     rate: float,
     other: str = "sine",
     shuffle: int = -1,
+    pulse: str = "pulse",
 ) -> pd.DataFrame:
-    """Per seed and label: the preference index of pulse against `other`."""
+    """Per seed and label: the preference index of `pulse` against `other`."""
     c = cells[
         (cells.family == family) & (cells.rate_hz == rate) & (cells.shuffle == shuffle)
     ]
     out = []
     for seed, g in c.groupby("seed"):
         by = {row.kind: np.asarray(row.activity, float) for row in g.itertuples()}
-        for lab, d in zip(labels, index(by["pulse"], by[other]), strict=True):
+        for lab, d in zip(labels, index(by[pulse], by[other]), strict=True):
             out.append({"seed": seed, "label": lab, "index": d})
     return pd.DataFrame(out)
 
 
 def model_signs(idx: pd.DataFrame) -> pd.DataFrame:
-    """Per label: seed-median index, and resolved when every seed has the same nonzero sign."""
+    """Per label: the seed-median index and its sign (the prediction; 0 where silent), and
+    resolved when every seed has that same nonzero sign (for the no-go only)."""
     rows = []
     for lab, g in idx.groupby("label", sort=False):
-        s = np.sign(g["index"].to_numpy())
+        v = g["index"].to_numpy()
+        med = float(np.median(v)) if not np.isnan(v).any() else float("nan")
+        sign = 0 if np.isnan(med) else int(np.sign(med))
         rows.append(
             {
                 "label": lab,
-                "index_median": float(g["index"].median()),
-                "resolved": bool(
-                    np.all(s == s[0]) and s[0] != 0 and not np.isnan(s).any()
-                ),
-                "sign": int(s[0]) if np.all(s == s[0]) and not np.isnan(s).any() else 0,
+                "index_median": med,
+                "sign": sign,
+                "resolved": bool(sign != 0 and np.all(np.sign(v) == sign)),
             }
         )
     return pd.DataFrame(rows)
 
 
 def no_go(signs: pd.DataFrame, doc: dict) -> tuple[bool, str]:
-    """Model only, before the data are read: informative when enough labels resolve."""
+    """Model only, before the data are read: informative when enough labels resolve and
+    the resolved ones include both signs (a constant prediction cannot pass)."""
     share = float(signs["resolved"].mean()) if len(signs) else 0.0
     need = doc["no_go"]["min_resolved_share"]
-    ok = share >= need - 1e-12
-    return (
-        ok,
-        f"{int(signs['resolved'].sum())} of {len(signs)} neuropils resolved ({share:.2f}, need {need})",
+    res = signs[signs["resolved"]]
+    pos, neg = int((res["sign"] > 0).sum()), int((res["sign"] < 0).sum())
+    ok = share >= need - 1e-12 and pos > 0 and neg > 0
+    return ok, (
+        f"{len(res)} of {len(signs)} neuropils resolved ({share:.2f}, need {need}); "
+        f"{pos} pulse-preferring, {neg} sine-preferring"
     )
 
 
@@ -516,6 +534,15 @@ def data_targets(path: Path, doc: dict) -> pd.DataFrame:
     neuropil = np.asarray(d["neuropil_index_per_roi"], int)  # 1-based, 0 = none
     labels = list(d["neuropil_full_names"])
     fly = np.asarray(d["fly_index_per_roi"], int)
+    expected = [
+        row["label"] for row in sorted(doc["neuropils"], key=lambda r: r["index"])
+    ]
+    if labels != expected:
+        raise SongError("neuropil_full_names are not the lock's labels in index order")
+    if neuropil.min() < 0 or neuropil.max() > len(labels):
+        raise SongError("neuropil_index_per_roi is not 1-based with 0 for none")
+    if names[:2] != ["Pulse", "Sine"] or set(np.unique(stim_idx)) - {0, 1, 2, 3}:
+        raise SongError("the stimulus index is not 1-based into Pulse, Sine, ...")
     mags = {}
     for stim in ("Pulse", "Sine"):
         k = names.index(stim) + 1
@@ -525,6 +552,13 @@ def data_targets(path: Path, doc: dict) -> pd.DataFrame:
             on[0] - rule["block_before"] + rule["block_len"],
         )
         t = t_all[block]
+        if not (
+            np.isclose(t[0], -10.0)
+            and np.isclose(t[-1], 20.0)
+            and np.allclose(np.diff(t), 0.5)
+            and np.array_equal(stim_idx[block] == k, (t >= 0) & (t <= 10))
+        ):
+            raise SongError(f"the {stim} block is not -10 to 20 s, stimulus 0 to 10 s")
         mags[stim] = magnitude(signal[:, block], t, rule)
     roi_index = index(mags["Pulse"], mags["Sine"])
     df = pd.DataFrame({"fly": fly, "neuropil": neuropil, "index": roi_index})[
@@ -566,18 +600,23 @@ def balanced_accuracy(pred: np.ndarray, truth: np.ndarray) -> float:
 def judge(
     cells: pd.DataFrame, labels: list[str], targets: pd.DataFrame, doc: dict
 ) -> dict:
+    """Every comparator under one rule: the sign of its seed-median index on every scorable
+    neuropil with a data sign; a silent neuropil (sign 0) counts as wrong for all alike."""
     g = doc["grid"]
     s = doc["score"]
     rate = g["decision_rate_hz"]
-    real = model_signs(model_indices(cells, labels, "real", rate))
     t = targets[targets["label"].isin(labels) & (targets["sign"] != 0)]
-    scored = t.merge(real[real["resolved"]], on="label", suffixes=("_data", "_model"))
-    out = {"scored": len(scored), "labels": scored["label"].tolist()}
-    truth = scored["sign_data"].to_numpy()
+    scored = list(t["label"])
+    truth = t["sign"].to_numpy()
+    out = {"scored": len(scored), "labels": scored}
     if len(scored) < s["min_scored"] or len(set(truth)) < 2:
         out["verdict"] = "uninformative: too few scored neuropils or one data class"
         return out
-    pred = scored["sign_model"].to_numpy()
+
+    def predict(signs: pd.DataFrame) -> np.ndarray:
+        return signs.set_index("label").reindex(scored)["sign"].fillna(0).to_numpy()
+
+    pred = predict(model_signs(model_indices(cells, labels, "real", rate)))
     acc = balanced_accuracy(pred, truth)
     rng = np.random.default_rng(s["permutation_seed"])
     perm = np.array(
@@ -587,46 +626,39 @@ def judge(
         ]
     )
     p_perm = (1 + int(np.sum(perm >= acc - 1e-12))) / (1 + s["permutations"])
-    shuf = []
-    for k in sorted(cells.loc[cells.family == "shuffle", "shuffle"].unique()):
-        sg = model_signs(
-            model_indices(cells, labels, "shuffle", rate, shuffle=k)
-        ).set_index("label")
-        shuf.append(
+    shuf = np.array(
+        [
             balanced_accuracy(
-                sg.reindex(scored["label"])["sign"].fillna(0).to_numpy(), truth
+                predict(
+                    model_signs(
+                        model_indices(cells, labels, "shuffle", rate, shuffle=k)
+                    )
+                ),
+                truth,
             )
-        )
-    shuf = np.asarray(shuf)
+            for k in sorted(cells.loc[cells.family == "shuffle", "shuffle"].unique())
+        ]
+    )
     p_shuf = (1 + int(np.sum(shuf >= acc - 1e-12))) / (1 + len(shuf))
-    acc_aper = balanced_accuracy(_aperiodic_pred(cells, labels, rate, scored), truth)
+    aper = balanced_accuracy(
+        predict(
+            model_signs(model_indices(cells, labels, "real", rate, pulse="aperiodic"))
+        ),
+        truth,
+    )
     out.update(
         balanced_accuracy=acc,
         p_permutation=p_perm,
         p_shuffle=p_shuf,
         shuffle_accuracies=shuf.tolist(),
-        aperiodic_accuracy=acc_aper,
+        aperiodic_accuracy=aper,
     )
     alpha = s["alpha"]
-    if p_perm <= alpha and p_shuf <= alpha and acc > acc_aper:
-        out["verdict"] = "pass"
-    elif p_perm <= alpha and p_shuf <= alpha:
-        out["verdict"] = "pass_burst_only"
+    if p_perm <= alpha and p_shuf <= alpha:
+        out["verdict"] = "pass" if acc > aper else "pass_burst_only"
     else:
         out["verdict"] = "fail"
     return out
-
-
-def _aperiodic_pred(cells, labels, rate, scored) -> np.ndarray:
-    """Signs of the aperiodic train against sine: a model with pulses but no period."""
-    c = cells[(cells.family == "real") & (cells.rate_hz == rate)]
-    out = []
-    for seed, g in c.groupby("seed"):
-        by = {row.kind: np.asarray(row.activity, float) for row in g.itertuples()}
-        for lab, d in zip(labels, index(by["aperiodic"], by["sine"]), strict=True):
-            out.append({"seed": seed, "label": lab, "index": d})
-    sg = model_signs(pd.DataFrame(out)).set_index("label")
-    return sg.reindex(scored["label"])["sign"].fillna(0).to_numpy()
 
 
 def reported(
@@ -649,13 +681,11 @@ def reported(
             model_signs(model_indices(cells, labels, "real", rate))
         )
     rate = doc["grid"]["decision_rate_hz"]
-    c = cells[(cells.family == "real") & (cells.rate_hz == rate)]
-    rows = []
-    for seed, g in c.groupby("seed"):
-        by = {row.kind: np.asarray(row.activity, float) for row in g.itertuples()}
-        for lab, d in zip(labels, index(by["pulse_w"], by["sine_w"]), strict=True):
-            rows.append({"seed": seed, "label": lab, "index": d})
-    out["secondary_accuracy"] = acc(model_signs(pd.DataFrame(rows)))
+    out["secondary_accuracy"] = acc(
+        model_signs(
+            model_indices(cells, labels, "real", rate, other="sine_w", pulse="pulse_w")
+        )
+    )
     period = model_signs(model_indices(cells, labels, "real", rate, other="aperiodic"))
     out["pulse_vs_aperiodic_resolved"] = int(period["resolved"].sum())
     real = cells[(cells.family == "real") & cells.kind.isin(KINDS)]
@@ -663,4 +693,26 @@ def reported(
         lambda x: int(x.max() - x.min())
     )
     out["jo_spike_spread_max"] = int(spread.max())
+    n = int(doc["drive"]["neurons"])
+    train_s = doc["stimulus"]["train_ms"] / 1000.0
+    kicks = real[real.kind == "sine"].groupby("rate_hz")["jo_kicks"].median()
+    out["delivered_rate_hz"] = {
+        f"{r:g}": float(k / n / train_s) for r, k in kicks.items()
+    }
+    return out
+
+
+def evaluate(cells: pd.DataFrame, labels: list[str], data_dir: Path, doc: dict) -> dict:
+    """The no-go on the model alone; only if it passes is the data file opened and scored."""
+    rate = doc["grid"]["decision_rate_hz"]
+    signs = model_signs(model_indices(cells, labels, "real", rate))
+    informative, note = no_go(signs, doc)
+    out = {"model": signs, "no_go": note, "verdict": "uninformative: no-go"}
+    if not informative:
+        return out
+    path = data_dir / "raw" / "pacheco2021" / PACHECO
+    targets = data_targets(check_input(path, doc["inputs"]["pacheco_sha256"]), doc)
+    out.update(judge(cells, labels, targets, doc))
+    out["targets"] = targets
+    out["reported"] = reported(cells, labels, targets, doc)
     return out

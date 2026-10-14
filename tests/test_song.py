@@ -10,6 +10,8 @@ from scipy import io
 from flymsg import evidence, sim, song
 
 DOC = song.assert_matches_code()
+LABELS = [r["label"] for r in sorted(DOC["neuropils"], key=lambda r: r["index"])]
+AVLP, LH = LABELS.index("AVLP") + 1, LABELS.index("LH") + 1
 
 
 def short(train_ms=360.0):
@@ -37,6 +39,7 @@ def test_envelopes_keep_pulses_and_drop_the_period():
     assert aper.sum() == pulse.sum()  # same pulses, same time on
     onsets = np.flatnonzero(np.diff(np.r_[0, aper.astype(int)]) == 1)
     assert len(onsets) == 278 and len(set(np.diff(onsets))) > 10  # no fixed period
+    assert np.diff(onsets).min() >= 160 + 44  # pulses stay two refractory periods apart
     assert song.envelope("sine", steps, p.dt, DOC, rng).all()
 
 
@@ -105,10 +108,21 @@ def test_index_and_seed_resolution():
     )
     s = song.model_signs(idx).set_index("label")
     assert s.loc["a", "resolved"] and s.loc["a", "sign"] == 1
-    assert not s.loc["b", "resolved"] and s.loc["b", "sign"] == 0
-    assert not s.loc["c", "resolved"]
+    # b: seed median 0.1 predicts pulse, but the seeds disagree: not resolved
+    assert not s.loc["b", "resolved"] and s.loc["b", "sign"] == 1
+    assert not s.loc["c", "resolved"] and s.loc["c", "sign"] == 0
     ok, _ = song.no_go(s.reset_index(), DOC)
     assert not ok  # 1 of 3 below one half
+    one_sided = pd.DataFrame(
+        {
+            "label": list("abcd"),
+            "sign": [1, 1, 1, -1],
+            "resolved": [True, True, True, False],
+        }
+    )
+    assert not song.no_go(one_sided, DOC)[0]  # resolved ones all pulse-preferring
+    both = one_sided.assign(resolved=True)
+    assert song.no_go(both, DOC)[0]
 
 
 def test_magnitude_is_the_papers_rule():
@@ -121,8 +135,8 @@ def test_magnitude_is_the_papers_rule():
     assert np.allclose(m, [2.0, 2.0])
 
 
-def fake_dataset(path, pulse, sine, fly, neuropil, sex):
-    t = np.tile(np.arange(-10, 20.5, 0.5), 3)
+def fake_dataset(path, pulse, sine, fly, neuropil, sex, names=None, step=0.5):
+    t = np.tile(np.arange(-10, 20 + step / 2, step)[:61], 3)
     stim = np.zeros(t.size, np.uint8)
     for k in range(3):
         stim[61 * k + 20 : 61 * k + 41] = k + 1
@@ -133,9 +147,7 @@ def fake_dataset(path, pulse, sine, fly, neuropil, sex):
         block = np.zeros(t.size, bool)
         block[61 * k : 61 * (k + 1)] = True
         sig[:, block & on] = np.asarray(amp)[:, None]
-    names = np.array(
-        ["AMMC", "AVLP", "LH"] + [f"X{i}" for i in range(38)], dtype=object
-    )
+    names = np.array(names or LABELS, dtype=object)
     io.savemat(
         path,
         {
@@ -161,7 +173,7 @@ def test_data_targets_by_fly_with_sex_and_fly_floor(tmp_path):
     # AVLP (index 2): 4 male flies, 3 prefer pulse -> share 3/4 >= 2/3 -> +1
     # LH (index 3): 3 male flies only -> no sign; female ROIs and index 0 ignored
     fly = [1, 2, 3, 4, 1, 2, 3, 5, 6]
-    neuropil = [2, 2, 2, 2, 3, 3, 3, 2, 0]
+    neuropil = [AVLP] * 4 + [LH] * 3 + [AVLP, 0]
     sex = [2, 2, 2, 2, 2, 2, 2, 1, 2]
     pulse = [3, 3, 3, 1, 3, 1, 3, 1, 3]
     sine = [1, 1, 1, 3, 1, 3, 1, 3, 1]
@@ -169,7 +181,19 @@ def test_data_targets_by_fly_with_sex_and_fly_floor(tmp_path):
     t = song.data_targets(path, DOC).set_index("label")
     assert t.loc["AVLP", "flies"] == 4 and t.loc["AVLP", "sign"] == 1
     assert t.loc["LH", "flies"] == 3 and t.loc["LH", "sign"] == 0
-    assert "X0" not in t.index
+    assert set(t.index) == {"AVLP", "LH"}
+
+
+def test_data_layout_is_checked_before_scoring(tmp_path):
+    args = ([3], [1], [1], [AVLP], [2])
+    path = tmp_path / "names.mat"
+    fake_dataset(path, *args, names=list(reversed(LABELS)))
+    with pytest.raises(song.SongError, match="neuropil_full_names"):
+        song.data_targets(path, DOC)
+    path = tmp_path / "time.mat"
+    fake_dataset(path, *args, step=0.25)
+    with pytest.raises(song.SongError, match="block"):
+        song.data_targets(path, DOC)
 
 
 def test_balanced_accuracy():
@@ -179,35 +203,76 @@ def test_balanced_accuracy():
     assert song.balanced_accuracy(np.array([0, 0, 0, 0]), truth) == 0.0
 
 
-def cells_for(labels, pulse_sign, seeds=(0, 1), shuffles=3):
-    """Synthetic cells: the real network's pulse/sine sign per label is `pulse_sign`;
-    shuffles and the aperiodic train predict nothing (all ties)."""
+def cells_for(labels, pulse_sign, aperiodic_sign=None, shuffle_signs=(), seeds=(0, 1)):
+    """Synthetic cells: per label the real network's pulse/sine sign, the aperiodic
+    train's sign against sine (default: silent ties), and one sign list per shuffle."""
     base = np.ones(len(labels))
-    pulse = base * (1 + 0.5 * np.asarray(pulse_sign))
+
+    def act(sign):
+        return list(base * (1 + 0.5 * np.asarray(sign)))
+
+    aper = aperiodic_sign if aperiodic_sign is not None else [0] * len(labels)
     rows = []
     for s in seeds:
-        for kind, act in (("pulse", pulse), ("sine", base), ("aperiodic", base)):
-            rows.append(("real", -1, s, kind, list(act)))
-        for k in range(shuffles):
-            rows += [("shuffle", k, s, kind, list(base)) for kind in ("pulse", "sine")]
+        for kind, a in (
+            ("pulse", act(pulse_sign)),
+            ("sine", list(base)),
+            ("aperiodic", act(aper)),
+        ):
+            rows.append(("real", -1, s, kind, a))
+        for k, sh in enumerate(shuffle_signs):
+            rows += [
+                ("shuffle", k, s, "pulse", act(sh)),
+                ("shuffle", k, s, "sine", list(base)),
+            ]
     cols = ["family", "shuffle", "seed", "kind", "activity"]
     return pd.DataFrame(rows, columns=cols).assign(rate_hz=100.0)
 
 
-def test_judge_verdicts():
-    labels = [f"N{i}" for i in range(10)]
-    signs = [1, 1, 1, 1, 1, -1, -1, -1, -1, -1]
-    targets = pd.DataFrame({"label": labels, "sign": signs})
+LAB = [f"N{i}" for i in range(10)]
+SIGNS = [1, 1, 1, 1, 1, -1, -1, -1, -1, -1]
+TARGETS = pd.DataFrame({"label": LAB, "sign": SIGNS})
+
+
+def judged(**kw):
     d = copy.deepcopy(DOC)
     d["score"]["permutations"] = 999
-    perfect = song.judge(cells_for(labels, signs, shuffles=20), labels, targets, d)
+    return song.judge(cells_for(LAB, SIGNS, **kw), LAB, TARGETS, d)
+
+
+def test_judge_scores_every_comparator_by_one_rule():
+    rng = np.random.default_rng(1)
+    random = [list(rng.choice([-1, 1], 10)) for _ in range(99)]
+    perfect = judged(shuffle_signs=random)
     assert perfect["balanced_accuracy"] == 1.0 and perfect["verdict"] == "pass"
-    few = song.judge(cells_for(labels[:5], signs[:5]), labels[:5], targets[:5], d)
-    assert few["verdict"].startswith("uninformative")
+    # shuffles that resolve and are right as often as the real model: no pass
+    assert judged(shuffle_signs=[SIGNS] * 99)["verdict"] == "fail"
+    # pulses without a period predict as well: the period adds nothing
+    burst = judged(aperiodic_sign=SIGNS, shuffle_signs=random)
+    assert burst["verdict"] == "pass_burst_only"
     wrong = song.judge(
-        cells_for(labels, [-s for s in signs], shuffles=20), labels, targets, d
+        cells_for(LAB, [-x for x in SIGNS], shuffle_signs=random), LAB, TARGETS, DOC
     )
     assert wrong["verdict"] == "fail"
+    few = song.judge(cells_for(LAB[:5], SIGNS[:5]), LAB[:5], TARGETS[:5], DOC)
+    assert few["verdict"].startswith("uninformative")
+
+
+def test_no_go_never_opens_the_data(monkeypatch, tmp_path):
+    opened = []
+    monkeypatch.setattr(song, "check_input", lambda p, e: opened.append(p))
+    silent = cells_for(LAB, [0] * 10)
+    out = song.evaluate(silent, LAB, tmp_path, DOC)
+    assert out["verdict"] == "uninformative: no-go" and not opened
+    with pytest.raises(TypeError):  # passes the no-go, then reaches the data file
+        song.evaluate(cells_for(LAB, SIGNS), LAB, tmp_path, DOC)
+    assert opened
+
+
+def test_weighted_kicks_refuse_bad_ratios():
+    k = {"pulse": np.ones((10, 2), np.int8), "sine": np.ones((10, 2), np.int8)}
+    with pytest.raises(song.SongError):
+        song.weighted_kicks(k, np.array(["A", "B"]), {"pulse": 0.0, "sine": 1.0}, 0)
 
 
 def test_peak_follows_their_pipeline():

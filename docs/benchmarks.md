@@ -104,26 +104,29 @@ before any response value of the data was read.
 - **Input, temporal only.** Johnston's organ JO-A, JO-B and JO-D on both sides (146 neurons)
   get the same input in three conditions that differ only in time: pulse (16 ms on, 20 ms off,
   10 s, the paper's stimulus), sine (constant) and an aperiodic train (the same pulses at random
-  onsets). Kicks pass one refractory period of dead time and are subsampled per neuron to the
-  same count in every condition, so each JO neuron fires the same number of spikes. The
+  places, at least two refractory periods apart). Kicks pass one refractory period of dead time
+  and are subsampled per neuron to the same count in every condition, so each JO neuron gets the
+  same number of kicks (its spikes are reported). The
   mapping "JO-A ≈ pulse, JO-B ≈ sine" is not supported by its sources (Kamikouchi et al. 2009,
   Matsuo et al. 2014, Ohashi et al. 2023), and the model has no carrier frequency, so the claim
   is the envelope-driven part of selectivity only; white noise is not scored.
 - **Model readout.** Per neuropil, spike counts over the 12 s window (train and 2 s after, the
   paper's) weighted by each neuron's synaptic connections there (MaleCNS `primary_post`, left
   and right pooled); the driven JO neurons are left out. Index (pulse − sine)/(pulse + sine)
-  per seed; a neuropil is resolved when all five seeds agree. Rates 50, 100 and 200 Hz; the
-  verdict at 100 Hz.
+  per seed; the prediction is the sign of the seed median. Rates 50, 100 and 200 Hz (nominal;
+  the delivered rate is reported); the verdict at 100 Hz.
 - **Data target.** The paper's response magnitude per male ROI (baseline −4 to −0.5 s,
   80th or 20th percentile of the baseline-subtracted signal from onset to 2 s after offset),
   the same index, the median per fly, and a sign per neuropil when at least four flies and two
   thirds of them agree. AMMC, SAD, WED and GNG are excluded (receptor-near), as are the five
   tracts without a MaleCNS region.
 - **Bar.** Balanced accuracy (a constant prediction scores 0.5) against a permutation of the
-  model's signs and against 20 degree-preserving shuffled connectomes, p ≤ 0.05 each; `pass`
-  also needs the periodic train to beat the aperiodic one, otherwise `pass_burst_only`.
-- **No-go, model only.** If fewer than half of the scorable neuropils resolve a sign, the run
-  stops before the data file is opened and is recorded as uninformative.
+  model's signs and against 99 degree-preserving shuffled connectomes, p ≤ 0.05 each; `pass`
+  also needs the periodic train to beat the aperiodic one, otherwise `pass_burst_only`. The real
+  model, every shuffle and the aperiodic train are scored on the same neuropils by the same rule.
+- **No-go, model only.** If fewer than half of the scorable neuropils resolve a sign (every seed
+  agreeing), or the resolved ones all prefer the same song, the run stops before the data file
+  is opened and is recorded as uninformative.
 - **Secondary, reported.** JO-A and JO-B weighted by their measured response ratio (Yamakoshi
   et al. 2025, doi:10.1016/j.isci.2025.113232, data 10.17632/29hpr3nrrv): females, a pan-JO
   driver with two ROIs, a 167 Hz carrier and a 100 Hz tone for the sine.
