@@ -7,9 +7,13 @@ export function xrRequested(search) {
 
 export function xrScaleForExtent(extentUm, displayWidthM = 1.2) {
   if (!Number.isFinite(extentUm) || extentUm <= 0)
-    throw new RangeError("XR requires a finite, positive scene extent in micrometres");
+    throw new RangeError(
+      "XR requires a finite, positive scene extent in micrometres",
+    );
   if (!Number.isFinite(displayWidthM) || displayWidthM <= 0)
-    throw new RangeError("XR requires a finite, positive display width in metres");
+    throw new RangeError(
+      "XR requires a finite, positive display width in metres",
+    );
   return displayWidthM / extentUm;
 }
 
@@ -19,7 +23,9 @@ export function xrScaleForExtent(extentUm, displayWidthM = 1.2) {
  *
  * The scene origin is the centre of the exported anatomy (in micrometres).
  * During XR only, the root is displayed ~1.2 m wide, 2 m in front of the
- * viewer's initial `local` reference space origin. It is restored on session end.
+ * viewer's initial `local` reference space origin. On session end the root, the
+ * desktop camera (three.js writes the headset pose and field of view into it) and
+ * the orbit controls are restored to their state when the session started.
  *
  * The caller must render with renderer.render(world, camera) when presenting,
  * not the desktop-only postprocessing composer.
@@ -35,7 +41,8 @@ export async function installXrObserver({
   xrSystem = navigator.xr,
   onTransition = () => {},
 }) {
-  if (!xrRequested(search)) return { available: false, reason: "not-requested" };
+  if (!xrRequested(search))
+    return { available: false, reason: "not-requested" };
 
   const container = documentRef.createElement("aside");
   container.id = "xr-observer";
@@ -55,8 +62,11 @@ export async function installXrObserver({
     button.hidden = true;
     return { available: false, reason };
   };
-  if (!xrSystem || typeof xrSystem.isSessionSupported !== "function" ||
-      typeof xrSystem.requestSession !== "function")
+  if (
+    !xrSystem ||
+    typeof xrSystem.isSessionSupported !== "function" ||
+    typeof xrSystem.requestSession !== "function"
+  )
     return unavailable("Immersive VR is not available in this browser.");
 
   let supported;
@@ -65,23 +75,30 @@ export async function installXrObserver({
   } catch {
     return unavailable("Cannot check immersive VR support in this browser.");
   }
-  if (!supported) return unavailable("Immersive VR is unsupported on this device.");
+  if (!supported)
+    return unavailable("Immersive VR is unsupported on this device.");
 
   const scale = xrScaleForExtent(extentUm);
   renderer.xr.enabled = true;
   renderer.xr.setReferenceSpaceType("local");
 
-  const original = {
-    position: root.position.clone(),
-    scale: root.scale.clone(),
-    near: camera.near,
-    far: camera.far,
-    controlsEnabled: controls.enabled,
-  };
+  let original = null;
   let presenting = false;
   const enter = () => {
     if (presenting) return;
     presenting = true;
+    original = {
+      position: root.position.clone(),
+      scale: root.scale.clone(),
+      cameraPosition: camera.position.clone(),
+      cameraQuaternion: camera.quaternion.clone(),
+      fov: camera.fov,
+      zoom: camera.zoom,
+      near: camera.near,
+      far: camera.far,
+      target: controls.target.clone(),
+      controlsEnabled: controls.enabled,
+    };
     root.position.set(0, 0, -2);
     root.scale.setScalar(scale);
     controls.enabled = false;
@@ -89,7 +106,8 @@ export async function installXrObserver({
     camera.far = 20;
     camera.updateProjectionMatrix();
     button.textContent = "Exit VR";
-    status.textContent = "Immersive replay observer · no live neural simulation";
+    status.textContent =
+      "Immersive replay observer · no live neural simulation";
     onTransition();
   };
   const exit = () => {
@@ -97,10 +115,16 @@ export async function installXrObserver({
     presenting = false;
     root.position.copy(original.position);
     root.scale.copy(original.scale);
-    controls.enabled = original.controlsEnabled;
+    camera.position.copy(original.cameraPosition);
+    camera.quaternion.copy(original.cameraQuaternion);
+    camera.fov = original.fov;
+    camera.zoom = original.zoom;
     camera.near = original.near;
     camera.far = original.far;
     camera.updateProjectionMatrix();
+    controls.target.copy(original.target);
+    controls.enabled = original.controlsEnabled;
+    controls.update();
     button.textContent = "Enter VR";
     status.textContent = "Immersive observation available";
     onTransition();
@@ -118,7 +142,8 @@ export async function installXrObserver({
       if (current) {
         await current.end();
       } else {
-        // Must be called directly from this user gesture, before any await.
+        // requestSession needs the click's user activation: it is the first await on
+        // this path
         const session = await xrSystem.requestSession("immersive-vr");
         try {
           await renderer.xr.setSession(session);
@@ -128,7 +153,8 @@ export async function installXrObserver({
         }
       }
     } catch {
-      status.textContent = "VR session failed; the desktop viewer is unchanged.";
+      status.textContent =
+        "VR session failed; the desktop viewer is unchanged.";
     } finally {
       button.disabled = false;
     }
