@@ -142,6 +142,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--checkpoint", type=Path)
     s = sub.add_parser(
+        "gf-looming",
+        help="print the locked looming -> giant fiber timing benchmark (Dombrovski et al. 2025), or run it with --run (#34)",
+    )
+    s.add_argument("--run", action="store_true")
+    s.add_argument("--workers", type=int, default=1)
+    s.add_argument("--checkpoint", type=Path)
+    s = sub.add_parser(
         "trace",
         help="record v, g, threshold, spikes and input of chosen neurons (exploratory)",
     )

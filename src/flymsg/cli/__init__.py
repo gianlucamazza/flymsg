@@ -13,6 +13,7 @@ from flymsg import (
     data,
     dimorphism,
     draws,
+    gf_looming,
     intervention,
     jump3d_lock,
     kc_sparseness,
@@ -62,6 +63,7 @@ from flymsg.cli.simulate import cmd_calibrate, cmd_sim, cmd_trace, cmd_viz, summ
 from flymsg.cli.validation import (
     cmd_benchmarks,
     cmd_convergence,
+    cmd_gf_looming,
     cmd_nulls,
     cmd_select_model,
     cmd_sensitivity,
@@ -113,6 +115,7 @@ COMMANDS = {
     "sensitivity": cmd_sensitivity,
     "convergence": cmd_convergence,
     "song": cmd_song,
+    "gf-looming": cmd_gf_looming,
     "experiment": cmd_experiment,
     "explore": cmd_explore,
     "confirm": cmd_confirm,
@@ -146,6 +149,7 @@ MALECNS_ONLY = (
     "sensitivity",
     "convergence",
     "song",
+    "gf-looming",
     "experiment",
     "explore",
     "confirm",
@@ -181,6 +185,8 @@ def main() -> None:
             return print(convergence.summary())
         if a.cmd == "song" and not a.run:
             return print(song.summary())
+        if a.cmd == "gf-looming" and not a.run:
+            return print(gf_looming.summary())
         if a.cmd == "viz-compare":  # reads two exports; loads no dataset
             scene = viz.compare_bundles(
                 a.a, a.b, a.out, tuple(a.labels), tuple(a.status), tuple(a.notes)
@@ -241,6 +247,8 @@ def main() -> None:
     except convergence.ConvergenceError as err:
         sys.exit(f"flymsg: {err}")
     except song.SongError as err:
+        sys.exit(f"flymsg: {err}")
+    except gf_looming.LoomingError as err:
         sys.exit(f"flymsg: {err}")
     except silence_scan.ScanError as err:
         sys.exit(f"flymsg: {err}")

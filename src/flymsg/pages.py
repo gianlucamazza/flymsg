@@ -46,6 +46,7 @@ EXTERNAL = {
     "../validation/t4t5.yaml": f"{BLOB}/validation/t4t5.yaml",
     "../validation/jump3d.yaml": f"{BLOB}/validation/jump3d.yaml",
     "../validation/song.yaml": f"{BLOB}/validation/song.yaml",
+    "../validation/gf_looming.yaml": f"{BLOB}/validation/gf_looming.yaml",
 }
 
 # (output stem, source path, nav label). Order is the site nav.

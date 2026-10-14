@@ -15,6 +15,17 @@
   - Secondary weighting by Yamakoshi et al. 2025's JO-A/JO-B ratio, reported only.
   - Four evidence records. Locked before any response value was read. No run.
 
+- **Looming → giant fiber timing lock** (#34, G3): `validation/gf_looming.yaml` v1,
+  `flymsg gf-looming [--run]`.
+  - LC4 driven by the disc's angular velocity and LPLC2 by its size (engineered forms, gains
+    scanned on a 4 × 4 grid). The model's DNp01 peak time before collision is fitted as
+    α · r/v − δ, against the same fit of Dombrovski et al. 2025's giant-fiber recordings
+    (Zenodo, CC BY 4.0) at r/v 10–80 ms.
+  - Timing only, never amplitude; only cells where both model giant fibers stay graded are
+    scored, and a fly interval overlapping the slopes of stimulus followers makes the run uninformative. A
+    model-only no-go runs first. Two evidence records. Locked before the files are downloaded,
+    except what an agent had opened during the search (recorded). No run.
+
 ### Engineering
 
 - **B6 v2 pose contract** (G1, #178): `flymsg.pose` (`flymsg.embodiment/v2`) types world,
