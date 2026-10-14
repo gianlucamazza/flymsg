@@ -338,3 +338,60 @@ records:
       code: "flymsg.song.yamakoshi_ratios"
       inputs_sha256: "aafe9a31c3744a46cf8c0aba29818aaa65c2a16105c9f02cf3e173af9c1a5dbe"
     used_by: [validation/song.yaml]
+
+  - id: dombrovski_gf_looming
+    quantity: "giant fiber (DNp01) membrane potential in whole-cell current clamp during looming discs at four r/v, two trials per fly"
+    value: "the deposited files: per fly and trial one 4 s trace per r/v (10, 20, 40, 80 ms) at 20 kHz, stimulus at 2 s; 10 control flies (DIP-epsilon null controls 18-22, RNAi controls 06-10) and 12 mutant flies"
+    unit: "mV"
+    status: measured
+    method: "in vivo whole-cell current clamp of the giant fiber in tethered flies, as in Jang et al. 2023 (Methods: 'as previously described'); trial means per animal; Extended Data Fig. 8"
+    uncertainty: "per fly, two trials; between flies, the spread of 5 + 5 control animals"
+    source:
+      citation: "Dombrovski, Zang, Frighetto et al. 2025, Nature 644:453; data: Zenodo record 14983850"
+      doi: "10.1038/s41586-025-09037-4"
+      license: "CC BY 4.0 (data and article)"
+      locator: "Methods, electrophysiology; Extended Data Fig. 8; Data availability (Zenodo 10.5281/zenodo.14983850)"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: unknown
+      stage: adult
+    cell:
+      type: "giant fiber (DNp01)"
+      maps_to: "MaleCNS DNp01(GF)_R and DNp01(GF)_L"
+      mapping_uncertainty: "the recorded side is not stated; the controls are genotype controls of DIP-epsilon experiments, not wild type"
+    transfer_limits: "timing only is used: the peak time relative to the virtual collision per r/v; amplitudes are not compared with the LIF's millivolts"
+    transformation:
+      code: "flymsg.gf_looming.data_fits"
+      inputs_sha256: "none yet: the files are downloaded after the lock; their md5 sums from the Zenodo record are in validation/gf_looming.yaml"
+    used_by: [validation/gf_looming.yaml]
+
+  - id: jang_looming_protocol
+    quantity: "looming protocol of the giant-fiber recordings: disc start and end size, r/v, hold, display"
+    value:
+      start_deg: 10.0
+      end_deg: 63.0
+      hold_s: 1.0
+      rv_ms: [10.0, 20.0, 40.0, 80.0]
+      display_hz: 240.0
+    unit: "deg (full angular size), s, ms, Hz"
+    status: inferred
+    method: "stated by Jang et al. 2023 for their recordings ('starting at 10 deg and expanding to 63 deg in angular size and held for 1 s', r/v = 10, 20, 40, 80 ms, black disc on white, 240 Hz); Dombrovski et al. 2025 record 'as previously described' citing it and do not restate the sizes, so their use for the 2025 traces is inferred"
+    uncertainty: "the 2025 disc sizes and positions are not stated; the deposited traces carry no stimulus channel"
+    source:
+      citation: "Jang, Goodman, Ausborn & von Reyn 2023, J Exp Biol 226:jeb244790 (PMC10263144)"
+      doi: "10.1242/jeb.244790"
+      license: unknown
+      locator: "Materials and methods, visual stimulation and electrophysiology"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: female
+      stage: "adult, 2-5 days"
+    cell:
+      type: "giant fiber (DNp01)"
+      maps_to: "the stimulus geometry of validation/gf_looming.yaml"
+      mapping_uncertainty: "inferred protocol for the 2025 recordings"
+    transfer_limits: "only the geometry (10 to 63 degrees, r/v) enters the model; display, luminance and azimuth do not"
+    transformation:
+      code: "flymsg.gf_looming.expansion"
+      inputs_sha256: "none: transcribed from the published methods (doi and locator); no file archived"
+    used_by: [validation/gf_looming.yaml]

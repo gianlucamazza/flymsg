@@ -132,8 +132,8 @@ fiber's membrane potential to looming at four r/v values.
 | Dombrovski et al. 2025 (as above)                                                                               | LPLC2 GCaMP7f imaging to looming (ΔF/F)                                                                                                                                                                                                                                                                                                                                              | OSF 10.17605/OSF.IO/Z7XFK, CC BY 4.0, 36 MB                                  | text (agent)                 |
 | Klapoetke et al. 2017, 2022 (_Neuron_, doi:10.1016/j.neuron.2022.02.013); Turner et al. 2022, _eLife_ 11:e82587 | LPLC2 and LC4 calcium imaging to looming (ΔF/F only). Turner's set covers both glomeruli                                                                                                                                                                                                                                                                                             | Klapoetke on request; Turner Dryad 10.5061/dryad.h44j0zpp8, CC0, 53 GB       | text (agent)                 |
 
-Next: an M2 transducer can now be scored without a data request on the stage that ends at the
-giant fiber: an input shaped as Ache et al. 2019 drives the model's DNp01, judged against the
+Next (locked 2026-10-15 as `validation/gf_looming.yaml` v1, timing only): an M2 transducer can
+now be scored without a data request on the stage that ends at the giant fiber: an input shaped as Ache et al. 2019 drives the model's DNp01, judged against the
 deposited r/v series with a held-out set fixed in the lock. That calibrates gains against the
 giant fiber; it is not a measured LC4 or LPLC2 rate and must be named so.
 

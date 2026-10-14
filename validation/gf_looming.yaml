@@ -1,0 +1,120 @@
+# Looming -> giant fiber timing (issue 34, gate G3). Version 1, fixed 2026-10-15 before any run.
+# Changing a locked field requires incrementing `version` and updating `content_sha256` and
+# flymsg.gf_looming.VERSION_HASHES. `flymsg gf-looming` prints this file; `--run` executes it.
+version: 1
+content_sha256: 439b00d2360727596bd42e2d18b48c7f053c46f2e35fc101c3d49ef3a2024104
+yaml_subset: 2
+evidence: [dombrovski_gf_looming, jang_looming_protocol]
+
+issue: 34
+claim:
+  kind: held_out_benchmark
+  scored: true
+  what: "How long before a looming disc's virtual collision the giant fiber (DNp01) peaks, as a function of r/v: by a threshold-angle model the time is alpha * r/v - delta, and alpha = 1 / tan(theta_thr / 2) fixes the angular size the response follows. Predicted by the connectome with LC4 and LPLC2 driven by engineered transducers, against the giant fiber's whole-cell recordings (Dombrovski et al. 2025)."
+  scope: "Timing only. No amplitude is scored: the LIF's millivolts are not the recorded ones, and the transducer gains are not measured, so they are scanned as an envelope and never chosen."
+  held_out: "The recordings were never used to build, calibrate or tune flymsg; the files are downloaded after this lock is merged and opened only after the model has run and passed its no-go."
+
+seen_before_lock: "During the 2026-10-14 literature search an agent opened one control file (DipE_Null_cont_fly22_trial01.mat: 80000 x 4, resting about -73 to -76, peak minus baseline 4.7 to 7.1 over the four r/v, units assumed mV) and noted that its peak timing is consistent with a 10 to 63 degree disc (no peak time was recorded); it also opened the deposited xlsx (r/v column order, 20 kHz, stimulus at 2 s, per-fly values behind Fig. 3 and Extended Data Fig. 8) and the structure of the Fig. 1 file. No other file was opened. The scored quantity is the slope of peak time over r/v across ten flies; the amplitudes seen do not enter it."
+
+inputs:
+  zenodo_doi: "10.5281/zenodo.14983850"
+  directory: "data/raw/dombrovski2025"
+  sample_rate_hz: 20000
+  trace_s: 4.0
+  onset_s: 2.0
+  columns_rv_ms: [10.0, 20.0, 40.0, 80.0]
+  onset_source: "the deposited xlsx note (columns 1 to 4 are r/v 10, 20, 40, 80 ms; 20 kHz; stimulus at 2 s), read by an agent before the lock"
+  control_md5:
+    DipE_Null_cont_fly18_trial01.mat: "acb4579298c438c26dd9477b4b582ea8"
+    DipE_Null_cont_fly18_trial02.mat: "2942370beee69bc4011c294e439fdfd6"
+    DipE_Null_cont_fly19_trial01.mat: "f6c7dabf501a68d5292a14b676c13891"
+    DipE_Null_cont_fly19_trial02.mat: "df39da7de92038056360f5265114fd5b"
+    DipE_Null_cont_fly20_trial01.mat: "e1402dff9747b3d308db884025ad47eb"
+    DipE_Null_cont_fly20_trial02.mat: "5ced3b9482b3a677620ea94aa6416c8d"
+    DipE_Null_cont_fly21_trial01.mat: "675415d0ccb7df869d8f1b45529d86ea"
+    DipE_Null_cont_fly21_trial02.mat: "207054710bba8dc22a61c5e157ee15e0"
+    DipE_Null_cont_fly22_trial01.mat: "3c5c43222d8c41346168cbabc7a19445"
+    DipE_Null_cont_fly22_trial02.mat: "1e881da79d3d9b4995fdd9ad202f18d5"
+    DipE_RNAi_cont_fly06_trial01.mat: "be4073a6e9162a7fd5e6347d3258cc7d"
+    DipE_RNAi_cont_fly06_trial02.mat: "8b226953a9e7e18f7bae82150ebece5d"
+    DipE_RNAi_cont_fly07_trial01.mat: "0438669e2479c661fa9d7c453e14bcc0"
+    DipE_RNAi_cont_fly07_trial02.mat: "5c7e3220aa658ff94fe6f8595210537a"
+    DipE_RNAi_cont_fly08_trial01.mat: "d51c026ca6a512e227017f54d4e56ab2"
+    DipE_RNAi_cont_fly08_trial02.mat: "8d267723d8b8baf6ac8581a47abcbb2d"
+    DipE_RNAi_cont_fly09_trial01.mat: "1c8720ec43fdc0a81d27137f903bdb52"
+    DipE_RNAi_cont_fly09_trial02.mat: "b2a66c9c4e94a69b19e8a43c1e9cef98"
+    DipE_RNAi_cont_fly10_trial01.mat: "552eb576059841e0515424eb4a185e3b"
+    DipE_RNAi_cont_fly10_trial02.mat: "5444d56cfc6a784a25811e6f8c3da7ff"
+
+stimulus:
+  rv_ms: [10.0, 20.0, 40.0, 80.0]
+  start_deg: 10.0
+  end_deg: 63.0
+  size: "full angular size theta: tan(theta / 2) = (r/v) / t_to_collision (flymsg.eye.looming_radius_deg gives theta / 2); the disc expands from start_deg to end_deg and then holds; the virtual collision lies (r/v) / tan(end_deg / 2) after the end of the expansion"
+  source: "Jang et al. 2023 (10 to 63 degrees, then held for 1 s; r/v 10, 20, 40, 80 ms), the protocol Dombrovski et al. 2025 cite for these recordings; inferred for them"
+
+drive:
+  lc4_type: LC4
+  lc4_neurons: 126
+  lplc2_type: LPLC2
+  lplc2_neurons: 185
+  sides: both
+  sides_why: "the recorded side and the disc's azimuth in the 2025 runs are not stated"
+  lc4_rate: "g4 * dtheta/dt, dtheta/dt in rad/s"
+  lplc2_rate: "g2 * theta, theta in rad"
+  forms_why: "Ache et al. 2019 (abstract): the giant fiber follows 'a linear function of angular velocity (provided by LC4) and a Gaussian function of angular size (provided by LPLC2)'; the Gaussian's parameters were not read from the paper, so size enters linearly; neither is a measured LC4 or LPLC2 spike rate"
+  cap_rule: "every rate is capped at 1000 / sim.Params.t_ref Hz, the most one LIF neuron can fire"
+  g4_hz_per_rad_s: [0.0, 2.0, 5.0, 10.0]
+  g2_hz_per_rad: [0.0, 50.0, 100.0, 200.0]
+  grid_why: "engineered envelope: LC4 and LPLC2 spike rates to looming are not measured (docs/leads.md, G3). At r/v 10 ms dtheta/dt reaches about 55 rad/s at 63 degrees, so g4 spans no input to the cap; theta reaches 1.1 rad, so g2 spans no input to about 220 Hz. The cell with both gains 0 has no input and is left out: 15 cells."
+  kicks: "per neuron and neural step, Poisson counts at the rate of that step (as song.matched_kicks, without matching); one kick is about 48 mV"
+
+model:
+  pre_ms: 200.0
+  post_ms: 150.0
+  post_why: "the window ends 150 ms after the expansion stops (Dombrovski et al. 2025 score 150 ms after onset in their Fig. 1); a later peak is no longer driven by expansion"
+  seed0: 340
+  seeds: 5
+  readout: "the mean membrane potential of DNp01(GF)_R and DNp01(GF)_L at every neural step (CpuRuntime.read), a step where one fires counted at v_th for that neuron; baseline the mean over pre_ms; the peak is the first maximum in the window from onset to the end of the expansion plus post_ms"
+  responding: "a cell responds when, in every seed and r/v, the peak exceeds the baseline by at least sim.Params.w_syn (one synapse's jump at rest)"
+  fit: "per cell, y = collision time - peak time per seed and r/v; the median over seeds per r/v; ordinary least squares y = alpha * rv - delta over the four r/v"
+
+data_rule:
+  flies: control
+  min_flies: 8
+  min_flies_why: "eight of the ten control flies with both trials readable; with fewer the bootstrap interval rests on too few animals"
+  trace: "the one 2-D array of shape (80000, 4) in each file, columns in columns_rv_ms order; any other content refuses"
+  trial_mean: "per fly and r/v, the mean of its two trials"
+  baseline_s: 1.0
+  baseline_source: "Jang et al. 2023: baseline the mean of the 1 s before stimulus onset"
+  filter: "Savitzky-Golay, polynomial order 4, frame the expansion's duration / 10 in samples rounded up to odd (Jang et al. 2023: 'frame size is 1/10th the length of the stimulus')"
+  peak: "the first maximum of the filtered, baseline-subtracted trace in the window from onset to the end of the expansion plus post_ms"
+  fit: "per fly, ordinary least squares y = alpha * rv - delta over the four r/v"
+  bootstrap: 10000
+  bootstrap_seed: 34
+  interval: "the 2.5 and 97.5 percentiles of the median alpha (and delta) over flies resampled with replacement"
+  mutants: "not used"
+
+no_go:
+  min_responding_share: 0.5
+  rule: "computed on the model only, before any data file is opened: if fewer than half of the 15 cells respond, the run stops and is recorded as uninformative"
+  why: "a peak time is defined only where the giant fiber moves; a slope from a few responding cells says little about the circuit"
+
+score:
+  statistic: "alpha per responding cell against the data's interval of the median alpha"
+  verdict:
+    pass: "every responding cell's alpha lies inside the interval"
+    partial: "some responding cells' alpha lie inside it"
+    fail: "none does"
+    uninformative: "the no-go, or fewer than min_flies readable control flies"
+  reported: "delta per cell and from the data (secondary, decides nothing), the implied threshold angle 2 * atan(1 / alpha), and per cell whether the median peak times increase with r/v"
+
+limits:
+  - "Engineered transducers: LC4 and LPLC2 rates follow angular velocity and size linearly with scanned gains; no measured LC4 or LPLC2 rate exists."
+  - "Both sides of LC4 and LPLC2 are driven and both giant fibers averaged: the recorded side and the disc's azimuth are not stated."
+  - "The disc sizes of the 2025 recordings are inferred from the protocol they cite (Jang et al. 2023)."
+  - "The control flies are genotype controls of DIP-epsilon experiments; their sex is not stated in the paper."
+  - "A spiking LIF giant fiber is compared with a graded recording: where the model fires, its peak is its first threshold crossing."
+  - "The scored quantity is a slope across four r/v per fly; one control file had been opened before the lock (seen_before_lock)."
+
+defaults_changed: false

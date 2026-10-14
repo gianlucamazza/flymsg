@@ -9,6 +9,7 @@ from flymsg import (
     compare,
     convergence,
     data,
+    gf_looming,
     managed,
     nulls,
     prereg,
@@ -421,6 +422,49 @@ def cmd_song(a, neurons, edges):
             "grid": doc["grid"],
         },
         {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
+        started,
+        {"verdict": result["verdict"]},
+    )
+    print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_gf_looming(a, neurons, edges):
+    """Run the locked looming -> giant fiber timing benchmark: the model and its no-go
+    first, then the data."""
+    started = datetime.now(UTC)
+    doc = gf_looming.assert_matches_code()
+    print(gf_looming.summary(doc))
+    rows = gf_looming.run(neurons, edges, a.workers, a.checkpoint)
+    out = managed.output(a, Path("runs/gf_looming") / f"v{doc['version']}")
+    out.mkdir(parents=True, exist_ok=True)
+    rows.to_csv(out / "runs.csv", index=False)
+    result = gf_looming.evaluate(rows, a.data, doc)
+    fits = result.pop("model")
+    fits.to_csv(out / "model.csv", index=False)
+    lines = [gf_looming.summary(doc), fits.to_string(index=False)]
+    if "flies_table" in result:
+        flies = result.pop("flies_table")
+        flies.to_csv(out / "data.csv", index=False)
+        lines.append(flies.to_string(index=False))
+    lines += [f"{k}: {v}" for k, v in result.items() if k != "verdict"]
+    lines.append(f"verdict: {result['verdict']}")
+    text = "\n".join(str(x) for x in lines)
+    (out / "report.txt").write_text(text + "\n")
+    print(text)
+    m = doc["model"]
+    stamp(
+        out,
+        "gf-looming --run",
+        a,
+        neurons,
+        edges,
+        {
+            "gf_looming_version": doc["version"],
+            "gf_looming_sha256": doc["content_sha256"],
+            "drive": doc["drive"],
+            "model": m,
+        },
+        {"seed0": m["seed0"], "seeds": m["seeds"]},
         started,
         {"verdict": result["verdict"]},
     )
