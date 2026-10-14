@@ -1,99 +1,68 @@
-# ADR — Virtual Experimental Environment (VEE) and optional WebXR viewer
+# ADR: an optional WebXR observer, apart from the experimental environment
 
-**Status:** Proposed, 2026-10-14. **Scope:** observability architecture and research gates. No new claims of biological validation.
+Status: accepted as an experimental, opt-in observer, 2026-10-14; unqualified on any headset
+([#177](https://github.com/gianlucamazza/flymsg/issues/177)). The sensorimotor arena it is kept
+apart from is planned in the [sensorimotor environment plan](sensorimotor-environment-plan.md)
+([#176](https://github.com/gianlucamazza/flymsg/issues/176)). No biological claim.
 
 ## Context
 
-FlyMSG already has: `CpuRuntime` online stepping, M0 sensor/body/clock contracts, M2 exploratory feedback, a NeuroMechFly jump experiment, a mapped eye geometry, and an independent three.js anatomy/replay viewer. This project must not duplicate their functionality.
+flymsg has an incremental runtime (`CpuRuntime`), the M0 sensor, body and clock contracts
+(accepted for the synthetic fixture), an exploratory M2 feedback loop, a NeuroMechFly jump, the
+measured eye geometry and a three.js viewer of anatomy and replays ([viz](viz.md)). The one-bit
+looming jump fails its DNp01 silencing check, T4/T5 v1–v3 found no direction selectivity (v4 is
+locked; [eye](eye.md)), the NeuroMechFly jump is short and `validation/motor_map.yaml` maps no
+actuator. An immersive view changes none of that.
 
-Crucially, the current looming one-bit behavior fails its DNp01-silencing control, T4/T5 v1–v3 do not recover direction selectivity, the NeuroMechFly jump is short, and `validation/motor_map.yaml` has no mapped physical actuators. A visually immersive scene cannot remove those limitations. See [embodiment](embodiment.md), [eye](eye.md), [behavior](behavior.md), and [roadmap](roadmap.md).
-
-We need two orthogonal features:
-
-- A **headless, evidence-gated virtual experimental environment** generating measurable sensory inputs and controlled sensorimotor interactions.
-- An **optional immersive _observer_** of already-produced neuron anatomy and simulation replay, independent of the scientific engine.
+Two things must stay apart: a headless, evidence-gated experimental environment that produces
+sensory input and closes a loop, and an optional immersive observer of outputs that already
+exist.
 
 ## Decision
 
-1. Reuse the existing `StimulusFrame → SensoryEncoder → NeuralStepper → MotorDecoder → Body → Sensor` proposal and the accepted M0 contracts for all future VEE research. Do not introduce a second scheduler, physics integrator, experiment manifest, or neural simulation.
-2. The presentation layer is strictly downstream of immutable scene/replay outputs. The viewer must **never** synthesize spikes, rewrite a manifest, reconfigure `sim.Params`, select a hypothesis, or silently label engineered mappings as biological.
-3. Add a **small opt-in WebXR observer** to the existing three.js viewer (`?xr=1`). It uses the same geometry and replay timestamps as desktop. Support is feature-detected; immersive sessions require user action; desktop rendering remains the default.
-4. While immersive, render using Three.js's native stereo XR path; do not route an unqualified desktop EffectComposer through a headset. No invented stereo pipeline, display-to-neuron interpretation, controller locomotion, or hardware-specific claims.
-5. Build any future headless arena against independent evidence (verified optical geometry, sensory transfer, motor evidence and falsification datasets). Keep this research work gated until the relevant inputs are available.
-6. Do not introduce a second framework, duplicate event transport or bridge through a mock biology layer solely to make a demo look complete.
+1. The observer reads immutable scene and replay outputs only. It never synthesises spikes,
+   rewrites a manifest, changes `sim.Params` or labels an engineered mapping as biological.
+2. The existing viewer gains `?xr=1`: support is feature-detected, a session starts and ends
+   only on the reader's action, and the desktop view stays the default. The same geometry and
+   replay timestamps are shown.
+3. In a session three.js renders the two eye views directly. The desktop composer (multisampled
+   scene target, bloom) is not run against the headset framebuffer, so XR shows the emissive
+   glow without the bloom halo and without MSAA.
+4. Any future arena reuses the M0 contracts, `CpuRuntime` and the existing manifests; no second
+   scheduler, physics integrator, manifest or simulator. Its gates are the plan's.
 
 ## Invariants
 
-- **Causality:** no rendering or headset clock may enter the scientific simulation update path. XR must only read already-produced scene/replay state.
-- **Numerical parity:** the same simulation configuration and seed produce the same scientific outputs regardless of viewer mode, including in headless execution. Scientific CI continues to run without WebXR or physical hardware.
-- **Provenance:** experiments retain immutable manifests, seeds, dataset hashes, coordinate frames, SI units and timestamp ordering. Viewer configuration is presentation metadata, not scientific provenance.
-- **Reference frames:** the exported scene uses micrometres; headset coordinates are metres. A display-only transform may scale/translate the entire scene but never write back to scientific position data.
-- **Session lifecycle:** native `immersive-vr` support check, explicit start, proper end/restore, XR-specific render path, and informative failure status. No mandatory XR dependency for desktop.
-- **Resource ownership:** the existing renderer, scene and replay buffers remain single-owned. No extra rendering engine or background clock.
-- **Evidence:** sensor encoders and actuator mappings must be accompanied by published measurement and a held-out protocol; an unsupported mapping stays `unmapped`.
+- **Causality:** no rendering or headset clock enters the simulation. The viewer never runs the
+  simulation, so scientific outputs do not depend on the viewer mode by construction.
+- **Reference frames:** the scene is in micrometres, the headset in metres; a display-only
+  transform scales and places the whole scene and writes nothing back.
+- **Lifecycle:** a support check, an explicit start, an end that restores the root, the
+  desktop camera (position, orientation, field of view, zoom) and the orbit controls, and a
+  status message on failure. Installing the observer never delays the first desktop frame.
+- **Ownership:** one renderer, one animation loop, one set of replay buffers.
 
-## Alternatives and decision
+## Alternatives
 
-| Alternative                                             | Benefit                              | Problem                                               | Verdict                                   |
-| ------------------------------------------------------- | ------------------------------------ | ----------------------------------------------------- | ----------------------------------------- |
-| Independent Unity/Unreal application                    | Rich tools                           | Duplicate data and rendering pipelines                | Rejected                                  |
-| Rebuild the CNS viewer in a VR framework                | Native interactions                  | Geometry/LOD, shaders and CI duplicated               | Rejected                                  |
-| WebXR on existing Three.js viewer                       | Minimal duplication                  | Hardware must still be qualified                      | Adopt as opt-in observer                  |
-| Couple scene animation directly into the LIF motor loop | Easy-looking closed loop             | Confuses animation with biological stimulus/actuation | Rejected                                  |
-| Headless arena using existing M0/M2 contracts           | Reproducibility and testable science | Sensory/motor evidence still required                 | Research direction, not asserted complete |
+| Alternative                                 | Problem                                           | Verdict         |
+| ------------------------------------------- | ------------------------------------------------- | --------------- |
+| A separate Unity or Unreal application      | Duplicate data and rendering pipelines            | Rejected        |
+| Rebuilding the viewer in a VR framework     | Geometry, levels of detail and shaders duplicated | Rejected        |
+| WebXR in the existing three.js viewer       | Hardware still to qualify                         | Adopted, opt-in |
+| Scene animation coupled into the motor loop | Confuses animation with stimulus and actuation    | Rejected        |
 
-## Current PR boundary
+## Acceptance
 
-Included:
-
-- Opt-in read-only WebXR support for the existing viewer, with native session lifecycle and conventional desktop fallback.
-- Explicit separation between XR rendering and the existing post-processing pipeline.
-- Unit tests of WebXR capability/activation, failures, and state restoration.
-- Documentation and roadmap gates.
-
-Not included:
-
-- New sensors, LC4 transfer functions, artificial muscle controllers, new physics backends, locomotion controls, real-time full-CNS execution, new scored results, or a new VEE runtime.
-- Claims of headset compatibility without a physical test. A device smoke test remains a release gate.
-
-## VEE research contract (future, not implemented here)
-
-`Protocol v1` should name: source geometry/stimulus and units, coordinate frames, deterministic timebase, documented `SensoryEncoder` type and source, `NeuralStepper` version, controlled `Body` backend, `MotorDecoder` evidence and failure-on-unmapped policy, immutable seed/config/manifest, defined observables, and independent pre-registered negative controls. It should reuse `flymsg experiment` and M0 rather than invent another file schema.
-
-Candidate studies:
-
-1. Open-loop moving-edge/looming stimuli mapped through measured eye directions, tested against T4/T5 and LC4/LPLC2 recordings; use the existing failed results as a fixed baseline.
-2. Connected versus disconnected, replayed and shuffled feedback with causal ordering tests.
-3. Bilateral TTM/jump studies **only** with sourced muscle-to-actuator mapping and independent movement measurements.
-
-Each claim is conditional on held-out animal evidence and must report failures. No exploration chosen after inspecting results can be promoted into a confirmatory result.
-
-## Acceptance gates
-
-### WebXR observer
-
-- On ordinary URLs with no `?xr=1`: _zero new controls_ and original desktop rendering, timestamps, export and selection paths.
-- On unsupported or denied devices: clear status and unchanged desktop usability, without a session request during load.
-- On supported devices: user-activated enter/exit, correct clean restoration of root transform and camera state, one renderer/animation loop and headset stereoscopy.
-- No changes to `activity.bin`, `scene.json`, `sim`, validation locks, or any scored result.
-- Automated tests for pure logic and session lifecycle pass; **hardware qualification still required** for framerate, visual alignment, stereo, menu/browser interoperability and context restoration.
-
-### Scientific arena (separate follow-up)
-
-- Fully headless replay and open/closed-loop controls using frozen clocks and seed provenance.
-- Valid sensory gain and retinal mapping against independent data, with uncertainties and pre-registered thresholds.
-- Motor mapping remains fail-closed until verified; No-Go if unavailable.
-- Published performance factors (simulation time / wall clock, RAM, p95 timing), numerical stability and biological falsification. No unsupported real-time promise.
-
-## Consequences
-
-Positive: the viewer gains an immersive inspection mode without a new app; the research roadmap remains honest and auditable. Negative: immersive performance on target headsets is not guaranteed and the VEE biology remains blocked on measurements. These are explicit release/research gates rather than technical debt.
+- Without `?xr=1`: no new control, unchanged rendering, export and selection.
+- Unsupported, failing or denied XR: a status message, no session request on load, the desktop
+  view unchanged.
+- Session state: enter and exit restore the root, camera and controls; tested in
+  `tests/js/xr.test.mjs` with a mock renderer.
+- On hardware ([#177](https://github.com/gianlucamazza/flymsg/issues/177)): stereo, scale and
+  orientation, frame times against the stereo budget, levels of detail under head motion,
+  session end from the headset menu, context loss. Until then no device is called supported.
 
 ## References
 
-- [3D viewer](viz.md)
-- [Embodiment / M0, M2 and NeuroMechFly](embodiment.md)
-- [Eye geometry and failed T4/T5 protocols](eye.md)
-- [Roadmap and falsification gates](roadmap.md)
-- [Three.js WebXR overview](https://threejs.org/manual/pages/webxr-basics.html)
+- [three.js WebXR basics](https://threejs.org/manual/pages/webxr-basics.html)
 - [WebXR Device API](https://www.w3.org/TR/webxr/)

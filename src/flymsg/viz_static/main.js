@@ -1348,6 +1348,7 @@ const pickLineMaterial = new THREE.ShaderMaterial({
 });
 
 function pickAt(x, y) {
+  if (renderer.xr.isPresenting) return null; // the stereo cameras own the view in XR
   const w = renderer.domElement.clientWidth,
     h = renderer.domElement.clientHeight;
   camera.setViewOffset(
@@ -1867,28 +1868,6 @@ controls.target.set(0, 0, 0);
 controls.update();
 fitClip();
 
-// The XR observer transforms only the presentation root. Neural activity,
-// manifests, scientific coordinate frames and simulation state are untouched.
-await installXrObserver({
-  search: location.search,
-  renderer,
-  root,
-  camera,
-  controls,
-  extentUm: extent,
-  onTransition: () => {
-    selectionDirty = true;
-    invalidate();
-    if (!renderer.xr.isPresenting) {
-      // Desktop may have been resized while the headset owned its framebuffer.
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight);
-      renderer.setScissor(0, 0, innerWidth, innerHeight);
-      composer.setSize(innerWidth, innerHeight);
-    }
-  },
-});
 
 addEventListener("resize", () => {
   if (renderer.xr.isPresenting) return; // XR runtime owns the stereo framebuffer size
@@ -1952,6 +1931,12 @@ renderer.setAnimationLoop(() => {
   const dt = timer.getDelta();
   const inXR = renderer.xr.isPresenting;
   const moved = inXR ? false : controls.update(); // XR headset owns its camera pose
+  if (inXR) {
+    // head motion moves the camera without OrbitControls events: refine as the view
+    // changes, at the selection's own rate
+    selectionDirty = true;
+    lastMove = performance.now();
+  }
   const playing = replay && clock.playing;
   if (playing) clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
   if (replay && clock.t !== shownT) updateActivity(clock.t);
@@ -1978,3 +1963,31 @@ renderer.setAnimationLoop(() => {
   sceneDirty = false;
   lastRender = now;
 });
+
+// ?xr=1 with the chrome shown: installed after the loop starts, so a slow XR runtime never
+// delays the first frame. The observer transforms only the presentation root; neural
+// activity, manifests, scientific frames and simulation state are untouched.
+const xrOptions = {
+  search: location.search,
+  renderer,
+  root,
+  camera,
+  controls,
+  extentUm: extent,
+  onTransition: () => {
+    selectionDirty = true;
+    invalidate();
+    if (!renderer.xr.isPresenting) {
+      // the desktop may have been resized while the headset owned its framebuffer
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.setScissor(0, 0, innerWidth, innerHeight);
+      composer.setSize(innerWidth, innerHeight);
+    }
+  },
+};
+if (showChrome(location.search))
+  installXrObserver(xrOptions).catch((error) =>
+    console.warn("XR observer not installed:", error),
+  );

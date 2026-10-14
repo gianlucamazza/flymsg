@@ -65,11 +65,6 @@ PAGES = (
     ("dimorphism", "docs/dimorphism.md", "Dimorphism"),
     ("related", "docs/related.md", "Related"),
     ("viz", "docs/viz.md", "3D view"),
-    (
-        "adr-virtual-experimental-environment",
-        "docs/adr-virtual-experimental-environment.md",
-        "Virtual lab ADR",
-    ),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("approximations", "docs/approximations.md", "Approximations"),
     ("leads", "docs/leads.md", "Leads"),
@@ -83,6 +78,11 @@ PAGES = (
     ("integrity-audit", "docs/integrity-audit-2026-10-13.md", "Integrity audit"),
     ("adr-gap-refractory", "docs/adr-gap-refractory.md", "Electrical ADR"),
     ("adr-run-integrity", "docs/adr-run-integrity.md", "Run integrity ADR"),
+    (
+        "adr-virtual-experimental-environment",
+        "docs/adr-virtual-experimental-environment.md",
+        "Virtual lab ADR",
+    ),
     ("run-integrity", "docs/run-integrity.md", "Run integrity"),
     ("changelog", "CHANGELOG.md", "Changelog"),
 )

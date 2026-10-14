@@ -6,16 +6,6 @@ geometry at source resolution from the public MaleCNS volumes on GCS
 (`gs://flyem-male-cns/v1.0/segmentation`, CORS and Range requests, no token). Example frames,
 and what each colour means, are in the README gallery.
 
-## Optional immersive observation (experimental WebXR)
-
-The existing page supports `?xr=1` to show an **Enter VR** button if the browser reports `immersive-vr` support. Example after the page with this PR is built: `live/looming/?xr=1&paused`. Ordinary URLs are unchanged; no XR session is requested on page load. The user must start and end the session. Browsers without immersive VR stay on the desktop viewer and show a capability message. WebXR requires a suitable secure context, compatible browser and headset.
-
-WebXR is an **observer of precomputed, binned neuron activity and geometry**, not a VR world presented to the fly: the replay contents, `scene.json`, `activity.bin`, manifest and scientific clocks do not change. The CNS is scaled from the viewer's micrometre coordinate space into an inspectable display in metres and placed in front of the headset's initial local origin. This display-only transform is undone on exit. Desktop postprocessing is not used for stereo XR; the native three.js XR renderer draws each view. XR uses head tracking to look at the object; no controller/ray selection or teleportation is claimed.
-
-The [VEE ADR](adr-virtual-experimental-environment.md) explains why a future sensorimotor arena must be headless, reuse the existing M0/M2 contracts, and be validated separately. VR inspection does not add biological fidelity or rescue the existing T4/T5, closed-loop or neuromechanical failures.
-
-**Release gates:** automated session-state tests and the existing desktop test suite are necessary, but do not establish headset support. Before advertising any device as supported, measure stereo rendering, scene scale/orientation, GPU frametimes, resolution, lifecycle and context recovery on that exact browser/headset. The live scene's existing laptop GPU baseline often falls below comfortable XR refresh rates; **no performance or comfort claim is made**.
-
 ## Live on the site
 
 The Pages site serves nine scenes with this page: the LC4_R and pIP10 replays and the
@@ -73,6 +63,22 @@ in one export only), then the colour mode. By group, each group shows its neuron
 its largest instances (`stimulus (55): LC4_R ×55`), so the stimulated side is visible. In a
 replay a line states that the glow is spikes per bin of the model, not a recording; while
 the soma layer is shown, its region colours are listed.
+
+## Optional WebXR observation (experimental)
+
+`?xr=1` adds an Enter VR button when the browser reports `immersive-vr` support, for example
+`live/looming/?xr=1&paused`; without the flag nothing changes, and with `?chrome=0` the button
+is not built. No session is requested on load: the reader starts and ends it, and a browser
+without immersive VR keeps the desktop view and says so. In a session the whole scene is scaled
+from micrometres to about 1.2 m and placed 2 m in front of the headset's starting point; that
+transform is display-only. three.js renders the two eye views directly, so the glow shows
+without the bloom halo and without MSAA, and clicks do not select neurons. Ending the session
+restores the scene, the desktop camera and the orbit controls. The observer replays existing
+exports and never runs the simulation. It is experimental and qualified on no headset: stereo,
+frame times against the stereo budget (this page's laptop baseline is far below it, see
+[measurements](#measurements)) and the session lifecycle on real hardware are open in
+[#177](https://github.com/gianlucamazza/flymsg/issues/177). The decision is in the
+[ADR](adr-virtual-experimental-environment.md).
 
 ## Selecting a neuron
 

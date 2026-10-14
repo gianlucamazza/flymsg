@@ -10,18 +10,6 @@ immutable executions, checkpoint compatibility and explicit electrical numerical
 [Approximations](approximations.md) lists every simplification of the model with its status
 and what would remove it.
 
-## Virtual experimental environment (proposed, not a scientific result)
-
-The [VEE ADR](adr-virtual-experimental-environment.md) distinguishes a reproducible virtual _experimental_ world from a VR viewer of exported anatomy and replay. The optional `?xr=1` WebXR observation path is an isolated presentation feature and never changes the neural engine. It is not a claim of fly perception, movement, or VR hardware performance.
-
-- **Viewer gate:** desktop parity, explicit opt-in, supported headset checks, session cleanup, and stereo performance on physical hardware. The existing viewer baseline in [viz](viz.md) remains the regression reference.
-- **Scientific sensory gate:** match measured eye directions, retinal response and LC4/LPLC2 / T4/T5 data under preregistered controls. Current T4/T5 outcomes remain failures.
-- **Causal gate:** reproduce feedback-connected, disconnected, replay and shuffled conditions with the existing M0/M2 interfaces. The existing small-motion closed loop currently yields no distinguishable input from its disconnected control at measured scales.
-- **Actuator gate:** reuse FlyGym/NeuroMechFly, map real muscle-to-body actuation with independent evidence, or retain the explicit `unmapped` refusal.
-- **Validation gate:** compare prospective behavior with independent animal data; do not promote calibration-only or exploratory outcomes to held-out success.
-
-No alternative simulation engine, parallel clock, invented retinal transducer or biological workaround is approved by this roadmap.
-
 ## Results
 
 | Result                                     | Verdict                                                                 | Record                                                                                            |
@@ -135,10 +123,11 @@ three stay off unless a lock names them.
 
 ## Blocked on hardware
 
-| Issue                                                       | Blocked by                                                  | Ready                                               |
-| ----------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------- |
-| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1 | GPU parity needs a D3D12 hardware adapter; CI has only WARP | The HLSL shader, DX12 host and fixtures build in CI |
-| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2 | A physical Series S console                                 | The UWP worker, job assets, runbook                 |
+| Issue                                                            | Blocked by                                                          | Ready                                                                                       |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | GPU parity needs a D3D12 hardware adapter; CI has only WARP         | The HLSL shader, DX12 host and fixtures build in CI                                         |
+| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | A physical Series S console                                         | The UWP worker, job assets, runbook                                                         |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md)) |
 
 ## What an animal test could check
 
