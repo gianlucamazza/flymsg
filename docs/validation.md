@@ -343,6 +343,13 @@ in `results/sensitivity/v1/` (archived from `runs/`). Nothing is chosen from thi
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results
 that close an open route are kept here too.
 
+**2026-10-14: T4/T5 v3, robust: neither.** Seed 94, 25 configurations of LMC × medulla release
+rate, with Mi1, Tm3, Mi4, Mi9 and C3 graded over Groschner et al. 2022's in vivo voltages. No
+T4 spike in any configuration. The edge reaches the medulla at ≤1.4 mV, at most about 5% of the
+measured swings, with the measured sign only in Tm3, C3 and Mi9; from an LMC rate of 100 Hz
+tonic lamina release holds Mi1 and Mi4 below release, Tm3 from 200 Hz. Report:
+`results/t4t5/v3.executions/d85c3913…/output/`.
+
 **2026-10-13: synapse weight rule v1, undecided.** Liu et al. 2022's 57 PN → LHN pairs of six
 matched LHN types: Spearman ρ 0.567 (count) against 0.581 (density), Δρ +0.015 with a 95%
 interval of −0.011 to +0.054. Count stays the rule. MaleCNS counts rank the measured
