@@ -38,7 +38,7 @@ Issue #20 left the residual `TTMn_R` partner unnamed. Silence-scan v2 named
 DNp02 and DNp06, and v3 replicated that naming
 ([behavior](behavior.md#residual-partner-scan)).
 
-## N1 — specific checks need the measured partners
+## N1: specific checks need the measured partners
 
 Fixed 2026-10-10, before the confirmatory comparison. The census below is that one
 permutation. The comparison was run on 2026-10-11. The same seed was run again the same

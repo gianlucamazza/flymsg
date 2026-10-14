@@ -8,8 +8,8 @@ density between the datasets (an optional adaptive threshold, used until v0.4, i
 default). Code: `src/flymsg/sim.py`.
 
 The model predicts **which circuits a stimulus recruits and in what order**. It does not
-predict exact firing rates: there is no dendritic geometry, neuromodulation, plasticity or gap
-junctions, and the parameters are shared by all neurons.
+predict exact firing rates: the default model has no dendritic geometry, neuromodulation, plasticity
+or gap junctions (the last two exist only inside locks), and the parameters are shared by all neurons.
 
 ## Dynamics
 
@@ -181,10 +181,10 @@ Issue #9 asks for one added mechanism only where a measured discrepancy comes wi
 parameter that transfers into this LIF. On that date none of the four candidates had one,
 and none entered the default model. `w_syn` and `th_jump` stay at the default.
 
-Three later mechanisms stay off unless a lock names them, and none of them changes
+Four later mechanisms stay off unless a lock names them, and none of them changes
 `sim.Params`: `sim.Gap` (electrical synapses; a spike crosses only when that lock sets
-`spike_mv` and `spike_ms`), `sim.Graded` (non-spiking release) and the dopamine-gated
-depression at Kenyon cell → MBON11. Each has its own section below. The table is the
+`spike_mv` and `spike_ms`), `sim.Graded` (non-spiking release), `sim.Membrane` (per-neuron
+membranes) and the dopamine-gated depression at Kenyon cell → MBON11. Each has its own section below. The table is the
 decision of 2026-10-11. The gap-junction row is about the default model and the giant-fiber
 conductance, which is still not in the model.
 
@@ -441,7 +441,8 @@ junction as spikelets. Junctions do not rectify.
 
 Between step boundaries the equation is linear, so each connected group is integrated
 exactly: the matrix exponential of the group's membrane, synaptic and spike terms (Van
-Loan's block form) is computed once per run, and each step applies it in float64. As
+Loan's block form) is computed once per run for the all-free group (the dense solver adds one
+reduced exponential per new refractory mask; the Taylor solver builds none), and each step applies it in float64. As
 everywhere in the model, discrete events act at step boundaries: spikes, resets,
 deliveries, kicks, the start and end of a spike term, and the refractory hold. Refractory membranes are continuously clamped at rest, with frozen
 chemical conductance; free partners retain the sink from their contacts. The accepted
@@ -479,7 +480,7 @@ postsynaptic voltage) is measured in Drosophila: the audit of 2026-10-13 found t
 ranges only (photoreceptors depolarize 40–65 mV to light, LMCs hyperpolarize 20–45 mV;
 Juusola et al. 2016, Zheng et al. 2006); the one measured R → LMC curve is from Calliphora.
 So a lock that uses graded neurons states its curve as a compensation and scans it over the
-measured ranges instead of choosing a value (`validation/t4t5.yaml` version 2).
+measured ranges instead of choosing a value (`validation/t4t5.yaml` versions 2 and 3).
 
 Without graded neurons the engine is unchanged, bit for bit. With them, `sim.run`, the NumPy
 reference (`tests/reference_sim.py`) and `CpuRuntime` (chunks, checkpoints) give identical
