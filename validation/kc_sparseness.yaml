@@ -6,14 +6,14 @@
 # and updating `content_sha256` and flymsg.kc_sparseness.VERSION_HASHES. `flymsg
 # kc-sparseness` prints this file.
 version: 8
-content_sha256: 5f1a9e0d643da086353b6d987fa6b1220503a2b7b6cebafa325145f47aa12cbc
+content_sha256: 016ad8ca4d274f9eef0f40c568b672df208db2fbeffd7f350a2ed226880f7223
 yaml_subset: 2
-evidence: [eln_pn_coupling, eln_spike_amplitude, sister_pn_coupling, kc_odor_sparseness]
+evidence: [eln_pn_coupling, eln_spike_amplitude, sister_pn_coupling, kc_odor_sparseness, kc_odor_overlap]
 
 issue: 95
 supersedes:
   version: 7
-  verdict: "within: the eight coupled arms and the uncoupled E and F of lLN2T+lLN1_bc except E/lLN2T+lLN1_bc+spike0ms; none of lLN2T"
+  verdict: "within: E/lLN2T+lLN1_bc, F/lLN2T+lLN1_bc, E/lLN2T+lLN1_bc+spike0.5ms, E/lLN2T+lLN1_bc+spike1ms, E/lLN2T+lLN1_bc+spike2ms, F/lLN2T+lLN1_bc+spike0ms, F/lLN2T+lLN1_bc+spike0.5ms, F/lLN2T+lLN1_bc+spike1ms, F/lLN2T+lLN1_bc+spike2ms"
   reason: "Version 7 ran with the boundary reset (flymsg.gap/boundary-reset-v1), qualified against the continuous clamp on 50 ms of one odor and seed only, because the dense per-mask exponential of the continuous clamp made the coupled arms take days (#155). The truncated Taylor action (flymsg.gap/continuous-clamp-taylor-v1, ADR accepted 2026-10-14) integrates the same continuous clamp to rounding at about the boundary reset's cost. Version 8 is version 7 under the continuous clamp, with fresh seeds, so that the result does not rest on the 50 ms qualification."
 question: "With only the local neurons Eckstein et al. 2024 liken to the cholinergic eLNs (lLN2T_a/b/c; with lLN1_bc as a variant) treated as electrical partners of PNs, at the measured asymmetric coupling with sister PNs coupled as measured and eLN spikes crossing as 40 mV spikelets of 0.5-2 ms, and every other cholinergic local neuron kept chemical, do Hige et al. 2015's two odors recruit a sparse, distinct set of Kenyon cells?"
 

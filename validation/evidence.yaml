@@ -114,6 +114,33 @@ records:
       inputs_sha256: "none: transcribed from the published figure (doi and locator); no file archived"
     used_by: [validation/kc_sparseness.yaml]
 
+  - id: kc_odor_overlap
+    quantity: "share of an odor's responding Kenyon cells that also respond to a similar odor"
+    value:
+      mean: 0.646
+    unit: "fraction of responders"
+    status: measured
+    method: "calcium imaging of Kenyon cell somata to pairs of odors"
+    uncertainty: unknown
+    source:
+      citation: "Campbell et al. 2013, J Neurosci 33:10568"
+      doi: "10.1523/JNEUROSCI.0682-12.2013"
+      license: unknown
+      locator: "Fig 4B-C"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: unknown
+      stage: adult
+    cell:
+      type: "Kenyon cells"
+      maps_to: "every ^KC type in MaleCNS v1.0"
+      mapping_uncertainty: "pooled over KC classes"
+    transfer_limits: "similar odor pairs of the study, not the DoOR vectors of 3-octanol and 4-methylcyclohexanol; dissimilar pairs share 21.8%"
+    transformation:
+      code: "flymsg.kc_sparseness decides: overlap_max = mean"
+      inputs_sha256: "none: transcribed from the published figure (doi and locator); no file archived"
+    used_by: [validation/kc_sparseness.yaml]
+
   - id: medulla_t4_input_voltages
     quantity: "in vivo membrane potential ranges of T4's medulla inputs to 30 deg/s ON and OFF edges"
     value:

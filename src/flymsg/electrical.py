@@ -18,7 +18,8 @@ TAYLOR_SEMANTICS = "flymsg.gap/continuous-clamp-taylor-v1"
 # Truncation bound of the Taylor action, relative to the 1-norm of the step's input
 # [x, g, s]: the float64 unit roundoff.
 TAYLOR_TOL = 2.0**-53
-# Above this step norm the series needs more terms than it saves; use the dense maps.
+# Above this step norm the series needs more terms than it saves; taylor_terms refuses it
+# and a lock must use the dense maps.
 TAYLOR_MAX_NORM = 0.5
 
 

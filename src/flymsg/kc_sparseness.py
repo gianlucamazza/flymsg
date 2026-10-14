@@ -46,7 +46,7 @@ VERSION_HASHES = {
     5: "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",  # measured asymmetric eLN-PN coupling, eLN spikelets 0-2 ms, seeds 86-88
     6: "bf1ae62f9b563e52df8523eefccbc7f3253c0ab457621969cf3e8ee77c1f6b9b",  # eLNs restricted to lLN2T (and lLN2T + lLN1_bc), seeds 89-91
     7: "de4274eb0bd689aefe8c9bcc9318eb40fbcdb688b9da61980a559f6c040896ef",  # v6 with the boundary reset of v5, qualified against the continuous clamp, seeds 92-94
-    8: "5f1a9e0d643da086353b6d987fa6b1220503a2b7b6cebafa325145f47aa12cbc",  # v7 under the continuous clamp by the Taylor action, seeds 95-97
+    8: "016ad8ca4d274f9eef0f40c568b672df208db2fbeffd7f350a2ed226880f7223",  # v7 under the continuous clamp by the Taylor action, seeds 95-97
 }
 # synapse classes without fast effect in each arm
 ARM_CLASSES = {
