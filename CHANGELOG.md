@@ -34,7 +34,8 @@
 - **Evidence records** (SF1, #147): `validation/evidence.yaml` and `flymsg.evidence` record
   source, locator, organism, cell mapping, unit, uncertainty, status and transformation for
   each sourced quantity, fail closed on missing fields, and require every new lock
-  (`yaml_subset: 2`) to name its records. Five records cover the Kenyon cell coupling,
+  (`yaml_subset: 2`) to name its records. Five records (six with `kc_odor_overlap`, added with the v8
+  lock) cover the Kenyon cell coupling,
   spike and sparseness values and the T4/T5 v3 medulla voltages; unstated fields (license,
   sex) are recorded as unknown. `scripts/evidence_audit.py` prints the audit.
 

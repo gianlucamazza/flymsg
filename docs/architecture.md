@@ -106,7 +106,7 @@ flymsg.scene/v1` (`viz.SCENE_SCHEMA`); the page warns in the console on another 
    - #28 robustness (tool in v0.8.31): `flymsg.sensitivity` runs a locked grid (B3) and
      reports every cell; `sim.Params` defaults never change.
    - #31 embodiment: bodies attach through B6 only.
-6. **CLI modules** (unreleased). `flymsg.cli` is a package: `__init__` keeps `main`, the
+6. **CLI modules** (done in v0.8.45). `flymsg.cli` is a package: `__init__` keeps `main`, the
    command table and the error handling; `parser` builds the whole argparse tree; the
    commands live in `connectome`, `simulate`, `validation`, `experiments`, `body` and
    `sensory`, with `common` for labels, links and `stamp`. Commands, flags, help, output
