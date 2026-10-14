@@ -16,6 +16,7 @@ directory a doc cites is added to the table below in the same commit.
 | `mb-plasticity/v1/`                     | `flymsg mb-plasticity --run` (#85)                                |
 | `kc-sparseness/v1/` … `v5/`             | `flymsg kc-sparseness --run` (#95); `docs/img/kc-sparseness.svg`  |
 | `kc-sparseness/v7.executions/…/output/` | `flymsg kc-sparseness --run` (#95), v7                            |
+| `kc-sparseness/v8.executions/…/output/` | `flymsg kc-sparseness --run` (#95), v8                            |
 | `jump3d/v1/`                            | `flymsg jump3d --run` (#90, #94); `docs/img/jump-range.svg`       |
 | `t4t5/v1/`, `v2/`, `v3.executions/…/`   | `flymsg t4t5 --run` (#84, #97, #140)                              |
 | `weight-rule/v1.executions/…`           | `flymsg weight-rule --run` (#139), the managed execution's output |

@@ -418,7 +418,7 @@ on removing chemical synapses rather than on electrical coupling; the result doe
 the eLNs are electrical, and the default model is unchanged. Outputs:
 `results/kc-sparseness/v7.executions/f8549bf7414656b26cf37dcf99811142bb3b1b3a7743b79d5ebeda941457c3a5/output/`.
 
-**Version 8 (locked 2026-10-14, no run).** Version 7 under the continuous clamp, integrated by
+**Version 8 (locked 2026-10-14).** Version 7 under the continuous clamp, integrated by
 the Taylor action (`flymsg.gap/continuous-clamp-taylor-v1`, #155), with fresh seeds 95–97.
 Version 7's boundary reset was qualified on 50 ms of one odor and seed; the Taylor action is
 exact to rounding by its truncation bound, and on 50 ms of arm E of each eLN set (seed 0) it
@@ -427,6 +427,22 @@ reproduced the dense continuous clamp spike for spike
 so the whole run can use the exact integrator. Arms, bounds and decision are version 7's; the
 version 7 result was read before this lock, so version 8 tests whether it survives the exact
 integrator and new seeds, not a new hypothesis.
+
+**Result of version 8 (2026-10-14): within, only with the variant set; v7 replicates.** Run
+from `ad7b71e`, the lock commit, in one attempt (35 min). With lLN2T+lLN1_bc, 8 of 10 arms are
+within: 2.0–2.3% of Kenyon cells respond to 3-octanol and 1.4–1.7% to 4-methylcyclohexanol, and
+43–48% / 56–66% of each odor's responders are shared. The two arms out, E/lLN2T+lLN1_bc and
+E/lLN2T+lLN1_bc+spike1ms, miss by overlap (66.2% and 65.1% of the second odor's responders
+shared against the 64.6% bound). Version 7's tenth arm missed the same way; the arms of base E
+sit at 61–66%, across the bound, so which of them pass depends on the seeds. With lLN2T alone
+no arm is within (16–23% / 14–20%, 80–82% / 92–96% shared). Every coupled arm stays within 21
+cells of its uncoupled base, and every arm within 19 cells of its version 7 count for each
+odor. The exact continuous clamp and fresh seeds therefore leave version 7's answer unchanged:
+the variant set is sparse by removing chemical cholinergic input onto PNs (41–43% / 37–39% of
+PNs spike), and electrical coupling barely changes recruitment: it moves no arm by more than
+21 cells, though near the overlap bound that can flip an arm (E/lLN2T+lLN1_bc is out, three of
+its four coupled arms are in). Outputs:
+`results/kc-sparseness/v8.executions/c714d0a3035c6d0842295f3e8057367fe9adbebb6e12fee4ac09eed6b31aee24/output/`.
 
 ## Electrical synapses (optional, 2026-10-13)
 

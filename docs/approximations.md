@@ -81,8 +81,8 @@ Each lock lists its own; the file is the authority.
 
 The validation battery passes 29/29 with the defaults; the held-out ORN_DM1 test, the
 DNp01 silence check, Kenyon cell sparseness v1–v5 and T4/T5 v1–v3 fail; Kenyon cell
-sparseness v7 is within only with the variant eLN set (v8, its rerun under the continuous
-clamp, has no result yet). The model is a connectome-
+sparseness v7 is within only with the variant eLN set, and v8 replicates it under the
+continuous clamp. The model is a connectome-
 constrained hypothesis generator, not a validated fly: biological validation (M4,
 [#36](https://github.com/gianlucamazza/flymsg/issues/36)) is blocked on an independent
 held-out benchmark.
