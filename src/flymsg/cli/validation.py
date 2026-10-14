@@ -14,6 +14,7 @@ from flymsg import (
     prereg,
     sensitivity,
     sim,
+    song,
     validate,
     wiring,
 )
@@ -374,5 +375,53 @@ def cmd_convergence(a, neurons, edges):
         {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
         started,
         {"verdict": verdict},
+    )
+    print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_song(a, neurons, edges):
+    """Run the locked pulse/sine benchmark: the model and its no-go first, then the data."""
+    started = datetime.now(UTC)
+    doc = song.assert_matches_code()
+    print(song.summary(doc))
+    regions = song.region_table(a.data, doc)
+    ratios = song.yamakoshi_ratios(
+        a.data / "raw" / "yamakoshi2025" / song.YAMAKOSHI, doc
+    )
+    cells, labels = song.run(neurons, edges, regions, ratios, a.workers, a.checkpoint)
+    out = managed.output(a, Path("runs/song") / f"v{doc['version']}")
+    out.mkdir(parents=True, exist_ok=True)
+    cells.to_json(out / "cells.jsonl", orient="records", lines=True)
+    result = song.evaluate(cells, labels, a.data, doc)
+    signs = result.pop("model")
+    signs.to_csv(out / "model.csv", index=False)
+    lines = [song.summary(doc), f"JO A/B ratios (Yamakoshi): {ratios}"]
+    if "targets" in result:
+        targets = result.pop("targets")
+        targets.to_csv(out / "data.csv", index=False)
+        both = signs.merge(
+            targets, on="label", how="outer", suffixes=("_model", "_data")
+        )
+        lines.append(both.to_string(index=False))
+    result["ratios"] = ratios
+    lines += [f"{k}: {v}" for k, v in result.items() if k != "verdict"]
+    lines.append(f"verdict: {result['verdict']}")
+    text = "\n".join(str(x) for x in lines)
+    (out / "report.txt").write_text(text + "\n")
+    print(text)
+    stamp(
+        out,
+        "song --run",
+        a,
+        neurons,
+        edges,
+        {
+            "song_version": doc["version"],
+            "song_sha256": doc["content_sha256"],
+            "grid": doc["grid"],
+        },
+        {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
+        started,
+        {"verdict": result["verdict"]},
     )
     print(f"report -> {out / 'report.txt'}")

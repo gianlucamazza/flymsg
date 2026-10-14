@@ -1,0 +1,290 @@
+# Pulse vs sine song across neuropils (issue 36, M4). Version 1, fixed 2026-10-14 before any run.
+# Changing a locked field requires incrementing `version` and updating `content_sha256` and
+# flymsg.song.VERSION_HASHES. `flymsg song` prints this file; `--run` executes it.
+version: 1
+content_sha256: a346c59b6fa1729912015d0d32c8f017f7f0ae03cd18006e9a00f09c4d838db3
+yaml_subset: 2
+evidence: [pacheco_song_stimulus, pacheco_song_responses, malecns_primary_regions, yamakoshi_jo_ab_ratio]
+
+issue: 36
+claim:
+  kind: held_out_benchmark
+  scored: true
+  what: "Per central-brain neuropil of male flies, the sign of the preference for pulse over sine song (Pacheco et al. 2021), predicted by the connectome driven through Johnston's organ with a temporal-only input."
+  scope: "The envelope-driven part of song selectivity only: the model has no carrier frequency, so selectivity that arises from frequency tuning early in the pathway (Baker et al. 2022; Azevedo & Wilson 2017) is outside the claim, and white noise is not scored."
+  held_out: "Pacheco et al. 2021's responses were never used to build, calibrate or tune flymsg; the data file is opened only after the model runs and its no-go check."
+
+seen_before_lock: "The dataset's structure only: timestamps, stimulus index vector, stimulus, sex and neuropil names, fly and ROI counts per neuropil and sex. No response value of any ROI has been read, summarised or plotted. Yamakoshi et al. 2025's raw traces were read to check their pipeline reproduces the authors' fitted file (one fly); no ratio was computed."
+
+inputs:
+  pacheco_file: "data/raw/pacheco2021/median_auditory_responses_wildtype.mat"
+  pacheco_sha256: 22c88e6261aebd17302d209a0a8e005c73730ae703e5754d905bc5670ab2d4ac
+  pacheco_doi: "10.34770/gv6w-5351"
+  syn_partners_file: "data/raw/roi/syn-partners-male-cns-v1.0-minconf-0.5-significant-only.feather"
+  syn_partners_sha256: 43748c76db13e339e9eeb6f4d56e98aab704a4f7fa8bf3cb916b323000070d04
+  yamakoshi_file: "data/raw/yamakoshi2025/Figure3_S7_Table6_Table7.zip"
+  yamakoshi_sha256: aafe9a31c3744a46cf8c0aba29818aaa65c2a16105c9f02cf3e173af9c1a5dbe
+  yamakoshi_doi: "10.17632/29hpr3nrrv"
+
+drive:
+  types: [JO-A, JO-B, JO-D]
+  type_regex: "^JO-[ABD]"
+  sides: both
+  neurons: 146
+  why: "JO-A, JO-B and JO-D respond at song frequencies (Pacheco et al. 2021; Kamikouchi et al. 2009; Matsuo et al. 2014); JO-C and JO-E respond to static deflection. Annotations ending in -unclear keep their subgroup."
+  equal_kicks: "kicks pass a dead time of one refractory period (sim.Params.t_ref), then each neuron's kicks are subsampled to its smallest count across the three conditions, so every JO neuron gets the same number of kicks in pulse, sine and aperiodic; one kick (about 48 mV) fires a JO neuron at rest, but its spikes also depend on recurrent input, so spikes are reported, not forced equal"
+  equal_mean_rate: "pulse and aperiodic kicks arrive at rate / duty during a pulse and none in a pause; sine at rate throughout"
+
+stimulus:
+  pulse_ms: 16.0
+  pause_ms: 20.0
+  train_ms: 10000.0
+  source: "Pacheco et al. 2021, Supplementary Table 2, coarse tuning protocol (Pslow): 16 ms pulses, 20 ms pauses, 10 s trains; sine 150 Hz, 10 s"
+  aperiodic: "the pulse train's number of pulses placed uniformly at random in the same 10 s with at least aperiodic_min_gap_ms between them: pulses without a period (and with irregular gaps)"
+  aperiodic_min_gap_ms: 4.4
+  aperiodic_min_gap_why: "two refractory periods (2 x sim.Params.t_ref), so no two pulses fuse into one longer pulse for a JO neuron"
+
+grid:
+  rates_hz: [50.0, 100.0, 200.0]
+  decision_rate_hz: 100.0
+  rate_why: "JO firing rates to song are not measured; the mean per-neuron rate is a free gain, scanned over 50, 100, 200 Hz (the battery's 100 Hz in the middle); the verdict is taken at 100 Hz and the other two are reported"
+  seed0: 360
+  seeds: 5
+  seeds_why: "the convergence and sensitivity locks' five seeds; a neuropil's sign is the seed median"
+  shuffles: 99
+  shuffles_why: "the smallest empirical p is 1/100, below alpha, so the shuffle test is not passed by its floor alone"
+  shuffle_seed0: 3600
+  duration_ms: 12000.0
+  bin_ms: 100.0
+
+neuropils:
+  - label: AMMC
+    index: 1
+    malecns: ["SAD"]
+    relation: merged
+  - label: SAD
+    index: 2
+    malecns: ["SAD"]
+    relation: merged
+  - label: GNG
+    index: 3
+    malecns: ["GNG"]
+    relation: exact
+  - label: WED
+    index: 4
+    malecns: ["WED"]
+    relation: exact
+  - label: AVLP
+    index: 5
+    malecns: ["AVLP"]
+    relation: exact
+  - label: PVLP
+    index: 6
+    malecns: ["PVLP"]
+    relation: exact
+  - label: PLP
+    index: 7
+    malecns: ["PLP"]
+    relation: exact
+  - label: AOTU
+    index: 8
+    malecns: ["AOTU"]
+    relation: exact
+  - label: AL
+    index: 9
+    malecns: ["AL"]
+    relation: exact
+  - label: MB_VL
+    index: 10
+    malecns: ["a'L", "aL"]
+    relation: merged
+  - label: MB_ML
+    index: 11
+    malecns: ["b'L", "bL", "gL"]
+    relation: merged
+  - label: MB_PED
+    index: 12
+    malecns: ["PED"]
+    relation: exact
+  - label: MB_CA
+    index: 13
+    malecns: ["CA"]
+    relation: exact
+  - label: LH
+    index: 14
+    malecns: ["LH"]
+    relation: exact
+  - label: EB
+    index: 15
+    malecns: ["EB"]
+    relation: exact
+  - label: FB
+    index: 16
+    malecns: ["FB"]
+    relation: exact
+  - label: PB
+    index: 17
+    malecns: ["PB"]
+    relation: exact
+  - label: NO
+    index: 18
+    malecns: ["NO"]
+    relation: exact
+  - label: BU
+    index: 19
+    malecns: ["BU"]
+    relation: exact
+  - label: LAL
+    index: 20
+    malecns: ["LAL"]
+    relation: exact
+  - label: SLP
+    index: 21
+    malecns: ["SLP"]
+    relation: exact
+  - label: SIP
+    index: 22
+    malecns: ["SIP"]
+    relation: exact
+  - label: SMP
+    index: 23
+    malecns: ["SMP"]
+    relation: exact
+  - label: CRE
+    index: 24
+    malecns: ["CRE"]
+    relation: exact
+  - label: SCL
+    index: 25
+    malecns: ["SCL"]
+    relation: exact
+  - label: ICL
+    index: 26
+    malecns: ["ICL"]
+    relation: exact
+  - label: IB
+    index: 27
+    malecns: ["IB"]
+    relation: exact
+  - label: ATL
+    index: 28
+    malecns: ["ATL"]
+    relation: exact
+  - label: VES
+    index: 29
+    malecns: ["VES"]
+    relation: exact
+  - label: EPA
+    index: 30
+    malecns: ["EPA"]
+    relation: exact
+  - label: GOR
+    index: 31
+    malecns: ["GOR"]
+    relation: exact
+  - label: SPS
+    index: 32
+    malecns: ["SPS"]
+    relation: exact
+  - label: IPS
+    index: 33
+    malecns: ["IPS"]
+    relation: exact
+  - label: FLA
+    index: 34
+    malecns: ["FLA"]
+    relation: exact
+  - label: CAN
+    index: 35
+    malecns: ["CAN"]
+    relation: exact
+  - label: PRW
+    index: 36
+    malecns: ["PRW"]
+    relation: exact
+  - label: mALT
+    index: 37
+    malecns: []
+    relation: absent
+  - label: GC
+    index: 38
+    malecns: []
+    relation: absent
+  - label: WEDC
+    index: 39
+    malecns: []
+    relation: absent
+  - label: iSADC
+    index: 40
+    malecns: []
+    relation: absent
+  - label: sSADC
+    index: 41
+    malecns: []
+    relation: absent
+
+score:
+  excluded: [AMMC, SAD, WED, GNG]
+  excluded_why: "receptor-near: JO axons project there and their pulse/sine sign is set by which JO subgroup stands for which song, not by the circuit; MaleCNS also has no AMMC outside SAD in primary regions"
+  model_activity: "per neuropil, the spike counts over the 12 s run (10 s train and 2 s after, the paper's window) summed over neurons weighted by each neuron's synaptic connections in that neuropil (pre and post, MaleCNS primary_post, left and right pooled); the driven JO neurons are left out"
+  model_index: "(pulse - sine) / (pulse + sine) per seed; the prediction is the sign of the seed median (0 where silent); a neuropil is resolved when every seed has that nonzero sign (used by the no-go only)"
+  data_index: "per male ROI the paper's magnitude for pulse and for sine, (pulse - sine) / (pulse + sine); the median over each fly's ROIs, then per neuropil the sign shared by the flies"
+  scored_set: "every scorable neuropil with a data sign; the real model, each shuffled connectome and the aperiodic train are scored on this same set by the same rule, and a sign 0 counts as wrong for all"
+  min_scored: 8
+  min_scored_why: "a quarter of the 32 scorable neuropils; with fewer, balanced accuracy moves by a whole neuropil's share"
+  statistic: "balanced accuracy of the model's sign against the data's (mean recall over pulse- and sine-preferring neuropils), so a constant prediction scores 0.5"
+  permutations: 10000
+  permutation_seed: 36
+  alpha: 0.05
+  verdict:
+    pass: "permutation p <= alpha (model signs permuted over the scored neuropils), degree-preserving shuffle p <= alpha (balanced accuracy of 99 shuffled connectomes, pulse vs sine, same seeds and rule) and higher balanced accuracy than the aperiodic train against sine"
+    pass_burst_only: "both p <= alpha but the aperiodic train predicts as well: pulses matter, their period does not"
+    fail: "otherwise"
+    uninformative: "fewer than min_scored neuropils, a single data class, or the no-go"
+
+no_go:
+  min_resolved_share: 0.5
+  rule: "computed on the model only, before the data file is opened: if fewer than half of the scorable neuropils resolve a sign over seeds at the decision rate, or the resolved ones are all pulse- or all sine-preferring, the run stops and is recorded as uninformative"
+  why: "LIF neurons with no intrinsic band-pass may smooth a 27.8 Hz envelope away, and a constant prediction cannot beat balanced accuracy 0.5; the test is meaningful only if the model distinguishes the conditions in both directions"
+  min_resolved_share_why: "a majority of neuropils must carry a model sign that is not seed noise"
+  not_a_no_go: "pulse against the aperiodic train is scored (pass against pass_burst_only), not a no-go"
+
+data_rule:
+  signal: median_z_scored_signal_per_roi
+  baseline_s: [-4.0, -0.5]
+  window_s: [0.0, 12.0]
+  high_percentile: 80
+  low_percentile: 20
+  block_before: 20
+  block_len: 61
+  min_flies: 4
+  min_fly_share_num: 2
+  min_fly_share_den: 3
+  min_fly_share_why: "the project's holds share (two thirds of seeds, here of flies); fewer flies agreeing leaves the neuropil without a sign"
+  percentile: "numpy linear interpolation; MATLAB prctile interpolates differently, a difference below one sample at 25 samples per window"
+  sex: Male
+  neuropil_index: "1-based into neuropil_full_names; 0 is a ROI outside every neuropil (41 names, values 0 to 41)"
+  source: "Pacheco et al. 2021 Methods (response magnitude: baseline -4 to -0.5 s, onset to 2 s after offset, 80th or 20th percentile of the baseline-subtracted signal whichever is larger in absolute value; neuropils counted with at least 4 flies). Z-scoring is linear per ROI, so the pulse/sine ratio is the same on dF/F (assumed per ROI over the recording, not per trial or stimulus; the readme does not say)."
+
+secondary:
+  decides: false
+  what: "the same model with JO-A and JO-B weighted by their measured response ratio: in each condition the weaker subgroup's kicks are thinned so that A/B equals the median over control flies of JO-A peak / JO-B peak (Yamakoshi et al. 2025, Fig 3); pulse from the 35 ms IPI pulse song, sine from the 100 Hz tone; JO-D untouched; at the decision rate"
+  pulse_column: IPI35
+  sine_column: 100Hz
+  control_flies: 11
+  baseline_frames: [1, 19]
+  fit_after_frame: 61
+  stimulus_frames: [21, 40]
+  compensations: "virgin females, a pan-JO driver with JO-A and JO-B separated by two ROIs on the axon bundle in the AMMC, a 167 Hz pulse carrier against Pacheco's 250 Hz, a 100 Hz tone for a 150 Hz sine, GCaMP6f peaks as a proxy for rates; equal kicks across conditions no longer hold"
+
+limits:
+  - "Temporal-only input: no carrier frequency, so frequency-driven selectivity and white noise are out of scope."
+  - "Spike counts against calcium: no GCaMP kernel; the model's 12 s count stands for the data's percentile magnitude."
+  - "The model has no spontaneous activity, so its baseline is zero and inhibition below baseline is invisible; the data's magnitude counts inhibitory responses as well."
+  - "Neuropil activity is a synapse-weighted sum of spike counts, a proxy for the calcium in a neuropil's neurites; left and right are pooled because the data has no hemisphere."
+  - "The JO rate is a free gain, scanned at three values; the delivered rate is lower than the nominal one after the dead time and the matching, and is reported."
+  - "Neuropils share neurons, so their signs are not independent; the permutation test treats them as exchangeable and overstates the effective number of neuropils, which the degree-preserving shuffles partly offset."
+  - "Neuropils absent from MaleCNS primary regions (mALT, GC, WEDC, iSADC, sSADC) are not scored; MB_VL and MB_ML pool the MaleCNS lobes."
+  - "The 85% selectivity rule of the paper classifies response types; the per-neuropil sign here uses the magnitudes it is built on."
+
+defaults_changed: false
