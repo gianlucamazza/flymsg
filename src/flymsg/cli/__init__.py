@@ -24,6 +24,7 @@ from flymsg import (
     sensitivity,
     silence_scan,
     sim,
+    song,
     t4t5,
     validate,
     viz,
@@ -64,6 +65,7 @@ from flymsg.cli.validation import (
     cmd_nulls,
     cmd_select_model,
     cmd_sensitivity,
+    cmd_song,
     cmd_validate,
     cmd_wiring_null,
 )
@@ -110,6 +112,7 @@ COMMANDS = {
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
     "convergence": cmd_convergence,
+    "song": cmd_song,
     "experiment": cmd_experiment,
     "explore": cmd_explore,
     "confirm": cmd_confirm,
@@ -142,6 +145,7 @@ MALECNS_ONLY = (
     "trace",
     "sensitivity",
     "convergence",
+    "song",
     "experiment",
     "explore",
     "confirm",
@@ -175,6 +179,8 @@ def main() -> None:
             return print(sensitivity.summary())
         if a.cmd == "convergence" and not a.run:
             return print(convergence.summary())
+        if a.cmd == "song" and not a.run:
+            return print(song.summary())
         if a.cmd == "viz-compare":  # reads two exports; loads no dataset
             scene = viz.compare_bundles(
                 a.a, a.b, a.out, tuple(a.labels), tuple(a.status), tuple(a.notes)
@@ -233,6 +239,8 @@ def main() -> None:
     except sensitivity.SensitivityError as err:
         sys.exit(f"flymsg: {err}")
     except convergence.ConvergenceError as err:
+        sys.exit(f"flymsg: {err}")
+    except song.SongError as err:
         sys.exit(f"flymsg: {err}")
     except silence_scan.ScanError as err:
         sys.exit(f"flymsg: {err}")

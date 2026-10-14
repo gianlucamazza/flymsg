@@ -135,6 +135,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--checkpoint", type=Path)
     s = sub.add_parser(
+        "song",
+        help="print the locked pulse/sine benchmark (Pacheco et al. 2021), or run it with --run (#36)",
+    )
+    s.add_argument("--run", action="store_true")
+    s.add_argument("--workers", type=int, default=1)
+    s.add_argument("--checkpoint", type=Path)
+    s = sub.add_parser(
         "trace",
         help="record v, g, threshold, spikes and input of chosen neurons (exploratory)",
     )

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Validation
+
+- **Pulse vs sine song lock** (#36, first held-out benchmark of M4): `validation/song.yaml` v1,
+  `flymsg song [--run]`.
+  - Johnston's organ JO-A, JO-B and JO-D get the same number of spikes in a pulse train
+    (16/20 ms, Pacheco et al. 2021), a sine and an aperiodic train. Per neuropil, the
+    synapse-weighted activity gives a pulse/sine preference sign.
+  - Scored against the paper's per-fly response magnitudes in 16 male flies, with balanced
+    accuracy against permuted signs and 20 degree-preserving shuffles. A model-only no-go runs
+    before the data are read.
+  - Secondary weighting by Yamakoshi et al. 2025's JO-A/JO-B ratio, reported only.
+  - Four evidence records. Locked before any response value was read. No run.
+
 ### Engineering
 
 - **B6 v2 pose contract** (G1, #178): `flymsg.pose` (`flymsg.embodiment/v2`) types world,

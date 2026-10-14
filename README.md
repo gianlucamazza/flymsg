@@ -125,6 +125,7 @@ recorded on the linked page. Negative results stay in the
 | KC → MBON11 depression v1                  | inconsistent: both odors go silent                           | [model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
 | Synapse weight rule v1                     | undecided: density and count rank Liu et al.'s uEPSPs alike  | [model](docs/model.md#synapse-weight-scaled-for-synapse-density)                                       |
 | Timestep convergence v1 (SF2)              | converged at 0.1 ms                                          | [validation](docs/validation.md#timestep-convergence-sf2-a-check-not-a-score)                          |
+| Pulse vs sine song v1 (#36, held out)      | locked, not run                                              | [benchmarks](docs/benchmarks.md#pulse-vs-sine-song-across-neuropils-lock-2026-10-14-36)                |
 | One-bit looming jump                       | silence fails                                                | [behavior](docs/behavior.md#result-2026-10-11)                                                         |
 | Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                              | [behavior](docs/behavior.md#residual-partner-scan)                                                     |
 | Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit | [behavior](docs/behavior.md#residual-partner-follow-up)                                                |
@@ -179,6 +180,7 @@ the final path. A clean committed worktree is required. See
 | `viz-compare A B --labels … --status …`                          | pair two replay exports; refuses mismatched datasets or time bases; no simulation                                                  |
 | `sensitivity [--run]`                                            | the locked w_syn × th_jump grid around the defaults: every cell, spreads, a figure; a report                                       |
 | `convergence [--run]`                                            | the locked timestep convergence check (SF2): the battery's responses at 0.1, 0.05 and 0.025 ms                                     |
+| `song [--run]`                                                   | the locked pulse/sine benchmark against Pacheco et al. 2021 (#36): model and no-go first, then the data                            |
 | `benchmarks [--run \| --corners]`                                | the frozen held-out manifest, scored with `--run`                                                                                  |
 | `silence-scan [--run]`                                           | the locked residual `TTMn_R` partner scan (#20); prints the protocol without `--run`                                               |
 | `partner-followup [--run]`                                       | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                                                     |

@@ -228,3 +228,113 @@ records:
       code: "flymsg.t4t5.delay_tau_syn: the synaptic time constant whose difference-of-exponentials peak is the delay later than the Params membrane's"
       inputs_sha256: "none: transcribed from the published text (doi and locator); no file archived"
     used_by: [validation/t4t5.yaml]
+
+  - id: pacheco_song_stimulus
+    quantity: "coarse tuning stimuli: pulse song train (pulse duration, pause, train length) and sine song"
+    value:
+      pulse_ms: 16.0
+      pause_ms: 20.0
+      train_ms: 10000.0
+      pulse_carrier_hz: 250.0
+      sine_hz: 150.0
+      intensity_mm_s: 5.0
+    unit: "ms, Hz, mm/s"
+    status: measured
+    method: "stimulus protocol of the coarse tuning experiments (Pslow), delivered to the antenna during two-photon imaging; six trials in blocks"
+    uncertainty: "none: protocol values"
+    source:
+      citation: "Pacheco, Thiberge, Pnevmatikakis & Murthy 2021, Nat Neurosci 24:93 (author manuscript PMC7783861)"
+      doi: "10.1038/s41593-020-00743-y"
+      license: unknown
+      locator: "Supplementary Table 2, sheet Coarse tuning protocol"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: "male and female"
+      stage: adult
+    cell:
+      type: "Johnston's organ neurons (stimulated through the antenna)"
+      maps_to: "MaleCNS JO-A, JO-B and JO-D, both sides"
+      mapping_uncertainty: "the antennal stimulus reaches every JO subgroup; the model drives only the song-responsive ones and without carrier frequency"
+    transfer_limits: "only the envelope (16 ms on, 20 ms off) enters the model; carrier frequency and intensity do not"
+    transformation:
+      code: "flymsg.song.envelope and flymsg.song.matched_kicks"
+      inputs_sha256: "none: transcribed from the published table (doi and locator); no file archived"
+    used_by: [validation/song.yaml]
+
+  - id: pacheco_song_responses
+    quantity: "median z-scored dF/F per ROI to pulse, sine and white noise across the central brain, with neuropil, fly and sex per ROI"
+    value: "the deposited file: 19,036 ROIs x 183 samples (-10 to 20 s at 2 Hz, per stimulus)"
+    unit: "standard deviations of dF/F"
+    status: measured
+    method: "two-photon pan-neuronal GCaMP6s imaging, 2 Hz volumes, 6 trials, median across trials per ROI; 33 flies (16 male), 19,036 ROIs"
+    uncertainty: "per ROI, the spread over six trials (per-trial file); not used"
+    source:
+      citation: "Pacheco, Thiberge, Pnevmatikakis & Murthy 2020, DataSpace, Princeton University"
+      doi: "10.34770/gv6w-5351"
+      license: "CC BY 4.0"
+      locator: "median_auditory_responses_wildtype.mat"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: "male (the scored subset)"
+      stage: adult
+    cell:
+      type: "ROIs in 41 IBNWB neuropils and tracts"
+      maps_to: "MaleCNS primary regions, left and right pooled (the lock's neuropil table)"
+      mapping_uncertainty: "regions by name; AMMC lies inside MaleCNS SAD; MB_VL and MB_ML pool lobes; five tracts have no region"
+    transfer_limits: "held-out target: never used to build or tune the model; read only after the model runs"
+    transformation:
+      code: "flymsg.song.data_targets"
+      inputs_sha256: "22c88e6261aebd17302d209a0a8e005c73730ae703e5754d905bc5670ab2d4ac"
+    used_by: [validation/song.yaml]
+
+  - id: malecns_primary_regions
+    quantity: "primary brain region of every synaptic connection (postsynaptic site)"
+    value: "the deposited table: one primary region per connection (143 region names)"
+    unit: "region name per connection"
+    status: measured
+    method: "MaleCNS v1.0 flat connectome, synaptic partners with confidence >= 0.5, significant-only; one row per connection with its postsynaptic primary region"
+    uncertainty: "region boundaries as drawn in MaleCNS v1.0"
+    source:
+      citation: "MaleCNS v1.0, FlyEM / Janelia (flyem-male-cns bucket, flat-connectome)"
+      doi: unknown
+      license: "CC BY 4.0"
+      locator: "syn-partners-male-cns-v1.0-minconf-0.5-significant-only.feather"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: male
+      stage: adult
+    cell:
+      type: "every MaleCNS neuron"
+      maps_to: "rows of data/neurons.parquet by bodyId"
+      mapping_uncertainty: "none: same dataset"
+    transfer_limits: "a connection's region stands for both partners' neurites there"
+    transformation:
+      code: "flymsg.song.region_counts"
+      inputs_sha256: "43748c76db13e339e9eeb6f4d56e98aab704a4f7fa8bf3cb916b323000070d04"
+    used_by: [validation/song.yaml]
+
+  - id: yamakoshi_jo_ab_ratio
+    quantity: "ratio of JO-A to JO-B peak calcium responses to a 35 ms IPI pulse song and to a 100 Hz tone"
+    value: "computed from the deposited traces by flymsg.song.yamakoshi_ratios at run time and written to the run's report"
+    unit: dimensionless
+    status: measured
+    method: "GCaMP6f in F-Gal4, iav-Gal4 (pan-JO) control flies, two ROIs on the JO-A and JO-B axon bundles in the AMMC; 10 fps, 2 s sounds from 2 s, four trials; the authors' pipeline (dF/F on frames 1-19, linear bleaching fit on frames 1-19 and 61-100, trial mean, three-frame average), peak over the stimulus; median over 11 flies of the per-fly ratio, computed at run time"
+    uncertainty: "fly-to-fly spread of the ratio; reported by the run"
+    source:
+      citation: "Yamakoshi et al. 2025, iScience (PMC12358670); data Mendeley 10.17632/29hpr3nrrv"
+      doi: "10.1016/j.isci.2025.113232"
+      license: "CC BY 4.0"
+      locator: "Figure 3 data, control flies"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: female
+      stage: "adult, virgin, 5-7 days"
+    cell:
+      type: "JO-A and JO-B axon bundles"
+      maps_to: "MaleCNS JO-A and JO-B (types starting JO-A, JO-B)"
+      mapping_uncertainty: "subgroups separated by ROI position, not by drivers"
+    transfer_limits: "female, 167 Hz pulse carrier, 100 Hz tone for a 150 Hz sine, songs and tone at different amplitudes (only the A/B ratio within a stimulus is used), calcium peaks as a proxy for rates"
+    transformation:
+      code: "flymsg.song.yamakoshi_ratios"
+      inputs_sha256: "aafe9a31c3744a46cf8c0aba29818aaa65c2a16105c9f02cf3e173af9c1a5dbe"
+    used_by: [validation/song.yaml]

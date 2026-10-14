@@ -14,6 +14,7 @@ from flymsg import (
     prereg,
     sensitivity,
     sim,
+    song,
     validate,
     wiring,
 )
@@ -374,5 +375,65 @@ def cmd_convergence(a, neurons, edges):
         {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
         started,
         {"verdict": verdict},
+    )
+    print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_song(a, neurons, edges):
+    """Run the locked pulse/sine benchmark: the model and its no-go first, then the data."""
+    started = datetime.now(UTC)
+    doc = song.assert_matches_code()
+    print(song.summary(doc))
+    regions = song.region_table(a.data, doc)
+    ratios = song.yamakoshi_ratios(
+        a.data / "raw" / "yamakoshi2025" / song.YAMAKOSHI, doc
+    )
+    cells, labels = song.run(neurons, edges, regions, ratios, a.workers, a.checkpoint)
+    out = managed.output(a, Path("runs/song") / f"v{doc['version']}")
+    out.mkdir(parents=True, exist_ok=True)
+    cells.to_json(out / "cells.jsonl", orient="records", lines=True)
+    rate = doc["grid"]["decision_rate_hz"]
+    signs = song.model_signs(song.model_indices(cells, labels, "real", rate))
+    signs.to_csv(out / "model.csv", index=False)
+    informative, note = song.no_go(signs, doc)
+    lines = [
+        song.summary(doc),
+        f"JO A/B ratios (Yamakoshi): {ratios}",
+        f"no-go: {note}",
+    ]
+    result = {"verdict": "uninformative: no-go", "no_go": note, "ratios": ratios}
+    if informative:
+        pacheco = song.check_input(
+            a.data / "raw" / "pacheco2021" / song.PACHECO,
+            doc["inputs"]["pacheco_sha256"],
+        )
+        targets = song.data_targets(pacheco, doc)
+        targets.to_csv(out / "data.csv", index=False)
+        result.update(song.judge(cells, labels, targets, doc))
+        result["reported"] = song.reported(cells, labels, targets, doc)
+        lines += [
+            signs.merge(
+                targets, on="label", how="outer", suffixes=("_model", "_data")
+            ).to_string(index=False)
+        ]
+    lines += [f"{k}: {v}" for k, v in result.items() if k != "verdict"]
+    lines.append(f"verdict: {result['verdict']}")
+    text = "\n".join(str(x) for x in lines)
+    (out / "report.txt").write_text(text + "\n")
+    print(text)
+    stamp(
+        out,
+        "song --run",
+        a,
+        neurons,
+        edges,
+        {
+            "song_version": doc["version"],
+            "song_sha256": doc["content_sha256"],
+            "grid": doc["grid"],
+        },
+        {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
+        started,
+        {"verdict": result["verdict"]},
     )
     print(f"report -> {out / 'report.txt'}")
