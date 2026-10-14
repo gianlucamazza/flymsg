@@ -1,0 +1,735 @@
+{
+ "results": [
+  {
+   "command": "behavior --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": true,
+   "execution_sha256": null,
+   "flymsg": "0.8.5",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/behavior.yaml",
+   "lock_sha256": "8f7a9dd74355ed60fb156f4eda162c04a5bc9e3eb1e428320039c1b5931dab50",
+   "lock_version": 1,
+   "outputs_sha256": {
+    "replay.npz": "e95cf988e6aa3c0aca7e8491c05eb88611c68f101d7526181ba31fa9629e61da",
+    "report.csv": "c8f80be546f7282d638e243311cced831d80e93e6e7a875465eedcf3d214b97c",
+    "run.txt": "8888450d60a4707e9ac551957fc68b0492cada26791dfa84a3509563ff4c8d5a"
+   },
+   "python": "3.13.9",
+   "result": "results/behavior",
+   "seeds": {
+    "seed0": 0,
+    "seeds": 3
+   },
+   "source_commit": "96cee3bc991dc6b62dbf84077df7d809686ad05f",
+   "verdict": "calibration feasibility FAIL: silence"
+  },
+  {
+   "command": "silence-scan --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.26",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/silence_scan.yaml",
+   "lock_sha256": "0982767d4ce972c7c9ef08b2c3491885e8bf242d7aeb54c22927eb6437a2bb1b",
+   "lock_version": 1,
+   "outputs_sha256": {
+    "confirm.csv": "59548ab6903a8ac6d6f3bf94246fa984a0c4aae4265b3aa5f8b6cd65c8f62a2d",
+    "posthoc.txt": "f300290ab147f2b1165a2a8d9edb463b12bab202ec249fb5cda0d3278826f854",
+    "report.txt": "f7710841b272cd23978f48c8631ef30b16946ba1d4a54e51ef56ffd47d198b5c",
+    "screen.csv": "38764522395f2d89beb7bbfa4660b7ebef3724025bba2776843abc84f317ba51"
+   },
+   "python": "3.13.9",
+   "result": "results/silence-scan/v1",
+   "seeds": {
+    "confirm": [
+     10,
+     11,
+     12
+    ],
+    "screen": [
+     0,
+     1,
+     2
+    ]
+   },
+   "source_commit": "7d939b2758181e292d0ab9bc6ead75fafc2422fd",
+   "verdict": "none: the residual drive is not one cell type"
+  },
+  {
+   "command": "silence-scan --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.27",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/silence_scan.yaml",
+   "lock_sha256": "79762510dae3d4f0499b8b60906f59920973469a82b0472176d88e6bc5fd4627",
+   "lock_version": 2,
+   "outputs_sha256": {
+    "confirm.csv": "29c8a35866312892547d14d870ce2188ac14439c127e4eeb87797a030dad5869",
+    "report.txt": "ba978f0bfc98bfa01170081d14f9d94ec6019641568477eb6f3947221f92410e",
+    "screen.csv": "38764522395f2d89beb7bbfa4660b7ebef3724025bba2776843abc84f317ba51"
+   },
+   "python": "3.13.9",
+   "result": "results/silence-scan/v2",
+   "seeds": {
+    "confirm": [
+     20,
+     21,
+     22
+    ],
+    "screen": [
+     0,
+     1,
+     2
+    ]
+   },
+   "source_commit": "764af9e385cde72c6b3502891197768b6275deca",
+   "verdict": "names_partner: DNp02, DNp06"
+  },
+  {
+   "command": "silence-scan --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.40",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/silence_scan.yaml",
+   "lock_sha256": "8cb7434f86ec0a0c545cee50167f1130f6d4b832feb6e785ee923e9474f28a55",
+   "lock_version": 3,
+   "outputs_sha256": {
+    "confirm.csv": "56a8369ff44821643def58f27f7625d9e3a30973f487bc4c1246ed786f78aed7",
+    "report.txt": "c0bb6b24f90bc95f8eef55ff6ed1e08125ba77bb3829b41b234f5a8c1e9ac8e1",
+    "screen.csv": "38764522395f2d89beb7bbfa4660b7ebef3724025bba2776843abc84f317ba51"
+   },
+   "python": "3.13.9",
+   "result": "results/silence-scan/v3",
+   "seeds": {
+    "confirm": [
+     30,
+     31,
+     32
+    ],
+    "screen": [
+     0,
+     1,
+     2
+    ]
+   },
+   "source_commit": "1bbf60e4c0b769b28611b6bf30e984a7379f060a",
+   "verdict": "names_partner: DNp02, DNp06"
+  },
+  {
+   "command": "mb-plasticity --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.41",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/mb_plasticity.yaml",
+   "lock_sha256": "ca75a5247ff4f5081f1034bbbf939636181829f5dcb2ad11fae6f1fb13610b50",
+   "lock_version": 1,
+   "outputs_sha256": {
+    "counts.csv": "e81dfd447c569bdf03a5f4a3f4e9a3582a3655807895c0a1724315b8c847ac30",
+    "report.txt": "179164a9205d1da57104d8d8b945f29cc15167272ea9ea6c30189b1fd7ce04f6"
+   },
+   "python": "3.13.9",
+   "result": "results/mb-plasticity/v1",
+   "seeds": {
+    "all": [
+     50,
+     51,
+     52
+    ]
+   },
+   "source_commit": "ce20fcefc067fa3201705910c866f0a4a98d3011",
+   "verdict": "inconsistent"
+  },
+  {
+   "command": "kc-sparseness --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.41",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/kc_sparseness.yaml",
+   "lock_sha256": "d5343b238f61e3bd9cb51ed8fc21981da7a418ad5fdfe7133fe201899c33caba",
+   "lock_version": 1,
+   "outputs_sha256": {
+    "arms.csv": "6f696605a74dbdb65fe49d14e1e7dbc26c3520637dfcfe3bced6508b6ce3c920",
+    "report.txt": "323fd8c039d65381e89186d3f3c9323d30aa0aab07c6625744305662a7debc12"
+   },
+   "python": "3.13.9",
+   "result": "results/kc-sparseness/v1",
+   "seeds": {
+    "all": [
+     60,
+     61,
+     62
+    ]
+   },
+   "source_commit": "b096b4a9c36e9985ee31c938b8b32cbc3ed000b0",
+   "verdict": "not_recurrence"
+  },
+  {
+   "command": "kc-sparseness --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.41",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/kc_sparseness.yaml",
+   "lock_sha256": "bcfef9af52861dfd0a903c8b01aded5f8f504b645cdf6933d91b01ae47350322",
+   "lock_version": 2,
+   "outputs_sha256": {
+    "arms.csv": "65ec8b5910268428b93744c836d77fcf4eb58c7cd9dd07b2d96e312d1d110a49",
+    "report.txt": "1733b891e9e6b9ada127727fb9b2c49b4db29ca4ff5f6014e24bea7065333824"
+   },
+   "python": "3.13.9",
+   "result": "results/kc-sparseness/v2",
+   "seeds": {
+    "all": [
+     70,
+     71,
+     72
+    ]
+   },
+   "source_commit": "374309ed33d54facc3a280b1408eefaa135e9ab3",
+   "verdict": "within: E, F"
+  },
+  {
+   "command": "kc-sparseness --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.42",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/kc_sparseness.yaml",
+   "lock_sha256": "0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2",
+   "lock_version": 3,
+   "outputs_sha256": {
+    "arms.csv": "e9c9f5070c71b9056f56353906c1b592bbb801460fc384a95eaf994414422d19",
+    "report.txt": "96b645e717b6945b77f343419a4621de5d40315f86bc038380493f0583d92b57"
+   },
+   "python": "3.13.9",
+   "result": "results/kc-sparseness/v3",
+   "seeds": {
+    "all": [
+     80,
+     81,
+     82
+    ]
+   },
+   "source_commit": "c1cf89671a1e532d6dee1487bd11d38f067acef6",
+   "verdict": "none"
+  },
+  {
+   "command": "kc-sparseness --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.44",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/kc_sparseness.yaml",
+   "lock_sha256": "72059246ade98ec69b49ce32bac587e0f6f52d39b2cb747c962fb4177694af67",
+   "lock_version": 4,
+   "outputs_sha256": {
+    "arms.csv": "f6ea98411bcf08a3f2af91606fc08d3f59a0e388f038ddd31c965aa2491f7d24",
+    "report.txt": "e5b4108df124dfee996803c46d3414f50cc95326225b5946ce28b51a2dbfab1f"
+   },
+   "python": "3.13.9",
+   "result": "results/kc-sparseness/v4",
+   "seeds": {
+    "all": [
+     83,
+     84,
+     85
+    ]
+   },
+   "source_commit": "b1116afd21ec37381303bee40a6976ed211a37ef",
+   "verdict": "none"
+  },
+  {
+   "command": "kc-sparseness --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.44",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/kc_sparseness.yaml",
+   "lock_sha256": "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",
+   "lock_version": 5,
+   "outputs_sha256": {
+    "arms.csv": "fe7f7d802a95f476fde2b900534c3a10c1fdf5d7ceb8a7a30bcb14a326d9dea9",
+    "report.txt": "e5fa956619201829ca23edc852ca843797624ef40e7d478b312f9f4001228cfe"
+   },
+   "python": "3.13.9",
+   "result": "results/kc-sparseness/v5",
+   "seeds": {
+    "all": [
+     86,
+     87,
+     88
+    ]
+   },
+   "source_commit": "00aff9cb11573686ffcf0ea6dea90639c30093d7",
+   "verdict": "none"
+  },
+  {
+   "command": "kc-sparseness --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": "f8549bf7414656b26cf37dcf99811142bb3b1b3a7743b79d5ebeda941457c3a5",
+   "flymsg": "0.8.45",
+   "inputs_sha256": {
+    "door/door_mappings.csv": "1197c492e769b1b587c907c5b750ffa2507d7e6c9fe9dfcb2ee8603871e00912",
+    "door/door_response_matrix.csv": "bc2aa5414ff54d3a1399f5fe171e154bcadc754bcf323a3c27711a54f70848e2",
+    "door/odor.csv": "a31d1841cf90ce23ec149760a5efa38eae02de7820bb2300c3a7dba221745940",
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/kc_sparseness.yaml",
+   "lock_sha256": "de4274eb0bd689aefe8c9bcc9318eb40fbcdb688b9da61980a559f6c040896ef",
+   "lock_version": 7,
+   "outputs_sha256": {
+    "arms.csv": "744715b90bb2e9f8204f328266e020c354820b4452877eb02e10677d52261ad4",
+    "report.txt": "3f2c23cf7114cb0b2a7eb717837426a4132ba4414bd411dd4ea922f251ba3e89"
+   },
+   "python": "3.13.9",
+   "result": "results/kc-sparseness/v7.executions/f8549bf7414656b26cf37dcf99811142bb3b1b3a7743b79d5ebeda941457c3a5/output",
+   "seeds": {
+    "all": [
+     92,
+     93,
+     94
+    ]
+   },
+   "source_commit": "45c064116ea62ba5a553152f344cb059a583feb4",
+   "verdict": "within: E/lLN2T+lLN1_bc, F/lLN2T+lLN1_bc, E/lLN2T+lLN1_bc+spike0.5ms, E/lLN2T+lLN1_bc+spike1ms, E/lLN2T+lLN1_bc+spike2ms, F/lLN2T+lLN1_bc+spike0ms, F/lLN2T+lLN1_bc+spike0.5ms, F/lLN2T+lLN1_bc+spike1ms, F/lLN2T+lLN1_bc+spike2ms"
+  },
+  {
+   "command": "kc-sparseness --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": "c714d0a3035c6d0842295f3e8057367fe9adbebb6e12fee4ac09eed6b31aee24",
+   "flymsg": "0.8.45",
+   "inputs_sha256": {
+    "door/door_mappings.csv": "1197c492e769b1b587c907c5b750ffa2507d7e6c9fe9dfcb2ee8603871e00912",
+    "door/door_response_matrix.csv": "bc2aa5414ff54d3a1399f5fe171e154bcadc754bcf323a3c27711a54f70848e2",
+    "door/odor.csv": "a31d1841cf90ce23ec149760a5efa38eae02de7820bb2300c3a7dba221745940",
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/kc_sparseness.yaml",
+   "lock_sha256": "016ad8ca4d274f9eef0f40c568b672df208db2fbeffd7f350a2ed226880f7223",
+   "lock_version": 8,
+   "outputs_sha256": {
+    "arms.csv": "5cd235b1925ec6f864228d779d299de771ab76d7812583e290f34fa4b8fd11b8",
+    "report.txt": "d4b92e6bd6dc7d0fd05de46a21c3613743b5c36879c5e15ca893ecb5127f6a0f"
+   },
+   "python": "3.13.9",
+   "result": "results/kc-sparseness/v8.executions/c714d0a3035c6d0842295f3e8057367fe9adbebb6e12fee4ac09eed6b31aee24/output",
+   "seeds": {
+    "all": [
+     95,
+     96,
+     97
+    ]
+   },
+   "source_commit": "ad7b71ec43389a86087c01b9b4780644f207363c",
+   "verdict": "within: F/lLN2T+lLN1_bc, E/lLN2T+lLN1_bc+spike0ms, E/lLN2T+lLN1_bc+spike0.5ms, E/lLN2T+lLN1_bc+spike2ms, F/lLN2T+lLN1_bc+spike0ms, F/lLN2T+lLN1_bc+spike0.5ms, F/lLN2T+lLN1_bc+spike1ms, F/lLN2T+lLN1_bc+spike2ms"
+  },
+  {
+   "command": "t4t5 --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.42",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/t4t5.yaml",
+   "lock_sha256": "bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8",
+   "lock_version": 1,
+   "outputs_sha256": {
+    "metrics.csv": "765e90d79f09bb056d0c8bd6bfcf956c69493c106f176ac14dfdefd41d79ebdb",
+    "report.txt": "75dfd6bb144ce8788117acfeebddc877dba8ae291f05ddb797388a090b47a701",
+    "spikes.csv": "2f8174eb1ab734f10d57c2ab08eb21f94fb18d10c879da5d9a52fc4b5b165406"
+   },
+   "python": "3.13.9",
+   "result": "results/t4t5/v1",
+   "seeds": {
+    "all": [
+     90,
+     91,
+     92
+    ]
+   },
+   "source_commit": "0c574f5549380d36e8d97731b2742fb290763468",
+   "verdict": "neither"
+  },
+  {
+   "command": "t4t5 --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.44",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/t4t5.yaml",
+   "lock_sha256": "d25bcbd7ecd6e01f383c00703995164d29cc57fc11192be15234b19314b0e390",
+   "lock_version": 2,
+   "outputs_sha256": {
+    "configurations.csv": "027e234ecfc6077839798348176667df6f0068896c03eeb01ceccc2b9a38b185",
+    "lmc.csv": "ee864196a393139fb2b2e9ac58e502bd6f72324524f85cd4707844cb84682f08",
+    "metrics.csv": "74cff552676d7403a712b84910eb2a42c117aac5835d18c0ac32adadcb9fcb2b",
+    "pathway.csv": "cc38feb773af833e9044d65c3d995e26d4d0c85ff87822268c7fc609fe5098cb",
+    "report.txt": "e099e4567ed21d4944a96c3d48c7ef778e7fbe2585a3e89b7fada850f3a4ce54",
+    "spikes.csv": "0115ce61cc6d7f0993583f955ecfb6325d283fddd9deb6b9e3ccff9ffdd6d19f"
+   },
+   "python": "3.13.9",
+   "result": "results/t4t5/v2",
+   "seeds": {
+    "all": [
+     93
+    ]
+   },
+   "source_commit": "17173c2cba50db104d8b4d3195d1307dd573e921",
+   "verdict": "robust: neither"
+  },
+  {
+   "command": "t4t5 --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": "d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644",
+   "flymsg": "0.8.45",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "eyemap/20240701.RData": "8408447f8c5798fbc6d751de79ef4983d08c342a500c9a55b2a3b4b38d92deec",
+    "eyemap/eyemap.RData": "c3f63c69afdc3f381cdafabb1d376b8e25ec5a71bce67550ae42fcdd79cf618e",
+    "groschner2022/fig3_C3.npy": "b9118e32cfb0d22acd4da41aee6931923ea33e4dda258df2abd26fd252e21be6",
+    "groschner2022/fig3_Mi1.npy": "351e9e791a30d1c5bac329165934fbc05dbcfbb038b4b6e940e2531de1d61cce",
+    "groschner2022/fig3_Mi4.npy": "9309bb6deadcb8bf5c9a52267ef6564c314a04212af81c129b0754cf4de1f791",
+    "groschner2022/fig3_Mi9.npy": "3d5909c9b6c42776ff5e56d7219eacd002758a24b3cf5b7cecf30a07b8bf5c83",
+    "groschner2022/fig3_Tm3.npy": "07797ccd2ce72d3ea89c9ca01ba641c7c92d3d6dd198d6324596f2cf16b0fb82",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c",
+    "raw/annotations": "2177e246113e4cfbf1e7772ec37c6da1955ff22e8063d0b1f833101f99a9a3b2"
+   },
+   "lock": "validation/t4t5.yaml",
+   "lock_sha256": "f19a2d7b82a0be9a3efb175813b165746161483b71b978115999816d00bc40b2",
+   "lock_version": 3,
+   "outputs_sha256": {
+    "configurations.csv": "38b4c0d04b7b9aa31929c5a2d0c112ebeb03ab24413ce5728eb6de56d94d92b3",
+    "lmc.csv": "445ff13bd7ed8f50fc5d4df64411613b90dca54b5748b416e0420a705fcfc5bd",
+    "medulla.csv": "70c28f38d467bda853089c55f7b322e78389878a440efb446fecd743ae1c67df",
+    "metrics.csv": "31ffec245dd3c8bd393fd4eecdb6d33470ce4e3b97ad1df9290b23dee57a39ab",
+    "pathway.csv": "afc3aef579a4fbe2e5385c48899ca0f4056b43d17c67ba9da126ca516d372523",
+    "report.txt": "f43ae20b82163552c9bb3d8fe6902d42388bf334d5cbc1ee9a68f710897e8ff2",
+    "spikes.csv": "f60131d57c00c4807441bce2edcf15fa09bbd0cec95503a1196208bb19c8ed14",
+    "t5.csv": "8f8cb66d4e9e3ffe3df822bc4e032682757ee45c1398014084ab8354a8801f50"
+   },
+   "python": "3.13.9",
+   "result": "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output",
+   "seeds": {
+    "all": [
+     94
+    ]
+   },
+   "source_commit": "406f622902c132973a1f8350ace709a03652337e",
+   "verdict": "robust: neither"
+  },
+  {
+   "command": "weight-rule --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": "beb2fccf6b8094ee842de39deba87da17448ac37fab0626e1fa15db517762f4f",
+   "flymsg": "0.8.45",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c",
+    "weight_rule/areas.csv": "a59ec3b23f2ab482528e40700caf0c6c7eb69eee011aa38da1ed1976130f17ee"
+   },
+   "lock": "validation/weight_rule.yaml",
+   "lock_sha256": "87a33e5fbc589f4445386618275c46bf88c18d7f97d46e1b02e82ff4535ef79d",
+   "lock_version": 1,
+   "outputs_sha256": {
+    "pairs.csv": "7561fd97ebdd770653e28c601941cbd6eb51238b63f33788b0c73dffc83528ba",
+    "report.txt": "192b72339bb8914648a73abb23646eceab17f0ebf21000d48c1534a33400e2f7",
+    "sensitivity_pairs.csv": "46b7bbcea99fb7de7fee31d3cd24c4872f09214c709a124ac3bf93973e6dea54"
+   },
+   "python": "3.13.9",
+   "result": "results/weight-rule/v1.executions/beb2fccf6b8094ee842de39deba87da17448ac37fab0626e1fa15db517762f4f/output",
+   "seeds": {
+    "bootstrap": [
+     139
+    ]
+   },
+   "source_commit": "78f06737ebe4e6f520d018161182eaac33cef0ad",
+   "verdict": "undecided"
+  },
+  {
+   "command": "jump3d --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.43",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/jump3d.yaml",
+   "lock_sha256": "c93eeebd796df1913769f3625ec033745a0ff29ae188bcced938d0b9bab9e8d2",
+   "lock_version": 1,
+   "outputs_sha256": {
+    "report.txt": "ff03c24c7025a2d759be18eb7032f121f4de4cf2167f0472a857e5c4f252c82f",
+    "seeds.json": "81cca66cb01227014c571eef29be4158ce8b0bebce70f5aeb7c1952bdaecbda9"
+   },
+   "python": "3.13.9",
+   "result": "results/jump3d/v1",
+   "seeds": {
+    "all": [
+     110,
+     111,
+     112
+    ]
+   },
+   "source_commit": "c05878d9e12331d0abf45477561abaa9c84ba1b6",
+   "verdict": "short"
+  },
+  {
+   "command": "partner-followup --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.41",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/partner_followup.yaml",
+   "lock_sha256": "513ebd2c8237f1805c42f45b55fe0168e985ecd7e39940a7a17639e9249a4d99",
+   "lock_version": 1,
+   "outputs_sha256": {
+    "drive.csv": "667428c6114f68fc990297a298619b421f99238f85a5ab15a277b58be9e74a39",
+    "left.csv": "9cc8e49695262df269570fe3e73f007c2803754f239c6add2d1e0f3eebc61f96",
+    "null_draws.csv": "074de4647423ee8f6cfbdfd48f165738a67e9277122a237f080ae268708b291f",
+    "report.txt": "11ed964ecb3b456e2c7ac0686e310c5675cbd9fbd6f91d25f042ea4f65830023"
+   },
+   "python": "3.13.9",
+   "result": "results/partner-followup/v1",
+   "seeds": {
+    "all": [
+     40,
+     41,
+     42
+    ]
+   },
+   "source_commit": "39b53a530e0dbc65e8fdd664592aab445c9397cd",
+   "verdict": null
+  },
+  {
+   "command": "jump",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": true,
+   "execution_sha256": null,
+   "flymsg": "0.8.33",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": null,
+   "lock_sha256": null,
+   "lock_version": null,
+   "outputs_sha256": {
+    "trajectory.json": "3a37cee3a77b4ab3aa2532a6fd23daa549bdbaa70ffee00517372907cc997ec5"
+   },
+   "python": "3.13.9",
+   "result": "results/jump/intact",
+   "seeds": {
+    "seed": 0
+   },
+   "source_commit": "3b30bcae77000a74159011078e374e13e9599f5e",
+   "verdict": null
+  },
+  {
+   "command": "jump",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": true,
+   "execution_sha256": null,
+   "flymsg": "0.8.33",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": null,
+   "lock_sha256": null,
+   "lock_version": null,
+   "outputs_sha256": {
+    "trajectory.json": "dbb30267375007e131c27ec0b06e28855015d53f80fdd32014d7117516931ff5"
+   },
+   "python": "3.13.9",
+   "result": "results/jump/dnp01",
+   "seeds": {
+    "seed": 0
+   },
+   "source_commit": "3b30bcae77000a74159011078e374e13e9599f5e",
+   "verdict": null
+  },
+  {
+   "command": "loop",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": true,
+   "execution_sha256": null,
+   "flymsg": "0.8.34",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": null,
+   "lock_sha256": null,
+   "lock_version": null,
+   "outputs_sha256": {
+    "loop.json": "9571e3e6a9400413220bafdc754bfdaa1fadfe12297a9b09dbb1f09b7d0a877c",
+    "loop.npz": "7af126a44cfbd38c20e0116fb682f4edaa84f5f2408e432f28df6118c52dd5a2"
+   },
+   "python": "3.13.9",
+   "result": "results/loop",
+   "seeds": {
+    "seed": 0
+   },
+   "source_commit": "fe1a01821ee1e1e0f9cc3d5f2059ce3192637ec6",
+   "verdict": null
+  },
+  {
+   "command": "sensitivity --run",
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.37",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/sensitivity.yaml",
+   "lock_sha256": "59806931f038d4565eeaee40cb15f5671db1bb3931ddf319f0c0b0b61eb55fef",
+   "lock_version": 1,
+   "outputs_sha256": {
+    "cells.csv": "460d75f714e1c99659f582fb8f5c77a6ea6614907f516c5a1c5e46f5a659a09e",
+    "holds.csv": "04a17469179a20e6a1835ef396449f76bedee4dab64e787aaee9d4e63cf13a9a",
+    "rate.svg": "9df5c1fefaba997b79af8d6d0787a280f28de72bf77b2ebce7640c9923b76e82",
+    "report.txt": "f4a4c44df1f7684beb9f78e0ecc97987408a22d36848da1a00783d187c56c789",
+    "spreads.csv": "24f9dc4a672c1f07a2645ac3fcfb92ec3f5f746c6c7d9012f2278fafacc3a7f5"
+   },
+   "python": "3.13.9",
+   "result": "results/sensitivity/v1",
+   "seeds": {
+    "seed0": 0,
+    "seeds": 5
+   },
+   "source_commit": "a7a15a9398d788513173fe0541bde120b9ed2262",
+   "verdict": null
+  }
+ ],
+ "schema": "flymsg.replication_index/v1"
+}
