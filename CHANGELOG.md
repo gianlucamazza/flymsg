@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Validation
+
+- **Timestep convergence lock** (SF2, #148): `validation/convergence.yaml` v1 runs the six
+  sensitivity cases at dt 0.1, 0.05 and 0.025 ms (seeds 0–4) and judges a response
+  converged when its holds verdict matches the finest step and its seed median lies within
+  the finest seed range; `flymsg convergence [--run]`. A numerical lock may declare
+  `evidence: none` with a reason. No run.
+
 ## 0.8.46 — 2026-10-14
 
 ### Result

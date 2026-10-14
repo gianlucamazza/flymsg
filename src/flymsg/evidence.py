@@ -110,6 +110,18 @@ def check_lock(doc: dict, records: dict[str, dict], label: str) -> list[str]:
     if doc.get("yaml_subset") != 2:
         return []
     ids = doc.get("evidence")
+    if ids == "none":
+        # a numerical lock that uses only the live defaults states why it needs no record;
+        # a scored lock or one that changes the defaults always names its records
+        if not str(doc.get("evidence_none") or "").strip():
+            raise EvidenceError(f"{label}: evidence: none needs evidence_none")
+        if (doc.get("claim") or {}).get("scored") is not False or doc.get(
+            "defaults_changed"
+        ) is not False:
+            raise EvidenceError(
+                f"{label}: evidence: none only for an unscored lock on the defaults"
+            )
+        return []
     if not isinstance(ids, list) or not ids:
         raise EvidenceError(f"{label}: a new lock lists its evidence records")
     missing = [i for i in ids if i not in records]

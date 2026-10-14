@@ -7,6 +7,7 @@ from pathlib import Path
 from flymsg import (
     benchmarks,
     compare,
+    convergence,
     data,
     managed,
     nulls,
@@ -334,5 +335,44 @@ def cmd_sensitivity(a, neurons, edges):
         },
         {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
         started,
+    )
+    print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_convergence(a, neurons, edges):
+    """Run the locked timestep convergence check and write every cell and the judgement."""
+    started = datetime.now(UTC)
+    doc = convergence.assert_matches_code()
+    print(convergence.summary(doc))
+    cells = convergence.run(neurons, edges, a.workers, a.checkpoint)
+    out = managed.output(a, Path("runs/convergence") / f"v{doc['version']}")
+    out.mkdir(parents=True, exist_ok=True)
+    cells.to_csv(out / "cells.csv", index=False)
+    judged = convergence.judge(cells, doc)
+    judged.to_csv(out / "judged.csv", index=False)
+    verdict = convergence.verdict(judged, doc)
+    text = "\n".join(
+        [
+            convergence.summary(doc),
+            judged.to_string(index=False),
+            f"verdict: {verdict}",
+        ]
+    )
+    (out / "report.txt").write_text(text + "\n")
+    print(text)
+    stamp(
+        out,
+        "convergence --run",
+        a,
+        neurons,
+        edges,
+        {
+            "convergence_version": doc["version"],
+            "convergence_sha256": doc["content_sha256"],
+            "grid": doc["grid"],
+        },
+        {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
+        started,
+        {"verdict": verdict},
     )
     print(f"report -> {out / 'report.txt'}")

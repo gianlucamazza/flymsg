@@ -8,6 +8,7 @@ from pathlib import Path
 from flymsg import (
     behavior,
     benchmarks,
+    convergence,
     data,
     eye,
     jump3d_lock,
@@ -31,6 +32,7 @@ PROTOCOLS = {
     "behavior": behavior,
     "benchmarks": benchmarks,
     "sensitivity": sensitivity,
+    "convergence": convergence,
     "silence-scan": silence_scan,
     "partner-followup": partner_followup,
     "mb-plasticity": plasticity,

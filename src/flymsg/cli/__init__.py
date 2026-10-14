@@ -9,6 +9,7 @@ import sys
 from flymsg import (
     behavior,
     benchmarks,
+    convergence,
     data,
     dimorphism,
     draws,
@@ -59,6 +60,7 @@ from flymsg.cli.sensory import (
 from flymsg.cli.simulate import cmd_calibrate, cmd_sim, cmd_trace, cmd_viz, summarize
 from flymsg.cli.validation import (
     cmd_benchmarks,
+    cmd_convergence,
     cmd_nulls,
     cmd_select_model,
     cmd_sensitivity,
@@ -107,6 +109,7 @@ COMMANDS = {
     "weight-rule": cmd_weight_rule,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
+    "convergence": cmd_convergence,
     "experiment": cmd_experiment,
     "explore": cmd_explore,
     "confirm": cmd_confirm,
@@ -138,6 +141,7 @@ MALECNS_ONLY = (
     "weight-rule",
     "trace",
     "sensitivity",
+    "convergence",
     "experiment",
     "explore",
     "confirm",
@@ -169,6 +173,8 @@ def main() -> None:
             return print(table.to_string(index=False) if not table.empty else "no runs")
         if a.cmd == "sensitivity" and not a.run:
             return print(sensitivity.summary())
+        if a.cmd == "convergence" and not a.run:
+            return print(convergence.summary())
         if a.cmd == "viz-compare":  # reads two exports; loads no dataset
             scene = viz.compare_bundles(
                 a.a, a.b, a.out, tuple(a.labels), tuple(a.status), tuple(a.notes)
@@ -225,6 +231,8 @@ def main() -> None:
     except workbench.ConfigError as err:
         sys.exit(f"flymsg: {err}")
     except sensitivity.SensitivityError as err:
+        sys.exit(f"flymsg: {err}")
+    except convergence.ConvergenceError as err:
         sys.exit(f"flymsg: {err}")
     except silence_scan.ScanError as err:
         sys.exit(f"flymsg: {err}")

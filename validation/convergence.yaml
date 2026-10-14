@@ -1,0 +1,60 @@
+# Timestep convergence (SF2, issue 148). Version 1, fixed 2026-10-14 before any run.
+# Changing a locked field requires incrementing `version` and updating `content_sha256` and
+# flymsg.convergence.VERSION_HASHES. `flymsg convergence` prints this file; `--run` executes it.
+version: 1
+content_sha256: c9b005eca561d65021b65a77332ffc07c846b4ae0553bfd662beccc338ae9516
+yaml_subset: 2
+evidence: none
+evidence_none: "A numerical check of the integrator: every parameter is the live default of sim.Params, none is a newly sourced biological value."
+
+issue: 148
+claim:
+  kind: numerical_convergence
+  scored: false
+  reason: "Checks that the battery's responses at the default timestep (0.1 ms) do not depend on the step size more than on the seed. It does not select a timestep, does not change sim.Params and does not replace any frozen score."
+
+seen_before_lock: "The sensitivity grid v1 (results/sensitivity/v1, seeds 0-4) at dt 0.1 ms only. No run at another timestep has been made."
+
+grid:
+  dt_ms: [0.1, 0.05, 0.025]
+  dt_rule: "halvings of the default; delay (1.8 ms) and t_ref (2.2 ms) stay whole numbers of steps at each"
+  seed0: 0
+  seeds: 5
+  rate_hz: 100.0
+  stim_ms: 300.0
+  duration_ms: 600.0
+
+cases:
+  positive: [looming escape, giant fiber output, P1 courtship drive, pIP10 song pathway, sugar feeding]
+  negative: [bitter feeding]
+
+holds:
+  holds_min_spikes: 3
+  holds_seed_share_num: 2
+  holds_seed_share_den: 3
+
+decides:
+  reference: "the finest timestep (0.025 ms)"
+  converged: "a response (case and target) converges at a timestep when its holds verdict (the v4 floor over seeds) equals the reference's and its seed-median target rate differs from the reference's seed median by at most the reference's seed range (max - min over seeds), and never less than the rate quantum (one spike in stim_ms, 3.33 Hz), the resolution of the measurement"
+  verdict: "converged if every response converges at 0.1 ms; otherwise not_converged with the list of responses that do not"
+  why_seed_range: "numerical error is judged against the variability the model already shows between seeds, floored at the measurement's resolution, so no tolerance is chosen"
+
+reported:
+  at_0_05:
+    decides: false
+    what: "the same judgement at 0.05 ms"
+  latency:
+    decides: false
+    what: "seed-median first spike of the target's best neuron; quantised to the timestep"
+  recruited_persistent:
+    decides: false
+    what: "seed-median counts of recruited and persistent neurons"
+
+limits:
+  - "Poisson input is drawn per step, so the input streams differ between timesteps; responses are compared as seed statistics, not spike for spike."
+  - "Discrete events (spikes, resets, delayed delivery) act at step boundaries at every timestep; the check measures how much that discretisation moves the responses."
+  - "Five seeds give a coarse seed range; a response near the v4 floor can flip its holds verdict with the seeds as well as with the step."
+  - "An input event arriving in the step where a stimulated neuron spikes is lost to the reset, and several in one step make one kick: about 1.5% of input events at 0.1 ms against 0.4% at 0.025 ms. This is part of what the check measures."
+  - "The best neuron of each target type is picked at each timestep, as validate.respond does, so a left/right switch can compare different neurons."
+
+defaults_changed: false
