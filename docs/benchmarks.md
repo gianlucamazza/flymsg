@@ -133,7 +133,7 @@ before any response value of the data was read.
 
 `flymsg song` prints the lock; `--run` runs the model, its no-go, then the data. No run yet.
 
-## Looming → giant fiber timing (lock, 2026-10-15, #34)
+## Looming to giant fiber timing (lock, 2026-10-15, #34)
 
 The first scored test of the looming transducer (gate G3 of the
 [sensorimotor plan](sensorimotor-environment-plan.md),
