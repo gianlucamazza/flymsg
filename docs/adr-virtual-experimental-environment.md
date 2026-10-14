@@ -16,7 +16,7 @@ We need two orthogonal features:
 ## Decision
 
 1. Reuse the existing `StimulusFrame → SensoryEncoder → NeuralStepper → MotorDecoder → Body → Sensor` proposal and the accepted M0 contracts for all future VEE research. Do not introduce a second scheduler, physics integrator, experiment manifest, or neural simulation.
-2. The presentation layer is strictly downstream of immutable scene/replay outputs. The viewer must *_never_* synthesize spikes, rewrite a manifest, reconfigure `sim.Params`, select a hypothesis, or silently label engineered mappings as biological.
+2. The presentation layer is strictly downstream of immutable scene/replay outputs. The viewer must **never** synthesize spikes, rewrite a manifest, reconfigure `sim.Params`, select a hypothesis, or silently label engineered mappings as biological.
 3. Add a **small opt-in WebXR observer** to the existing three.js viewer (`?xr=1`). It uses the same geometry and replay timestamps as desktop. Support is feature-detected; immersive sessions require user action; desktop rendering remains the default.
 4. While immersive, render using Three.js's native stereo XR path; do not route an unqualified desktop EffectComposer through a headset. No invented stereo pipeline, display-to-neuron interpretation, controller locomotion, or hardware-specific claims.
 5. Build any future headless arena against independent evidence (verified optical geometry, sensory transfer, motor evidence and falsification datasets). Keep this research work gated until the relevant inputs are available.
@@ -45,12 +45,14 @@ We need two orthogonal features:
 ## Current PR boundary
 
 Included:
+
 - Opt-in read-only WebXR support for the existing viewer, with native session lifecycle and conventional desktop fallback.
 - Explicit separation between XR rendering and the existing post-processing pipeline.
 - Unit tests of WebXR capability/activation, failures, and state restoration.
 - Documentation and roadmap gates.
 
 Not included:
+
 - New sensors, LC4 transfer functions, artificial muscle controllers, new physics backends, locomotion controls, real-time full-CNS execution, new scored results, or a new VEE runtime.
 - Claims of headset compatibility without a physical test. A device smoke test remains a release gate.
 
@@ -59,6 +61,7 @@ Not included:
 `Protocol v1` should name: source geometry/stimulus and units, coordinate frames, deterministic timebase, documented `SensoryEncoder` type and source, `NeuralStepper` version, controlled `Body` backend, `MotorDecoder` evidence and failure-on-unmapped policy, immutable seed/config/manifest, defined observables, and independent pre-registered negative controls. It should reuse `flymsg experiment` and M0 rather than invent another file schema.
 
 Candidate studies:
+
 1. Open-loop moving-edge/looming stimuli mapped through measured eye directions, tested against T4/T5 and LC4/LPLC2 recordings; use the existing failed results as a fixed baseline.
 2. Connected versus disconnected, replayed and shuffled feedback with causal ordering tests.
 3. Bilateral TTM/jump studies **only** with sourced muscle-to-actuator mapping and independent movement measurements.
@@ -69,7 +72,7 @@ Each claim is conditional on held-out animal evidence and must report failures. 
 
 ### WebXR observer
 
-- On ordinary URLs with no `?xr=1`: *zero new controls* and original desktop rendering, timestamps, export and selection paths.
+- On ordinary URLs with no `?xr=1`: _zero new controls_ and original desktop rendering, timestamps, export and selection paths.
 - On unsupported or denied devices: clear status and unchanged desktop usability, without a session request during load.
 - On supported devices: user-activated enter/exit, correct clean restoration of root transform and camera state, one renderer/animation loop and headset stereoscopy.
 - No changes to `activity.bin`, `scene.json`, `sim`, validation locks, or any scored result.
