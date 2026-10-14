@@ -9,6 +9,14 @@
   float32 operations, so results are bit-identical (oracle tests for a minority and a majority;
   on the whole CNS with Mi1 and Tm1 membranes, identical spikes in 5.3 s against 7.2 s).
 
+### Viewer
+
+- **Graded neurons in the 3D replay**: `flymsg viz --eye POLARITY DIRECTION [--eye-config N]
+[--eye-top N]` replays one edge of the locked T4/T5 protocol and writes `graded.bin`, each
+  non-spiking neuron's potential per bin relative to rest (or its dark anchor); the page lets
+  them glow by potential, in their colour when depolarized and blue when hyperpolarized. The
+  site gains the `eye-on` scene (right eye, ON edge, v4 configuration 11).
+
 ### Result
 
 - **Timestep convergence v1: converged** (SF2, #148). All ten battery responses converge at the

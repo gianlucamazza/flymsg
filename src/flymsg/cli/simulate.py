@@ -215,8 +215,8 @@ def cmd_calibrate(a, neurons, edges):
 def eye_replay(a, neurons, edges):
     """One edge of the locked T4/T5 protocol at one of its configurations, for the 3D view of
     the right eye: per class (photoreceptors, L1-L3, graded medulla) the `--eye-top` neurons
-    whose potential moves most (at least 1 mV), the spiking neurons of the T4/T5 pathway
-    that fire most, and every T4/T5 that fires. Graded potentials are relative to rest, and
+    whose potential moves most (at least 1 mV) and the `--eye-top` spiking neurons of the
+    T4/T5 pathway, T4/T5 included, that fire most. Graded potentials are relative to rest, and
     to each medulla neuron's dark anchor where the lock sets one; full glow is the
     configuration's photoreceptor response, LMC range, or the medulla type's measured swing."""
     polarity, direction = a.eye
@@ -266,8 +266,7 @@ def eye_replay(a, neurons, edges):
     fired = np.flatnonzero(
         (rates > 0) & right & pathway & ~np.isin(np.arange(len(neurons)), order)
     )
-    top = fired[np.argsort(-rates[fired], kind="stable")][: a.eye_top]
-    fired = np.union1d(top, fired[t4t5_cells[fired]])
+    fired = np.sort(fired[np.argsort(-rates[fired], kind="stable")][: a.eye_top])
     idx = np.concatenate([order[keep], fired])
     groups = [*kind[keep], *["response (spiking)"] * fired.size]
     graded = {
@@ -282,7 +281,7 @@ def eye_replay(a, neurons, edges):
         "t4t5_version": doc["version"],
         "configuration": a.eye_config,
         "selection": f"right eye; per class the {a.eye_top} neurons moving most (>= 1 mV); "
-        f"the {a.eye_top} T4/T5-pathway spiking neurons firing most, and every T4/T5 that fires",
+        f"the {a.eye_top} spiking neurons of the T4/T5 pathway (T4/T5 included) firing most",
         "seed": proto["seed"],
         **{k: v for k, v in cfg.items() if k != "config"},
     }
