@@ -13,6 +13,7 @@ directory a doc cites is added to the table below in the same commit.
 | `jump/intact/`, `jump/dnp01/`           | `flymsg jump --sim LC4_R [--silence DNp01]` (M1)                  |
 | `loop/`                                 | `flymsg loop --sim LC4_R …` (M2)                                  |
 | `sensitivity/v1/`                       | `flymsg sensitivity --run` (#28)                                  |
+| `convergence/v1.executions/…/output/`   | `flymsg convergence --run` (#148), SF2                            |
 | `mb-plasticity/v1/`                     | `flymsg mb-plasticity --run` (#85)                                |
 | `kc-sparseness/v1/` … `v5/`             | `flymsg kc-sparseness --run` (#95); `docs/img/kc-sparseness.svg`  |
 | `kc-sparseness/v7.executions/…/output/` | `flymsg kc-sparseness --run` (#95), v7                            |

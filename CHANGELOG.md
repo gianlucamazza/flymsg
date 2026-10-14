@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Result
+
+- **Timestep convergence v1: converged** (SF2, #148). All ten battery responses converge at the
+  default 0.1 ms against 0.025 ms: same holds verdicts, seed-median rates within the finest
+  seed range (giant fiber → TTMn exactly at it). First-spike latencies and recruitment of weak
+  pathways move with the step (TTMn under giant fiber output 35 → 82 ms, sugar-recruited
+  neurons 439 → 155) and do not decide. Run from the lock commit `7c4d34d` in one attempt.
+
 ### Validation
 
 - **Timestep convergence lock** (SF2, #148): `validation/convergence.yaml` v1 runs the six

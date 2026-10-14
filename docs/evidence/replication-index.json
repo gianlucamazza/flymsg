@@ -1014,6 +1014,54 @@
    },
    "source_commit": "a7a15a9398d788513173fe0541bde120b9ed2262",
    "verdict": null
+  },
+  {
+   "command": "convergence --run",
+   "config": {
+    "convergence_sha256": "c9b005eca561d65021b65a77332ffc07c846b4ae0553bfd662beccc338ae9516",
+    "convergence_version": 1,
+    "grid": {
+     "dt_ms": [
+      0.1,
+      0.05,
+      0.025
+     ],
+     "dt_rule": "halvings of the default; delay (1.8 ms) and t_ref (2.2 ms) stay whole numbers of steps at each",
+     "duration_ms": 600.0,
+     "rate_hz": 100.0,
+     "seed0": 0,
+     "seeds": 5,
+     "stim_ms": 300.0
+    }
+   },
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": "be1ac2741e08d8f0432fd49fed5ebd74fab5062d79cb280a39637f49ae31997c",
+   "flymsg": "0.8.46",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/convergence.yaml",
+   "lock_sha256": "c9b005eca561d65021b65a77332ffc07c846b4ae0553bfd662beccc338ae9516",
+   "lock_version": 1,
+   "other_results": null,
+   "outputs_sha256": {
+    "cells.csv": "ea9fc10956feda99d08fbf575ebd5ca9245d4ce5eae362d1470f6244d71fb15f",
+    "judged.csv": "7afda8567a0397140143ab43da3e87b767bfeb212e4db600e7681bd0307937ef",
+    "report.txt": "57a226ffd2a24cdaeacda79e6f083f6e6019d81d3f0b293bd71fb8e35697df11"
+   },
+   "python": "3.13.9",
+   "result": "results/convergence/v1.executions/be1ac2741e08d8f0432fd49fed5ebd74fab5062d79cb280a39637f49ae31997c/output",
+   "seeds": {
+    "seed0": 0,
+    "seeds": 5
+   },
+   "source_commit": "7c4d34d382018931e92021d41377aecd53557c73",
+   "verdict": "converged"
   }
  ],
  "schema": "flymsg.replication_index/v1"
