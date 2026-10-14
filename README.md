@@ -114,6 +114,7 @@ recorded on the linked page. Negative results stay in the
 | Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                 | [benchmarks](docs/benchmarks.md)                                                                       |
 | Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
 | Kenyon cell sparseness v7                  | within only with the variant eLN set (lLN2T+lLN1_bc)         | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| Kenyon cell sparseness v8                  | locked, no result yet: v7 under the exact continuous clamp   | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
 | KC → MBON11 depression v1                  | inconsistent: both odors go silent                           | [model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
 | One-bit looming jump                       | silence fails                                                | [behavior](docs/behavior.md#result-2026-10-11)                                                         |
 | Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                              | [behavior](docs/behavior.md#residual-partner-scan)                                                     |
@@ -173,9 +174,9 @@ the final path. A clean committed worktree is required. See
 | `partner-followup [--run]`                                      | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                          |
 | `mb-plasticity [--run]`                                         | the locked dopamine-gated KC → MBON11 depression (#85), applied between trials                          |
 | `weight-rule [--areas] [--run]`                                 | the locked count-vs-density comparison on Liu et al. 2022's PN → LHN uEPSPs (#139)                      |
-| `kc-sparseness [--run]`                                         | the locked Kenyon-cell sparseness diagnostic (#95), v1–v7: recurrence, antennal lobe, odors, coupling   |
+| `kc-sparseness [--run]`                                         | the locked Kenyon-cell sparseness diagnostic (#95), v1–v8: recurrence, antennal lobe, odors, coupling   |
 | `jump3d [--run]`                                                | the locked TTM-driven jump: TTMn spikes → measured twitch → NeuroMechFly in MuJoCo (#90, #94)           |
-| `t4t5 [--run]`                                                  | the locked T4/T5 test: ON/OFF edges moving through the measured eye; polarity and direction (#84)       |
+| `t4t5 [--run]`                                                  | the locked T4/T5 test: ON/OFF edges moving through the measured eye; polarity and direction (#84, #140) |
 | `odor NAME`                                                     | a DoOR odorant as a response per MaleCNS ORN type (fetched, CC BY-SA)                                   |
 | `muscles`                                                       | MANC's muscle per MaleCNS motor neuron (Cheong 2024, fetched, CC BY); never an actuator                 |
 | `eye`                                                           | optic-lobe column → viewing direction (Zhao 2025 eye map, fetched) and photoreceptor → column           |
@@ -211,7 +212,8 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 4. **Rules before results.** Criteria, calibrations, model selections and every confirmatory
    experiment are written down in [validation](docs/validation.md) and a versioned, hashed
    lock in `validation/*.yaml` before they run; the runner refuses a lock edited without a new
-   version, and a failure is recorded rather than tuned away.
+   version, and a failure is recorded rather than tuned away. Every new lock names the records
+   in `validation/evidence.yaml` that hold the source, units and uncertainty of its parameters.
 5. **3D view.** The export holds only metadata and activity. The page reads the public
    multi-resolution meshes and skeletons directly from Google Cloud Storage, refining detail
    near the camera within a triangle budget ([viz](docs/viz.md)).
@@ -242,25 +244,31 @@ the [findings log](docs/validation.md#findings-log). A public source enters
 note. A present-tense sentence describes the default model today. A dated sentence stays
 under its date.
 
-| Document                             | Content                                                                                    |
-| ------------------------------------ | ------------------------------------------------------------------------------------------ |
-| [data](docs/data.md)                 | sources, files, filtering, schema, the female FAFB dataset, citations                      |
-| [model](docs/model.md)               | equations, parameters, the 2026-10-11 default, optional Gap, Graded and KC→MBON11          |
-| [validation](docs/validation.md)     | battery status, the dated status log, protocol, calibration, findings log                  |
-| [benchmarks](docs/benchmarks.md)     | held-out partition, the ORN_DM1 failure, both corners fail                                 |
-| [behavior](docs/behavior.md)         | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated               |
-| [architecture](docs/architecture.md) | module layers, the six contracts and their tests, migration order                          |
-| [embodiment](docs/embodiment.md)     | M0 contract, M1/M2 engineering bodies, NeuroMechFly jump v1 (short); FlyBody unselected    |
-| [eye](docs/eye.md)                   | column directions, column stimuli, T4/T5 v1–v3 (neither)                                   |
-| [runtime](docs/runtime.md)           | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                        |
-| [nulls](docs/nulls.md)               | pre-registered null families, scores, draw counts, methods                                 |
-| [provenance](docs/provenance.md)     | date, public source and introducing commit for each idea on `main`                         |
-| [comparison](docs/comparison.md)     | engine check against the published model, male vs female, the LB3 split                    |
-| [dimorphism](docs/dimorphism.md)     | dimorphic neurons among responders, silencing                                              |
-| [related](docs/related.md)           | adjacent whole-CNS models, the raw 211,577 count, wiring null N1                           |
-| [viz](docs/viz.md)                   | 3D pipeline, whole-CNS soma layer, sides, levels of detail, GPU measurements               |
-| [roadmap](docs/roadmap.md)           | the results index; brain coverage; what is blocked on evidence, hardware, or an unrun lock |
-| [CHANGELOG](CHANGELOG.md)            | what changed in each version                                                               |
+| Document                                              | Content                                                                                    |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [data](docs/data.md)                                  | sources, files, filtering, schema, the female FAFB dataset, citations                      |
+| [model](docs/model.md)                                | equations, parameters, the 2026-10-11 default, optional Gap, Graded and KC→MBON11          |
+| [approximations](docs/approximations.md)              | every simplification of the model, its status and what would remove it                     |
+| [leads](docs/leads.md)                                | sources that could lift an approximation; none used without a lock                         |
+| [validation](docs/validation.md)                      | battery status, the dated status log, protocol, calibration, findings log                  |
+| [benchmarks](docs/benchmarks.md)                      | held-out partition, the ORN_DM1 failure, both corners fail                                 |
+| [behavior](docs/behavior.md)                          | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated               |
+| [architecture](docs/architecture.md)                  | module layers, the six contracts and their tests, migration order                          |
+| [embodiment](docs/embodiment.md)                      | M0 contract, M1/M2 engineering bodies, NeuroMechFly jump v1 (short); FlyBody unselected    |
+| [eye](docs/eye.md)                                    | column directions, column stimuli, T4/T5 v1–v3 (neither)                                   |
+| [runtime](docs/runtime.md)                            | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                        |
+| [nulls](docs/nulls.md)                                | pre-registered null families, scores, draw counts, methods                                 |
+| [scientific fidelity](docs/scientific-fidelity.md)    | numerical, physiological and behavioral validation gates; evidence records (SF1)           |
+| [integrity audit](docs/integrity-audit-2026-10-13.md) | engineering audit of 2026-10-13 and its resolution ledger                                  |
+| [ADR: gap refractory](docs/adr-gap-refractory.md)     | electrical coupling with refractory clamps; dense and Taylor solvers                       |
+| [ADR: run integrity](docs/adr-run-integrity.md)       | immutable run identity, resumable steps, finalization                                      |
+| [provenance](docs/provenance.md)                      | date, public source and introducing commit for each idea on `main`                         |
+| [comparison](docs/comparison.md)                      | engine check against the published model, male vs female, the LB3 split                    |
+| [dimorphism](docs/dimorphism.md)                      | dimorphic neurons among responders, silencing                                              |
+| [related](docs/related.md)                            | adjacent whole-CNS models, the raw 211,577 count, wiring null N1                           |
+| [viz](docs/viz.md)                                    | 3D pipeline, whole-CNS soma layer, sides, levels of detail, GPU measurements               |
+| [roadmap](docs/roadmap.md)                            | the results index; brain coverage; what is blocked on evidence, hardware, or an unrun lock |
+| [CHANGELOG](CHANGELOG.md)                             | what changed in each version                                                               |
 
 ## Development
 
