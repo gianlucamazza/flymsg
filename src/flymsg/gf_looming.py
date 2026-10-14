@@ -35,7 +35,7 @@ REACH = 0.95  # a peak's time: the first sample at 95% of the window maximum
 NEAR_END_MS = 20.0  # a peak this soon after the expansion stops follows the stimulus
 
 VERSION_HASHES: dict[int, str] = {
-    1: "e055f37cb28f755f852aad30488a6696f7dc9fc86c1e85f9fd203046fc872589",
+    1: "c868e4ec8a84cc375492f4a26b3e3f7a47ced35966d4ad575a328a285c65f0c4",
 }
 
 
@@ -393,14 +393,14 @@ def data_fits(directory: Path, doc: dict) -> pd.DataFrame:
     for name, digest in sorted(i["control_md5"].items()):
         path = directory / name
         if not path.is_file():
-            continue  # a missing file leaves its fly out; min_flies decides
+            raise LoomingError(f"{name} is missing")
         if md5(path) != digest:
             raise LoomingError(f"{name} does not match its locked md5")
         flies.setdefault(name.rsplit("_trial", 1)[0], []).append(read_trace(path, doc))
     rows = []
     for fly, traces in sorted(flies.items()):
         if len(traces) != 2:
-            continue
+            raise LoomingError(f"{fly} does not have its two trials")
         mean = np.mean(traces, axis=0)
         t = (np.arange(mean.shape[0]) / fs - i["onset_s"]) * 1000.0  # ms from onset
         ys, edges, near = [], 0, 0
@@ -440,8 +440,6 @@ def interval(values: np.ndarray, doc: dict) -> tuple[float, float]:
 
 
 def judge(fits: pd.DataFrame, flies: pd.DataFrame, doc: dict) -> dict:
-    if len(flies) < doc["data_rule"]["min_flies"]:
-        return {"verdict": f"uninformative: {len(flies)} readable control flies"}
     lo, hi = interval(flies["alpha"].to_numpy(), doc)
     d_lo, d_hi = interval(flies["delta_ms"].to_numpy(), doc)
     locked = stimulus_locked(doc)

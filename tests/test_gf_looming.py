@@ -169,15 +169,23 @@ def test_the_data_rule_recovers_each_flys_slope(tmp_path):
     mixed = model.copy()
     mixed.loc[mixed.index[:3], "alpha"] = 5.0
     assert gf_looming.judge(mixed, flies, doc)["verdict"] == "partial"
-    assert gf_looming.judge(model, flies.head(7), doc)["verdict"].startswith(
-        "uninformative"
-    )
 
 
-def test_a_changed_or_odd_file_refuses_and_a_missing_one_drops_its_fly(tmp_path):
+def test_a_missing_changed_or_odd_file_refuses(tmp_path):
     doc = synthetic(tmp_path, [2.0, 2.0])
+    data = tmp_path.parent / "data"
+    (data / "raw").mkdir(parents=True)
+    (data / "raw" / "dombrovski2025").symlink_to(tmp_path)
+    assert gf_looming.inputs_present(data, doc) == data / "raw" / "dombrovski2025"
     (tmp_path / "fly00_trial01.mat").unlink()
-    assert list(gf_looming.data_fits(tmp_path, doc).fly) == ["fly01"]
+    with pytest.raises(LoomingError, match="missing"):
+        gf_looming.inputs_present(data, doc)
+    with pytest.raises(LoomingError, match="is missing"):
+        gf_looming.data_fits(tmp_path, doc)
+    doc["inputs"]["control_md5"].pop("fly00_trial01.mat")
+    with pytest.raises(LoomingError, match="two trials"):
+        gf_looming.data_fits(tmp_path, doc)
+    doc["inputs"]["control_md5"].pop("fly00_trial02.mat")
     io.savemat(tmp_path / "fly01_trial02.mat", {"data": np.zeros((10, 4))})
     with pytest.raises(LoomingError, match="locked md5"):
         gf_looming.data_fits(tmp_path, doc)

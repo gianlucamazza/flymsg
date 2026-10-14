@@ -2,7 +2,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.gf_looming.VERSION_HASHES. `flymsg gf-looming` prints this file; `--run` executes it.
 version: 1
-content_sha256: e055f37cb28f755f852aad30488a6696f7dc9fc86c1e85f9fd203046fc872589
+content_sha256: c868e4ec8a84cc375492f4a26b3e3f7a47ced35966d4ad575a328a285c65f0c4
 yaml_subset: 2
 evidence: [dombrovski_gf_looming, jang_looming_protocol]
 
@@ -87,8 +87,7 @@ model:
 
 data_rule:
   flies: control
-  min_flies: 8
-  min_flies_why: "eight of the ten control flies with both trials readable; with fewer the bootstrap interval rests on too few animals"
+  files: "every locked control file must exist (checked before the model runs, without opening them), match its md5 and hold one trace array; otherwise the run refuses, so all ten flies enter the interval"
   trace: "the one array of shape (80000, 4) in each file, columns in columns_rv_ms order; arrays of other shapes are ignored, and none or several of this shape refuse"
   trial_mean: "per fly and r/v, the mean of its two trials"
   baseline_s: 1.0
@@ -113,7 +112,7 @@ score:
     pass: "every scored cell's alpha lies inside the interval"
     partial: "some scored cells' alpha lie inside it"
     fail: "none does"
-    uninformative: "the no-go, fewer than min_flies readable control flies, no scored cell, or an interval that overlaps the stimulus-locked band or holds the onset slope"
+    uninformative: "the no-go, no scored cell, or an interval that overlaps the stimulus-locked band or holds the onset slope"
   reported: "delta per cell and from the data (secondary, decides nothing), the implied threshold angle 2 * atan(1 / alpha), per cell whether the median peak times increase with r/v, the share of peaks near the end of the expansion, edge peaks, and the cells that respond but fire"
 
 limits:
