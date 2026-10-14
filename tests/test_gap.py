@@ -1,6 +1,8 @@
 """Electrical synapses (#85): exact parity with the NumPy reference and the runtime, the
 coupling coefficient they produce, and the spiking model untouched without them."""
 
+import math
+
 import numpy as np
 import pytest
 from reference_sim import run_reference
@@ -11,8 +13,9 @@ from flymsg import native, sim
 from flymsg.runtime import CpuRuntime
 
 
+@pytest.mark.parametrize("solver", ["dense", "taylor"])
 @pytest.mark.parametrize("conductance", [0.0, 4.0])
-def test_refractory_partner_is_clamped_throughout_the_exact_step(conductance):
+def test_refractory_partner_is_clamped_throughout_the_exact_step(conductance, solver):
     p, c = sim.Params(), 5.0
     rt = CpuRuntime(
         sparse.csc_matrix((2, 2), dtype=np.float32),
@@ -21,7 +24,7 @@ def test_refractory_partner_is_clamped_throughout_the_exact_step(conductance):
         kicks=np.zeros((0, 0), dtype=np.int32),
         p=p,
         per_bin=1,
-        gap=sim.Gap(np.array([0]), np.array([1]), c),
+        gap=sim.Gap(np.array([0]), np.array([1]), c, solver=solver),
     )
     rt._state["v"][0] = p.v_rest + 5
     rt._state["g"][:] = [conductance, 99.0]
@@ -403,3 +406,66 @@ def test_explicit_historical_boundary_mode_remains_distinct():
     rt.advance_to(1)
     assert rt.snapshot()["v"][0] == np.float32(-47.14625549316406)
     assert "boundary-reset-v1" in rt._semantics
+
+
+def test_taylor_terms_bound_the_remainder():
+    from flymsg import electrical
+
+    k = electrical.taylor_terms(0.025)
+    assert 0.025 ** (k + 1) / math.factorial(k + 1) * math.exp(0.025) <= 2.0**-53
+    assert 0.025**k / math.factorial(k) * math.exp(0.025) > 2.0**-53
+    with pytest.raises(ValueError, match="dense solver"):
+        electrical.taylor_terms(0.6)
+    with pytest.raises(ValueError, match="continuous clamp only"):
+        sim.gap_arrays(
+            sim.Gap(
+                np.array([0]),
+                np.array([1]),
+                0.1,
+                refractory_mode="boundary",
+                solver="taylor",
+            ),
+            2,
+            sim.Params(),
+        )
+
+
+def test_taylor_solver_matches_the_dense_reference(tmp_path):
+    """The independent reference builds a dense exponential per refractory mask; the
+    Taylor action must give the same spikes and the same potentials to float32 rounding,
+    across a chunk boundary and a checkpoint."""
+    W = _network(400, 12000)
+    p = sim.Params()
+    dense = _spiking_gap(n=400, m=150)
+    gap = sim.Gap(**{**dense.__dict__, "solver": "taylor"})
+    steps = 1500
+    kicks = sim.poisson_kicks(9, 150.0, p.dt, steps, 30)
+    ref, rec = run_reference(
+        W,
+        np.arange(30),
+        150,
+        steps * p.dt,
+        None,
+        p,
+        9,
+        record=np.arange(400),
+        gap=dense,
+    )
+    kw = {"steps": steps, "kicks": kicks, "p": p, "per_bin": 100, "gap": gap}
+    rt = CpuRuntime(W, np.arange(30), **kw)
+    rt.advance_to(733)
+    rt.checkpoint(tmp_path / "c.npz")
+    resumed = CpuRuntime(W, np.arange(30), **kw)
+    resumed.restore(tmp_path / "c.npz")
+    assert rt._semantics.endswith("flymsg.gap/continuous-clamp-taylor-v1")
+    assert rt._gap[2].size == 0  # no dense step matrix is built
+    for r in (rt, resumed):
+        r.advance_to(steps)
+        assert ref.counts.sum() > 0
+        assert np.array_equal(r.result().counts, ref.counts)
+        np.testing.assert_allclose(r.snapshot()["v"], rec["v"][-1], rtol=0, atol=1e-4)
+    plain = CpuRuntime(W, np.arange(30), **{**kw, "gap": dense})
+    with pytest.raises(ValueError, match="incompatible"):
+        plain.restore(tmp_path / "c.npz")
+    with pytest.raises(native.NativeCapabilityError, match="continuous-clamp"):
+        native.export_fixture(CpuRuntime(W, np.arange(30), **kw), tmp_path / "f.bin")

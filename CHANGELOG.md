@@ -50,6 +50,14 @@
 
 ### Engineering
 
+- **Taylor solver for the continuous clamp** (#155): `Gap(solver="taylor")`,
+  `flymsg.gap/continuous-clamp-taylor-v1`, applies the clamped step's exponential to the
+  state as a truncated Taylor series whose remainder is bounded by the float64 unit
+  roundoff, instead of building a dense map per refractory mask. On the Kenyon cell
+  couplings (688 and 726 cells) it gives the dense solver's spikes neuron for neuron in
+  3.6–4.9 s against 1,412–1,655 s per 50 ms; a 1,000 ms odor takes 14.7 s. Proposed in the
+  [electrical ADR](docs/adr-gap-refractory.md); KC locks may name it once accepted.
+
 - **Lock parser, subset 2** (#159): the lock parser cut ` #` inside quoted strings and read
   a quoted list item holding `:` as a one-key map. A lock with the top-level line
   `yaml_subset: 2` is parsed quote-aware (no escapes; a list item that opens a quote must be

@@ -145,6 +145,7 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     named = doc.get("electrical_semantics")
     if new_electrical and named not in {
         electrical.SEMANTICS,
+        electrical.TAYLOR_SEMANTICS,
         electrical.BOUNDARY_SEMANTICS,
     }:
         raise SparsenessError("a new electrical lock names the current integrator")
@@ -398,7 +399,12 @@ def protocol(
             if electrical_semantics(doc) == electrical.BOUNDARY_SEMANTICS
             else "continuous"
         )
-        gap = replace(gap, refractory_mode=mode)
+        solver = (
+            "taylor"
+            if electrical_semantics(doc) == electrical.TAYLOR_SEMANTICS
+            else "dense"
+        )
+        gap = replace(gap, refractory_mode=mode, solver=solver)
         runs.append((name, weights[base], gap))
     per_arm = len(proto["odors"]) * len(proto["seeds"])
 
@@ -498,6 +504,7 @@ def run(
     # with the continuous-clamp model. A new registered lock must name the new semantics.
     if "coupling" in doc and electrical_semantics(doc) not in {
         electrical.SEMANTICS,
+        electrical.TAYLOR_SEMANTICS,
         electrical.BOUNDARY_SEMANTICS,
     }:
         raise SparsenessError(

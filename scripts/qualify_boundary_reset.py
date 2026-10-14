@@ -26,7 +26,7 @@ ODOR = "3-octanol"
 SET = "lLN2T"
 
 
-def setup(data_dir: Path):
+def setup(data_dir: Path, eln_set: str = SET):
     """The weight matrix of arm E for the set and the indices the v7 run would use."""
     neurons, edges = data.load(data_dir)
     captured = {}
@@ -41,7 +41,7 @@ def setup(data_dir: Path):
     finally:
         kc_sparseness.protocol = run_protocol
     W, idx = captured["W"], captured["idx"]
-    own = idx["sets"][SET]
+    own = idx["sets"][eln_set]
     return kc_sparseness.arms(W, {**idx, **own}, ["E"])["E"], idx, own, len(neurons)
 
 
