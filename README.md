@@ -254,35 +254,35 @@ the [findings log](docs/validation.md#findings-log). A public source enters
 note. A present-tense sentence describes the default model today. A dated sentence stays
 under its date.
 
-| Document                                                                              | Content                                                                                                   |
-| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [data](docs/data.md)                                                                  | sources, files, filtering, schema, the female FAFB dataset, citations                                     |
-| [model](docs/model.md)                                                                | equations, parameters, the 2026-10-11 default, optional Gap, Graded, Membrane, weight scale and KC→MBON11 |
-| [approximations](docs/approximations.md)                                              | every simplification of the model, its status and what would remove it                                    |
-| [leads](docs/leads.md)                                                                | sources that could lift an approximation; none used without a lock                                        |
-| [validation](docs/validation.md)                                                      | battery status, the dated status log, protocol, calibration, findings log                                 |
-| [benchmarks](docs/benchmarks.md)                                                      | held-out partition, the ORN_DM1 failure, both corners fail                                                |
-| [behavior](docs/behavior.md)                                                          | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated                              |
-| [architecture](docs/architecture.md)                                                  | module layers, the six contracts and their tests, migration order                                         |
-| [embodiment](docs/embodiment.md)                                                      | M0 contract, M1/M2 engineering bodies, NeuroMechFly jump v1 (short); FlyBody unselected                   |
-| [eye](docs/eye.md)                                                                    | column directions, column stimuli, T4/T5 v1–v3 (neither), v4 locked                                       |
-| [runtime](docs/runtime.md)                                                            | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                                       |
-| [nulls](docs/nulls.md)                                                                | pre-registered null families, scores, draw counts, methods                                                |
-| [scientific fidelity](docs/scientific-fidelity.md)                                    | numerical, physiological and behavioral validation gates; evidence records (SF1)                          |
-| [replication](docs/replication.md)                                                    | rerun an archived result; the replication index; the claims audit                                         |
-| [sensorimotor plan](docs/sensorimotor-environment-plan.md)                            | gates for a headless closed-loop experiment; reuse inventory; no-go rules                                 |
-| [integrity audit](docs/integrity-audit-2026-10-13.md)                                 | engineering audit of 2026-10-13 and its resolution ledger                                                 |
-| [ADR: gap refractory](docs/adr-gap-refractory.md)                                     | electrical coupling with refractory clamps; dense and Taylor solvers                                      |
-| [ADR: run integrity](docs/adr-run-integrity.md)                                       | immutable run identity, resumable steps, finalization                                                     |
-| [ADR: virtual experimental environment](docs/adr-virtual-experimental-environment.md) | the optional WebXR observer, kept apart from the experimental environment                                 |
-| [run integrity](docs/run-integrity.md)                                                | output paths, execution directories, checkpoints and historical locks                                     |
-| [provenance](docs/provenance.md)                                                      | date, public source and introducing commit for each idea on `main`                                        |
-| [comparison](docs/comparison.md)                                                      | engine check against the published model, male vs female, the LB3 split                                   |
-| [dimorphism](docs/dimorphism.md)                                                      | dimorphic neurons among responders, silencing                                                             |
-| [related](docs/related.md)                                                            | adjacent whole-CNS models, the raw 211,577 count, wiring null N1                                          |
-| [viz](docs/viz.md)                                                                    | 3D pipeline, whole-CNS soma layer, graded potentials, optional WebXR, levels of detail, GPU measurements  |
-| [roadmap](docs/roadmap.md)                                                            | the results index; brain coverage; what is blocked on evidence, hardware, or an unrun lock                |
-| [CHANGELOG](CHANGELOG.md)                                                             | what changed in each version                                                                              |
+| Document                                                                              | Content                                                                                                         |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [data](docs/data.md)                                                                  | sources, files, filtering, schema, the female FAFB dataset, citations                                           |
+| [model](docs/model.md)                                                                | equations, parameters, the 2026-10-11 default, optional Gap, Graded, Membrane, weight scale and KC→MBON11       |
+| [approximations](docs/approximations.md)                                              | every simplification of the model, its status and what would remove it                                          |
+| [leads](docs/leads.md)                                                                | sources that could lift an approximation; none used without a lock                                              |
+| [validation](docs/validation.md)                                                      | battery status, the dated status log, protocol, calibration, findings log                                       |
+| [benchmarks](docs/benchmarks.md)                                                      | held-out partition, the ORN_DM1 failure, both corners fail                                                      |
+| [behavior](docs/behavior.md)                                                          | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated                                    |
+| [architecture](docs/architecture.md)                                                  | module layers, the six contracts and their tests, migration order                                               |
+| [embodiment](docs/embodiment.md)                                                      | M0 contract, M1/M2 engineering bodies, NeuroMechFly jump v1 (short); FlyBody unselected                         |
+| [eye](docs/eye.md)                                                                    | column directions, column stimuli, T4/T5 v1–v3 (neither), v4 locked                                             |
+| [runtime](docs/runtime.md)                                                            | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                                             |
+| [nulls](docs/nulls.md)                                                                | pre-registered null families, scores, draw counts, methods                                                      |
+| [scientific fidelity](docs/scientific-fidelity.md)                                    | numerical, physiological and behavioral validation gates; evidence records (SF1)                                |
+| [replication](docs/replication.md)                                                    | rerun an archived result; the replication index; the claims audit                                               |
+| [sensorimotor plan](docs/sensorimotor-environment-plan.md)                            | gates for a headless closed-loop experiment; reuse inventory; no-go rules                                       |
+| [integrity audit](docs/integrity-audit-2026-10-13.md)                                 | engineering audit of 2026-10-13 and its resolution ledger                                                       |
+| [ADR: gap refractory](docs/adr-gap-refractory.md)                                     | electrical coupling with refractory clamps; dense and Taylor solvers                                            |
+| [ADR: run integrity](docs/adr-run-integrity.md)                                       | immutable run identity, resumable steps, finalization                                                           |
+| [ADR: virtual experimental environment](docs/adr-virtual-experimental-environment.md) | the optional WebXR observer, kept apart from the experimental environment                                       |
+| [run integrity](docs/run-integrity.md)                                                | output paths, execution directories, checkpoints and historical locks                                           |
+| [provenance](docs/provenance.md)                                                      | date, public source and introducing commit for each idea on `main`                                              |
+| [comparison](docs/comparison.md)                                                      | engine check against the published model, male vs female, the LB3 split                                         |
+| [dimorphism](docs/dimorphism.md)                                                      | dimorphic neurons among responders, silencing                                                                   |
+| [related](docs/related.md)                                                            | adjacent whole-CNS models, the raw 211,577 count, wiring null N1                                                |
+| [viz](docs/viz.md)                                                                    | 3D pipeline, whole-CNS soma layer, graded potentials, sides, optional WebXR, levels of detail, GPU measurements |
+| [roadmap](docs/roadmap.md)                                                            | the results index; brain coverage; what is blocked on evidence, hardware, or an unrun lock                      |
+| [CHANGELOG](CHANGELOG.md)                                                             | what changed in each version                                                                                    |
 
 ## Development
 

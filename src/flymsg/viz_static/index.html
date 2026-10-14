@@ -212,7 +212,18 @@
         flex-direction: column;
         align-items: center;
         gap: 6px;
-        max-width: min(300px, calc(100vw - 24px));
+        max-width: min(240px, calc(100vw - 290px));
+      }
+      /* the observer takes the top centre: the banner and the selection panel move below it */
+      body:has(#xr-observer) #compare,
+      body:has(#xr-observer) #selection {
+        top: calc(var(--top) + 84px);
+      }
+      @media (max-width: 600px) {
+        body:has(#xr-observer) #compare,
+        body:has(#xr-observer) #selection {
+          top: calc(var(--top) + 116px);
+        }
       }
       #xr-observer button {
         min-width: 100px;

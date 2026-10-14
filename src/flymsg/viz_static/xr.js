@@ -92,6 +92,7 @@ export async function installXrObserver({
       scale: root.scale.clone(),
       cameraPosition: camera.position.clone(),
       cameraQuaternion: camera.quaternion.clone(),
+      cameraScale: camera.scale.clone(),
       fov: camera.fov,
       zoom: camera.zoom,
       near: camera.near,
@@ -117,6 +118,7 @@ export async function installXrObserver({
     root.scale.copy(original.scale);
     camera.position.copy(original.cameraPosition);
     camera.quaternion.copy(original.cameraQuaternion);
+    camera.scale.copy(original.cameraScale);
     camera.fov = original.fov;
     camera.zoom = original.zoom;
     camera.near = original.near;

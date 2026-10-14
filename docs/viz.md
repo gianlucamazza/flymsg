@@ -64,22 +64,6 @@ its largest instances (`stimulus (55): LC4_R ×55`), so the stimulated side is v
 replay a line states that the glow is spikes per bin of the model, not a recording; while
 the soma layer is shown, its region colours are listed.
 
-## Optional WebXR observation (experimental)
-
-`?xr=1` adds an Enter VR button when the browser reports `immersive-vr` support, for example
-`live/looming/?xr=1&paused`; without the flag nothing changes, and with `?chrome=0` the button
-is not built. No session is requested on load: the reader starts and ends it, and a browser
-without immersive VR keeps the desktop view and says so. In a session the whole scene is scaled
-from micrometres to about 1.2 m and placed 2 m in front of the headset's starting point; that
-transform is display-only. three.js renders the two eye views directly, so the glow shows
-without the bloom halo and without MSAA, and clicks do not select neurons. Ending the session
-restores the scene, the desktop camera and the orbit controls. The observer replays existing
-exports and never runs the simulation. It is experimental and qualified on no headset: stereo,
-frame times against the stereo budget (this page's laptop baseline is far below it, see
-[measurements](#measurements)) and the session lifecycle on real hardware are open in
-[#177](https://github.com/gianlucamazza/flymsg/issues/177). The decision is in the
-[ADR](adr-virtual-experimental-environment.md).
-
 ## Selecting a neuron
 
 A click, the `select` field of the panel, or `?select=<bodyId|instance|type>` selects a
@@ -156,6 +140,22 @@ pinch), a 12 px tap slop instead of 4 px, the panel's clear button instead of Es
 common in a background tab on a phone, shows a notice and is restored; time spent in a
 background tab does not advance the replay. These are layout and input checks in an emulated
 390×844 viewport; frame rates on a real phone are not measured yet (#24).
+
+## Optional WebXR observation (experimental)
+
+`?xr=1` adds an Enter VR button when the browser reports `immersive-vr` support, for example
+`live/looming/?xr=1&paused`; without the flag nothing changes, and with `?chrome=0` the button
+is not built. No session is requested on load: the reader starts and ends it, and a browser
+without immersive VR keeps the desktop view and says so. In a session the whole scene is scaled
+from micrometres to about 1.2 m and placed 2 m in front of the headset's starting point; that
+transform is display-only. three.js renders the two eye views directly, so the glow shows
+without the bloom halo and without MSAA, and clicks do not select neurons. Ending the session
+restores the scene, the desktop camera and the orbit controls. The observer replays existing
+exports and never runs the simulation. It is experimental and qualified on no headset: stereo,
+frame times against the stereo budget (this page's laptop baseline is far below it, see
+[measurements](#measurements)) and the session lifecycle on real hardware are open in
+[#177](https://github.com/gianlucamazza/flymsg/issues/177). The decision is in the
+[ADR](adr-virtual-experimental-environment.md).
 
 ## Sources
 

@@ -1063,9 +1063,12 @@ controls.addEventListener("change", () => {
 
 function eyeView() {
   const eye = data.worldToLocal(camera.position.clone()).toArray();
+  // in XR the canvas keeps its desktop CSS size; the drawing buffer is one eye's pixels
+  const heightPx = renderer.xr.isPresenting
+    ? renderer.getSize(new THREE.Vector2()).y
+    : renderer.domElement.clientHeight;
   const pxPerUnit =
-    renderer.domElement.clientHeight /
-    (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+    heightPx / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
   return { eye, pxPerUnit };
 }
 
@@ -1867,7 +1870,6 @@ camera.position.set(extent * 0.7, extent * 0.25, extent * 0.55); // oblique: bra
 controls.target.set(0, 0, 0);
 controls.update();
 fitClip();
-
 
 addEventListener("resize", () => {
   if (renderer.xr.isPresenting) return; // XR runtime owns the stereo framebuffer size

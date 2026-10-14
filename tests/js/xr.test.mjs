@@ -118,6 +118,7 @@ function fixture({
   const camera = {
     position: new Vector(700, 250, 550),
     quaternion: new Vector(0, 0.2, 0, 0.98),
+    scale: new Vector(1, 1, 1),
     fov: 40,
     zoom: 1,
     near: 2,
@@ -217,6 +218,7 @@ test("a click enters; session end restores the root, the desktop camera and the 
   // three.js writes the headset pose and field of view into the camera
   f.camera.position.set(0.1, 1.6, 0.2);
   f.camera.quaternion.set(0.5, 0.5, 0.5, 0.5);
+  f.camera.scale.set(1.0000001, 1, 1);
   f.camera.fov = 96;
   f.camera.zoom = 1.3;
   await result.button.click();
@@ -225,6 +227,8 @@ test("a click enters; session end restores the root, the desktop camera and the 
   assert.deepEqual(f.root.scale, new Vector(1, 1, 1));
   assert.deepEqual(f.camera.position, new Vector(10, 20, 30));
   assert.deepEqual(f.camera.quaternion, new Vector(0, 0.2, 0, 0.98));
+  assert.deepEqual(f.camera.scale, new Vector(1, 1, 1));
+  assert.ok(f.camera.updates >= 2);
   assert.deepEqual([f.camera.fov, f.camera.zoom], [40, 1]);
   assert.deepEqual([f.camera.near, f.camera.far], [2, 500]);
   assert.deepEqual(f.controls.target, new Vector(-1, -2, -3));
@@ -252,4 +256,17 @@ test("a session the renderer cannot take is ended, and the scene stays desktop",
   assert.equal(result.button.textContent, "Enter VR");
   assert.deepEqual(f.root.position, new Vector(4, 5, 6));
   assert.deepEqual(f.camera.position, new Vector(700, 250, 550));
+});
+
+test("a session ended by the headset restores the desktop state too", async () => {
+  const f = fixture();
+  const result = await installXrObserver(f.options);
+  await result.button.click();
+  f.camera.position.set(0.1, 1.6, 0.2);
+  f.renderer.xr.session = null;
+  f.renderer.xr.isPresenting = false;
+  f.renderer.xr.dispatch("sessionend");
+  assert.equal(result.button.textContent, "Enter VR");
+  assert.deepEqual(f.camera.position, new Vector(700, 250, 550));
+  assert.deepEqual(f.root.position, new Vector(4, 5, 6));
 });
