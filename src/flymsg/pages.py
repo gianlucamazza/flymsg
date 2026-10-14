@@ -65,6 +65,7 @@ PAGES = (
     ("dimorphism", "docs/dimorphism.md", "Dimorphism"),
     ("related", "docs/related.md", "Related"),
     ("viz", "docs/viz.md", "3D view"),
+    ("adr-virtual-experimental-environment", "docs/adr-virtual-experimental-environment.md", "Virtual lab ADR"),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("approximations", "docs/approximations.md", "Approximations"),
     ("leads", "docs/leads.md", "Leads"),
