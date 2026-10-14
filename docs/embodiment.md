@@ -72,25 +72,29 @@ command; M0 v1 above is frozen, and a v1 record never parses as v2 or the revers
   +x anterior, +y left, +z dorsal), `eye/L` and `eye/R` (FlyGym's eye cameras: optical axis
   −z, image up +y), `eyemap` (the Zhao et al. 2025 micro-CT head frame of `flymsg.eye`). A
   `Pose` maps child to parent coordinates and composes only through a shared frame.
-- **Quaternions** are (w, x, y, z), MuJoCo's order, unit norm within 1e-9 and stored with
-  w ≥ 0; degenerate, non-finite and reflected inputs refuse. FlyGym millimetres convert to
-  metres in one function, `mm`.
+- **Quaternions** are (w, x, y, z), MuJoCo's order, unit norm within 1e-9, stored with the
+  first nonzero component positive and checked on construction, never rescaled, so a stored
+  trace parses back bit for bit; degenerate, non-finite, reflected and non-orthonormal inputs
+  refuse. FlyGym millimetres convert to metres in one function, `mm`.
 - **State**: world ← body pose, linear velocity in world and angular velocity in body (the
   MuJoCo free-joint convention), integer microseconds.
 - **Clock** (`embodiment.Clock`, unchanged): per body tick, sensors read the state at its start,
-  the neural model advances, the motor command is issued at its end, then physics steps.
+  the neural model advances, then physics steps under the command held since the last control
+  tick; motor events aggregate at control ticks once their latency has passed, as in M0 v1.
   `state_at` returns the latest state not after the asked time, so no future pose reaches an
   earlier neural input.
 - **Eye mounts** come from FlyGym 2.1.0 (`flygym_eye_mounts`): 0.23 mm anterior, ±0.38 mm
   lateral and 0.02 mm dorsal of the thorax origin, optical axes 63° off the midline and level;
   the right mount is the mirrored left one within 0.2°. FlyGym compiles with `fusestatic` on,
-  which fuses the rigid head into the thorax and moves both eye cameras to the thorax origin
-  (0.44 mm off, orientation kept); the mounts are read from a compile without it.
+  which fuses the rigid head into its parent: in a simulation, with the fly on a free joint,
+  both eye cameras land on the thorax origin (0.44 mm off, orientation kept); the mounts are
+  read from a compile without it.
 - **Registration** of `eyemap` into `body` has no default and needs a source: the rotation
   between the micro-CT head and NeuroMechFly's head is not measured
   ([#84](https://github.com/gianlucamazza/flymsg/issues/84),
   [#179](https://github.com/gianlucamazza/flymsg/issues/179)).
-- **Actuators** are named by compiled MuJoCo name and id with a unit; `pose.command` refuses a
+- **Actuators** are named by compiled MuJoCo name and id with a unit and the model they were
+  compiled from; neurons stay MaleCNS bodyIds as in v1; `pose.command` refuses a
   name or id the compiled model does not have, then defers to `motor_map.command`, which refuses
   every row today.
 - **Trace**: provenance, clock, both mounts and the states serialise to canonical JSON and

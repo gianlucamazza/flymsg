@@ -19,8 +19,9 @@ Quaternions are (w, x, y, z), MuJoCo's order, unit norm, and stored canonical (w
 FlyGym lengths are millimetres; `mm` converts at the boundary and nothing else does.
 
 Clock ordering per body tick [t, t + body_us): sample the sensors from the state at
-time t, advance the neural model over the tick, issue the motor command at t + body_us,
-then step physics to t + body_us. `state_at` returns the latest state not after the
+time t, advance the neural model over the tick, then step physics to t + body_us under the
+command held since the last control tick. Motor events aggregate at control ticks once
+their latency has passed, as in M0 v1 (`embodiment.run_fixture`). `state_at` returns the latest state not after the
 asked time, so no future pose can enter an earlier neural input.
 """
 
@@ -52,37 +53,63 @@ def _finite(values, name: str) -> tuple[float, ...]:
     return out
 
 
+def _hamilton(a, b) -> tuple[float, float, float, float]:
+    aw, ax, ay, az = a
+    bw, bx, by, bz = b
+    return (
+        aw * bw - ax * bx - ay * by - az * bz,
+        aw * bx + ax * bw + ay * bz - az * by,
+        aw * by - ax * bz + ay * bw + az * bx,
+        aw * bz + ax * by - ay * bx + az * bw,
+    )
+
+
+def _canonical(q) -> tuple[float, float, float, float]:
+    """q and -q are one rotation: store the one whose first nonzero component is
+    positive, with no negative zeros."""
+    for c in q:
+        if c != 0:
+            sign = 1.0 if c > 0 else -1.0
+            return tuple(sign * v + 0.0 for v in q)
+    return tuple(v + 0.0 for v in q)
+
+
 @dataclass(frozen=True)
 class Quat:
-    """Unit quaternion (w, x, y, z); construct with `Quat.of` to normalise and check."""
+    """Unit quaternion (w, x, y, z) in canonical sign. Direct construction checks and
+    never rescales, so a stored quaternion parses back bit for bit; `Quat.of`
+    normalises a computed one first."""
 
     w: float
     x: float
     y: float
     z: float
 
+    def __post_init__(self) -> None:
+        q = (self.w, self.x, self.y, self.z)
+        if not all(type(c) is float and math.isfinite(c) for c in q):
+            raise ContractError("quaternion components must be finite floats")
+        n = math.sqrt(sum(c * c for c in q))
+        if abs(n - 1.0) > NORM_TOL:
+            raise ContractError(f"quaternion norm {n!r} is not 1")
+        if _canonical(q) != q:
+            raise ContractError("quaternion is not in canonical sign")
+
     @classmethod
     def of(cls, values) -> Quat:
         values = _finite(values, "quaternion")
         if len(values) != 4:
             raise ContractError("a quaternion has four components (w, x, y, z)")
-        w, x, y, z = values
-        n = math.sqrt(w * w + x * x + y * y + z * z)
+        n = math.sqrt(sum(c * c for c in values))
         if abs(n - 1.0) > NORM_TOL:
             raise ContractError(f"quaternion norm {n!r} is not 1")
-        if w < 0:  # q and -q are the same rotation; store one
-            w, x, y, z = -w, -x, -y, -z
-        return cls(w / n, x / n, y / n, z / n)
+        return cls(*_canonical(tuple(c / n for c in values)))
+
+    def components(self) -> tuple[float, float, float, float]:
+        return (self.w, self.x, self.y, self.z)
 
     def __mul__(self, o: Quat) -> Quat:
-        return Quat.of(
-            (
-                self.w * o.w - self.x * o.x - self.y * o.y - self.z * o.z,
-                self.w * o.x + self.x * o.w + self.y * o.z - self.z * o.y,
-                self.w * o.y - self.x * o.z + self.y * o.w + self.z * o.x,
-                self.w * o.z + self.x * o.y - self.y * o.x + self.z * o.w,
-            )
-        )
+        return Quat.of(_hamilton(self.components(), o.components()))
 
     def inverse(self) -> Quat:
         return Quat.of((self.w, -self.x, -self.y, -self.z))
@@ -93,23 +120,22 @@ class Quat:
         return tuple(tuple(c[i] for c in cols) for i in range(3))
 
     def rotate(self, v) -> tuple[float, float, float]:
-        p = Quat(0.0, *_finite(v, "vector"))
-        r = self._raw(self._raw(self, p), Quat(self.w, -self.x, -self.y, -self.z))
-        return (r.x, r.y, r.z)
-
-    @staticmethod
-    def _raw(a: Quat, b: Quat) -> Quat:  # product without the unit-norm check
-        return Quat(
-            a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
-            a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
-            a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
-            a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
-        )
+        q = self.components()
+        conj = (self.w, -self.x, -self.y, -self.z)
+        r = _hamilton(_hamilton(q, (0.0, *_finite(v, "vector"))), conj)
+        return (r[1], r[2], r[3])
 
     @classmethod
     def from_matrix(cls, m) -> Quat:
         """Rotation matrix (rows) to quaternion; refuses a reflection or a non-rotation."""
         r = [_finite(row, "matrix") for row in m]
+        if len(r) != 3 or any(len(row) != 3 for row in r):
+            raise ContractError("a rotation matrix is 3 x 3")
+        for i in range(3):
+            for j in range(3):
+                dot = sum(r[k][i] * r[k][j] for k in range(3))
+                if abs(dot - (i == j)) > 1e-6:
+                    raise ContractError("matrix is not orthonormal")
         det = (
             r[0][0] * (r[1][1] * r[2][2] - r[1][2] * r[2][1])
             - r[0][1] * (r[1][0] * r[2][2] - r[1][2] * r[2][0])
@@ -175,9 +201,10 @@ class Pose:
             raise ContractError(
                 f"unknown or degenerate frame pair {self.parent}<-{self.child}"
             )
-        if len(self.position_m) != 3:
+        position = _finite(self.position_m, "position")
+        if len(position) != 3:
             raise ContractError("position must have three components")
-        _finite(self.position_m, "position")
+        object.__setattr__(self, "position_m", position)  # stored as a float tuple
         if not isinstance(self.orientation, Quat):
             raise ContractError("orientation must be a Quat")
 
@@ -272,10 +299,10 @@ class BodyState:
         if (self.pose.parent, self.pose.child) != ("world", "body"):
             raise ContractError("a body state maps body to world")
         for name in ("linear_velocity_m_s", "angular_velocity_rad_s"):
-            v = getattr(self, name)
+            v = _finite(getattr(self, name), name)
             if len(v) != 3:
                 raise ContractError(f"{name} must have three components")
-            _finite(v, name)
+            object.__setattr__(self, name, v)
 
 
 def eye_pose(state: BodyState, mount: EyeMount) -> Pose:
@@ -307,16 +334,21 @@ def state_at(states: tuple[BodyState, ...], time_us: int, clock: Clock) -> BodyS
 
 @dataclass(frozen=True)
 class ActuatorRef:
-    """A compiled MuJoCo actuator, by name and id, in the motor map."""
+    """A compiled MuJoCo actuator, by name and id, with the unit of its control and the
+    model it was compiled from. Whether a neuron may drive it is the motor map's call
+    (its rows carry the source and status); neurons stay MaleCNS bodyIds, as in v1."""
 
     name: str
     mujoco_id: int
     unit: str
+    source: str
 
     def __post_init__(self) -> None:
         integer(self.mujoco_id, "mujoco_id")
         if not self.name or self.unit not in ("N", "N*m", "rad"):
             raise ContractError("an actuator needs a name and a unit in N, N*m or rad")
+        if not self.source:
+            raise ContractError("an actuator needs the model it was compiled from")
 
 
 def command(actuator: ActuatorRef, compiled: dict[str, int]) -> None:
@@ -367,11 +399,12 @@ class Trace:
 
 
 def _pose(d: dict) -> Pose:
+    q = d["orientation"]
+    if set(q) != set("wxyz"):
+        raise ContractError("orientation needs exactly w, x, y, z")
+    # direct construction: a stored quaternion is checked, never rescaled
     return Pose(
-        d["parent"],
-        d["child"],
-        tuple(d["position_m"]),
-        Quat.of(tuple(d["orientation"].values())),
+        d["parent"], d["child"], tuple(d["position_m"]), Quat(*(q[k] for k in "wxyz"))
     )
 
 
@@ -400,7 +433,7 @@ def from_json(text: str) -> Trace:
         )
     except ContractError:
         raise
-    except (KeyError, TypeError, ValueError) as err:
+    except (AttributeError, KeyError, TypeError, ValueError) as err:
         raise ContractError(f"malformed v2 trace: {err!r}") from err
     trace.validate()
     return trace
@@ -409,10 +442,11 @@ def from_json(text: str) -> Trace:
 def flygym_eye_mounts() -> tuple[EyeMount, EyeMount]:
     """Body <- eye mounts read from FlyGym 2.1.0's NeuroMechFly vision cameras.
 
-    Compiled with ``fusestatic`` off: with FlyGym's default (on) MuJoCo fuses the static
-    head and eye bodies into the thorax and both cameras land on the thorax origin, 0.23 mm behind,
-    0.38 mm medial to and 0.02 mm below the eyes (0.44 mm; the orientation survives). The head is rigid
-    in this skeleton, so the mounts are fixed in the body frame."""
+    Compiled with ``fusestatic`` off. FlyGym's default (on) fuses the rigid head and eye
+    bodies into their parent: in a simulation, with the fly on a free joint, both cameras
+    land on the thorax origin, 0.23 mm behind, 0.38 mm medial to and 0.02 mm below the
+    eyes (0.44 mm; the orientation survives). The head is rigid in this skeleton, so the
+    mounts are fixed in the body frame."""
     import mujoco
     from flygym.anatomy import AxisOrder, JointPreset, Skeleton
     from flygym.compose import KinematicPosePreset, NeuroMechFly
@@ -431,9 +465,14 @@ def flygym_eye_mounts() -> tuple[EyeMount, EyeMount]:
     model = spec.compile()
     data = mujoco.MjData(model)
     mujoco.mj_forward(model, data)
-    root = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, f"{fly.name}/c_thorax")
-    if root < 0:
-        root = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "c_thorax")
+
+    def find(kind, name: str) -> int:
+        i = mujoco.mj_name2id(model, kind, name)
+        if i < 0:
+            raise ContractError(f"FlyGym model has no {name}")
+        return i
+
+    root = find(mujoco.mjtObj.mjOBJ_BODY, "c_thorax")
     body = Pose(
         "world",
         "body",
@@ -442,9 +481,7 @@ def flygym_eye_mounts() -> tuple[EyeMount, EyeMount]:
     )
     mounts = []
     for side, cam in (("L", "l_eye_cam_camera"), ("R", "r_eye_cam_camera")):
-        cid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, f"{fly.name}/{cam}")
-        if cid < 0:
-            cid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, cam)
+        cid = find(mujoco.mjtObj.mjOBJ_CAMERA, cam)
         world_eye = Pose(
             "world",
             f"eye/{side}",

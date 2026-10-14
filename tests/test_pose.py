@@ -1,5 +1,6 @@
 import json
 import math
+import random
 
 import pytest
 
@@ -167,13 +168,13 @@ def test_unknown_or_unpublished_actuator_refuses():
     name = doc["actuators"][0]["name"]
     compiled = {name: 3}
     with pytest.raises(ContractError, match="not compiled"):
-        pose.command(ActuatorRef(name, 4, "N*m"), compiled)
+        pose.command(ActuatorRef(name, 4, "N*m", "fixture"), compiled)
     with pytest.raises(ContractError, match="not compiled"):
-        pose.command(ActuatorRef("no_such_actuator", 0, "N*m"), compiled)
+        pose.command(ActuatorRef("no_such_actuator", 0, "N*m", "fixture"), compiled)
     with pytest.raises(ContractError, match="unmapped"):
-        pose.command(ActuatorRef(name, 3, "N*m"), compiled)
+        pose.command(ActuatorRef(name, 3, "N*m", "fixture"), compiled)
     with pytest.raises(ContractError):
-        ActuatorRef(name, 3, "mm")
+        ActuatorRef(name, 3, "mm", "fixture")
 
 
 def test_flygym_eye_mounts_are_mirrored_and_off_the_thorax():
@@ -189,3 +190,84 @@ def test_flygym_eye_mounts_are_mirrored_and_off_the_thorax():
     r = right.pose.orientation
     dot = abs(m.w * r.w + m.x * r.x + m.y * r.y + m.z * r.z)
     assert math.degrees(2 * math.acos(min(1.0, dot))) < 0.2
+
+
+def test_canonical_sign_at_half_turns_and_direct_construction():
+    assert Quat.of((0, -1, 0, 0)) == Quat.of((0, 1, 0, 0))
+    assert Quat.of((0, 0, -S, -S)) == Quat.of((0, 0, S, S))
+    assert Quat.of((-0.0, 1, 0, 0)).w == 0.0  # no negative zero stored
+    for bad in (
+        (2.0, 0.0, 0.0, 0.0),
+        (-1.0, 0.0, 0.0, 0.0),
+        (0.0, -1.0, 0.0, 0.0),
+        (1, 0, 0, 0),
+    ):
+        with pytest.raises(ContractError):
+            Quat(*bad)
+    with pytest.raises(ContractError):
+        Quat.from_matrix([[1, 1, 0], [0, 1, 0], [0, 0, 1]])  # a shear, det 1
+
+
+@pytest.mark.parametrize(
+    "axis", [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (0, 1, 1)]
+)
+@pytest.mark.parametrize("deg", [179.999, 180.0])
+def test_matrix_branches_near_half_turns(axis, deg):
+    n = math.sqrt(sum(a * a for a in axis))
+    h = math.radians(deg) / 2
+    q = Quat.of((math.cos(h), *(math.sin(h) * a / n for a in axis)))
+    back = Quat.from_matrix(q.matrix())
+    assert close(back.components(), q.components(), 1e-9)
+
+
+def test_random_traces_round_trip_bit_for_bit():
+    rng = random.Random(178)
+    for _ in range(200):
+        g = [rng.gauss(0, 1) for _ in range(4)]
+        n = math.sqrt(sum(c * c for c in g))
+        q = Quat.of(tuple(c / n for c in g))
+        p = tuple(rng.uniform(-1e3, 1e3) for _ in range(3))
+        trace = Trace(PROVENANCE, Clock(), (LEFT, pose.mirror(LEFT)), (state(0, p, q),))
+        text = trace.to_json()
+        assert pose.from_json(text) == trace and pose.from_json(text).to_json() == text
+
+
+def test_orientation_keys_and_malformed_types_refuse():
+    doc = json.loads(
+        Trace(PROVENANCE, Clock(), (LEFT, pose.mirror(LEFT)), (state(0),)).to_json()
+    )
+    q = doc["states"][0]["pose"]["orientation"]
+    doc["states"][0]["pose"]["orientation"] = {
+        "x": q["x"],
+        "y": q["y"],
+        "z": q["z"],
+        "w": q["w"],
+    }
+    assert (
+        pose.from_json(json.dumps(doc)).states[0].pose.orientation == IDENTITY
+    )  # by name
+    for path, value in (
+        (("provenance",), [1, 2]),
+        (("states", 0, "pose", "orientation"), [1.0, 0.0, 0.0, 0.0]),
+        (("states", 0, "pose", "orientation"), {"w": 1.0, "x": 0.0, "y": 0.0}),
+        (
+            ("states", 0, "pose", "orientation"),
+            {"w": -1.0, "x": 0.0, "y": 0.0, "z": 0.0},
+        ),
+        (("mounts",), "LR"),
+    ):
+        bad = json.loads(json.dumps(doc))
+        target = bad
+        for k in path[:-1]:
+            target = target[k]
+        target[path[-1]] = value
+        with pytest.raises(ContractError):
+            pose.from_json(json.dumps(bad))
+
+
+def test_stored_vectors_are_float_tuples():
+    s = BodyState(0, Pose("world", "body", [1, 2, 3], IDENTITY), [0, 0, 0], (0, 0, 1))
+    assert s.pose.position_m == (1.0, 2.0, 3.0) and isinstance(
+        s.linear_velocity_m_s, tuple
+    )
+    hash(s)
