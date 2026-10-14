@@ -22,9 +22,9 @@
     α · r/v − δ, against the same fit of Dombrovski et al. 2025's giant-fiber recordings
     (Zenodo, CC BY 4.0) at r/v 10–80 ms.
   - Timing only, never amplitude; only cells where both model giant fibers stay graded are
-    scored, and a slope a stimulus-locked peak would give makes the run uninformative. A
+    scored, and a fly interval overlapping the slopes of stimulus followers makes the run uninformative. A
     model-only no-go runs first. Two evidence records. Locked before the files are downloaded,
-    except two an agent had opened (recorded). No run.
+    except what an agent had opened during the search (recorded). No run.
 
 ### Engineering
 

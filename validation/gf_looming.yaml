@@ -2,7 +2,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.gf_looming.VERSION_HASHES. `flymsg gf-looming` prints this file; `--run` executes it.
 version: 1
-content_sha256: e4dddf981c68c7495f5fb8ba4e3ccd4751a0036e48797c5fd297a5c562a1969c
+content_sha256: 2b9eb8f2fb22a6cdb149e52815d9e73daf78f98101adf67f272839c91a028d90
 yaml_subset: 2
 evidence: [dombrovski_gf_looming, jang_looming_protocol]
 
@@ -75,7 +75,7 @@ model:
   post_why: "the window ends 150 ms after the expansion stops (Dombrovski et al. 2025 score 150 ms after onset in their Fig. 1); a later peak is no longer driven by expansion"
   seed0: 340
   seeds: 5
-  readout: "the membrane potential of DNp01(GF)_R and DNp01(GF)_L at every neural step (CpuRuntime.read), a sample standing at the end of its step, filtered as the data (data_rule.filter, the same frame in ms, since its lag grows with r/v and would otherwise bias alpha); per giant fiber the baseline is the mean over pre_ms and the peak time the first sample in the window (after onset to the end of the expansion plus post_ms) at reach of its window maximum above baseline; the run's peak time is the mean of the two"
+  readout: "the membrane potential of DNp01(GF)_R and DNp01(GF)_L at every neural step (CpuRuntime.read), a sample standing at the end of its step, filtered as the data (data_rule.filter, the same frame in ms, since the distortion it gives an asymmetric peak grows with r/v and would otherwise bias alpha; the run lasts one frame past the window so the filter's edge stays outside it); per giant fiber the baseline is the mean over pre_ms and the peak time the first sample in the window (after onset to the end of the expansion plus post_ms) at reach of its window maximum above baseline; the run's peak time is the mean of the two"
   reach: 0.95
   reach_why: "a noisy plateau makes the time of the maximum itself arbitrary; the first time at 95% of it is defined the same way in model and data"
   near_end_ms: 20.0
@@ -108,12 +108,12 @@ no_go:
 
 score:
   statistic: "alpha per responding cell against the data's interval of the median alpha"
-  stimulus_locked: "a peak locked to the stimulus gives alpha = 1 / tan(end_deg / 2) (at the end of the expansion, about 1.63) or 1 / tan(start_deg / 2) (at onset, about 11.43) whatever the circuit; if the flies' interval holds either, the timing cannot separate the circuit from the stimulus"
+  stimulus_locked: "a trace that only follows the stimulus gives a slope whatever the circuit: the locked readout (filter, reach, window, fit) applied to theta and dtheta/dt, raw and through tau_syn, tau_m and both (sim.Params), at the model's and the data's dt, gives a band (about 1.73 to 2.01), and a peak at onset gives 1 / tan(start_deg / 2) (about 11.43); if the flies' interval overlaps the band or holds the onset slope, the timing cannot separate the circuit from the stimulus. Each scored cell's distance from the band is reported: only that part of its slope is the circuit's"
   verdict:
     pass: "every scored cell's alpha lies inside the interval"
     partial: "some scored cells' alpha lie inside it"
     fail: "none does"
-    uninformative: "the no-go, fewer than min_flies readable control flies, no scored cell, or an interval that holds a stimulus-locked alpha"
+    uninformative: "the no-go, fewer than min_flies readable control flies, no scored cell, or an interval that overlaps the stimulus-locked band or holds the onset slope"
   reported: "delta per cell and from the data (secondary, decides nothing), the implied threshold angle 2 * atan(1 / alpha), per cell whether the median peak times increase with r/v, the share of peaks near the end of the expansion, edge peaks, and the cells that respond but fire"
 
 limits:
@@ -122,6 +122,7 @@ limits:
   - "The disc sizes of the 2025 recordings are inferred from the protocol they cite (Jang et al. 2023)."
   - "The control flies are genotype controls of DIP-epsilon experiments; their sex is not stated in the paper."
   - "Only cells where the LIF giant fibers stay subthreshold are scored, since the recordings are graded; cells where they fire are reported, not scored."
-  - "The scored quantity is a slope across four r/v per fly; one control file had been opened before the lock (seen_before_lock)."
+  - "Graded cells are the weak-gain ones, whose peaks come latest and closest to a stimulus follower; the stimulus-locked band is the guard, and the distance from it is reported."
+  - "The scored quantity is a slope across four r/v per fly; one control file and the xlsx had been opened, and the Fig. 1 file's structure seen, before the lock (seen_before_lock)."
 
 defaults_changed: false

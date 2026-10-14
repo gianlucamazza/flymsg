@@ -35,7 +35,7 @@ REACH = 0.95  # a peak's time: the first sample at 95% of the window maximum
 NEAR_END_MS = 20.0  # a peak this soon after the expansion stops follows the stimulus
 
 VERSION_HASHES: dict[int, str] = {
-    1: "e4dddf981c68c7495f5fb8ba4e3ccd4751a0036e48797c5fd297a5c562a1969c",
+    1: "2b9eb8f2fb22a6cdb149e52815d9e73daf78f98101adf67f272839c91a028d90",
 }
 
 
@@ -105,7 +105,8 @@ def expansion(rv_ms: float, doc: dict, dt_ms: float) -> dict:
     onset = m["pre_ms"]
     collision = onset + to_start
     end = collision - to_end
-    duration = end + m["post_ms"]
+    # one filter frame past the window, so the filter's edge stays outside it
+    duration = end + m["post_ms"] + (end - onset) / 10
     t = np.arange(round(duration / dt_ms)) * dt_ms
     half = np.radians(eye.looming_radius_deg(np.minimum(t, end), collision, rv_ms))
     theta = np.where(t < onset, 0.0, 2 * half)
@@ -188,7 +189,8 @@ def peak_time(x: np.ndarray, t: np.ndarray, window: np.ndarray, base: float) -> 
 
 def smooth(x: np.ndarray, stim: dict, dt_ms: float) -> np.ndarray:
     """Jang et al. 2023's Savitzky-Golay filter: order 4, a frame of a tenth of the
-    expansion, odd; the same in ms for model and data, since its lag grows with r/v."""
+    expansion, odd; the same in ms for model and data, since the distortion it gives an
+    asymmetric peak grows with r/v."""
     frame = math.ceil((stim["end"] - stim["onset"]) / 10 / dt_ms) // 2 * 2 + 1
     return signal.savgol_filter(x, frame, 4)
 
@@ -292,13 +294,61 @@ def no_go(fits: pd.DataFrame, doc: dict) -> tuple[bool, str]:
     )
 
 
-def stimulus_locked(doc: dict) -> dict[str, float]:
-    """The slopes a peak locked to the stimulus gives whatever the circuit: at the end of
-    the expansion, or at its onset."""
+def lowpass(x: np.ndarray, tau_ms: float, dt_ms: float) -> np.ndarray:
+    """First-order low-pass, exact for piecewise-constant input."""
+    if tau_ms == 0:
+        return x
+    a = math.exp(-dt_ms / tau_ms)
+    out = np.empty_like(x)
+    acc = 0.0
+    for k, v in enumerate(x):
+        acc = a * acc + (1 - a) * v
+        out[k] = acc
+    return out
+
+
+def follower_slopes(doc: dict, dt_ms: float) -> dict[str, float]:
+    """The slope alpha the locked readout gives a trace that only follows the stimulus:
+    theta or dtheta/dt, raw or through tau_syn and tau_m (sim.Params), at this dt."""
+    p = sim.Params()
+    filters = {
+        "raw": (),
+        "tau_syn": (p.tau_syn,),
+        "tau_m": (p.tau_m,),
+        "tau_syn+tau_m": (p.tau_syn, p.tau_m),
+    }
+    out = {}
+    for name in ("theta", "dtheta"):
+        for label, taus in filters.items():
+            ys = []
+            for rv in doc["stimulus"]["rv_ms"]:
+                stim = expansion(rv, doc, dt_ms)
+                x = stim[name]
+                for tau in taus:
+                    x = lowpass(x, tau, dt_ms)
+                y = readout(x[:, None], np.zeros((x.size, 1), bool), stim, dt_ms, doc)
+                ys.append(y["before_collision_ms"])
+            out[f"{name}/{label}"] = fit(np.asarray(doc["stimulus"]["rv_ms"]), ys)[0]
+    return out
+
+
+def stimulus_locked(doc: dict) -> dict:
+    """The band of slopes stimulus followers give at the model's and the data's dt, and
+    the slope of a peak at onset; whatever the circuit, a slope there is the stimulus's."""
     s = doc["stimulus"]
+    slopes = {
+        **follower_slopes(doc, sim.Params.dt),
+        **{
+            f"{k}@data": v
+            for k, v in follower_slopes(
+                doc, 1000.0 / doc["inputs"]["sample_rate_hz"]
+            ).items()
+        },
+    }
     return {
-        "end": 1 / math.tan(math.radians(s["end_deg"] / 2)),
+        "band": [min(slopes.values()), max(slopes.values())],
         "onset": 1 / math.tan(math.radians(s["start_deg"] / 2)),
+        "followers": slopes,
     }
 
 
@@ -394,20 +444,29 @@ def judge(fits: pd.DataFrame, flies: pd.DataFrame, doc: dict) -> dict:
         return {"verdict": f"uninformative: {len(flies)} readable control flies"}
     lo, hi = interval(flies["alpha"].to_numpy(), doc)
     d_lo, d_hi = interval(flies["delta_ms"].to_numpy(), doc)
+    locked = stimulus_locked(doc)
+    band_lo, band_hi = locked["band"]
     out = {
         "alpha_interval": [lo, hi],
         "theta_thr_interval_deg": [threshold_deg(hi), threshold_deg(lo)],
         "delta_interval_ms": [d_lo, d_hi],
-        "stimulus_locked_alpha": stimulus_locked(doc),
+        "stimulus_locked": locked,
         "flies": len(flies),
         "fly_edge_peaks": int(flies.edge_peaks.sum()),
         "fly_near_end_peaks": int(flies.near_end.sum()),
     }
-    locked = [k for k, a in stimulus_locked(doc).items() if lo <= a <= hi]
-    if locked:
+    hits = [
+        name
+        for name, overlaps in (
+            ("followers", lo <= band_hi and band_lo <= hi),
+            ("onset", lo <= locked["onset"] <= hi),
+        )
+        if overlaps
+    ]
+    if hits:
         out["verdict"] = (
-            "uninformative: the flies' slope does not separate the circuit from a peak "
-            f"locked to the stimulus {' and '.join(locked)}"
+            "uninformative: the flies' slope does not separate the circuit from a "
+            f"stimulus-locked peak ({' and '.join(hits)})"
         )
         return out
     live = fits[fits.scored]
@@ -416,6 +475,10 @@ def judge(fits: pd.DataFrame, flies: pd.DataFrame, doc: dict) -> dict:
         return out
     inside = int(((live.alpha >= lo) & (live.alpha <= hi)).sum())
     out["inside"] = f"{inside} of {len(live)} scored cells"
+    # the part of a cell's slope that is the circuit's: its distance from the band
+    out["cell_distance_from_band"] = [
+        float(max(band_lo - a, a - band_hi, 0.0)) for a in live.alpha
+    ]
     out["verdict"] = "pass" if inside == len(live) else "partial" if inside else "fail"
     return out
 

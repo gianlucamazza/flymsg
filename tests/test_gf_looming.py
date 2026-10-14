@@ -185,10 +185,18 @@ def test_a_changed_or_odd_file_refuses_and_a_missing_one_drops_its_fly(tmp_path)
         gf_looming.read_trace(tmp_path / "fly01_trial02.mat", doc)
 
 
-def test_a_stimulus_locked_slope_in_the_flies_interval_is_uninformative(tmp_path):
-    end = gf_looming.stimulus_locked(DOC)["end"]
-    assert end == pytest.approx(1 / math.tan(math.radians(31.5)))
-    doc = synthetic(tmp_path, [end - 0.1, end - 0.05, end, end + 0.05, end + 0.1] * 2)
+def test_stimulus_followers_set_a_band_and_an_overlapping_interval_is_uninformative(
+    tmp_path,
+):
+    locked = gf_looming.stimulus_locked(DOC)
+    lo, hi = locked["band"]
+    assert 1.6 < lo < hi < 2.1
+    assert locked["onset"] == pytest.approx(1 / math.tan(math.radians(5)))
+    mid = (lo + hi) / 2
+    doc = synthetic(tmp_path, [mid - 0.1, mid - 0.05, mid, mid + 0.05, mid + 0.1] * 2)
     flies = gf_looming.data_fits(tmp_path, doc)
-    verdict = gf_looming.judge(gf_looming.model_fits(rows(end), doc), flies, doc)
-    assert verdict["verdict"].startswith("uninformative: the flies' slope")
+    verdict = gf_looming.judge(gf_looming.model_fits(rows(mid), doc), flies, doc)
+    assert verdict["verdict"] == (
+        "uninformative: the flies' slope does not separate the circuit from a "
+        "stimulus-locked peak (followers)"
+    )

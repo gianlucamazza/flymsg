@@ -141,8 +141,9 @@ The first scored test of the looming transducer (gate G3 of the
 (DNp01) peak at the right time before a looming disc's collision? Dombrovski et al. 2025
 (doi:10.1038/s41586-025-09037-4) deposited the giant fiber's whole-cell potential to discs at
 r/v 10, 20, 40 and 80 ms (Zenodo 10.5281/zenodo.14983850, CC BY 4.0).
-`validation/gf_looming.yaml` v1 is locked before the files are downloaded, except the two an
-agent had opened during the search (recorded in the lock).
+`validation/gf_looming.yaml` v1 is locked before the files are downloaded, except one trace and the
+spreadsheet an agent had opened during the search, and the structure of the Fig. 1 file
+(recorded in the lock).
 
 - **Stimulus.** A dark disc from 10° to 63°, then held, at the four r/v: the protocol of Jang et
   al. 2023 (doi:10.1242/jeb.244790), which the 2025 recordings cite. Its use for them is
@@ -162,14 +163,17 @@ agent had opened during the search (recorded in the lock).
   1 s before onset and a Savitzky–Golay filter (Jang et al. 2023's), the same peak rule, window
   and fit; a bootstrap interval of the median α over flies.
 - **Bar.** `pass` when every scored cell's α lies inside the flies' interval, `partial` when
-  some do, `fail` when none does. A peak locked to the stimulus gives α ≈ 1.63 (the expansion's
-  end) or 11.43 (its onset) whatever the circuit; if the flies' interval holds either, the run
-  is uninformative. δ, the implied angle and the peaks near the expansion's end are reported.
+  some do, `fail` when none does. A trace that only follows the stimulus (its size or angular
+  velocity, raw or low-passed by the synaptic and membrane time constants) gives α between about
+  1.73 and 2.01 under the same readout, and a peak at onset 11.43, whatever the circuit; if the
+  flies' interval overlaps that band or holds the onset slope, the run is uninformative. Each
+  scored cell's distance from the band is reported. δ, the implied angle and the peaks near the expansion's end are reported.
   Amplitudes are never compared.
 - **No-go, model only.** If fewer than 4 of the 15 cells respond (one synapse's jump in both
   giant fibers, every seed and r/v) and stay graded, the run stops before any file is opened.
 - **Seen before the lock.** During the search an agent opened one control file and the
-  deposited spreadsheet; the lock records what was seen. The scored slope was not computed.
+  deposited spreadsheet and saw the structure of the Fig. 1 file; the lock records what was
+  seen. The scored slope was not computed.
 
 `flymsg gf-looming` prints the lock; `--run` runs the model, its no-go, then the data. No run
 yet.

@@ -375,7 +375,7 @@ records:
       display_hz: 240.0
     unit: "deg (full angular size), s, ms, Hz"
     status: inferred
-    method: "stated by Jang et al. 2023 for their recordings ('starting at 10 deg and expanding to 63 deg in angular size and held for 1 s', r/v = 10, 20, 40, 80 ms, black disc on white, 240 Hz); Dombrovski et al. 2025 record 'as previously described' citing it and do not restate the sizes, so their use for the 2025 traces is inferred"
+    method: "stated by Jang et al. 2023 for their recordings ('starting at 10 deg and expanding to 63 deg in angular size and held for 1 s', r/v = 10, 20, 40, 80 ms, black disc on white, 240 Hz); Dombrovski et al. 2025 record 'as previously described' citing it and do not restate the sizes, so their use for the 2025 traces is inferred; before the lock an agent noted that one deposited control trace's peak timing is consistent with it (validation/gf_looming.yaml, seen_before_lock)"
     uncertainty: "the 2025 disc sizes and positions are not stated; the deposited traces carry no stimulus channel"
     source:
       citation: "Jang, Goodman, Ausborn & von Reyn 2023, J Exp Biol 226:jeb244790 (PMC10263144)"
