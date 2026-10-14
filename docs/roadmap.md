@@ -184,26 +184,30 @@ it is a plan, not a result.
 
 **1. Now: nothing outside is needed.**
 
-| Issue                                                      | Work                                                                                                      | Exit                                                                           |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Done: baseline of the live scenes (#153); `scripts/bench_check.py` compares a new run                     | Baseline committed; regression thresholds from it; a physical phone stays open |
-| [#139](https://github.com/gianlucamazza/flymsg/issues/139) | Done: v1 undecided (Δρ +0.015, interval −0.011 to +0.054); count stays                                    | More power needs measured pairs across more LHN types                          |
-| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Done (#142): the muscle is the type's; neuron-level matches recorded (140 of 623 disagree)                | Muscle → body actuator (#19, #35) stays blocked on evidence                    |
-| [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Lock Pacheco et al. 2021 (song → neuropil responses, iav mutants as null) as the first held-out benchmark | Scoring rule fixed before the run                                              |
+| Issue                                                      | Work                                                                                                                                                                                                                                                                       | Exit                                                                           |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Done: baseline of the live scenes (#153); `scripts/bench_check.py` compares a new run                                                                                                                                                                                      | Baseline committed; regression thresholds from it; a physical phone stays open |
+| [#139](https://github.com/gianlucamazza/flymsg/issues/139) | Done: v1 undecided (Δρ +0.015, interval −0.011 to +0.054); count stays                                                                                                                                                                                                     | More power needs measured pairs across more LHN types                          |
+| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Done (#142): the muscle is the type's; neuron-level matches recorded (140 of 623 disagree)                                                                                                                                                                                 | Muscle → body actuator (#19, #35) stays blocked on evidence                    |
+| [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Pacheco et al. 2021 as the first held-out benchmark: "JO-A ≈ pulse, JO-B ≈ sine" is not supported by its sources, so input by measured JO tuning or no sign prediction near the receptors; per-synapse neuropils (`syn-partners`, 2.97 GB) and a MaleCNS → IBNWB map first | Scoring rule fixed before the run                                              |
 
 **2. Next: the evidence exists and must be read and fixed in a lock.**
 
-| Issue                                                      | Work                                                                                                          |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v4 locked: dark anchor, lamina → medulla gain 1–16, Behnia delays (verified); not yet run               |
-| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc, replicated by v8 under the exact clamp; relational APL tests still open |
-| [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | An M2 transducer predicting the giant fiber potential (von Reyn et al. 2017), validated on the giant fiber    |
-| Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                       |
+| Issue                                                      | Work                                                                                                                                                                                               |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v4 locked: dark anchor, lamina → medulla gain 1–16, Behnia delays (verified); not yet run                                                                                                    |
+| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc, replicated by v8 under the exact clamp; relational APL tests still open                                                                                      |
+| [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | A transducer from von Reyn et al. 2017 (ModelDB 230400) into LC4 and LPLC2, scored on the model's DNp01 at held-out r/v (Ache et al. 2019); the traces are not deposited, a data request is needed |
+| Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                                                                                                            |
 
 **3. Blocked on measurements that do not exist.** Junctional conductances and a gap-junction
 list (#85), a Drosophila voltage → release curve (#97), muscle → body actuator (#19, #35),
 per-type neuromodulatory gains. Meanwhile: envelopes over measured ranges and inverse
 predictions (what value the result would need), never a chosen value.
+
+The sensorimotor gates G1 (B6 v2 pose contract, #178) and G2 (geometric optics onto the
+columns, #179) are implemented; G2 runs on the real eye once the micro-CT → NeuroMechFly head
+registration has a source.
 
 **4. Blocked on hardware.** A D3D12 adapter (#39), a Series S (#40) and a headset for the WebXR
 observer (#177); until then the native executor refuses whatever is not qualified, and the

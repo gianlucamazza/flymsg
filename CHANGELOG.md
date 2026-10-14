@@ -10,6 +10,12 @@
   compiled MuJoCo id that still refuse through the motor map, and a canonical JSON trace. No
   body is wired; M0 v1 is unchanged. FlyGym's default `fusestatic` compile moves both eye
   cameras of a simulated fly 0.44 mm to the thorax origin; the mounts are read without it.
+- **Geometric optics onto measured columns** (G2, #179): `flymsg.optics` turns dark spheres and
+  a B6 v2 pose into per-column angle, angular radius and its rate, angular velocity relative
+  to the eye, acceptance coverage and the first sphere on each axis; no photoreceptor gain, no
+  viewer. The micro-CT → NeuroMechFly head registration is unmeasured, so the real eye needs a
+  sourced `Registration` first. The planar Rice coverage is within 0.0076 of the spherical
+  integral at 8.23° acceptance.
 
 ## 0.8.47 — 2026-10-14
 

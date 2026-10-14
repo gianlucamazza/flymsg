@@ -46,6 +46,28 @@ no measured value and is stated by the lock. That lock is the T4/T5 test below.
 The giant fiber's size/velocity split (Ache et al. 2019) is a separate test on the
 [roadmap](roadmap.md) and is not part of this lock.
 
+**Geometric optics from a 6-DoF pose (G2, [#179](https://github.com/gianlucamazza/flymsg/issues/179)).**
+`flymsg.optics` measures dark spheres in the world from every column, given a B6 v2 body
+state and eye mounts (`flymsg.pose`, [embodiment](embodiment.md#b6-v2-6-dof-body-and-eye-pose-g1-178)):
+the angle from the column's axis to each sphere, the sphere's angular radius asin(r/d) and its
+rate, its angular velocity relative to the eye (so a turning fly sees the world turn the other
+way), the covered share of the acceptance profile and which sphere the column's axis meets
+first, and the sphere's azimuth and elevation in the body frame. Every column of an eye looks
+out from the position of that eye's mount; a column without a lens keeps NaN. Shares are per sphere as if alone; where silhouettes overlap only `nearest` resolves
+which one the axis sees. Nothing is a photoreceptor response, and the module imports no
+viewer, renderer or physics engine. Columns enter the body frame only through an explicit,
+sourced `Registration` of the micro-CT head frame: the rotation between that frame and
+NeuroMechFly's head is not measured, so no default exists and only tests use the identity. It
+may only pitch and shift in the sagittal plane, because the left eye's columns are the right
+eye's mirrored. Each sample carries a hash of the column source, registration, mounts, spheres
+and acceptance.
+That gap, not the optics, is what keeps G2 from running on the real eye.
+
+The planar Rice CDF of `disk_coverage` is checked against `optics.coverage_exact`, the same
+Gaussian profile integrated over the sphere: with an acceptance of 8.23° its largest error is
+0.0007 for caps up to 10° in radius, 0.0022 up to 30°, 0.0046 up to 60° and 0.0076 up to 89°
+(coverage is a share, 0 to 1).
+
 ## T4/T5 direction selectivity through the eye (lock, 2026-10-13)
 
 `eye.edge_coverage` moves a straight edge across each eye's measured columns (direction per
