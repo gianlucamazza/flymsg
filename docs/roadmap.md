@@ -207,7 +207,9 @@ predictions (what value the result would need), never a chosen value.
 
 The sensorimotor gates G1 (B6 v2 pose contract, #178) and G2 (geometric optics onto the
 columns, #179) are implemented; G2 runs on the real eye once the micro-CT → NeuroMechFly head
-registration has a source.
+registration has a source. G5 (#180) has its schedule, evidence gate and record on synthetic
+components; the [body-wiring ADR](adr-body-wiring.md) is proposed, and a biological closed
+loop refuses until G3 and G4 are measured.
 
 **4. Blocked on hardware.** A D3D12 adapter (#39), a Series S (#40) and a headset for the WebXR
 observer (#177); until then the native executor refuses whatever is not qualified, and the

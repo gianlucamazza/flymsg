@@ -29,6 +29,13 @@
   viewer. The micro-CT → NeuroMechFly head registration is unmeasured, so the real eye needs a
   sourced `Registration` first. The planar Rice coverage is within 0.0076 of the spherical
   integral at 8.23° acceptance.
+- **Body-wiring ADR and G5 groundwork** (#178, #180): `docs/adr-body-wiring.md` (proposed)
+  fixes one clock and one causal order for a 3D body through B6 v2.
+  - `flymsg.closedloop` implements it without a body: the schedule, a per-component evidence
+    gate, intact/disconnected/shuffled/replay/silenced arms, replay parity and a
+    `flymsg.closedloop/v1` record.
+  - A biological run refuses unless registration, transducer, motor map and body are all
+    measured; none is today. Tested on a toy circuit and body only.
 
 ## 0.8.47 — 2026-10-14
 

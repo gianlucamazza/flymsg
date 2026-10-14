@@ -277,6 +277,7 @@ under its date.
 | [ADR: gap refractory](docs/adr-gap-refractory.md)                                     | electrical coupling with refractory clamps; dense and Taylor solvers                                            |
 | [ADR: run integrity](docs/adr-run-integrity.md)                                       | immutable run identity, resumable steps, finalization                                                           |
 | [ADR: virtual experimental environment](docs/adr-virtual-experimental-environment.md) | the optional WebXR observer, kept apart from the experimental environment                                       |
+| [ADR: body wiring](docs/adr-body-wiring.md) (proposed)                                | one clock and causal order for a 3D body through B6 v2; unmeasured components refuse                            |
 | [run integrity](docs/run-integrity.md)                                                | output paths, execution directories, checkpoints and historical locks                                           |
 | [provenance](docs/provenance.md)                                                      | date, public source and introducing commit for each idea on `main`                                              |
 | [comparison](docs/comparison.md)                                                      | engine check against the published model, male vs female, the LB3 split                                         |

@@ -84,6 +84,7 @@ PAGES = (
         "docs/adr-virtual-experimental-environment.md",
         "WebXR ADR",
     ),
+    ("adr-body-wiring", "docs/adr-body-wiring.md", "Body wiring ADR"),
     ("run-integrity", "docs/run-integrity.md", "Run integrity"),
     ("changelog", "CHANGELOG.md", "Changelog"),
 )
