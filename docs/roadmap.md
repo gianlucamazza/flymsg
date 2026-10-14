@@ -10,11 +10,6 @@ immutable executions, checkpoint compatibility and explicit electrical numerical
 [Approximations](approximations.md) lists every simplification of the model with its status
 and what would remove it.
 
-The [sensorimotor environment completion plan](sensorimotor-environment-plan.md)
-sets engineering, biological-interface and independent-prediction gates. It
-reuses the existing embodiment runtime and keeps the VR observer independent;
-this is a plan, not a new experimental result.
-
 ## Results
 
 | Result                                     | Verdict                                                                 | Record                                                                                            |
@@ -172,6 +167,11 @@ about the fly.
   physical phone stays open.
 
 ## Completion plan
+
+The [sensorimotor environment completion plan](sensorimotor-environment-plan.md)
+sets engineering, biological-interface and independent-prediction gates. It
+reuses the existing embodiment runtime and keeps the VR observer independent;
+this is a plan, not a new experimental result.
 
 Status on 2026-10-14 (after v0.8.45). flymsg is complete when a model prediction passes an
 independent held-out benchmark (M4, [#36](https://github.com/gianlucamazza/flymsg/issues/36));
