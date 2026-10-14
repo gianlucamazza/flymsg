@@ -72,6 +72,35 @@ The native path continues to refuse electrical fixtures until explicitly qualifi
 - Spikelets, rectification, dendrites and biological coupling calibration remain outside
   this correction. This decision supplies no missing biological measurement.
 
+## Solver decision for large components (#155)
+
+Status: proposed, 2026-10-14. Needs the user's acceptance before a scored lock names it.
+
+Measurement: on the KC v6/v7 couplings one connected component holds 688 cells (726 with
+lLN1_bc). Each new refractory mask needs a dense exponential of about 2,100 x 2,100, 1.1-1.6
+s, with no cache hit, because masks change almost every step once PNs fire; one simulation
+takes hours (v6 was stopped for this reason, v7 used the boundary reset).
+
+Proposal: `flymsg.gap/continuous-clamp-taylor-v1`. For the same reduced block B of this
+decision (free cells only, sink diagonals retained, clamped x = 0, frozen chemical drive
+excluded, spikelets of every member as constant input), compute exp(B dt) u as the sum of
+the first K terms of its Taylor series, each a sparse product with the component's
+generator, and add the result as the dense maps do. K is the fewest terms with
+theta^(K+1) / (K+1)! e^theta <= 2^-53, theta the 1-norm of the full component's B dt; every
+mask's block is a principal submatrix with no larger norm, so the bound holds for all masks.
+Above theta = 0.5 the solver refuses and the dense maps remain. It differs from the dense
+maps only by rounding, not by model: the clamp, the sink and the spikelets are unchanged.
+
+Evidence: the analytic one-free/one-clamped test holds bit for bit; against the independent
+NumPy reference (dense exponential per mask) a spiking network with spikelets, a chunk
+boundary and a checkpoint gives the same spikes and potentials within 1e-4 mV. On the KC
+couplings (theta = 0.025, K = 7), arm E of both eLN sets, 3-octanol, 50 ms, spikelets 0 and
+1 ms: identical spike counts for every neuron and identical first spikes (9,798 / 9,634 /
+5,299 / 5,255 spikes), 3.6-4.9 s against 1,412-1,655 s; a full 1,000 ms odor takes 14.7 s
+(`docs/evidence/gap-taylor-qualification-2026-10-14.json`, `scripts/qualify_taylor.py`).
+The checkpoint identity names the solver, so dense and Taylor checkpoints do not restore
+into each other. Native and GPU paths refuse it, like every continuous clamp.
+
 ## Alternatives
 
 - Keep the full exponential and clamp afterwards: rejected, contradicts the clamp

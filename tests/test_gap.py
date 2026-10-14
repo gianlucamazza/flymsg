@@ -466,3 +466,5 @@ def test_taylor_solver_matches_the_dense_reference(tmp_path):
     plain = CpuRuntime(W, np.arange(30), **{**kw, "gap": dense})
     with pytest.raises(ValueError, match="incompatible"):
         plain.restore(tmp_path / "c.npz")
+    with pytest.raises(native.NativeCapabilityError, match="continuous-clamp"):
+        native.export_fixture(CpuRuntime(W, np.arange(30), **kw), tmp_path / "f.bin")

@@ -436,7 +436,13 @@ everywhere in the model, discrete events act at step boundaries: spikes, resets,
 deliveries, kicks, the start and end of a spike term, and the refractory hold. Refractory membranes are continuously clamped at rest, with frozen
 chemical conductance; free partners retain the sink from their contacts. The accepted
 [electrical ADR](adr-gap-refractory.md) and [run integrity](run-integrity.md) document the
-reduced operators and execution identity.
+reduced operators and execution identity. The dense solver builds one reduced exponential
+per new refractory mask, which on a component of hundreds of cells costs about a second per
+mask (#155). `Gap(solver="taylor")` (`flymsg.gap/continuous-clamp-taylor-v1`) applies the
+same exponential to the state as a truncated Taylor series, with as many terms as bound the
+remainder by the float64 unit roundoff for the component's step norm; on the Kenyon cell
+couplings it gives the dense solver's spikes neuron for neuron in about 1/400 of the time
+([qualification](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/gap-taylor-qualification-2026-10-14.json)).
 
 EM does not show gap junctions and few are measured (#85), so no electrical synapse is in
 the default model. Without them the engine is unchanged, bit for bit; with them `sim.run`,
