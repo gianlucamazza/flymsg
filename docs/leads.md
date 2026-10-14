@@ -69,7 +69,7 @@ from muscle to body actuator, not from neuron to muscle.
 
 Next: join MANC's supplementary table to MaleCNS types for a cited neuron → muscle column;
 judge jump3d by take-off velocity (0.48 m/s, verified in the full text on 2026-10-14) before
-distance, once the body has the leg push it lacks (jump3d v1 left 0.03–0.06 m/s, TTM only); an M2 transducer that predicts
+distance, once the body has the leg push it lacks (jump3d v1 left at 0.06–0.07 m/s, TTM only); an M2 transducer that predicts
 the giant fiber potential, validated on the giant fiber.
 
 ## Held-out validation ([#36](https://github.com/gianlucamazza/flymsg/issues/36))
