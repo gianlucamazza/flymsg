@@ -42,7 +42,7 @@
 - **Leads for the sensorimotor gates** (#179, #34, #19, #35): no published head-to-thorax
   registration for the micro-CT eye map; no deposited LC4/LPLC2 firing rates, but the giant
   fiber's looming responses at four r/v values are on Zenodo (CC BY 4.0, Dombrovski et al.
-  2025), so a giant-fiber-scored transducer no longer needs a data request; no source names a
+  2025), so a giant-fiber-scored transducer no longer waits for a data request (disc sizes and sex still to be read; not an LC4/LPLC2 rate); no source names a
   motor neuron or muscle with a FlyBody actuator, and FlyGym 2.1.0 ships a front-leg muscle
   model.
 
