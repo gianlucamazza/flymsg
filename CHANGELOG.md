@@ -13,7 +13,7 @@
 ### Validation
 
 - **T4/T5 v4 lock** (#140): each graded medulla neuron's measured range anchored at its own
-  settled dark potential (two passes), a lamina → medulla gain scanned over 1, 4, 16 at LMC and
+  settled dark potential (six passes), a lamina → medulla gain scanned over 1, 4, 16 at LMC and
   medulla rates of 50 and 200 Hz (12 configurations, seed 98), and Behnia et al. 2014's delays
   (Mi1 18 ms after Tm3, Tm1 13 ms after Tm2) set through the synaptic time constant at
   unchanged steady gain. Evidence record `medulla_filter_delays`. Decides on T4 as v3. No run.

@@ -4,7 +4,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.t4t5.VERSION_HASHES. `flymsg t4t5` prints this file.
 version: 4
-content_sha256: d58b983665b0d01979539df1b6bdd390461053411063674a64c7f29bf8e10547
+content_sha256: dc65228c3fdbc6c37e245235c329bbbf314121e09a0e2a3a372f82ae599ceabc
 yaml_subset: 2
 evidence: [medulla_t4_input_voltages, medulla_filter_delays]
 
@@ -17,7 +17,7 @@ question: "With the medulla's measured ranges anchored at its settled dark poten
 
 prior: "Lappalainen et al. 2024 (doi:10.1038/s41586-024-07939-3, Fig 2d): untrained connectome models with signs predict contrast preference well but direction selectivity poorly. Polarity is expected if contrast crosses the lamina; direction is the open question. The medulla neurons downstream of the lamina (Mi1, Tm3, Mi4, Mi9, Tm1, Tm2, Tm4, Tm9) stay spiking and silent at rest, so disinhibition alone may not reach them."
 
-seen_before_lock: "Version 3 (results/t4t5/v3.executions/d85c3913.../output, seed 94, 25 configurations, robust: neither, with the medulla potentials per type and configuration). Behnia et al. 2014 was read in full (PMC4243710) for the delays. Engineering checks of the version 4 code on a three-neuron chain, and one smoke run on the eye (one configuration at gain 16 and 200 Hz, 0.3 deg of travel, 10 ms settle) checked for output shapes and the dark anchor's convergence between the passes (at most 0.09 mV); no full-length edge has been run under version 4. Earlier: versions 1 and 2 (results/t4t5/v1, seeds 90-92; results/t4t5/v2, seed 93, 17 configurations, robust: neither, with spikes per pathway type). Before this lock the Groschner et al. 2022 traces were read (cell counts, mean dark potential, lowest and highest mean values per type, the photodiode trace and the authors' notebook) and Behnia et al. 2014, Kohn et al. 2021 and Yang et al. 2016 were read for OFF-pathway voltages (none in mV). An engineering smoke run of the v3 code (first configuration, 0.3 deg of travel, 10 ms settle) was checked for output shapes only; no full-length moving edge has been run with graded medulla neurons."
+seen_before_lock: "Version 3 (results/t4t5/v3.executions/d85c3913.../output, seed 94, 25 configurations, robust: neither, with the medulla potentials per type and configuration). Behnia et al. 2014 was read in full (PMC4243710) for the delays. Engineering checks of the version 4 code on a three-neuron chain, and one smoke run on the eye (one configuration at gain 16 and 200 Hz, 0.3 deg of travel, 10 ms settle) checked for output shapes and the dark anchor's change between the passes (at most 0.09 mV); a review then found that this code passed the unscaled weights to the stimulus runs (gain and timing scale applied only in darkness), fixed before this lock: every run of a configuration now goes through one function. A second smoke run with the full 200 ms settle (same configuration, 0.3 deg) showed the dark anchors far from rest at gain 16 and a pass-to-pass change of up to 5.3 mV after two passes, falling to 0.6 mV or less by the sixth, hence six passes; its spikes and verdict were not read beyond the output shape. No full-length edge has been run under version 4. Earlier: versions 1 and 2 (results/t4t5/v1, seeds 90-92; results/t4t5/v2, seed 93, 17 configurations, robust: neither, with spikes per pathway type). Before this lock the Groschner et al. 2022 traces were read (cell counts, mean dark potential, lowest and highest mean values per type, the photodiode trace and the authors' notebook) and Behnia et al. 2014, Kohn et al. 2021 and Yang et al. 2016 were read for OFF-pathway voltages (none in mV). An engineering smoke run of the v3 code (first configuration, 0.3 deg of travel, 10 ms settle) was checked for output shapes only; no full-length moving edge has been run with graded medulla neurons."
 
 sources:
   subtypes: "Maisak et al. 2013, Nature, doi:10.1038/nature12320: T4 respond to ON edges, T5 to OFF edges; subtypes a-d prefer front-to-back, back-to-front, upward, downward (Shinomiya et al. 2019, eLife 8:e40025, Fig 3B)"
@@ -80,8 +80,8 @@ protocol:
       highest: -46.9
   medulla_mv_from: "flymsg.medulla.ranges: per type, the mean over cells of each sweep; dark is the mean of the first second of the ON sweep (darkness, before the edge), lowest and highest the extremes of the two mean sweeps; rounded to 0.1 mV; the run recomputes them from the sha256-pinned files and stops if they differ"
   medulla_curve: "per neuron, release 0 at v_dark - (dark - lowest), saturated at v_dark + (highest - dark), where v_dark is that neuron's settled potential (mean of the last 10 ms bin) after settle_ms in darkness with every graded release on: the settled dark potential, tonic lamina input included, stands for the measured dark potential"
-  dark_anchor_passes: 2
-  dark_anchor_note: "pass 1 settles with version 3's curve (anchored at rest), pass 2 with the curve anchored at pass 1's potentials; the curve of pass 2's potentials is used, and the median change between the passes is reported per type"
+  dark_anchor_passes: 6
+  dark_anchor_note: "pass 1 settles with version 3's curve (anchored at rest), each later pass with the curve anchored at the previous pass's potentials; the curve of the sixth pass's potentials is used, and the median change between the last two passes is reported per type (a change, not a fixed-point error; it about halves per pass). The anchor is darkness, as Groschner et al.'s first second; ON runs settle on the edge's first frame (its leading half-lit columns), OFF runs under light, so the OFF runs start from a lit state on the dark-anchored curve, as their OFF sweeps start in light"
   timing:
     Mi1:
       after: Tm3
@@ -100,7 +100,7 @@ protocol:
     medulla_rate_hz: [50.0, 200.0]
     lamina_medulla_gain: [1.0, 4.0, 16.0]
     grid: "every lamina_medulla_gain x lmc_rate_hz x medulla_rate_hz at photoreceptor_response_mv 52.5 and lmc_hyperpolarisation_mv 32.5: 12 configurations"
-    gain_rule: "lamina_medulla_gain multiplies every synapse from L1-L3 onto the five graded medulla types; 1 is the model's weight, 16 brings version 3's largest evoked swing (1.4 mV) to the order of the measured 12-28 mV; scanned, not chosen"
+    gain_rule: "lamina_medulla_gain multiplies every synapse from L1-L3 onto the five graded medulla types; 1 is the model's weight (for Mi1 on top of its timing scale, so the gain stays a multiple of the Params steady gain), 16 brings version 3's largest evoked swing (1.4 mV) to the order of the measured 12-28 mV; scanned, not chosen"
     ranges_from: "photoreceptor and LMC ranges as version 2 (their midpoints; version 2's verdict did not depend on them); medulla voltages measured (medulla_mv); lmc_rate_hz and medulla_rate_hz have no measurement and span four doublings around the 100 Hz input rate of every flymsg protocol; version 4 keeps two of them, one below and one above 100 Hz"
 
 compensations:
@@ -113,6 +113,7 @@ compensations:
   - "Behnia et al.'s delays are of whole-path filters to flicker; the model sets them only as each slower cell's own filter-peak shift through its synaptic time constant, and sets no delay for Mi4 and Mi9, which have no measured peak time here."
   - "The medulla release curve is threshold-linear between the lowest and highest mean potentials measured to edges, anchored at each neuron's settled dark potential; the mean traces are under -1 pA holding current, and their extremes understate single-cell ranges."
   - "The lamina -> medulla gain is not measured; it is scanned over 1-16, not chosen."
+  - "The membrane is current-based, without reversal potentials: at high gain the anchored dark potentials lie far from rest (in the smoke run, Mi1 about 100 mV below and Mi9 about 70 mV above at gain 16 and 200 Hz). Only potentials relative to each neuron's anchor carry meaning, and the release curve uses only those."
   - "Tm1, Tm2, Tm4, Tm9 and every type other than photoreceptors, L1-L3 and the five graded medulla types stay spiking; T4 and T5 are counted by spikes, while in the fly they respond mostly in graded potentials."
   - "CT1 is one point neuron per side; in the fly it is compartmentalised per column."
   - "The left eye is the right eye mirrored; spike counts are compared with calcium measurements."

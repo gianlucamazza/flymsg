@@ -145,7 +145,7 @@ Version 3 failed for two reasons its tables show: tonic L1–L3 release at rest 
 below its measured dark level, and the edge moved the graded medulla by at most 1.4 mV. Version
 4 (`validation/t4t5.yaml` v4, seed 98, 12 configurations) changes three things and nothing
 else. Each graded medulla neuron's measured range is anchored at its own settled potential
-after 200 ms of darkness with every graded release on (two passes; the median change between
+after 200 ms of darkness with every graded release on (six passes; the median change between the last
 them is reported), so the dark state, tonic lamina input included, stands for the measured dark
 potential. Every synapse from L1–L3 onto the five graded medulla types is multiplied by 1, 4 or
 16 (16 brings v3's largest swing to the order of the measured 12–28 mV), at LMC and medulla
@@ -154,4 +154,6 @@ delays (Mi1 18 ms after Tm3, Tm1 13 ms after Tm2; Fig. 3B, 3E, verified in PMC42
 through the slower cell's synaptic time constant (38.45 and 24.83 ms), with its incoming
 weights scaled by the ratio of steady gains (0.130, 0.201) so only the timing changes; Mi4 and
 Mi9 have no measured peak time here and keep the default. The decision is version 3's, on the
-four T4 subtypes; the Gruntman et al. recordings stay held out. No run yet.
+four T4 subtypes; the Gruntman et al. recordings stay held out. The membrane is current-based, so
+at high gain the anchored dark potentials lie far from rest; only potentials relative to the
+anchor carry meaning. No run yet.

@@ -30,7 +30,7 @@ VERSION_HASHES = {
     1: "bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8",  # ON/OFF edges, 4 directions, 30 deg/s, acceptance 8.23 deg, seeds 90-92
     2: "d25bcbd7ecd6e01f383c00703995164d29cc57fc11192be15234b19314b0e390",  # graded photoreceptors and L1-L3, 17-configuration envelope, settle 200 ms, seed 93
     3: "f19a2d7b82a0be9a3efb175813b165746161483b71b978115999816d00bc40b2",  # T4's medulla inputs graded over Groschner et al.'s voltages, 25 configurations, seed 94
-    4: "d58b983665b0d01979539df1b6bdd390461053411063674a64c7f29bf8e10547",  # dark-anchored medulla, lamina -> medulla gain 1-16, Behnia delays, 12 configurations, seed 98
+    4: "dc65228c3fdbc6c37e245235c329bbbf314121e09a0e2a3a372f82ae599ceabc",  # dark-anchored medulla, lamina -> medulla gain 1-16, Behnia delays, 12 configurations, seed 98
 }
 SPENT_SEEDS = (90, 91, 92, 93, 94)
 # measured Drosophila ranges and their midpoints (Juusola et al. 2016), and the unmeasured
@@ -44,7 +44,7 @@ V4_RATE_HZ = (50.0, 200.0)
 LAMINA_GAIN = (1.0, 4.0, 16.0)
 # Behnia et al. 2014 Fig 3B, 3E: filter peak delays (ms) of the slower cell over its partner
 DELAYS_MS = {"Mi1": ("Tm3", 18.0), "Tm1": ("Tm2", 13.0)}
-DARK_PASSES = 2
+DARK_PASSES = 6
 PATHWAY = ("Mi1", "Tm3", "Mi4", "Mi9", "Tm1", "Tm2", "Tm4", "Tm9")
 ANGLE = {
     "front_to_back": 0.0,
@@ -474,19 +474,24 @@ def protocol(
             W_timed = scale_block(W_timed, cells, None, scale)
     settle_steps = round(proto["settle_ms"] / p.dt)
 
-    def dark(Wc, graded) -> np.ndarray:
-        """Each graded neuron's mean potential over the last bin of settle_ms in darkness."""
-        r = sim.run(
+    def simulate(Wc, stim, n_steps, kicks, graded):
+        """Every run of a configuration, in darkness or with an edge, goes through here, so
+        the configuration's weights, membranes and release always travel together."""
+        return sim.run(
             Wc,
-            receptors_all[:1],
-            duration_ms=settle_steps * p.dt,
+            stim,
+            duration_ms=n_steps * p.dt,
             p=p,
             seed=proto["seed"],
-            kicks=np.zeros((settle_steps, 1), dtype=np.float32),
+            kicks=kicks,
             graded=graded,
             membrane=membrane,
         )
-        return r.graded_v[-1]
+
+    def dark(Wc, graded) -> np.ndarray:
+        """Each graded neuron's mean potential over the last bin of settle_ms in darkness."""
+        kicks = np.zeros((settle_steps, 1), dtype=np.float32)
+        return simulate(Wc, receptors_all[:1], settle_steps, kicks, graded).graded_v[-1]
 
     def configuration(cfg: dict) -> dict[str, pd.DataFrame]:
         rate_r, receiving = photoreceptor_rate(W, lit_neurons, lmc, cfg["lmc_mv"], p)
@@ -520,16 +525,8 @@ def protocol(
         gain = photoreceptor_gain(cfg["photoreceptor_mv"], p)
         spikes, path_rows, lmc_rows = [], [], []
         for (direction, polarity), (stim, lit, n_steps, settle) in stimuli.items():
-            r = sim.run(
-                W,
-                stim,
-                duration_ms=n_steps * p.dt,
-                p=p,
-                seed=proto["seed"],
-                kicks=(gain * lit).astype(np.float32),
-                graded=graded,
-                membrane=membrane,
-            )
+            kicks = (gain * lit).astype(np.float32)
+            r = simulate(Wc, stim, n_steps, kicks, graded)
             first_bin = round(settle * p.dt / r.bin_ms)
             total = r.counts[first_bin:].sum(axis=0)
             key = {
