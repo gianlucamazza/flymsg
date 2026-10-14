@@ -154,7 +154,7 @@ Run one authority for time, neural steps and physics. Each iteration must read t
 7. **PR-S6 (science/reporting):** frozen independent benchmark, uncertainty, figures and replication package. E2 candidate only upon a passing evaluation.
 8. **Optional PR-S7 (viewer):** read-only overlay on the existing 3D interface. Do not make UX/VR an experimental prerequisite.
 
-A slice may explicitly end with **no-go** when its measured prerequisities are absent; do not disguise that as unfinished engineering or substitute a guessed mapping. No calendar completion date can be justified until the data/evidence inventory resolves G0.
+A slice may explicitly end with **no-go** when its measured prerequisites are absent; do not disguise that as unfinished engineering or substitute a guessed mapping. No calendar completion date can be justified until the data/evidence inventory resolves G0.
 
 ## Critical dependencies and owners
 
