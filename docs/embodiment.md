@@ -100,12 +100,12 @@ command; M0 v1 above is frozen, and a v1 record never parses as v2 or the revers
 - **Trace**: provenance, clock, both mounts and the states serialise to canonical JSON and
   parse back identically; another schema, clock or a missing field refuses.
 
-`uv run pytest tests/test_pose.py` checks these. Wiring an actual body waits for the
-[body-wiring ADR](adr-body-wiring.md) to be accepted.
+`uv run pytest tests/test_pose.py` checks these. An actual body is wired only as the
+accepted [body-wiring ADR](adr-body-wiring.md) fixes.
 
 ## G5 groundwork: closed-loop schedule and record (#180)
 
-`flymsg.closedloop` implements the [body-wiring ADR](adr-body-wiring.md) (proposed) without a
+`flymsg.closedloop` implements the [body-wiring ADR](adr-body-wiring.md) (accepted) without a
 body ([#180](https://github.com/gianlucamazza/flymsg/issues/180)), in the B6 v2 / M0 v1 clock
 order: at each control tick it delivers the spikes of earlier ticks whose time + latency ≤ T
 as held actuator commands; per body tick it reads the last stepped state, projects the

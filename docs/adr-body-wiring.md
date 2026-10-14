@@ -1,6 +1,6 @@
 # ADR: wiring a 3D body through B6 v2
 
-Status: proposed, 2026-10-14. Needs the user's acceptance before an actual body is wired
+Status: accepted, 2026-10-14. Accepted by the user before an actual body is wired
 ([#178](https://github.com/gianlucamazza/flymsg/issues/178)).
 Scope: the G5 closed loop ([#180](https://github.com/gianlucamazza/flymsg/issues/180)) of the
 [sensorimotor plan](sensorimotor-environment-plan.md); supplements the accepted
