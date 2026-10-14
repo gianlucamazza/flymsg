@@ -156,6 +156,18 @@ Run one authority for time, neural steps and physics. Each iteration must read t
 
 A slice may explicitly end with **no-go** when its measured prerequisites are absent; do not disguise that as unfinished engineering or substitute a guessed mapping. No calendar completion date can be justified until the data/evidence inventory resolves G0.
 
+## Expansion beyond the first validated task
+
+The looming/escape task is a **vertical slice** of a reusable environment, not a claim that the whole fly has been replicated. Only after its explicit E0/E1/E2 gates should additional modalities be promoted from research leads to implementation:
+
+- **Other visual behaviors:** moving edges, optic flow, steering and obstacle responses, contingent on relevant T4/T5 or other pathway validation. The existing negative T4/T5 results prohibit claims of working visual navigation.
+- **Olfaction:** environment concentration fields and antennal pose must connect to sourced odor-to-ORN transduction (the existing DoOR inputs can be baselines). A hand-authored odor gradient alone does not establish biologically measured olfaction.
+- **Proprioception and contact:** map measured FlyGym joint angles/contact/force sensors through justified peripheral afferents into the MaleCNS VNC/brain; an available MuJoCo sensor is not automatically a biological mechanoreceptor.
+- **Broader actuation:** additional leg/wing/proboscis muscle paths and their body actuators only where mapping, force and timing evidence exist. A learned FlyGym walking/flight policy remains a separately labeled external-controller control, never passed off as decoded MaleCNS behavior.
+- **Multisensory experiments:** combine qualified modalities under the single time authority and the same experimental manifest; pre-register cross-modal and lesion controls before a scored claim.
+
+Each extension needs its own source/holdout inventory, versioned gate and explicit no-go conditions. E2 on one looming-escape task **does not** validate every other sense, motor act or cognitive property.
+
 ## Critical dependencies and owners
 
 - **#176** is the sensorimotor umbrella; this document is its definition of completion.
