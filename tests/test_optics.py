@@ -159,13 +159,123 @@ def test_rice_coverage_within_its_error_bound_and_eye_agrees():
 
 def test_no_viewer_or_rendering_import():
     tree = ast.parse(Path(optics.__file__).read_text())
-    names = {
-        a.name.split(".")[0] if isinstance(n, ast.Import) else (n.module or "")
-        for n in ast.walk(tree)
-        if isinstance(n, ast.Import | ast.ImportFrom)
-        for a in n.names
-    }
-    imported = {n for n in names} | {
-        a.name for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) for a in n.names
-    }
-    assert not imported & {"viz", "mujoco", "flygym", "photoreceptor_kicks"}
+    parts = set()
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            for a in n.names:
+                parts |= set(a.name.split("."))
+        elif isinstance(n, ast.ImportFrom):
+            parts |= set((n.module or "").split("."))
+            parts |= {a.name for a in n.names}
+    assert "pose" in parts  # the walk sees dotted and from-imports
+    assert not parts & {"viz", "mujoco", "flygym", "photoreceptor_kicks", "eye"}
+
+
+def pitch(deg):
+    h = math.radians(deg) / 2
+    return Quat.of((math.cos(h), 0.0, math.sin(h), 0.0))
+
+
+def test_registration_keeps_the_sagittal_plane_and_mirrors_both_eyes():
+    cols = table([("R", 70.0, 20.0), ("L", -70.0, 20.0)])
+    reg = Registration(
+        Pose("body", "eyemap", (1e-4, 0.0, 0.0), pitch(15)), "test pitch"
+    )
+    out = optics.sample(
+        cols,
+        reg,
+        MOUNTS,
+        still(),
+        (optics.Sphere("s", (0.0, 0.0, 0.05), 0.002),),
+        ACCEPTANCE,
+    )
+    r_axis = np.asarray(reg.pose.orientation.matrix()) @ cols.direction[0]
+    l_axis = np.asarray(reg.pose.orientation.matrix()) @ cols.direction[1]
+    assert np.allclose(l_axis, r_axis * [1, -1, 1], atol=1e-15)
+    assert math.isclose(out.angle_deg[0, 0], out.angle_deg[0, 1], abs_tol=1e-9)
+    for bad in (
+        Registration(Pose("body", "eyemap", (0.0, 0.0, 0.0), yaw(20)), "yaw"),
+        Registration(Pose("body", "eyemap", (0.0, 1e-4, 0.0), IDENTITY), "shift"),
+    ):
+        with pytest.raises(ContractError, match="sagittal"):
+            optics.sample(
+                cols,
+                bad,
+                MOUNTS,
+                still(),
+                (optics.Sphere("s", (0.0, 0.0, 0.05), 0.002),),
+                ACCEPTANCE,
+            )
+
+
+def yaw(deg):
+    h = math.radians(deg) / 2
+    return Quat.of((math.cos(h), 0.0, 0.0, math.sin(h)))
+
+
+def test_sphere_direction_in_the_body_frame():
+    out = run((optics.Sphere("s", (0.05, -0.05, 0.05 * math.sqrt(2)), 0.002),))
+    # seen from the right eye (y = -0.3 mm), roughly 45 deg right and 45 deg up
+    assert math.isclose(out.azimuth_deg[0, 1], 45.0, abs_tol=0.5)
+    assert math.isclose(out.elevation_deg[0, 1], 45.0, abs_tol=0.5)
+
+
+def test_eye_lever_arm_and_body_translation_change_the_radius_rate():
+    r, d = 0.002, 0.05
+    ahead_of_left = (optics.Sphere("s", (d, 3e-4, 0.0), r),)
+    # yaw left at 1 rad/s: the left eye (y = +0.3 mm) moves backward at 0.3 mm/s
+    turning = run(ahead_of_left, still(omega=(0.0, 0.0, 1.0)))
+    expect = -math.degrees(r * 3e-4 / (d * math.sqrt(d * d - r * r)))
+    assert math.isclose(turning.radius_rate_deg_s[0, 2], expect, rel_tol=1e-9)
+    moving = run(ahead_of_left, still(v=(0.1, 0.0, 0.0)))
+    expect = math.degrees(r * 0.1 / (d * math.sqrt(d * d - r * r)))
+    assert math.isclose(moving.radius_rate_deg_s[0, 2], expect, rel_tol=1e-9)
+
+
+def test_near_contact_approaches_a_half_sphere():
+    near = run((optics.Sphere("s", (0.0, 3e-4 + 0.0101, 0.0), 0.01),))
+    assert 81.0 < near.radius_deg[0, 0] < 90.0 and near.coverage[0, 0] > 0.999
+
+
+def test_config_hash_tracks_every_input():
+    s = (optics.Sphere("s", (0.0, 0.05, 0.0), 0.005),)
+    base = run(s)
+    other_cols = optics.Columns(COLS.side, COLS.p, COLS.q, COLS.direction, "c" * 64)
+    changed = [
+        optics.sample(other_cols, REG, MOUNTS, still(), s, ACCEPTANCE),
+        optics.sample(COLS, REG, MOUNTS, still(), s, 5.0),
+        optics.sample(
+            COLS, Registration(REG.pose, "other"), MOUNTS, still(), s, ACCEPTANCE
+        ),
+        run((optics.Sphere("t", (0.0, 0.05, 0.0), 0.005),)),
+    ]
+    assert len({base.config_sha256, *(c.config_sha256 for c in changed)}) == 5
+    assert len({base.digest(), *(c.digest() for c in changed)}) == 5
+
+
+def test_column_table_refuses_duplicates_and_bad_hashes():
+    df = pd.DataFrame(
+        {
+            "side": ["L", "L"],
+            "p": [0, 0],
+            "q": [0, 0],
+            "azimuth_deg": [0.0, 1.0],
+            "elevation_deg": [0.0, 0.0],
+        }
+    )
+    with pytest.raises(ContractError, match="twice"):
+        optics.Columns.from_frame(df, SHA)
+    with pytest.raises(ContractError):
+        optics.Columns.from_frame(df.iloc[:1], "Z" * 64)
+
+
+@pytest.mark.parametrize("rho", [0.5, 2.0, 5.0])
+def test_exact_coverage_on_and_opposite_the_axis(rho):
+    # on the axis the share has a closed form for the spherical Gaussian only numerically;
+    # check against a 10x finer quadrature and the antipodal complement
+    on = optics.coverage_exact(0.0, rho, ACCEPTANCE)
+    assert math.isclose(
+        on, optics.coverage_exact(0.0, rho, ACCEPTANCE, n=200000), abs_tol=1e-6
+    )
+    opposite = optics.coverage_exact(180.0, 180.0 - rho, ACCEPTANCE)
+    assert math.isclose(opposite, 1.0 - on, abs_tol=1e-6)

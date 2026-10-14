@@ -9,8 +9,10 @@ photoreceptor gain, no spikes, no rendering. A viewer's scene cannot reach this 
 Columns come from `flymsg.eye.columns` (Zhao et al. 2025 directions on the MaleCNS hex
 grid) in the `eyemap` frame; a column without a lens keeps a NaN direction and NaN output.
 Their rotation into the body needs an explicit `pose.Registration` with a source: none is
-measured yet (#84), so only tests construct one. Every column of an eye looks out from that
-eye's mount (`pose.EyeMount`).
+measured yet (#84), so only tests construct one. It may only pitch and shift in the sagittal
+plane: the left eye's columns are the right eye's mirrored, so that plane is the mirror. Every
+column of an eye looks out from the position of that eye's mount (`pose.EyeMount`); the
+mount's orientation is unused, the columns carry their own directions.
 
 Coverage uses `eye.disk_coverage`'s profile, a circular Gaussian of full width at half
 maximum `acceptance_deg`, with the planar Rice CDF; `coverage_exact` integrates the same
@@ -23,6 +25,7 @@ subtract.
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 from dataclasses import dataclass
 
@@ -65,7 +68,9 @@ class Sphere:
 
 @dataclass(frozen=True)
 class Columns:
-    """Column axes in the `eyemap` frame (unit vectors, NaN where no lens)."""
+    """Column axes in the `eyemap` frame (unit vectors, NaN where no lens). The left eye's
+    rows are the right eye's lenses mirrored across the frame's y = 0 plane (`eye.columns`),
+    which therefore stands for the body's sagittal plane."""
 
     side: tuple[str, ...]
     p: tuple[int, ...]
@@ -77,10 +82,14 @@ class Columns:
     def from_frame(cls, cols: pd.DataFrame, source_sha256: str) -> Columns:
         """From `eye.columns` output: azimuth grows to the fly's right, elevation up, and
         `eyemap` +y is the fly's left, so y = -cos(el) sin(az)."""
-        if len(source_sha256) != 64:
-            raise ContractError("the column table needs its SHA-256")
+        if len(source_sha256) != 64 or any(
+            c not in "0123456789abcdef" for c in source_sha256
+        ):
+            raise ContractError("the column table needs its lowercase SHA-256")
         if not set(cols["side"]) <= set(pose.SIDES):
             raise ContractError("column sides must be L or R")
+        if cols.duplicated(["side", "p", "q"]).any():
+            raise ContractError("a column appears twice")
         az = np.radians(cols["azimuth_deg"].to_numpy(float))
         el = np.radians(cols["elevation_deg"].to_numpy(float))
         d = np.stack(
@@ -100,8 +109,11 @@ class Sample:
     """Per-column measurements at `time_us`; arrays are (spheres, columns) unless noted."""
 
     time_us: int
+    config_sha256: str  # columns source, registration, mounts, spheres, acceptance
     has_direction: np.ndarray  # (columns,)
     angle_deg: np.ndarray  # column axis to sphere centre
+    azimuth_deg: np.ndarray  # sphere centre from the column's eye, body frame, + right
+    elevation_deg: np.ndarray  # same, + dorsal
     radius_deg: np.ndarray  # sphere angular radius from the column's eye
     radius_rate_deg_s: np.ndarray
     angular_velocity_deg_s: (
@@ -111,22 +123,41 @@ class Sample:
     nearest: np.ndarray  # (columns,) sphere index the axis meets first, -1 none
 
     def digest(self) -> str:
-        h = hashlib.sha256(f"{SCHEMA}:{self.time_us}".encode())
+        h = hashlib.sha256(f"{SCHEMA}:{self.time_us}:{self.config_sha256}".encode())
         for name in (
             "has_direction",
             "angle_deg",
+            "azimuth_deg",
+            "elevation_deg",
             "radius_deg",
             "radius_rate_deg_s",
             "angular_velocity_deg_s",
             "coverage",
             "nearest",
         ):
-            h.update(np.ascontiguousarray(getattr(self, name)).tobytes())
+            a = np.ascontiguousarray(getattr(self, name))
+            h.update(f"{name}{a.shape}{a.dtype}".encode())
+            h.update(a.tobytes())
         return h.hexdigest()
 
 
 def _matrix(q: pose.Quat) -> np.ndarray:
     return np.asarray(q.matrix())
+
+
+SAGITTAL_TOL = 1e-12
+
+
+def _config(columns, registration, mounts, spheres, acceptance_deg) -> str:
+    doc = {
+        "schema": SCHEMA,
+        "columns": columns.source_sha256,
+        "registration": [registration.source, repr(registration.pose)],
+        "mounts": sorted([m.side, m.source, repr(m.pose)] for m in mounts),
+        "spheres": [repr(s) for s in spheres],
+        "acceptance_deg": repr(float(acceptance_deg)),
+    }
+    return hashlib.sha256(json.dumps(doc, sort_keys=True).encode()).hexdigest()
 
 
 def sample(
@@ -149,10 +180,20 @@ def sample(
         raise ContractError("spheres need unique names")
     if not (math.isfinite(acceptance_deg) and acceptance_deg > 0):
         raise ContractError("acceptance must be positive")
+    r_be = _matrix(registration.pose.orientation)
+    mirror = np.diag([1.0, -1.0, 1.0])
+    # the left rows are mirrored lenses, so the registration must keep the sagittal plane
+    # (pitch only): any yaw or roll would mirror wrongly onto the left eye
+    if np.abs(mirror @ r_be @ mirror - r_be).max() > SAGITTAL_TOL or (
+        abs(registration.pose.position_m[1]) > SAGITTAL_TOL
+    ):
+        raise ContractError(
+            "a registration may only pitch and shift in the sagittal plane"
+        )
     sigma = acceptance_deg / FWHM
     r_wb = _matrix(state.pose.orientation)
     body_pos = np.asarray(state.pose.position_m)
-    axes = columns.direction @ (r_wb @ _matrix(registration.pose.orientation)).T
+    axes = columns.direction @ (r_wb @ r_be).T
     has = np.isfinite(axes).all(axis=1)
     side = np.asarray(columns.side)
     origin = np.empty((len(side), 3))
@@ -166,6 +207,8 @@ def sample(
         )
     n_s, n_c = len(spheres), len(side)
     angle = np.full((n_s, n_c), np.nan)
+    azimuth = np.full((n_s, n_c), np.nan)
+    elevation = np.full((n_s, n_c), np.nan)
     radius = np.full((n_s, n_c), np.nan)
     rate = np.full((n_s, n_c), np.nan)
     ang_v = np.full((n_s, n_c, 3), np.nan)
@@ -183,6 +226,11 @@ def sample(
         cos_a = np.clip(np.einsum("ij,ij->i", axes, u), -1.0, 1.0)
         a = np.degrees(np.arccos(cos_a))
         angle[i] = np.where(has, a, np.nan)
+        ub = u @ r_wb  # body frame
+        azimuth[i] = np.where(has, np.degrees(-np.arctan2(ub[:, 1], ub[:, 0])), np.nan)
+        elevation[i] = np.where(
+            has, np.degrees(np.arcsin(np.clip(ub[:, 2], -1.0, 1.0))), np.nan
+        )
         radius[i] = np.where(has, np.degrees(rho), np.nan)
         drho = -sph.radius_m * d_dot / (dist * np.sqrt(dist**2 - sph.radius_m**2))
         rate[i] = np.where(has, np.degrees(drho), np.nan)
@@ -199,7 +247,20 @@ def sample(
         hit[i] = np.where(has & (disc >= 0) & (t > 0), t, np.inf)
     first = np.argmin(hit, axis=0)
     nearest = np.where(np.isfinite(hit.min(axis=0)), first, -1)
-    return Sample(state.time_us, has, angle, radius, rate, ang_v, cover, nearest)
+    config = _config(columns, registration, mounts, spheres, acceptance_deg)
+    return Sample(
+        state.time_us,
+        config,
+        has,
+        angle,
+        azimuth,
+        elevation,
+        radius,
+        rate,
+        ang_v,
+        cover,
+        nearest,
+    )
 
 
 def coverage_exact(
@@ -209,7 +270,8 @@ def coverage_exact(
     `acceptance_deg`, normalised over the sphere) inside a spherical cap of angular radius
     `radius_deg` whose centre is `angle_deg` from the profile's axis; midpoint quadrature
     in the profile's polar angle out to 12 sigma (the rest weighs < 1e-30), the cap's
-    azimuthal extent exact."""
+    azimuthal extent exact; on the axis (cap centred on or opposite the profile) the cell
+    the cap edge crosses gets its covered fraction."""
     sigma = math.radians(acceptance_deg) / FWHM
     a, rho = math.radians(angle_deg), math.radians(radius_deg)
     top = min(math.pi, 12 * sigma)
@@ -222,10 +284,9 @@ def coverage_exact(
             math.sin(a) * np.sin(alpha)
         )
     inside = np.where(np.isfinite(c), np.arccos(np.clip(c, -1, 1)) / math.pi, 0.0)
-    if math.sin(a) == 0:
-        inside = (
-            (alpha <= rho).astype(float)
-            if a == 0
-            else (alpha >= math.pi - rho).astype(float)
-        )
+    if math.sin(a) < 1e-12:
+        h = top / n
+        edge = rho if math.cos(a) > 0 else math.pi - rho
+        share = np.clip((edge - (alpha - h / 2)) / h, 0.0, 1.0)
+        inside = share if math.cos(a) > 0 else 1.0 - share
     return float((weight * inside).sum() / weight.sum())
