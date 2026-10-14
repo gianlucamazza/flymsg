@@ -33,9 +33,17 @@ def test_refuses_timesteps_that_round_the_delay():
         convergence.assert_matches_code(doc)
 
 
-def test_evidence_none_needs_a_reason():
+def test_evidence_none_needs_a_reason_and_an_unscored_lock_on_the_defaults():
     with pytest.raises(evidence.EvidenceError, match="evidence_none"):
         evidence.check_lock({"yaml_subset": 2, "evidence": "none"}, {}, "x")
+    base = {"yaml_subset": 2, "evidence": "none", "evidence_none": "defaults only"}
+    for doc in (
+        {**base, "claim": {"scored": True}, "defaults_changed": False},
+        {**base, "claim": {"scored": False}, "defaults_changed": True},
+        base,
+    ):
+        with pytest.raises(evidence.EvidenceError, match="unscored lock"):
+            evidence.check_lock(doc, {}, "x")
 
 
 def test_a_chain_responds_alike_at_finer_steps():
@@ -79,6 +87,18 @@ def test_judges_the_median_against_the_finest_seed_range():
     far = _cells({0.1: [40, 42, 44], 0.05: [20, 21, 23], 0.025: [18, 21, 25]})
     judged = convergence.judge(far, doc)
     assert convergence.verdict(judged, doc) == "not_converged: c/T"
+
+
+def test_a_silent_reference_tolerates_one_spike_in_the_window():
+    doc = convergence.load()
+    stray = _cells({0.1: [0, 10 / 3, 10 / 3], 0.05: [0, 0, 0], 0.025: [0, 0, 0]})
+    assert convergence.verdict(convergence.judge(stray, doc), doc) == "converged"
+    two = _cells({0.1: [0, 20 / 3, 20 / 3], 0.05: [0, 0, 0], 0.025: [0, 0, 0]})
+    assert convergence.verdict(convergence.judge(two, doc), doc) != "converged"
+
+
+def test_jobs_start_with_the_finest_step():
+    assert convergence.jobs(convergence.load())[0][0] == 0.025
 
 
 def test_a_holds_flip_does_not_converge():

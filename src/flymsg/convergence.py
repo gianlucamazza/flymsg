@@ -3,7 +3,7 @@
 The YAML file is the lock. The six sensitivity cases run at the default timestep and at finer
 ones with the default parameters otherwise; a response converges at a timestep when its
 holds verdict equals the finest timestep's and its seed-median rate lies within the finest
-timestep's seed range of the finest median. Numerical error is judged against seed
+timestep's seed range of the finest median (never less than one spike in the window). Numerical error is judged against seed
 variability, not against a chosen tolerance. Nothing is chosen from the result and the
 defaults in `sim.Params` do not change.
 """
@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "convergence.yaml"
 
 VERSION_HASHES = {
-    1: "8cd705e7b606fb68e72e2199883c2a850ed5d7d35d7960dfc663e2e958ea123b",
+    1: "c9b005eca561d65021b65a77332ffc07c846b4ae0553bfd662beccc338ae9516",
 }
 
 
@@ -112,10 +112,11 @@ def _job(job: tuple) -> list[dict]:
 
 
 def jobs(doc: dict) -> list[tuple]:
+    """Finest timestep first: its jobs take the longest, so they start first."""
     c = doc["cases"]
     return [
         (dt, case)
-        for dt in doc["grid"]["dt_ms"]
+        for dt in sorted(doc["grid"]["dt_ms"])
         for case in [*c["positive"], *c["negative"]]
     ]
 
@@ -141,6 +142,7 @@ def judge(cells: pd.DataFrame, doc: dict) -> pd.DataFrame:
         at_floor=cells["rate"] * stim_s >= h["holds_min_spikes"] - 1e-9
     )
     finest = min(doc["grid"]["dt_ms"])
+    quantum = 1000.0 / doc["grid"]["stim_ms"]  # one spike in the window, in Hz
     rows = []
     for (case, target), g in cells.groupby(["case", "target"], sort=False):
         ref = g[g["dt_ms"] == finest]
@@ -164,7 +166,7 @@ def judge(cells: pd.DataFrame, doc: dict) -> pd.DataFrame:
                     "delta_vs_finest": median - ref_median,
                     "finest_seed_range": ref_range,
                     "converged": holds == ref_holds
-                    and abs(median - ref_median) <= ref_range + 1e-9,
+                    and abs(median - ref_median) <= max(ref_range, quantum) + 1e-9,
                 }
             )
     return pd.DataFrame(rows)

@@ -345,7 +345,8 @@ timestep. The six cases of the sensitivity grid run with the default parameters 
 dt = 0.1 ms (the default), 0.05 and 0.025 ms, seeds 0–4; delay and refractory period stay
 whole numbers of steps at each. A response (case and target) converges at a timestep when
 its holds verdict (the v4 floor) equals the finest timestep's and its seed-median target
-rate differs from the finest seed median by at most the finest seed range. The verdict is
+rate differs from the finest seed median by at most the finest seed range, and never less
+than one spike in the window (3.33 Hz, the measurement's resolution). The verdict is
 `converged` if every response converges at 0.1 ms. Numerical error is judged against seed
 variability, so no tolerance is chosen; Poisson input is drawn per step, so runs compare as
 seed statistics, not spike for spike. `flymsg convergence --run` writes every cell, the

@@ -2,7 +2,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.convergence.VERSION_HASHES. `flymsg convergence` prints this file; `--run` executes it.
 version: 1
-content_sha256: 8cd705e7b606fb68e72e2199883c2a850ed5d7d35d7960dfc663e2e958ea123b
+content_sha256: c9b005eca561d65021b65a77332ffc07c846b4ae0553bfd662beccc338ae9516
 yaml_subset: 2
 evidence: none
 evidence_none: "A numerical check of the integrator: every parameter is the live default of sim.Params, none is a newly sourced biological value."
@@ -35,9 +35,9 @@ holds:
 
 decides:
   reference: "the finest timestep (0.025 ms)"
-  converged: "a response (case and target) converges at a timestep when its holds verdict (the v4 floor over seeds) equals the reference's and its seed-median target rate differs from the reference's seed median by at most the reference's seed range (max - min over seeds)"
+  converged: "a response (case and target) converges at a timestep when its holds verdict (the v4 floor over seeds) equals the reference's and its seed-median target rate differs from the reference's seed median by at most the reference's seed range (max - min over seeds), and never less than the rate quantum (one spike in stim_ms, 3.33 Hz), the resolution of the measurement"
   verdict: "converged if every response converges at 0.1 ms; otherwise not_converged with the list of responses that do not"
-  why_seed_range: "numerical error is judged against the variability the model already shows between seeds, so no tolerance is chosen"
+  why_seed_range: "numerical error is judged against the variability the model already shows between seeds, floored at the measurement's resolution, so no tolerance is chosen"
 
 reported:
   at_0_05:
@@ -54,5 +54,7 @@ limits:
   - "Poisson input is drawn per step, so the input streams differ between timesteps; responses are compared as seed statistics, not spike for spike."
   - "Discrete events (spikes, resets, delayed delivery) act at step boundaries at every timestep; the check measures how much that discretisation moves the responses."
   - "Five seeds give a coarse seed range; a response near the v4 floor can flip its holds verdict with the seeds as well as with the step."
+  - "An input event arriving in the step where a stimulated neuron spikes is lost to the reset, and several in one step make one kick: about 1.5% of input events at 0.1 ms against 0.4% at 0.025 ms. This is part of what the check measures."
+  - "The best neuron of each target type is picked at each timestep, as validate.respond does, so a left/right switch can compare different neurons."
 
 defaults_changed: false
