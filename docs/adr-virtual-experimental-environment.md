@@ -92,5 +92,5 @@ Positive: the viewer gains an immersive inspection mode without a new app; the r
 - [Embodiment / M0, M2 and NeuroMechFly](embodiment.md)
 - [Eye geometry and failed T4/T5 protocols](eye.md)
 - [Roadmap and falsification gates](roadmap.md)
-- [Three.js WebXR overview](https://threejs.org/manual/en/webxr.html)
+- [Three.js WebXR overview](https://threejs.org/manual/pages/webxr-basics.html)
 - [WebXR Device API](https://www.w3.org/TR/webxr/)
