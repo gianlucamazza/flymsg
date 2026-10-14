@@ -105,7 +105,9 @@ are graded and the medulla inputs differ in timing (Behnia et al. 2014; [leads](
 here they are spiking point neurons at rest, which disinhibition from the lamina does not
 lift, the outcome the lock's prior names. Outputs: `results/t4t5/v2/`.
 
-**Version 3 (locked 2026-10-13; #140).** T4's medulla inputs Mi1, Tm3, Mi4, Mi9 and
+## T4/T5 version 3: graded medulla inputs (lock, 2026-10-13, #140)
+
+T4's medulla inputs Mi1, Tm3, Mi4, Mi9 and
 C3 become graded over the potentials Groschner et al. 2022 recorded in vivo to the same
 30°/s edges (Edmond doi:10.17617/3.8G, CC BY 4.0; `flymsg.medulla` fetches the five files by
 sha256 and the run recomputes the ranges). Per type, the mean dark potential stands at the

@@ -29,7 +29,7 @@ and what would remove it.
 | T4/T5 through the eye v1                   | neither                                                                 | [eye](eye.md#t4t5-direction-selectivity-through-the-eye-lock-2026-10-13)                          |
 | Synapse weight rule v1                     | undecided: density and count rank Liu et al.'s uEPSPs alike (Δρ +0.015) | [model](model.md#synapse-weight-scaled-for-synapse-density)                                       |
 | T4/T5 v2                                   | robust: neither; contrast crosses the lamina, stops in the medulla      | [eye](eye.md#t4t5-version-2-graded-photoreceptors-and-lamina-lock-2026-10-13-84-97)               |
-| T4/T5 v3                                   | robust: neither; the edge reaches the graded medulla at ≤1.4 mV         | [eye](eye.md#t4t5-version-2-graded-photoreceptors-and-lamina-lock-2026-10-13-84-97)               |
+| T4/T5 v3                                   | robust: neither; the edge reaches the graded medulla at ≤1.4 mV         | [eye](eye.md#t4t5-version-3-graded-medulla-inputs-lock-2026-10-13-140)                            |
 | NeuroMechFly jump v1                       | short                                                                   | [embodiment](embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)               |
 | Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference            | [comparison](comparison.md)                                                                       |
 | Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                                   | [comparison](comparison.md)                                                                       |
@@ -148,8 +148,9 @@ about the fly.
 - T4/T5 v3: robust neither ([eye](eye.md)). With Mi1, Tm3, Mi4, Mi9 and C3 graded, the edge
   reaches the medulla at ≤1.4 mV, with the measured sign only in Tm3, C3 and Mi9; from an LMC
   rate of 100 Hz tonic lamina release holds Mi1 and Mi4 below release (Tm3 from 200 Hz).
-  Neither the gain of the lamina → medulla step nor the tonic release of the LMCs is measured;
-  a v4 needs those measurements, or a scan of them named as such, before another run.
+  Neither the gain of the lamina → medulla step nor the tonic release of the LMCs is measured,
+  and per-type timing (Behnia et al. 2014) is not yet set; a v4 needs those, or a scan named as
+  such, before another run.
 - Kenyon cell sparseness v7: within only with the variant eLN set lLN2T+lLN1_bc
   ([model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)). With lLN2T alone Kenyon
   cells stay dense; the coupling moves no arm, so what the antennal lobe lacks is which
@@ -176,12 +177,12 @@ never with a chosen value, so the order follows the evidence that exists.
 
 **2. Next: the evidence exists and must be read and fixed in a lock.**
 
-| Issue                                                      | Work                                                                                                             |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | Done: T4/T5 v3 robust neither (Groschner et al. 2022 voltages); per-type timing (Behnia et al. 2014) still unset |
-| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | Done: KC v7 within only with lLN2T+lLN1_bc; relational APL tests still open                                      |
-| [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | An M2 transducer predicting the giant fiber potential (von Reyn et al. 2017), validated on the giant fiber       |
-| Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                          |
+| Issue                                                      | Work                                                                                                                                              |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v3 ran without per-type timing (robust neither); still open: timing from Behnia et al. 2014's two measured delays, Gruntman et al. held out |
+| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | Done: KC v7 within only with lLN2T+lLN1_bc; relational APL tests still open                                                                       |
+| [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | An M2 transducer predicting the giant fiber potential (von Reyn et al. 2017), validated on the giant fiber                                        |
+| Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                                                           |
 
 **3. Blocked on measurements that do not exist.** Junctional conductances and a gap-junction
 list (#85), a Drosophila voltage → release curve (#97), muscle → body actuator (#19, #35),
