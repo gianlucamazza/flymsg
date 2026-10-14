@@ -360,6 +360,10 @@ def test_a_resumed_run_equals_the_uninterrupted_one(tmp_path):
         "body-20000.npz",
         "loop.json",
         "neural-20000.npz",
+        "ticks-10000.json",
+        "ticks-15000.json",
+        "ticks-20000.json",
+        "ticks-5000.json",
     ]
     body = ToyBody()
     resumed = run(body=body, checkpoint_dir=tmp_path, checkpoint_every_us=5000)
@@ -373,5 +377,7 @@ def test_a_resumed_run_equals_the_uninterrupted_one(tmp_path):
     current.write_text("[0, 0.0, 0.0]")
     with pytest.raises(ContractError, match="does not match its hash"):
         run(checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    with pytest.raises(ContractError, match="both a directory and an interval"):
+        run(checkpoint_dir=tmp_path)
     with pytest.raises(ContractError, match="control ticks"):
         run(checkpoint_dir=tmp_path / "x", checkpoint_every_us=1500)

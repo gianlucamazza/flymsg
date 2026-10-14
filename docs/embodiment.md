@@ -130,12 +130,15 @@ adapter.
   bound where silhouettes overlap), with the optics configuration hash the record carries.
 - **Body**: `flymsg.flygym_body.FlyGymBody` puts the `jump3d.build` NeuroMechFly behind the
   adapter: the thorax root as a B6 v2 state, 0 µs at the end of settling, FlyGym's g/mm/s
-  converted at the boundary, commands from neutral controls each step, contacts as the
-  normal force per fly body on the ground. Its posture gain and torque-driven hinges are
+  converted at the boundary, the pose read from the free joint's `qpos`, commands from
+  neutral controls each step, contacts as the normal force per fly body on the ground of the
+  last physics substep. Its posture gain and torque-driven hinges are
   chosen, so it reports `engineered`.
 - **Checkpoints**: with `checkpoint_dir`, a run writes the runtime, the body's MuJoCo
-  integration state and the loop state (bound by hashes) at control ticks, and resumes from
-  them; a resumed run's record equals the uninterrupted one, on the toy body and on
+  integration state with its construction, the ticks since the last checkpoint and the loop
+  state (bound by hashes, flushed before the loop state replaces the previous one) at
+  control ticks, and resumes from them; the callables and compiled actuators are the
+  caller's to keep the same; a resumed run's record equals the uninterrupted one, on the toy body and on
   NeuroMechFly.
 
 `uv run pytest tests/test_closedloop.py tests/test_flygym_body.py` runs it on a two-neuron

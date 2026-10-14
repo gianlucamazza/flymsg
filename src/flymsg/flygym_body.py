@@ -7,14 +7,16 @@ compensation). The adapter only converts and steps:
 
 - units at the boundary: FlyGym's g, mm, s to SI (lengths and linear velocities through
   `pose.mm`, forces × 1e-6 N, torques × 1e-9 N·m); angles in rad on both sides;
-- state: the thorax root (`c_thorax`, the free joint's body) as a `pose.BodyState`, linear
-  velocity in world and angular velocity in body, as MuJoCo's free joint stores them;
+- state: the thorax root (`c_thorax`, the free joint's body) as a `pose.BodyState`, read
+  from the free joint's `qpos`/`qvel` (after `mj_step`, `xpos`/`xquat` still hold the pose
+  before the last step), linear velocity in world and angular velocity in body;
 - time: 0 at the end of the settling period, then exactly the stepped microseconds;
 - commands: every step starts from the neutral controls of the settled body and writes the
   commanded actuators, so an actuator left out of a command returns to neutral (no torque, or
   the neutral posture); the held command is the caller's, as the ADR fixes;
 - contacts: the normal force of every contact between a fly body and the ground, summed per
-  fly body and named by its MuJoCo body name.
+  fly body and named by its MuJoCo body name, as MuJoCo left them: those of the last physics
+  substep, computed at its start, not an average over the body tick.
 
 No motor neuron reaches an actuator here: `pose.command` still refuses every row, so a run
 with this body is synthetic (`BODY_EVIDENCE`).
@@ -47,10 +49,14 @@ class FlyGymBody:
             raise ContractError("the physics timestep must be whole microseconds")
         if m.jnt_type[0] != mujoco.mjtJoint.mjJNT_FREE:
             raise ContractError("the body's root is not a free joint")
-        self._root = int(m.jnt_bodyid[0])
+        if m.jnt_qposadr[0] != 0 or m.jnt_dofadr[0] != 0 or any(m.jnt_pos[0]):
+            raise ContractError(
+                "the root free joint must lead qpos and sit at its body"
+            )
         # the ground plane belongs to the world body
         self._ground = {i for i in range(m.ngeom) if m.geom_bodyid[i] == 0}
         source = f"FlyGym 2.1.0 NeuroMechFly, flymsg.jump3d.build({cfg!r})"
+        self._identity = f"{source}; mujoco {mujoco.__version__}; nq {m.nq}; nu {m.nu}"
         self.actuators = {}
         for i in range(m.nu):
             name = mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_ACTUATOR, i)
@@ -107,6 +113,7 @@ class FlyGymBody:
                     state=state,
                     t_us=np.int64(self._t_us),
                     neutral=self._neutral,
+                    identity=np.array(self._identity),
                 )
             temporary.replace(path)
         finally:
@@ -117,11 +124,13 @@ class FlyGymBody:
         spec = mujoco.mjtState.mjSTATE_INTEGRATION
         with np.load(path, allow_pickle=False) as saved:
             state, t_us, neutral = saved["state"], int(saved["t_us"]), saved["neutral"]
+            identity = str(saved["identity"])
+        if identity != self._identity:
+            raise ContractError("the body checkpoint is of another body construction")
         if state.shape != (mujoco.mj_stateSize(m, spec),) or neutral.shape != (m.nu,):
             raise ContractError("the body checkpoint is not of this model")
         mujoco.mj_resetData(m, d)
         mujoco.mj_setState(m, d, state, spec)
-        mujoco.mj_forward(m, d)
         self._t_us, self._neutral = t_us, neutral.copy()
 
     def _state(self) -> pose.BodyState:
@@ -131,8 +140,8 @@ class FlyGymBody:
             pose.Pose(
                 "world",
                 "body",
-                tuple(pose.mm(float(v)) for v in d.xpos[self._root]),
-                pose.Quat.of(tuple(float(v) for v in d.xquat[self._root])),
+                tuple(pose.mm(float(v)) for v in d.qpos[0:3]),
+                pose.Quat.of(tuple(float(v) for v in d.qpos[3:7])),
             ),
             tuple(pose.mm(float(v)) for v in d.qvel[0:3]),
             tuple(float(v) for v in d.qvel[3:6]),

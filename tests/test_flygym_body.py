@@ -1,5 +1,7 @@
 """The FlyGym body adapter and a synthetic closed loop through optics, on NeuroMechFly."""
 
+import dataclasses
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,6 +10,7 @@ from test_core import chain
 from flymsg import closedloop, optics, pose, sim
 from flymsg.embodiment import Clock, ContractError
 from flymsg.flygym_body import BODY_EVIDENCE, FlyGymBody
+from flymsg.jump3d import DEFAULT
 from flymsg.pose import IDENTITY, Pose, Provenance, Registration
 from flymsg.runtime import CpuRuntime
 
@@ -153,6 +156,11 @@ def test_a_biological_run_on_this_body_refuses():
         )
 
 
+class Fresh(FlyGymBody):
+    def reset(self):
+        raise AssertionError("a resumed body is restored, not reset")
+
+
 class Killed(FlyGymBody):
     def step(self, commands, dt_us):
         if self._t_us >= 12_000:
@@ -165,6 +173,16 @@ def test_a_resumed_flygym_run_equals_the_uninterrupted_one(settled, tmp_path):
     whole = loop(body)
     with pytest.raises(ContractError, match="killed"):
         loop(Killed(), checkpoint_dir=tmp_path, checkpoint_every_us=5000)
-    assert (
-        loop(FlyGymBody(), checkpoint_dir=tmp_path, checkpoint_every_us=5000) == whole
-    )
+    assert sorted(p.name for p in tmp_path.iterdir()) == [
+        "body-10000.npz",
+        "loop.json",
+        "neural-10000.npz",
+        "ticks-10000.json",
+        "ticks-5000.json",
+    ]
+    assert loop(Fresh(), checkpoint_dir=tmp_path, checkpoint_every_us=5000) == whole
+    # the same body under another posture gain refuses its checkpoint
+    with pytest.raises(ContractError, match="another body construction"):
+        Fresh(dataclasses.replace(DEFAULT, posture_kp=40.0)).restore(
+            next(tmp_path.glob("body-*.npz"))
+        )
