@@ -47,9 +47,9 @@ remains the honest treatment.
 | Lappalainen et al. 2024, _Nature_, doi:10.1038/s41586-024-07939-3                                                              | Per-type time constants and resting potentials, fitted on a task (not measured), arbitrary voltage units                                                                                                                                             | flyvis, MIT                                                                   | text (agent)                       |
 
 T4/T5 v3 (locked and run, robust: neither) used Groschner's voltages and left per-type timing
-unset. Next, for a later lock: hold out the Gruntman recordings as the direction benchmark; gate
-any per-type timing on Behnia's two measured delays (18 ms, 13 ms); report flyvis values only
-as a fitted comparison.
+unset. T4/T5 v4 (locked 2026-10-14, not yet run) sets Behnia's two delays (18 ms, 13 ms) through
+the slower cell's τ_syn and holds out the Gruntman recordings as the direction benchmark; flyvis
+values stay a fitted comparison only.
 
 ## Motor map and body ([#19](https://github.com/gianlucamazza/flymsg/issues/19), [#34](https://github.com/gianlucamazza/flymsg/issues/34), [#35](https://github.com/gianlucamazza/flymsg/issues/35))
 

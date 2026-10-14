@@ -138,7 +138,7 @@ def test_b5_viewer_bundle():
     page = (viz.STATIC / "main.js").read_text() + (
         viz.STATIC / "partners.js"
     ).read_text()
-    for name in ("scene.json", "activity.bin", "partners.json"):
+    for name in ("scene.json", "activity.bin", "graded.bin", "partners.json"):
         assert f'"{name}"' in page  # the files the page fetches
     assert f'SCENE_SCHEMA = "{viz.SCENE_SCHEMA}"' in page  # page and exporter agree
     for path in sorted(ROOT.glob("docs/live/*/scene.json")):
@@ -151,6 +151,12 @@ def test_b5_viewer_bundle():
             assert set(act) == {"bins", "bin_ms", "stim_ms"}
             size = (path.parent / "activity.bin").stat().st_size
             assert size == act["bins"] * len(scene["neurons"])  # uint8, bin-major
+            if "graded" in scene:
+                g = scene["graded"]
+                assert set(g) == {"k", "scale_mv", "reference"}, path
+                assert len(g["k"]) == len(g["scale_mv"]), path
+                graded_size = (path.parent / "graded.bin").stat().st_size
+                assert graded_size == act["bins"] * len(g["k"])  # int8, bin-major
             if "comparison" in scene:
                 size_b = (path.parent / "activity_b.bin").stat().st_size
                 assert size_b == size

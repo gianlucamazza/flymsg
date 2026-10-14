@@ -90,33 +90,38 @@ three stay off unless a lock names them.
 
 ## Done model-side
 
-| Item                                                                    | Where                                                                                             |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Engine parity with Shiu et al. 2024 (brian2)                            | [model](model.md)                                                                                 |
-| Calibration battery 29/29; held-out ORN_DM1 fails                       | [validation](validation.md), [benchmarks](benchmarks.md)                                          |
-| Sensitivity grid (#28)                                                  | [validation](validation.md)                                                                       |
-| One-bit looming loop; DNp01 silence check fails                         | [behavior](behavior.md)                                                                           |
-| Residual `TTMn_R` drive: DNp02 and DNp06, replicated (#20)              | [behavior](behavior.md#result-of-version-3-2026-10-12)                                            |
-| KC → MBON11 depression v1 run: inconsistent (#85)                       | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
-| Left mirror replicates; DNp06 alone sufficient at 200 Hz (#76)          | [behavior](behavior.md#residual-partner-follow-up)                                                |
-| M0 interface, M1 jump body, M2 closed loop (engineering)                | [embodiment](embodiment.md)                                                                       |
-| Eye map, column stimuli, graded photoreceptor kicks                     | [eye](eye.md)                                                                                     |
-| Odors as DoOR receptor vectors                                          | [data](data.md#odor-responses-flymsg-odor)                                                        |
-| Graded neurons and electrical synapses; spikelets when a lock sets them | [model](model.md#electrical-synapses-optional-2026-10-13)                                         |
-| T4/T5 v1 neither; v2 and v3 robust neither                              | [eye](eye.md)                                                                                     |
-| NeuroMechFly jump v1 short; closed loop cuts input at takeoff           | [embodiment](embodiment.md)                                                                       |
-| R0 incremental CPU runtime; native executor matches the oracle          | [runtime](runtime.md)                                                                             |
-| Archived outputs; figures redraw from a clone                           | [`results/`](../results/README.md)                                                                |
-| Viewer baseline of the live scenes (#153)                               | [viz](viz.md)                                                                                     |
-| Evidence records for sourced parameters (SF1, #147)                     | [scientific fidelity](scientific-fidelity.md)                                                     |
-| Taylor solver for the continuous clamp (#155, ADR accepted 2026-10-14)  | [ADR](adr-gap-refractory.md)                                                                      |
+| Item                                                                    | Where                                                                                                 |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Engine parity with Shiu et al. 2024 (brian2)                            | [model](model.md)                                                                                     |
+| Calibration battery 29/29; held-out ORN_DM1 fails                       | [validation](validation.md), [benchmarks](benchmarks.md)                                              |
+| Sensitivity grid (#28)                                                  | [validation](validation.md)                                                                           |
+| One-bit looming loop; DNp01 silence check fails                         | [behavior](behavior.md)                                                                               |
+| Residual `TTMn_R` drive: DNp02 and DNp06, replicated (#20)              | [behavior](behavior.md#result-of-version-3-2026-10-12)                                                |
+| KC → MBON11 depression v1 run: inconsistent (#85)                       | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13)     |
+| Left mirror replicates; DNp06 alone sufficient at 200 Hz (#76)          | [behavior](behavior.md#residual-partner-follow-up)                                                    |
+| M0 interface, M1 jump body, M2 closed loop (engineering)                | [embodiment](embodiment.md)                                                                           |
+| Eye map, column stimuli, graded photoreceptor kicks                     | [eye](eye.md)                                                                                         |
+| Odors as DoOR receptor vectors                                          | [data](data.md#odor-responses-flymsg-odor)                                                            |
+| Graded neurons and electrical synapses; spikelets when a lock sets them | [model](model.md#electrical-synapses-optional-2026-10-13)                                             |
+| T4/T5 v1 neither; v2 and v3 robust neither                              | [eye](eye.md)                                                                                         |
+| NeuroMechFly jump v1 short; closed loop cuts input at takeoff           | [embodiment](embodiment.md)                                                                           |
+| R0 incremental CPU runtime; native executor matches the oracle          | [runtime](runtime.md)                                                                                 |
+| Archived outputs; figures redraw from a clone                           | [`results/`](../results/README.md)                                                                    |
+| Viewer baseline of the live scenes (#153)                               | [viz](viz.md)                                                                                         |
+| Evidence records for sourced parameters (SF1, #147)                     | [scientific fidelity](scientific-fidelity.md)                                                         |
+| Taylor solver for the continuous clamp (#155, ADR accepted 2026-10-14)  | [ADR](adr-gap-refractory.md)                                                                          |
+| Timestep convergence v1: converged at 0.1 ms (SF2, #148)                | [validation](validation.md#timestep-convergence-sf2-a-check-not-a-score)                              |
+| Replication package: index, operator guide, claims audit (SF5, #151)    | [replication](replication.md)                                                                         |
+| Faster per-neuron membranes, bit-identical (#182)                       | [model](model.md#per-neuron-membranes-optional-2026-10-13)                                            |
+| Graded potentials in the 3D replay; eye-on live scene                   | [viz](viz.md#graded-neurons)                                                                          |
+| Optional WebXR observer (experimental, unqualified on a headset, #177)  | [viz](viz.md#optional-webxr-observation-experimental), [ADR](adr-virtual-experimental-environment.md) |
 
 ## Blocked on evidence
 
 | Issue                                                                                                                 | Blocked by                                                                                                                                                                                                                                     | Unblocked by                                                                                                                          | Ready when it arrives                                                                                                                      |
 | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | [#34](https://github.com/gianlucamazza/flymsg/issues/34) M2                                                           | No measured LC4 tuning: the transducer's gain and ceiling are stated by the caller                                                                                                                                                             | LC4 or LPLC2 responses to looming with trial variability, mapped to MaleCNS bodyIds (anchors: von Reyn et al. 2014, Ache et al. 2019) | `sensory_runtime.schedule_sensory_drive`, the closed loop with its three controls                                                          |
-| [#84](https://github.com/gianlucamazza/flymsg/issues/84) eye                                                          | No measured Drosophila release curve. The column → direction table exists. T4/T5 v2 and v3: robust neither; in v3 the graded medulla moves at most about 5% of the measured swings                                                             | A measured lamina → medulla gain or LMC release curve, judged against Maisak et al. 2013                                              | [eye](eye.md): geometry, `eye.edge_coverage`, `sim.Graded`, `validation/t4t5.yaml` v3                                                      |
+| [#84](https://github.com/gianlucamazza/flymsg/issues/84) eye                                                          | No measured Drosophila release curve. The column → direction table exists. T4/T5 v2 and v3: robust neither; in v3 the graded medulla moves at most about 5% of the measured swings                                                             | A measured lamina → medulla gain or LMC release curve, judged against Maisak et al. 2013                                              | [eye](eye.md): geometry, `eye.edge_coverage`, `sim.Graded`, `validation/t4t5.yaml` v4 (locked, not yet run)                                |
 | [#85](https://github.com/gianlucamazza/flymsg/issues/85) electrical, modulation                                       | No junctional conductance; no gap-junction list; no per-type modulatory effect                                                                                                                                                                 | Paired recordings with conductance and input resistance; a ShakB puncta map on MaleCNS bodyIds; receptor maps with measured effects   | `sim.Gap` (off by default; a spike crosses when the lock sets `spike_mv` and `spike_ms`) and the sign table with its documented exclusions |
 | [#19](https://github.com/gianlucamazza/flymsg/issues/19), [#35](https://github.com/gianlucamazza/flymsg/issues/35) M3 | Neuron → muscle is cited from MANC for 406 of 708 motor neurons (`flymsg muscles`); no published assignment of a muscle to a FlyBody actuator; FlyBody has no tergotrochanter joint (FlyGym's NeuroMechFly has the coxa-trochanter joint, #90) | A muscle-level map for `TTMn_L` and `TTMn_R` with force and timing, and a body that has the joint                                     | `validation/motor_map.yaml` (fail-closed, every row `unmapped`), the M0 contracts, the timestep rules                                      |
 | [#36](https://github.com/gianlucamazza/flymsg/issues/36) M4                                                           | No held-out animal measurement for a model prediction                                                                                                                                                                                          | An animal test of the predictions below, pre-registered before the data are seen                                                      | The predictions, the frozen partition, the behavior lock                                                                                   |
@@ -154,9 +159,9 @@ about the fly.
 - T4/T5 v3: robust neither ([eye](eye.md)). With Mi1, Tm3, Mi4, Mi9 and C3 graded, the edge
   reaches the medulla at ≤1.4 mV, with the measured sign only in Tm3, C3 and Mi9; from an LMC
   rate of 100 Hz tonic lamina release holds Mi1 and Mi4 below release (Tm3 from 200 Hz).
-  Neither the gain of the lamina → medulla step nor the tonic release of the LMCs is measured,
-  and per-type timing (Behnia et al. 2014) is not yet set; a v4 needs those, or a scan named as
-  such, before another run.
+  T4/T5 v4 is locked (#140): the medulla anchored at its settled dark potential, the lamina →
+  medulla gain scanned over 1–16, Behnia et al. 2014's delays set; not yet run
+  ([eye](eye.md#t4t5-version-4-dark-anchor-lamina-gain-and-measured-delays-lock-2026-10-14-140)).
 - Kenyon cell sparseness v7: within only with the variant eLN set lLN2T+lLN1_bc
   ([model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)). With lLN2T alone Kenyon
   cells stay dense; the coupling moves no arm, so what the antennal lobe lacks is which
@@ -200,8 +205,9 @@ list (#85), a Drosophila voltage → release curve (#97), muscle → body actuat
 per-type neuromodulatory gains. Meanwhile: envelopes over measured ranges and inverse
 predictions (what value the result would need), never a chosen value.
 
-**4. Blocked on hardware.** A D3D12 adapter (#39) and a Series S (#40); until then the native
-executor refuses whatever is not qualified.
+**4. Blocked on hardware.** A D3D12 adapter (#39), a Series S (#40) and a headset for the WebXR
+observer (#177); until then the native executor refuses whatever is not qualified, and the
+observer stays experimental.
 
 Sources for each step are in [leads](leads.md); the simplifications they would lift are in
 [approximations](approximations.md).
