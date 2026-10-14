@@ -185,8 +185,8 @@ advances, the new TTMn spikes join the twitch trains from their own time on, and
 integrates the same interval; at the first block boundary after takeoff the remaining
 stimulus input is replaced by zeros, the behavior v1 one-bit loop with takeoff as the bit.
 A test checks that the spikes before the cut equal an open-loop run with the same input and
-that none follow the cut. The vision path (body pose → eye → photoreceptors) waits on graded
-lamina neurons ([#97](https://github.com/gianlucamazza/flymsg/issues/97)).
+that none follow the cut. No vision path (body pose → eye → photoreceptors) is built; T4/T5
+v1–v3 found no direction selectivity through the eye ([eye](eye.md)).
 
 ### M1 jump body (v0.8.34, #33)
 
@@ -305,8 +305,8 @@ From the research plan of PR #47. A step that lacks its evidence keeps the synth
 ### Existing evidence and blockers
 
 - M0 records synthetic sensory events. M2 and `jump3d.closed_loop` feed a stated stimulus
-  back into `CpuRuntime`. The path from body pose through the eye waits on the T4/T5 v2 run
-  ([eye](eye.md)).
+  back into `CpuRuntime`. The path from body pose through the eye is not built: T4/T5 v1–v3
+  found no direction selectivity through the eye (robust neither, [eye](eye.md)).
 - `validation/motor_map.yaml`: every real actuator is `unmapped`. 406 of 708 motor neurons
   have a MANC muscle (`flymsg muscles`), but no source maps a muscle to an actuator.
   NeuroMechFly jump v1 ran and was short. FlyBody stays unselected.

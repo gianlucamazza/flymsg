@@ -34,9 +34,8 @@
 - **Evidence records** (SF1, #147): `validation/evidence.yaml` and `flymsg.evidence` record
   source, locator, organism, cell mapping, unit, uncertainty, status and transformation for
   each sourced quantity, fail closed on missing fields, and require every new lock
-  (`yaml_subset: 2`) to name its records. Five records (six with `kc_odor_overlap`, added with the v8
-  lock) cover the Kenyon cell coupling,
-  spike and sparseness values and the T4/T5 v3 medulla voltages; unstated fields (license,
+  (`yaml_subset: 2`) to name its records. Six records cover the Kenyon cell coupling,
+  spike, sparseness and overlap values (`kc_odor_overlap` added with the v8 lock) and the T4/T5 v3 medulla voltages; unstated fields (license,
   sex) are recorded as unknown. `scripts/evidence_audit.py` prints the audit.
 
 - **Kenyon cell sparseness v7 lock** (#85, #95): v6 with the boundary reset of v5. The v6 run
@@ -89,7 +88,7 @@
 
 ### Viewer
 
-- **Baseline of the live scenes** (#24): five runs of the six live scenes on one laptop GPU,
+- **Baseline of the live scenes** (#24): five runs of six of the live pages (the gallery scenes and the heaviest comparisons) on one laptop GPU,
   their ranges in `docs/viz.md` and the runs in `docs/evidence/viewer-bench-2026-10-13/`.
   `scripts/bench_viewer.py` judges a pass by the CPU other processes used during it (not
   the load its own browser makes) and waits (`--cooldown`) for an idle machine;
