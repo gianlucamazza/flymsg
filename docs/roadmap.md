@@ -184,12 +184,12 @@ never with a chosen value, so the order follows the evidence that exists.
 
 **2. Next: the evidence exists and must be read and fixed in a lock.**
 
-| Issue                                                      | Work                                                                                                                                              |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v3 ran without per-type timing (robust neither); still open: timing from Behnia et al. 2014's two measured delays, Gruntman et al. held out |
-| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc, replicated by v8 under the exact clamp; relational APL tests still open                                     |
-| [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | An M2 transducer predicting the giant fiber potential (von Reyn et al. 2017), validated on the giant fiber                                        |
-| Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                                                           |
+| Issue                                                      | Work                                                                                                          |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v4 locked: dark anchor, lamina → medulla gain 1–16, Behnia delays (verified); not yet run               |
+| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc, replicated by v8 under the exact clamp; relational APL tests still open |
+| [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | An M2 transducer predicting the giant fiber potential (von Reyn et al. 2017), validated on the giant fiber    |
+| Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                       |
 
 **3. Blocked on measurements that do not exist.** Junctional conductances and a gap-junction
 list (#85), a Drosophila voltage → release curve (#97), muscle → body actuator (#19, #35),

@@ -1,21 +1,23 @@
-# T4/T5 direction selectivity through the eye (issues 84, 97, 140). Version 3, fixed
-# 2026-10-13 after the v2 run and before any v3 run. Version 1 is the file at 0c574f5,
-# version 2 at 1ea7cd9 (run from 17173c2).
+# T4/T5 direction selectivity through the eye (issues 84, 97, 140). Version 4, fixed
+# 2026-10-14 after the v3 run and before any v4 run. Version 1 is the file at 0c574f5,
+# version 2 at 1ea7cd9 (run from 17173c2), version 3 at 406f622.
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.t4t5.VERSION_HASHES. `flymsg t4t5` prints this file.
-version: 3
-content_sha256: f19a2d7b82a0be9a3efb175813b165746161483b71b978115999816d00bc40b2
+version: 4
+content_sha256: d58b983665b0d01979539df1b6bdd390461053411063674a64c7f29bf8e10547
+yaml_subset: 2
+evidence: [medulla_t4_input_voltages, medulla_filter_delays]
 
 issue: 140
 supersedes:
-  version: 2
+  version: 3
   verdict: "robust: neither"
-  reason: "With graded photoreceptors and L1-L3, contrast crossed the lamina (L1-L3 hyperpolarized 14-33 mV under light) but stopped in the medulla: Mi1, Tm3 and Mi4 never fired and no T4 or T5 neuron spiked in any of 17 configurations. In the fly Mi1, Tm3, Mi4, Mi9 and C3 are non-spiking, and their voltages to the same 30 deg/s edges are deposited (Groschner et al. 2022). Version 3 makes these five T4 inputs graded with release spanning their measured voltages; T5's inputs (Tm1, Tm2, Tm4, Tm9) have no measured voltage in mV and stay as in version 2, so version 3 decides on T4 only."
-question: "With graded photoreceptors and L1-L3 as in version 2 and T4's medulla inputs Mi1, Tm3, Mi4, Mi9 and C3 graded over the voltages measured in vivo, do the four T4 subtypes respond more to ON than to OFF edges and with their measured preferred directions, and does the answer hold over the unmeasured release rates?"
+  reason: "With Mi1, Tm3, Mi4, Mi9 and C3 graded, no T4 neuron spiked in any of 25 configurations, for two separate reasons the v3 tables show: tonic L1-L3 release at rest held the medulla below its measured dark level (Mi1 and Mi4 below release from an LMC rate of 100 Hz), and the edge moved the graded medulla by at most 1.4 mV, about 5% of the measured swings. Version 3 also set no per-type timing. Version 4 anchors each medulla neuron's measured range at its own settled potential in darkness, scans a gain on lamina -> medulla synapses, and sets Behnia et al. 2014's two measured delays."
+question: "With the medulla's measured ranges anchored at its settled dark potential, Behnia et al. 2014's delays set (Mi1 18 ms after Tm3, Tm1 13 ms after Tm2) and the lamina -> medulla gain scanned, do the four T4 subtypes respond more to ON than to OFF edges and with their measured preferred directions, and does the answer hold over the scan?"
 
 prior: "Lappalainen et al. 2024 (doi:10.1038/s41586-024-07939-3, Fig 2d): untrained connectome models with signs predict contrast preference well but direction selectivity poorly. Polarity is expected if contrast crosses the lamina; direction is the open question. The medulla neurons downstream of the lamina (Mi1, Tm3, Mi4, Mi9, Tm1, Tm2, Tm4, Tm9) stay spiking and silent at rest, so disinhibition alone may not reach them."
 
-seen_before_lock: "Versions 1 and 2 (results/t4t5/v1, seeds 90-92; results/t4t5/v2, seed 93, 17 configurations, robust: neither, with spikes per pathway type). Before this lock the Groschner et al. 2022 traces were read (cell counts, mean dark potential, lowest and highest mean values per type, the photodiode trace and the authors' notebook) and Behnia et al. 2014, Kohn et al. 2021 and Yang et al. 2016 were read for OFF-pathway voltages (none in mV). An engineering smoke run of the v3 code (first configuration, 0.3 deg of travel, 10 ms settle) was checked for output shapes only; no full-length moving edge has been run with graded medulla neurons."
+seen_before_lock: "Version 3 (results/t4t5/v3.executions/d85c3913.../output, seed 94, 25 configurations, robust: neither, with the medulla potentials per type and configuration). Behnia et al. 2014 was read in full (PMC4243710) for the delays. Engineering checks of the version 4 code on a three-neuron chain, and one smoke run on the eye (one configuration at gain 16 and 200 Hz, 0.3 deg of travel, 10 ms settle) checked for output shapes and the dark anchor's convergence between the passes (at most 0.09 mV); no full-length edge has been run under version 4. Earlier: versions 1 and 2 (results/t4t5/v1, seeds 90-92; results/t4t5/v2, seed 93, 17 configurations, robust: neither, with spikes per pathway type). Before this lock the Groschner et al. 2022 traces were read (cell counts, mean dark potential, lowest and highest mean values per type, the photodiode trace and the authors' notebook) and Behnia et al. 2014, Kohn et al. 2021 and Yang et al. 2016 were read for OFF-pathway voltages (none in mV). An engineering smoke run of the v3 code (first configuration, 0.3 deg of travel, 10 ms settle) was checked for output shapes only; no full-length moving edge has been run with graded medulla neurons."
 
 sources:
   subtypes: "Maisak et al. 2013, Nature, doi:10.1038/nature12320: T4 respond to ON edges, T5 to OFF edges; subtypes a-d prefer front-to-back, back-to-front, upward, downward (Shinomiya et al. 2019, eLife 8:e40025, Fig 3B)"
@@ -25,7 +27,7 @@ sources:
   graded_lmc: "Juusola et al. 2016 (as above): Drosophila LMCs rest at -30 to -50 mV and hyperpolarize 20-45 mV to light; Zheng et al. 2006, J Gen Physiol 127:495, doi:10.1085/jgp.200509470: LMC transients up to 45 mV, both cell classes non-spiking"
   no_release_curve: "No Vpre -> release or Vpre -> Vpost relation is measured in Drosophila (audit 2026-10-13, issue 97); the only measured R -> LMC curve is from Calliphora"
   medulla_voltages: "Groschner, Malis, Zuidinga & Borst 2022, Nature 603:119, doi:10.1038/s41586-022-04428-3 (CC BY 4.0), Fig 3a; data Edmond doi:10.17617/3.8G v1.0 (CC BY 4.0), fig3_<type>.npy: in vivo whole-cell potentials (mV, 1 kHz, -1 pA holding) of Mi1 (24 cells), Tm3 (12), Mi4 (19), Mi9 (29) and C3 (16) to 30 deg/s ON and OFF edges; no type is reported to spike"
-  medulla_timing: "Behnia et al. 2014, Nature 512:427, doi:10.1038/nature13427, Fig 3B and 3E: whole-cell peak response times Mi1 71 ms (SEM 3.8) vs Tm3 53 ms (SEM 5.2), Tm1 56 ms (SEM 3.8) vs Tm2 43 ms (SEM 2.7) to Gaussian flicker; graded responses"
+  medulla_timing: "Behnia et al. 2014, Nature 512:427, doi:10.1038/nature13427 (PMC4243710), Fig 3B and 3E: filter peak times Mi1 71 ms (SEM 3.8, N 7) vs Tm3 53 ms (SEM 5.2, N 11), delay 18 ms; Tm1 56 ms (SEM 3.8, N 15) vs Tm2 43 ms (SEM 2.7, N 14), delay 13 ms; to Gaussian flicker"
   off_voltages: "No resting potential or response in mV for Tm1, Tm2, Tm4 or Tm9: Behnia et al. 2014 give figure axes only, Kohn et al. 2021 (Curr Biol, doi:10.1016/j.cub.2021.09.061) normalized responses, Yang et al. 2016 (Cell) and the calcium-imaging studies no mV"
   lmc_types: "L1 glutamatergic, L2 and L3 cholinergic in MaleCNS; L1 feeds the ON pathway (Mi1, Tm3), L2 and L3 the OFF pathway (Tm1, Tm2, Tm4, Tm9) (Shinomiya et al. 2019)"
 
@@ -39,7 +41,7 @@ protocol:
   acceptance_deg: 8.23
   directions: [front_to_back, back_to_front, upward, downward]
   polarities: [on, off]
-  seed: 94
+  seed: 98
   seed_note: "the input is deterministic (graded light, no Poisson draw), so one run per stimulus and configuration; the seed is recorded and draws nothing"
   subtypes: [T4a, T4b, T4c, T4d, T5a, T5b, T5c, T5d]
   preferred:
@@ -77,17 +79,29 @@ protocol:
       lowest: -74.0
       highest: -46.9
   medulla_mv_from: "flymsg.medulla.ranges: per type, the mean over cells of each sweep; dark is the mean of the first second of the ON sweep (darkness, before the edge), lowest and highest the extremes of the two mean sweeps; rounded to 0.1 mV; the run recomputes them from the sha256-pinned files and stops if they differ"
-  medulla_curve: "release 0 at v_rest - (dark - lowest), saturated at v_rest + (highest - dark): the model's rest stands for the measured dark potential, so the release a type has in darkness is the measured share of its range below the dark level"
+  medulla_curve: "per neuron, release 0 at v_dark - (dark - lowest), saturated at v_dark + (highest - dark), where v_dark is that neuron's settled potential (mean of the last 10 ms bin) after settle_ms in darkness with every graded release on: the settled dark potential, tonic lamina input included, stands for the measured dark potential"
+  dark_anchor_passes: 2
+  dark_anchor_note: "pass 1 settles with version 3's curve (anchored at rest), pass 2 with the curve anchored at pass 1's potentials; the curve of pass 2's potentials is used, and the median change between the passes is reported per type"
+  timing:
+    Mi1:
+      after: Tm3
+      delay_ms: 18.0
+    Tm1:
+      after: Tm2
+      delay_ms: 13.0
+  timing_rule: "the slower cell of each pair gets the synaptic time constant (flymsg.t4t5.delay_tau_syn: 38.45 ms for Mi1, 24.83 ms for Tm1) at which its filter peak, a difference of exponentials with the Params membrane time constant, falls the measured delay after the Params filter's; its incoming weights are scaled by the ratio of steady gains (0.130, 0.201) so only the timing changes. The faster cells and every other type keep Params"
   photoreceptor_curve: "release 0 at rest (v_rest) rising linearly to saturation at v_rest + photoreceptor_response_mv; the light gain is set so that full light holds a photoreceptor at that depolarization (steady state of the membrane equation, photoreceptor input only)"
   lmc_curve: "release half-saturated at rest, 0 at v_rest - lmc_hyperpolarisation_mv, saturated at v_rest + lmc_hyperpolarisation_mv (tonic, symmetric about rest)"
   photoreceptor_rate: "set so that full light on the window hyperpolarizes by lmc_hyperpolarisation_mv the median L1-L3 among those receiving synapses from window photoreceptors, at steady state, counting photoreceptor input only"
   envelope:
     photoreceptor_response_mv: [40.0, 52.5, 65.0]
     lmc_hyperpolarisation_mv: [20.0, 32.5, 45.0]
-    lmc_rate_hz: [25.0, 50.0, 100.0, 200.0, 400.0]
-    medulla_rate_hz: [25.0, 50.0, 100.0, 200.0, 400.0]
-    grid: "every lmc_rate_hz x medulla_rate_hz at photoreceptor_response_mv 52.5 and lmc_hyperpolarisation_mv 32.5: 25 configurations"
-    ranges_from: "photoreceptor and LMC ranges as version 2 (their midpoints; version 2's verdict did not depend on them); medulla voltages measured (medulla_mv); lmc_rate_hz and medulla_rate_hz have no measurement and span four doublings around the 100 Hz input rate of every flymsg protocol"
+    lmc_rate_hz: [50.0, 200.0]
+    medulla_rate_hz: [50.0, 200.0]
+    lamina_medulla_gain: [1.0, 4.0, 16.0]
+    grid: "every lamina_medulla_gain x lmc_rate_hz x medulla_rate_hz at photoreceptor_response_mv 52.5 and lmc_hyperpolarisation_mv 32.5: 12 configurations"
+    gain_rule: "lamina_medulla_gain multiplies every synapse from L1-L3 onto the five graded medulla types; 1 is the model's weight, 16 brings version 3's largest evoked swing (1.4 mV) to the order of the measured 12-28 mV; scanned, not chosen"
+    ranges_from: "photoreceptor and LMC ranges as version 2 (their midpoints; version 2's verdict did not depend on them); medulla voltages measured (medulla_mv); lmc_rate_hz and medulla_rate_hz have no measurement and span four doublings around the 100 Hz input rate of every flymsg protocol; version 4 keeps two of them, one below and one above 100 Hz"
 
 compensations:
   - "The release curve is threshold-linear with endpoints at the measured voltage ranges; its shape is not measured in Drosophila."
@@ -96,8 +110,9 @@ compensations:
   - "The medulla release rate at saturation (medulla_rate_hz) is not measured; it is scanned, not chosen."
   - "Photoreceptor depolarization is linear in light, without adaptation or the log compression of real photoreceptors; rest is darkness."
   - "Only photoreceptors assigned to a column with a viewing direction are driven; about a third of cartridges receive light."
-  - "Point neurons with one time constant: direction selectivity in the fly relies on delay differences between inputs (Mi1/Tm3 against Mi4/Mi9; Behnia et al. 2014 measure 18 ms between Mi1 and Tm3) that the model does not set per type."
-  - "The medulla release curve is threshold-linear between the lowest and highest mean potentials measured to edges, anchored at the model's rest for the dark potential; the mean traces are under -1 pA holding current, and their extremes understate single-cell ranges."
+  - "Behnia et al.'s delays are of whole-path filters to flicker; the model sets them only as each slower cell's own filter-peak shift through its synaptic time constant, and sets no delay for Mi4 and Mi9, which have no measured peak time here."
+  - "The medulla release curve is threshold-linear between the lowest and highest mean potentials measured to edges, anchored at each neuron's settled dark potential; the mean traces are under -1 pA holding current, and their extremes understate single-cell ranges."
+  - "The lamina -> medulla gain is not measured; it is scanned over 1-16, not chosen."
   - "Tm1, Tm2, Tm4, Tm9 and every type other than photoreceptors, L1-L3 and the five graded medulla types stay spiking; T4 and T5 are counted by spikes, while in the fly they respond mostly in graded potentials."
   - "CT1 is one point neuron per side; in the fly it is compartmentalised per column."
   - "The left eye is the right eye mirrored; spike counts are compared with calcium measurements."
@@ -107,7 +122,7 @@ decides:
   polarity: "per configuration: every T4 subtype fires more, summed over directions, to ON than to OFF edges"
   direction: "per configuration: for at least 3 of the 4 T4 subtypes, the vector sum of responses to ON edges points within 45 deg of the measured preferred direction"
   verdict: "per configuration: both, polarity only, direction only, or neither"
-  envelope_verdict: "robust: <verdict> if all 25 configurations give the same verdict; otherwise depends, with the count of configurations per verdict"
+  envelope_verdict: "robust: <verdict> if all 12 configurations give the same verdict; otherwise depends, with the count of configurations per verdict"
 
 reported:
   dsi:
@@ -121,7 +136,7 @@ reported:
     what: "the version 2 polarity and direction checks for the four T5 subtypes, whose inputs are unchanged"
   medulla_voltage:
     decides: false
-    what: "potential of each graded medulla type relative to rest: median at the end of the settle period, lowest and highest bin mean of the type median during motion, in rows that also carry the measured range below and above the dark level (measured_low_mv, measured_high_mv)"
+    what: "potential of each graded medulla type relative to rest: median at the end of the settle period, lowest and highest bin mean of the type median during motion, in rows that also carry the measured range below and above the dark level (measured_low_mv, measured_high_mv), with the dark anchor (dark_anchor_mv, relative to rest) and the median change of the dark potential between the two passes (anchor_residual_mv)"
   lmc_voltage:
     decides: false
     what: "potential of the L1-L3 receiving synapses from window photoreceptors: median at the end of the settle period, lowest and highest bin mean during motion, next to the measured 20-45 mV"
