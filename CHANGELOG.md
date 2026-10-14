@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.47 — 2026-10-14
 
 ### Result
 
@@ -57,6 +57,8 @@
   sha256, seeds and verdict; the tests check it against the archive and every lock hash
   against the registered versions. Four historical results ran from a modified tree and are
   marked. The synapse weight rule v1, rerun here from its commit, gives byte-identical tables.
+- **Post-review alignment** (#184): provenance rows for every feature of this release, docs
+  aligned with the latest merges, and the viewer-bundle contract test covers `graded.bin`.
 
 ## 0.8.46 — 2026-10-14
 
