@@ -2,6 +2,21 @@
  "results": [
   {
    "command": "behavior --run",
+   "config": {
+    "behavior_sha256": "8f7a9dd74355ed60fb156f4eda162c04a5bc9e3eb1e428320039c1b5931dab50",
+    "behavior_version": 1,
+    "checks": [
+     "jump",
+     "feedback",
+     "silence",
+     "decoder_match"
+    ],
+    "duration_ms": 600.0,
+    "rate_hz": 100.0,
+    "stim_ms": 300.0,
+    "th_jump": 0.0,
+    "w_syn": 0.19230769230769232
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -16,6 +31,7 @@
    "lock": "validation/behavior.yaml",
    "lock_sha256": "8f7a9dd74355ed60fb156f4eda162c04a5bc9e3eb1e428320039c1b5931dab50",
    "lock_version": 1,
+   "other_results": null,
    "outputs_sha256": {
     "replay.npz": "e95cf988e6aa3c0aca7e8491c05eb88611c68f101d7526181ba31fa9629e61da",
     "report.csv": "c8f80be546f7282d638e243311cced831d80e93e6e7a875465eedcf3d214b97c",
@@ -32,6 +48,16 @@
   },
   {
    "command": "silence-scan --run",
+   "config": {
+    "duration_ms": 300.0,
+    "m": 2,
+    "rate_hz": 100.0,
+    "scan_sha256": "0982767d4ce972c7c9ef08b2c3491885e8bf242d7aeb54c22927eb6437a2bb1b",
+    "scan_version": 1,
+    "stim_ms": 300.0,
+    "th_jump": 0.0,
+    "w_syn": 0.19230769230769232
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -46,6 +72,7 @@
    "lock": "validation/silence_scan.yaml",
    "lock_sha256": "0982767d4ce972c7c9ef08b2c3491885e8bf242d7aeb54c22927eb6437a2bb1b",
    "lock_version": 1,
+   "other_results": null,
    "outputs_sha256": {
     "confirm.csv": "59548ab6903a8ac6d6f3bf94246fa984a0c4aae4265b3aa5f8b6cd65c8f62a2d",
     "posthoc.txt": "f300290ab147f2b1165a2a8d9edb463b12bab202ec249fb5cda0d3278826f854",
@@ -71,6 +98,16 @@
   },
   {
    "command": "silence-scan --run",
+   "config": {
+    "duration_ms": 300.0,
+    "m": 2,
+    "rate_hz": 100.0,
+    "scan_sha256": "79762510dae3d4f0499b8b60906f59920973469a82b0472176d88e6bc5fd4627",
+    "scan_version": 2,
+    "stim_ms": 300.0,
+    "th_jump": 0.0,
+    "w_syn": 0.19230769230769232
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -85,6 +122,7 @@
    "lock": "validation/silence_scan.yaml",
    "lock_sha256": "79762510dae3d4f0499b8b60906f59920973469a82b0472176d88e6bc5fd4627",
    "lock_version": 2,
+   "other_results": null,
    "outputs_sha256": {
     "confirm.csv": "29c8a35866312892547d14d870ce2188ac14439c127e4eeb87797a030dad5869",
     "report.txt": "ba978f0bfc98bfa01170081d14f9d94ec6019641568477eb6f3947221f92410e",
@@ -109,6 +147,16 @@
   },
   {
    "command": "silence-scan --run",
+   "config": {
+    "duration_ms": 300.0,
+    "m": 2,
+    "rate_hz": 100.0,
+    "scan_sha256": "8cb7434f86ec0a0c545cee50167f1130f6d4b832feb6e785ee923e9474f28a55",
+    "scan_version": 3,
+    "stim_ms": 300.0,
+    "th_jump": 0.0,
+    "w_syn": 0.19230769230769232
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -123,6 +171,7 @@
    "lock": "validation/silence_scan.yaml",
    "lock_sha256": "8cb7434f86ec0a0c545cee50167f1130f6d4b832feb6e785ee923e9474f28a55",
    "lock_version": 3,
+   "other_results": null,
    "outputs_sha256": {
     "confirm.csv": "56a8369ff44821643def58f27f7625d9e3a30973f487bc4c1246ed786f78aed7",
     "report.txt": "c0bb6b24f90bc95f8eef55ff6ed1e08125ba77bb3829b41b234f5a8c1e9ac8e1",
@@ -147,6 +196,13 @@
   },
   {
    "command": "mb-plasticity --run",
+   "config": {
+    "factor": 0.1,
+    "odor_ms": 1000.0,
+    "plasticity_sha256": "ca75a5247ff4f5081f1034bbbf939636181829f5dcb2ad11fae6f1fb13610b50",
+    "plasticity_version": 1,
+    "rate_hz": 100.0
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -161,6 +217,7 @@
    "lock": "validation/mb_plasticity.yaml",
    "lock_sha256": "ca75a5247ff4f5081f1034bbbf939636181829f5dcb2ad11fae6f1fb13610b50",
    "lock_version": 1,
+   "other_results": null,
    "outputs_sha256": {
     "counts.csv": "e81dfd447c569bdf03a5f4a3f4e9a3582a3655807895c0a1724315b8c847ac30",
     "report.txt": "179164a9205d1da57104d8d8b945f29cc15167272ea9ea6c30189b1fd7ce04f6"
@@ -179,6 +236,12 @@
   },
   {
    "command": "kc-sparseness --run",
+   "config": {
+    "odor_ms": 1000.0,
+    "rate_hz": 100.0,
+    "sparseness_sha256": "d5343b238f61e3bd9cb51ed8fc21981da7a418ad5fdfe7133fe201899c33caba",
+    "sparseness_version": 1
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -193,6 +256,7 @@
    "lock": "validation/kc_sparseness.yaml",
    "lock_sha256": "d5343b238f61e3bd9cb51ed8fc21981da7a418ad5fdfe7133fe201899c33caba",
    "lock_version": 1,
+   "other_results": null,
    "outputs_sha256": {
     "arms.csv": "6f696605a74dbdb65fe49d14e1e7dbc26c3520637dfcfe3bced6508b6ce3c920",
     "report.txt": "323fd8c039d65381e89186d3f3c9323d30aa0aab07c6625744305662a7debc12"
@@ -211,6 +275,12 @@
   },
   {
    "command": "kc-sparseness --run",
+   "config": {
+    "odor_ms": 1000.0,
+    "rate_hz": 100.0,
+    "sparseness_sha256": "bcfef9af52861dfd0a903c8b01aded5f8f504b645cdf6933d91b01ae47350322",
+    "sparseness_version": 2
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -225,6 +295,7 @@
    "lock": "validation/kc_sparseness.yaml",
    "lock_sha256": "bcfef9af52861dfd0a903c8b01aded5f8f504b645cdf6933d91b01ae47350322",
    "lock_version": 2,
+   "other_results": null,
    "outputs_sha256": {
     "arms.csv": "65ec8b5910268428b93744c836d77fcf4eb58c7cd9dd07b2d96e312d1d110a49",
     "report.txt": "1733b891e9e6b9ada127727fb9b2c49b4db29ca4ff5f6014e24bea7065333824"
@@ -243,6 +314,13 @@
   },
   {
    "command": "kc-sparseness --run",
+   "config": {
+    "odor_ms": 1000.0,
+    "odor_source": "door",
+    "rate_hz": 100.0,
+    "sparseness_sha256": "0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2",
+    "sparseness_version": 3
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -257,6 +335,7 @@
    "lock": "validation/kc_sparseness.yaml",
    "lock_sha256": "0a6b0ec6d7b8829cf9aa35de0c945841259a3502ec59e70bd569e1dfd54e0bd2",
    "lock_version": 3,
+   "other_results": null,
    "outputs_sha256": {
     "arms.csv": "e9c9f5070c71b9056f56353906c1b592bbb801460fc384a95eaf994414422d19",
     "report.txt": "96b645e717b6945b77f343419a4621de5d40315f86bc038380493f0583d92b57"
@@ -275,6 +354,13 @@
   },
   {
    "command": "kc-sparseness --run",
+   "config": {
+    "odor_ms": 1000.0,
+    "odor_source": "door",
+    "rate_hz": 100.0,
+    "sparseness_sha256": "72059246ade98ec69b49ce32bac587e0f6f52d39b2cb747c962fb4177694af67",
+    "sparseness_version": 4
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -289,6 +375,7 @@
    "lock": "validation/kc_sparseness.yaml",
    "lock_sha256": "72059246ade98ec69b49ce32bac587e0f6f52d39b2cb747c962fb4177694af67",
    "lock_version": 4,
+   "other_results": null,
    "outputs_sha256": {
     "arms.csv": "f6ea98411bcf08a3f2af91606fc08d3f59a0e388f038ddd31c965aa2491f7d24",
     "report.txt": "e5b4108df124dfee996803c46d3414f50cc95326225b5946ce28b51a2dbfab1f"
@@ -307,6 +394,13 @@
   },
   {
    "command": "kc-sparseness --run",
+   "config": {
+    "odor_ms": 1000.0,
+    "odor_source": "door",
+    "rate_hz": 100.0,
+    "sparseness_sha256": "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",
+    "sparseness_version": 5
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -321,6 +415,7 @@
    "lock": "validation/kc_sparseness.yaml",
    "lock_sha256": "2612483facfd85c1b24f606ae7a6d9ea734a1697f9d6b517bd3469c98613e21b",
    "lock_version": 5,
+   "other_results": null,
    "outputs_sha256": {
     "arms.csv": "fe7f7d802a95f476fde2b900534c3a10c1fdf5d7ceb8a7a30bcb14a326d9dea9",
     "report.txt": "e5fa956619201829ca23edc852ca843797624ef40e7d478b312f9f4001228cfe"
@@ -339,6 +434,14 @@
   },
   {
    "command": "kc-sparseness --run",
+   "config": {
+    "electrical_semantics": "flymsg.gap/boundary-reset-v1",
+    "odor_ms": 1000.0,
+    "odor_source": "door",
+    "rate_hz": 100.0,
+    "sparseness_sha256": "de4274eb0bd689aefe8c9bcc9318eb40fbcdb688b9da61980a559f6c040896ef",
+    "sparseness_version": 7
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -356,6 +459,7 @@
    "lock": "validation/kc_sparseness.yaml",
    "lock_sha256": "de4274eb0bd689aefe8c9bcc9318eb40fbcdb688b9da61980a559f6c040896ef",
    "lock_version": 7,
+   "other_results": null,
    "outputs_sha256": {
     "arms.csv": "744715b90bb2e9f8204f328266e020c354820b4452877eb02e10677d52261ad4",
     "report.txt": "3f2c23cf7114cb0b2a7eb717837426a4132ba4414bd411dd4ea922f251ba3e89"
@@ -374,6 +478,14 @@
   },
   {
    "command": "kc-sparseness --run",
+   "config": {
+    "electrical_semantics": "flymsg.gap/continuous-clamp-taylor-v1",
+    "odor_ms": 1000.0,
+    "odor_source": "door",
+    "rate_hz": 100.0,
+    "sparseness_sha256": "016ad8ca4d274f9eef0f40c568b672df208db2fbeffd7f350a2ed226880f7223",
+    "sparseness_version": 8
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -391,6 +503,7 @@
    "lock": "validation/kc_sparseness.yaml",
    "lock_sha256": "016ad8ca4d274f9eef0f40c568b672df208db2fbeffd7f350a2ed226880f7223",
    "lock_version": 8,
+   "other_results": null,
    "outputs_sha256": {
     "arms.csv": "5cd235b1925ec6f864228d779d299de771ab76d7812583e290f34fa4b8fd11b8",
     "report.txt": "d4b92e6bd6dc7d0fd05de46a21c3613743b5c36879c5e15ca893ecb5127f6a0f"
@@ -409,6 +522,13 @@
   },
   {
    "command": "t4t5 --run",
+   "config": {
+    "acceptance_deg": 8.23,
+    "gain": 0.01,
+    "speed_deg_s": 30.0,
+    "t4t5_sha256": "bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8",
+    "t4t5_version": 1
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -423,6 +543,7 @@
    "lock": "validation/t4t5.yaml",
    "lock_sha256": "bf56cc800341402e0c520ad3e320d8a490e25542abcad108336bc4501def2cd8",
    "lock_version": 1,
+   "other_results": null,
    "outputs_sha256": {
     "metrics.csv": "765e90d79f09bb056d0c8bd6bfcf956c69493c106f176ac14dfdefd41d79ebdb",
     "report.txt": "75dfd6bb144ce8788117acfeebddc877dba8ae291f05ddb797388a090b47a701",
@@ -442,6 +563,33 @@
   },
   {
    "command": "t4t5 --run",
+   "config": {
+    "acceptance_deg": 8.23,
+    "envelope": {
+     "grid": "every lmc_hyperpolarisation_mv x lmc_rate_hz at photoreceptor_response_mv 52.5 (15 configurations), plus photoreceptor_response_mv 40 and 65 at 32.5 mV and 100 Hz (2): 17 configurations",
+     "lmc_hyperpolarisation_mv": [
+      20.0,
+      32.5,
+      45.0
+     ],
+     "lmc_rate_hz": [
+      25.0,
+      50.0,
+      100.0,
+      200.0,
+      400.0
+     ],
+     "photoreceptor_response_mv": [
+      40.0,
+      52.5,
+      65.0
+     ],
+     "ranges_from": "photoreceptor and LMC voltage ranges: the measured Drosophila ranges and their midpoints (Juusola et al. 2016); lmc_rate_hz has no measurement and spans four doublings around the 100 Hz input rate of every flymsg protocol"
+    },
+    "speed_deg_s": 30.0,
+    "t4t5_sha256": "d25bcbd7ecd6e01f383c00703995164d29cc57fc11192be15234b19314b0e390",
+    "t4t5_version": 2
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -456,6 +604,7 @@
    "lock": "validation/t4t5.yaml",
    "lock_sha256": "d25bcbd7ecd6e01f383c00703995164d29cc57fc11192be15234b19314b0e390",
    "lock_version": 2,
+   "other_results": null,
    "outputs_sha256": {
     "configurations.csv": "027e234ecfc6077839798348176667df6f0068896c03eeb01ceccc2b9a38b185",
     "lmc.csv": "ee864196a393139fb2b2e9ac58e502bd6f72324524f85cd4707844cb84682f08",
@@ -476,6 +625,47 @@
   },
   {
    "command": "t4t5 --run",
+   "config": {
+    "acceptance_deg": 8.23,
+    "envelope": {
+     "grid": "every lmc_rate_hz x medulla_rate_hz at photoreceptor_response_mv 52.5 and lmc_hyperpolarisation_mv 32.5: 25 configurations",
+     "lmc_hyperpolarisation_mv": [
+      20.0,
+      32.5,
+      45.0
+     ],
+     "lmc_rate_hz": [
+      25.0,
+      50.0,
+      100.0,
+      200.0,
+      400.0
+     ],
+     "medulla_rate_hz": [
+      25.0,
+      50.0,
+      100.0,
+      200.0,
+      400.0
+     ],
+     "photoreceptor_response_mv": [
+      40.0,
+      52.5,
+      65.0
+     ],
+     "ranges_from": "photoreceptor and LMC ranges as version 2 (their midpoints; version 2's verdict did not depend on them); medulla voltages measured (medulla_mv); lmc_rate_hz and medulla_rate_hz have no measurement and span four doublings around the 100 Hz input rate of every flymsg protocol"
+    },
+    "medulla_files_sha256": {
+     "C3": "b9118e32cfb0d22acd4da41aee6931923ea33e4dda258df2abd26fd252e21be6",
+     "Mi1": "351e9e791a30d1c5bac329165934fbc05dbcfbb038b4b6e940e2531de1d61cce",
+     "Mi4": "9309bb6deadcb8bf5c9a52267ef6564c314a04212af81c129b0754cf4de1f791",
+     "Mi9": "3d5909c9b6c42776ff5e56d7219eacd002758a24b3cf5b7cecf30a07b8bf5c83",
+     "Tm3": "07797ccd2ce72d3ea89c9ca01ba641c7c92d3d6dd198d6324596f2cf16b0fb82"
+    },
+    "speed_deg_s": 30.0,
+    "t4t5_sha256": "f19a2d7b82a0be9a3efb175813b165746161483b71b978115999816d00bc40b2",
+    "t4t5_version": 3
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -498,6 +688,7 @@
    "lock": "validation/t4t5.yaml",
    "lock_sha256": "f19a2d7b82a0be9a3efb175813b165746161483b71b978115999816d00bc40b2",
    "lock_version": 3,
+   "other_results": null,
    "outputs_sha256": {
     "configurations.csv": "38b4c0d04b7b9aa31929c5a2d0c112ebeb03ab24413ce5728eb6de56d94d92b3",
     "lmc.csv": "445ff13bd7ed8f50fc5d4df64411613b90dca54b5748b416e0420a705fcfc5bd",
@@ -520,6 +711,10 @@
   },
   {
    "command": "weight-rule --run",
+   "config": {
+    "weight_rule_sha256": "87a33e5fbc589f4445386618275c46bf88c18d7f97d46e1b02e82ff4535ef79d",
+    "weight_rule_version": 1
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -535,6 +730,7 @@
    "lock": "validation/weight_rule.yaml",
    "lock_sha256": "87a33e5fbc589f4445386618275c46bf88c18d7f97d46e1b02e82ff4535ef79d",
    "lock_version": 1,
+   "other_results": null,
    "outputs_sha256": {
     "pairs.csv": "7561fd97ebdd770653e28c601941cbd6eb51238b63f33788b0c73dffc83528ba",
     "report.txt": "192b72339bb8914648a73abb23646eceab17f0ebf21000d48c1534a33400e2f7",
@@ -552,6 +748,13 @@
   },
   {
    "command": "jump3d --run",
+   "config": {
+    "body": "flygym 2.1.0 NeuroMechFly",
+    "jump3d_sha256": "c93eeebd796df1913769f3625ec033745a0ff29ae188bcced938d0b9bab9e8d2",
+    "jump3d_version": 1,
+    "rate_hz": 100.0,
+    "stim_ms": 300.0
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -566,6 +769,7 @@
    "lock": "validation/jump3d.yaml",
    "lock_sha256": "c93eeebd796df1913769f3625ec033745a0ff29ae188bcced938d0b9bab9e8d2",
    "lock_version": 1,
+   "other_results": null,
    "outputs_sha256": {
     "report.txt": "ff03c24c7025a2d759be18eb7032f121f4de4cf2167f0472a857e5c4f252c82f",
     "seeds.json": "81cca66cb01227014c571eef29be4158ce8b0bebce70f5aeb7c1952bdaecbda9"
@@ -584,6 +788,14 @@
   },
   {
    "command": "partner-followup --run",
+   "config": {
+    "drive_rate_hz": 200.0,
+    "followup_sha256": "513ebd2c8237f1805c42f45b55fe0168e985ecd7e39940a7a17639e9249a4d99",
+    "followup_version": 1,
+    "left_rate_hz": 100.0,
+    "th_jump": 0.0,
+    "w_syn": 0.19230769230769232
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -598,6 +810,10 @@
    "lock": "validation/partner_followup.yaml",
    "lock_sha256": "513ebd2c8237f1805c42f45b55fe0168e985ecd7e39940a7a17639e9249a4d99",
    "lock_version": 1,
+   "other_results": {
+    "drive": "single_sufficient: DNp06_R",
+    "left": "replicates"
+   },
    "outputs_sha256": {
     "drive.csv": "667428c6114f68fc990297a298619b421f99238f85a5ab15a277b58be9e74a39",
     "left.csv": "9cc8e49695262df269570fe3e73f007c2803754f239c6add2d1e0f3eebc61f96",
@@ -618,6 +834,19 @@
   },
   {
    "command": "jump",
+   "config": {
+    "decoder": "engineered_decoder",
+    "duration": 600.0,
+    "gain_n": 2e-05,
+    "mass_kg": 1e-06,
+    "motor": "TTMn_R",
+    "rate": 100.0,
+    "silence": [],
+    "sim": [
+     "LC4_R"
+    ],
+    "stim_ms": 300.0
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -632,6 +861,7 @@
    "lock": null,
    "lock_sha256": null,
    "lock_version": null,
+   "other_results": null,
    "outputs_sha256": {
     "trajectory.json": "3a37cee3a77b4ab3aa2532a6fd23daa549bdbaa70ffee00517372907cc997ec5"
    },
@@ -645,6 +875,21 @@
   },
   {
    "command": "jump",
+   "config": {
+    "decoder": "engineered_decoder",
+    "duration": 600.0,
+    "gain_n": 2e-05,
+    "mass_kg": 1e-06,
+    "motor": "TTMn_R",
+    "rate": 100.0,
+    "silence": [
+     "DNp01"
+    ],
+    "sim": [
+     "LC4_R"
+    ],
+    "stim_ms": 300.0
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -659,6 +904,7 @@
    "lock": null,
    "lock_sha256": null,
    "lock_version": null,
+   "other_results": null,
    "outputs_sha256": {
     "trajectory.json": "dbb30267375007e131c27ec0b06e28855015d53f80fdd32014d7117516931ff5"
    },
@@ -672,6 +918,21 @@
   },
   {
    "command": "loop",
+   "config": {
+    "decoder": "engineered_decoder",
+    "distance_m": 0.2,
+    "duration": 300.0,
+    "gain_n": 2e-05,
+    "mass_kg": 1e-06,
+    "max_rate_hz": 200.0,
+    "motor": "TTMn_R",
+    "radius_m": 0.01,
+    "sim": [
+     "LC4_R"
+    ],
+    "speed_m_s": 0.5,
+    "transducer_gain": 30.0
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -686,6 +947,7 @@
    "lock": null,
    "lock_sha256": null,
    "lock_version": null,
+   "other_results": null,
    "outputs_sha256": {
     "loop.json": "9571e3e6a9400413220bafdc754bfdaa1fadfe12297a9b09dbb1f09b7d0a877c",
     "loop.npz": "7af126a44cfbd38c20e0116fb682f4edaa84f5f2408e432f28df6118c52dd5a2"
@@ -700,6 +962,28 @@
   },
   {
    "command": "sensitivity --run",
+   "config": {
+    "grid": {
+     "duration_ms": 600.0,
+     "rate_hz": 100.0,
+     "seed0": 0,
+     "seeds": 5,
+     "stim_ms": 300.0,
+     "th_jump": [
+      0.0,
+      2.0
+     ],
+     "w_syn_factors": [
+      0.8,
+      0.9,
+      1.0,
+      1.1,
+      1.2
+     ]
+    },
+    "sensitivity_sha256": "59806931f038d4565eeaee40cb15f5671db1bb3931ddf319f0c0b0b61eb55fef",
+    "sensitivity_version": 1
+   },
    "dataset": {
     "name": "malecns",
     "release": "v1.0"
@@ -714,6 +998,7 @@
    "lock": "validation/sensitivity.yaml",
    "lock_sha256": "59806931f038d4565eeaee40cb15f5671db1bb3931ddf319f0c0b0b61eb55fef",
    "lock_version": 1,
+   "other_results": null,
    "outputs_sha256": {
     "cells.csv": "460d75f714e1c99659f582fb8f5c77a6ea6614907f516c5a1c5e46f5a659a09e",
     "holds.csv": "04a17469179a20e6a1835ef396449f76bedee4dab64e787aaee9d4e63cf13a9a",

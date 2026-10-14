@@ -126,6 +126,14 @@ Sci Rep 6:21841, doi:10.1038/srep21841), repository `ropensci/DoOR.data` at `db3
 They are CC BY-SA 4.0. `flymsg odor` downloads them into `data/raw/door/` on first use;
 flymsg does not redistribute them or anything derived from them.
 
+## Medulla voltages (`flymsg.medulla`)
+
+Groschner, Malis, Zuidinga & Borst 2022, _Nature_ 603:119, doi:10.1038/s41586-022-04428-3,
+Fig. 3a: whole-cell traces of Mi1, Tm3, Mi4, Mi9 and C3 to 30°/s ON and OFF edges, deposited
+on Edmond (doi:10.17617/3.8G, version 1.0, CC BY 4.0). The T4/T5 v3 run fetches the five
+files into `data/raw/groschner2022/` and refuses one whose sha256 differs from the pinned
+value in `src/flymsg/medulla.py`; they are fetched, not redistributed.
+
 ## MANC muscles (`flymsg muscles`)
 
 The muscle of each motor neuron type comes from MANC: Cheong, Eichler, Stürner et al.,
