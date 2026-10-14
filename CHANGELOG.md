@@ -21,6 +21,13 @@
 
 ### Validation
 
+- **Evidence records** (SF1, #147): `validation/evidence.yaml` and `flymsg.evidence` record
+  source, locator, organism, cell mapping, unit, uncertainty, status and transformation for
+  each sourced quantity, fail closed on missing fields, and require every new lock
+  (`yaml_subset: 2`) to name its records. Five records cover the Kenyon cell coupling,
+  spike and sparseness values and the T4/T5 v3 medulla voltages; unstated fields (license,
+  sex) are recorded as unknown. `scripts/evidence_audit.py` prints the audit.
+
 - **Kenyon cell sparseness v7 lock** (#85, #95): v6 with the boundary reset of v5. The v6 run
   was stopped after its uncoupled arms (never read, later lost with its worktree): under the continuous clamp each new
   refractory mask of the 688-cell coupled component costs a dense exponential of ~1–1.6 s
