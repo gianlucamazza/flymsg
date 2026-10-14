@@ -1,0 +1,499 @@
+"""G5 (#180): the closed-loop schedule, evidence gate and record of the body-wiring ADR.
+
+`docs/adr-body-wiring.md` keeps the B6 v2 / M0 v1 clock order. At each control tick T,
+spikes of earlier ticks whose time + latency <= T become actuator commands, held until the
+next control tick. Then, per body tick [t, t + body):
+
+1. sample: the body state at t (the last one stepped, never a later one);
+2. stimulus: the world at t projected onto the columns;
+3. input: seeded counts for the neural steps of the tick, recorded;
+4. neural: `CpuRuntime` advances to t + body;
+5. physics: the body steps to t + body under the held command.
+
+Every component carries an evidence status. A biological run refuses unless all are
+`measured`; none is today (transducer, registration and motor map are not), so only
+synthetic runs execute, and their record says so. The statuses are declared by the caller;
+the motor map is also enforced in code, through `pose.command`. No body is wired here: the
+body is an adapter passed in, and the tests use a toy one. M0 v1, B6 v2, M2 (`loop`) and
+`CpuRuntime` are unchanged.
+"""
+
+from __future__ import annotations
+
+import json
+import math
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, fields
+from typing import Protocol
+
+import numpy as np
+
+from flymsg import pose
+from flymsg.embodiment import Clock, ContractError, SpikeEvent, integer
+from flymsg.runtime import CpuRuntime
+
+SCHEMA = "flymsg.closedloop/v1"
+PHASES = ("command", "sample", "stimulus", "input", "neural", "physics")
+STATUSES = ("measured", "engineered", "unmapped", "synthetic")
+COMPONENTS = ("registration", "transducer", "motor_map", "body")
+MODES = ("biological", "synthetic")
+# disconnected is the open loop: the input sees the body held at its initial pose
+ARMS = ("intact", "disconnected", "shuffled", "replay", "silenced")
+
+Command = tuple[pose.ActuatorRef, float]
+Contact = tuple[str, float]  # contact name, normal force in N
+
+
+@dataclass(frozen=True)
+class Step:
+    phase: str
+    time_us: int
+
+
+def schedule(clock: Clock, duration_us: int) -> tuple[Step, ...]:
+    """The ordered steps of a run: a command per control tick, the rest per body tick."""
+    clock.validate()
+    integer(duration_us, "duration_us", 1)
+    if duration_us % clock.control_us:
+        raise ContractError("duration must be a multiple of the control period")
+    steps = []
+    for t in range(0, duration_us, clock.body_us):
+        if t % clock.control_us == 0:
+            steps.append(Step("command", t))
+        steps += [Step(phase, t) for phase in PHASES[1:]]
+    return tuple(steps)
+
+
+def require(evidence: dict[str, str], mode: str) -> None:
+    """Refuse a missing or unknown status, and a biological run on anything unmeasured."""
+    if mode not in MODES:
+        raise ContractError(f"mode must be one of {', '.join(MODES)}")
+    if sorted(evidence) != sorted(COMPONENTS):
+        raise ContractError(f"evidence must name exactly {', '.join(COMPONENTS)}")
+    for name, status in evidence.items():
+        if status not in STATUSES:
+            raise ContractError(f"{name} has unknown status {status!r}")
+    unmeasured = sorted(k for k, v in evidence.items() if v != "measured")
+    if mode == "biological" and unmeasured:
+        raise ContractError(
+            f"a biological run needs measured components; not: {', '.join(unmeasured)}"
+        )
+
+
+class Body(Protocol):
+    """A v2 body adapter: B6 v2 states, compiled actuators, named contact forces."""
+
+    def reset(self) -> pose.BodyState: ...
+
+    def step(
+        self, commands: tuple[Command, ...], dt_us: int
+    ) -> tuple[pose.BodyState, tuple[Contact, ...]]: ...
+
+
+@dataclass(frozen=True)
+class Tick:
+    """One body tick [time_us, time_us + body)."""
+
+    time_us: int
+    commands: tuple[
+        tuple[str, int, float], ...
+    ]  # held: actuator name, MuJoCo id, value
+    state: pose.BodyState  # the state the stimulus was computed from
+    stimulus: tuple[float, ...]  # per column
+    input_counts: tuple[tuple[int, ...], ...]  # (neural steps, inputs)
+    spikes: tuple[SpikeEvent, ...]  # MaleCNS bodyIds, in time order
+    stepped: pose.BodyState  # the body after the physics step
+    contacts: tuple[Contact, ...]
+
+
+@dataclass(frozen=True)
+class Record:
+    provenance: pose.Provenance
+    clock: Clock
+    arm: str
+    mode: str
+    evidence: tuple[tuple[str, str], ...]
+    optics_config_sha256: str
+    run_identity_sha256: str
+    input_ids: tuple[int, ...]  # bodyIds of the inputs, in runtime order
+    traced_ids: tuple[int, ...]  # bodyIds whose spikes are recorded
+    silenced_ids: tuple[
+        int, ...
+    ]  # declared by the caller; the runtime does not expose it
+    ticks: tuple[Tick, ...]
+    schema: str = SCHEMA
+
+    def validate(self) -> None:
+        if self.schema != SCHEMA:
+            raise ContractError(f"not a {SCHEMA} record")
+        self.provenance.validate()
+        self.clock.validate()
+        if self.arm not in ARMS:
+            raise ContractError(f"arm must be one of {', '.join(ARMS)}")
+        if any(len(e) != 2 for e in self.evidence) or len(
+            {e[0] for e in self.evidence}
+        ) != len(self.evidence):
+            raise ContractError("evidence must be unique (component, status) pairs")
+        require(dict(self.evidence), self.mode)
+        for name in ("optics_config_sha256", "run_identity_sha256"):
+            _sha256(getattr(self, name), name)
+        if (self.arm == "silenced") != bool(self.silenced_ids):
+            raise ContractError("only the silenced arm names silenced neurons")
+        if not self.input_ids or not self.traced_ids:
+            raise ContractError("a record needs input and traced bodyIds")
+        for v in (*self.input_ids, *self.traced_ids, *self.silenced_ids):
+            integer(v, "bodyId")
+        if not self.ticks:
+            raise ContractError("a record needs at least one tick")
+        c = self.clock
+        end = len(self.ticks) * c.body_us
+        if end % c.control_us:
+            raise ContractError("the record does not end on a control tick")
+        per = c.body_us // c.neural_us
+        columns = len(self.ticks[0].stimulus)
+        last_spike = -1
+        for k, tick in enumerate(self.ticks):
+            t = k * c.body_us
+            if tick.time_us != t:
+                raise ContractError(f"tick {k} is off the body grid")
+            seen = tick.state.time_us
+            if seen % c.body_us or seen >= end:
+                raise ContractError(f"tick {k} read a state off the run")
+            if self.arm != "shuffled" and seen != t:
+                raise ContractError(f"tick {k} did not read the state at its start")
+            if tick.stepped.time_us != t + c.body_us:
+                raise ContractError(f"tick {k} physics is off the body grid")
+            if (
+                self.arm in ("intact", "silenced")
+                and k
+                and tick.state != self.ticks[k - 1].stepped
+            ):
+                raise ContractError(f"tick {k} did not read the last stepped state")
+            if t % c.control_us and tick.commands != self.ticks[k - 1].commands:
+                raise ContractError(
+                    f"tick {k} changed the command between control ticks"
+                )
+            for command in tick.commands:
+                if len(command) != 3:
+                    raise ContractError(f"tick {k} has a malformed command")
+                name, mujoco_id, value = command
+                integer(mujoco_id, "mujoco_id")
+                if type(name) is not str or not name or not _finite(value):
+                    raise ContractError(f"tick {k} has a malformed command")
+            if not columns or len(tick.stimulus) != columns:
+                raise ContractError(f"tick {k} stimulus needs one value per column")
+            if not all(_finite(v) for v in tick.stimulus):
+                raise ContractError(f"tick {k} stimulus is not finite")
+            if len(tick.input_counts) != per or any(
+                len(row) != len(self.input_ids) for row in tick.input_counts
+            ):
+                raise ContractError(f"tick {k} input counts do not fit the tick")
+            for row in tick.input_counts:
+                for v in row:
+                    integer(v, "input count")
+            for s in tick.spikes:
+                integer(s.time_us, "spike time")
+                if (
+                    s.neuron_id not in self.traced_ids
+                    or not t <= s.time_us < t + c.body_us
+                    or s.time_us % c.neural_us
+                    or s.time_us < last_spike
+                ):
+                    raise ContractError(f"tick {k} has a spike out of place")
+                last_spike = s.time_us
+            _contacts(tick.contacts)
+
+    def to_json(self) -> str:
+        self.validate()
+        return json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
+
+
+def _finite(value) -> bool:
+    return type(value) in (int, float) and math.isfinite(value)
+
+
+def _sha256(value: str, name: str) -> None:
+    if (
+        type(value) is not str
+        or len(value) != 64
+        or any(c not in "0123456789abcdef" for c in value)
+    ):
+        raise ContractError(f"{name} must be a lowercase SHA-256")
+
+
+def _state(d: dict) -> pose.BodyState:
+    p = d["pose"]
+    q = p["orientation"]
+    if set(q) != set("wxyz"):
+        raise ContractError("orientation needs exactly w, x, y, z")
+    return pose.BodyState(
+        d["time_us"],
+        pose.Pose(
+            p["parent"],
+            p["child"],
+            tuple(p["position_m"]),
+            pose.Quat(*(q[k] for k in "wxyz")),
+        ),
+        tuple(d["linear_velocity_m_s"]),
+        tuple(d["angular_velocity_rad_s"]),
+    )
+
+
+def from_json(text: str) -> Record:
+    """Parse a closed-loop record; another schema, an unknown or missing field refuses."""
+    try:
+        d = json.loads(text)
+        if d.get("schema") != SCHEMA:
+            raise ContractError(f"not a {SCHEMA} record")
+        if set(d) != {f.name for f in fields(Record)}:
+            raise ContractError("unknown or missing record fields")
+        record = Record(
+            pose.Provenance(**d["provenance"]),
+            Clock(**d["clock"]),
+            d["arm"],
+            d["mode"],
+            tuple(tuple(e) for e in d["evidence"]),
+            d["optics_config_sha256"],
+            d["run_identity_sha256"],
+            tuple(d["input_ids"]),
+            tuple(d["traced_ids"]),
+            tuple(d["silenced_ids"]),
+            tuple(
+                Tick(
+                    t["time_us"],
+                    tuple(tuple(c) for c in t["commands"]),
+                    _state(t["state"]),
+                    tuple(t["stimulus"]),
+                    tuple(tuple(r) for r in t["input_counts"]),
+                    tuple(SpikeEvent(**s) for s in t["spikes"]),
+                    _state(t["stepped"]),
+                    tuple(tuple(c) for c in t["contacts"]),
+                )
+                for t in d["ticks"]
+            ),
+            d["schema"],
+        )
+        record.validate()
+    except ContractError:
+        raise
+    except (AttributeError, KeyError, TypeError, ValueError) as err:
+        raise ContractError(f"malformed closed-loop record: {err!r}") from err
+    return record
+
+
+def _adapter(call, *args, what="body adapter"):
+    """A body or runtime call; any failure inside it becomes a ContractError."""
+    try:
+        return call(*args)
+    except ContractError:
+        raise
+    except Exception as err:
+        raise ContractError(f"{what} failed: {err!r}") from err
+
+
+def _held(state: pose.BodyState, time_us: int) -> pose.BodyState:
+    """The body as the open loop sees it: its initial pose, at rest, at `time_us`."""
+    return pose.BodyState(time_us, state.pose, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
+
+
+def run(
+    runtime: CpuRuntime,
+    body: Body,
+    *,
+    input_ids: tuple[int, ...],
+    traced_ids: tuple[int, ...],
+    stimulus: Callable[[int, pose.BodyState], tuple[float, ...]],
+    transducer: Callable[[tuple[float, ...]], np.ndarray],
+    decoder: Callable[[tuple[SpikeEvent, ...]], tuple[Command, ...]],
+    compiled: dict[str, int],
+    clock: Clock,
+    duration_us: int,
+    arm: str,
+    mode: str,
+    evidence: dict[str, str],
+    provenance: pose.Provenance,
+    optics_config_sha256: str,
+    run_identity_sha256: str,
+    silenced_ids: tuple[int, ...] = (),
+    replay: Record | None = None,
+) -> Record:
+    """One arm of a closed loop in the ADR order.
+
+    Evidence, clock, arm, replay and runtime shape are checked before the body is reset; a
+    runtime too short for `duration_us` fails at its first overflowing call, as a
+    ContractError. `runtime` is fresh, built by the caller on `clock.neural_us` with zero
+    kicks, its inputs in `input_ids` order and `traced_ids` traced (and, for the silenced
+    arm, `silenced_ids` silenced: the runtime does not expose it, so the record states what
+    the caller declared). `stimulus` must be a pure function of the time and state it is
+    given; `transducer` returns one rate in Hz per input; `decoder` turns delivered spikes
+    into actuator commands.
+    """
+    require(evidence, mode)
+    provenance.validate()
+    steps = schedule(clock, duration_us)
+    if arm not in ARMS:
+        raise ContractError(f"arm must be one of {', '.join(ARMS)}")
+    if (arm == "silenced") != bool(silenced_ids):
+        raise ContractError("only the silenced arm names silenced neurons")
+    if (arm == "replay") != (replay is not None):
+        raise ContractError("the replay arm, and only it, needs a recorded run")
+    if runtime.step != 0 or runtime.tick_us != clock.neural_us:
+        raise ContractError("the runtime must be fresh and on the neural tick")
+    if (
+        not traced_ids
+        or runtime.n_inputs != len(input_ids)
+        or runtime.traced_spikes(0, 0).shape[1] != len(traced_ids)
+    ):
+        raise ContractError("input and traced bodyIds must match the runtime")
+    per = clock.body_us // clock.neural_us
+    n_ticks = duration_us // clock.body_us
+    if replay is not None:
+        replay.validate()
+        if (
+            replay.arm == "replay"
+            or replay.clock != clock
+            or len(replay.ticks) != n_ticks
+            or replay.input_ids != tuple(input_ids)
+        ):
+            raise ContractError("the recorded run does not fit this replay")
+    rng = np.random.default_rng(provenance.seed)
+    order = np.arange(n_ticks)
+    if arm == "shuffled":
+        # the open-loop stimuli in a seeded random order (as in `loop`)
+        order = np.random.default_rng(provenance.seed + 1).permutation(n_ticks)
+
+    last = _adapter(body.reset)
+    if not isinstance(last, pose.BodyState) or last.time_us != 0:
+        raise ContractError("a body starts at time 0")
+    initial = last
+    spikes: list[SpikeEvent] = []
+    delivered = 0
+    ticks = []
+    commands: tuple[Command, ...] = ()
+    for step in steps:
+        t = step.time_us
+        k = t // clock.body_us
+        if step.phase == "command":
+            eligible = delivered
+            while (
+                eligible < len(spikes)
+                and spikes[eligible].time_us + clock.latency_us <= t
+            ):
+                eligible += 1
+            commands = _commands(
+                decoder(tuple(spikes[delivered:eligible])), compiled, mode
+            )
+            delivered = eligible
+        elif step.phase == "sample":
+            if last.time_us != t:
+                raise ContractError("the last stepped state is not at this tick")
+            if arm in ("intact", "silenced"):
+                seen = last
+            else:
+                seen = _held(initial, int(order[k]) * clock.body_us)
+        elif step.phase == "stimulus":
+            if replay is not None:
+                stim = replay.ticks[k].stimulus  # what produced the replayed counts
+            else:
+                stim = tuple(float(v) for v in stimulus(seen.time_us, seen))
+        elif step.phase == "input":
+            if replay is not None:
+                counts = np.asarray(replay.ticks[k].input_counts, dtype=np.int64)
+            else:
+                rates = np.asarray(transducer(stim), dtype=float)
+                if rates.shape != (len(input_ids),) or not (
+                    np.isfinite(rates).all() and (rates >= 0).all()
+                ):
+                    raise ContractError(
+                        "the transducer must give one finite rate >= 0 per input"
+                    )
+                counts = rng.poisson(
+                    rates * clock.neural_us / 1e6, (per, len(input_ids))
+                )
+            _adapter(runtime.schedule_inputs, counts, what="runtime")
+        elif step.phase == "neural":
+            start = k * per
+            _adapter(runtime.advance_to, start + per, what="runtime")
+            bits = runtime.traced_spikes(start, start + per)
+            new = [
+                SpikeEvent(traced_ids[int(j)], (start + int(i)) * clock.neural_us)
+                for i, j in zip(*np.nonzero(bits), strict=True)
+            ]
+            spikes += new
+        else:
+            state, contacts = _adapter(body.step, commands, clock.body_us)
+            if (
+                not isinstance(state, pose.BodyState)
+                or state.time_us != t + clock.body_us
+            ):
+                raise ContractError("the body returned a state off the body grid")
+            ticks.append(
+                Tick(
+                    t,
+                    tuple((a.name, a.mujoco_id, v) for a, v in commands),
+                    seen,
+                    stim,
+                    tuple(tuple(int(c) for c in row) for row in counts),
+                    tuple(new),
+                    state,
+                    _contacts(contacts),
+                )
+            )
+            last = state
+    record = Record(
+        provenance,
+        clock,
+        arm,
+        mode,
+        tuple(sorted(evidence.items())),
+        optics_config_sha256,
+        run_identity_sha256,
+        tuple(input_ids),
+        tuple(traced_ids),
+        tuple(silenced_ids),
+        tuple(ticks),
+    )
+    record.validate()
+    return record
+
+
+def _commands(raw, compiled: dict[str, int], mode: str) -> tuple[Command, ...]:
+    out = []
+    for actuator, value in raw:
+        if not isinstance(actuator, pose.ActuatorRef) or not _finite(value):
+            raise ContractError("a command is an actuator and a finite value")
+        if mode == "biological":
+            pose.command(actuator, compiled)  # the motor map refuses every row today
+        elif compiled.get(actuator.name) != actuator.mujoco_id:
+            raise ContractError(
+                f"{actuator.name} is not compiled actuator {actuator.mujoco_id}"
+            )
+        out.append((actuator, float(value)))
+    return tuple(out)
+
+
+def _contacts(raw) -> tuple[Contact, ...]:
+    out = tuple(tuple(c) for c in raw)
+    if any(
+        len(c) != 2
+        or type(c[0]) is not str
+        or not c[0]
+        or not _finite(c[1])
+        or c[1] < 0
+        for c in out
+    ):
+        raise ContractError("a contact is a name and a finite normal force >= 0 in N")
+    return tuple((name, float(force)) for name, force in out)
+
+
+def replay_parity(original: Record, replayed: Record) -> None:
+    """Refuse unless the replay fed the same counts and produced the same spikes."""
+    if replayed.arm != "replay" or original.arm == "replay":
+        raise ContractError("compare a recorded arm with its replay")
+    if len(original.ticks) != len(replayed.ticks):
+        raise ContractError("the replay has a different length")
+    for a, b in zip(original.ticks, replayed.ticks, strict=True):
+        if a.input_counts != b.input_counts:
+            raise ContractError(f"input counts differ at {a.time_us} us")
+        if a.spikes != b.spikes:
+            raise ContractError(f"spikes differ at {a.time_us} us")

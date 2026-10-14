@@ -115,6 +115,9 @@ three stay off unless a lock names them.
 | Faster per-neuron membranes, bit-identical (#182)                       | [model](model.md#per-neuron-membranes-optional-2026-10-13)                                            |
 | Graded potentials in the 3D replay; eye-on live scene                   | [viz](viz.md#graded-neurons)                                                                          |
 | Optional WebXR observer (experimental, unqualified on a headset, #177)  | [viz](viz.md#optional-webxr-observation-experimental), [ADR](adr-virtual-experimental-environment.md) |
+| B6 v2 pose contract (G1, #178); body-wiring ADR accepted 2026-10-14     | [embodiment](embodiment.md#b6-v2-6-dof-body-and-eye-pose-g1-178), [ADR](adr-body-wiring.md)           |
+| Geometric optics onto the measured columns (G2, #179)                   | [eye](eye.md#eye-geometry-84)                                                                         |
+| G5 schedule, evidence gate and record, synthetic only (#180)            | [embodiment](embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)                         |
 
 ## Blocked on evidence
 
@@ -174,7 +177,7 @@ about the fly.
 
 ## Completion plan
 
-Status on 2026-10-14 (after v0.8.46). flymsg is complete when a model prediction passes an
+Status on 2026-10-14 (after v0.8.47). flymsg is complete when a model prediction passes an
 independent held-out benchmark (M4, [#36](https://github.com/gianlucamazza/flymsg/issues/36));
 everything else serves that. An open problem closes with a measurement, a lock and a run,
 never with a chosen value, so the order follows the evidence that exists. The
@@ -184,18 +187,18 @@ it is a plan, not a result.
 
 **1. Now: nothing outside is needed.**
 
-| Issue                                                      | Work                                                                                                                                                   | Exit                                                                           |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Done: baseline of the live scenes (#153); `scripts/bench_check.py` compares a new run                                                                  | Baseline committed; regression thresholds from it; a physical phone stays open |
-| [#139](https://github.com/gianlucamazza/flymsg/issues/139) | Done: v1 undecided (Δρ +0.015, interval −0.011 to +0.054); count stays                                                                                 | More power needs measured pairs across more LHN types                          |
-| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Done (#142): the muscle is the type's; neuron-level matches recorded (140 of 623 disagree)                                                             | Muscle → body actuator (#19, #35) stays blocked on evidence                    |
-| [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Locked (`song.yaml` v1): Pacheco et al. 2021 pulse/sine sign per neuropil with a temporal-only JO input ("JO-A ≈ pulse" is not supported); not yet run | Run after T4/T5 v4: model and no-go first, then the data                       |
+| Issue                                                      | Work                                                                                                                                                       | Exit                                                                           |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Done: baseline of the live scenes (#153); `scripts/bench_check.py` compares a new run                                                                      | Baseline committed; regression thresholds from it; a physical phone stays open |
+| [#139](https://github.com/gianlucamazza/flymsg/issues/139) | Done: v1 undecided (Δρ +0.015, interval −0.011 to +0.054); count stays                                                                                     | More power needs measured pairs across more LHN types                          |
+| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Done (#142): the muscle is the type's; neuron-level matches recorded (140 of 623 disagree)                                                                 | Muscle → body actuator (#19, #35) stays blocked on evidence                    |
+| [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Locked (`song.yaml` v1): Pacheco et al. 2021 pulse/sine sign per neuropil with a temporal-only JO input ("JO-A ≈ pulse" is not supported); run in progress | Run after T4/T5 v4: model and no-go first, then the data                       |
 
 **2. Next: the evidence exists and must be read and fixed in a lock.**
 
 | Issue                                                      | Work                                                                                                                                                                                               |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v4 locked: dark anchor, lamina → medulla gain 1–16, Behnia delays (verified); not yet run                                                                                                    |
+| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v4 locked: dark anchor, lamina → medulla gain 1–16, Behnia delays (verified); run in progress                                                                                                |
 | [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc, replicated by v8 under the exact clamp; relational APL tests still open                                                                                      |
 | [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | A transducer from von Reyn et al. 2017 (ModelDB 230400) into LC4 and LPLC2, scored on the model's DNp01 at held-out r/v (Ache et al. 2019); the traces are not deposited, a data request is needed |
 | Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                                                                                                            |
@@ -207,7 +210,9 @@ predictions (what value the result would need), never a chosen value.
 
 The sensorimotor gates G1 (B6 v2 pose contract, #178) and G2 (geometric optics onto the
 columns, #179) are implemented; G2 runs on the real eye once the micro-CT → NeuroMechFly head
-registration has a source.
+registration has a source. G5 (#180) has its schedule, evidence gate and record on synthetic
+components; the [body-wiring ADR](adr-body-wiring.md) is accepted, and a biological closed
+loop refuses until G3 and G4 are measured.
 
 **4. Blocked on hardware.** A D3D12 adapter (#39), a Series S (#40) and a headset for the WebXR
 observer (#177); until then the native executor refuses whatever is not qualified, and the

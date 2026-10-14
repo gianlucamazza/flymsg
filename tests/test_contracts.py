@@ -14,6 +14,7 @@ import pytest
 from flymsg import (
     behavior,
     benchmarks,
+    closedloop,
     data,
     embodiment,
     manifest,
@@ -174,6 +175,12 @@ def test_b6_embodiment_contract():
     assert embodiment.CLOCK == "flymsg.clock/us-v1"
     assert embodiment.Clock().neural_us == round(sim.Params.dt * 1000)
     assert pose.SCHEMA == "flymsg.embodiment/v2" and pose.CLOCK == embodiment.CLOCK
+    assert closedloop.SCHEMA == "flymsg.closedloop/v1"
+    # a biological closed loop refuses anything unmeasured (body-wiring ADR)
+    with pytest.raises(embodiment.ContractError):
+        closedloop.require(
+            dict.fromkeys(closedloop.COMPONENTS, "engineered"), "biological"
+        )
     # the only path from a motor neuron to a body refuses every name while all rows are unmapped
     doc = motor_map.assert_locked()
     for row in [*doc["actuators"], *doc["neurons"]]:
