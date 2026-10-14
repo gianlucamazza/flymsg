@@ -13,22 +13,26 @@ next control tick. Then, per body tick [t, t + body):
 Every component carries an evidence status. A biological run refuses unless all are
 `measured`; none is today (transducer, registration and motor map are not), so only
 synthetic runs execute, and their record says so. The statuses are declared by the caller;
-the motor map is also enforced in code, through `pose.command`. No body is wired here: the
-body is an adapter passed in, and the tests use a toy one. M0 v1, B6 v2, M2 (`loop`) and
+the motor map is also enforced in code, through `pose.command`. The body is an adapter
+passed in: a toy one in the tests, FlyGym's NeuroMechFly in `flymsg.flygym_body`. M0 v1, B6 v2, M2 (`loop`) and
 `CpuRuntime` are unchanged.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
+import os
+import re
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, fields
+from pathlib import Path
 from typing import Protocol
 
 import numpy as np
 
-from flymsg import pose
+from flymsg import optics, pose, runstore
 from flymsg.embodiment import Clock, ContractError, SpikeEvent, integer
 from flymsg.runtime import CpuRuntime
 
@@ -239,6 +243,19 @@ def _state(d: dict) -> pose.BodyState:
     )
 
 
+def _tick(t: dict) -> Tick:
+    return Tick(
+        t["time_us"],
+        tuple(tuple(c) for c in t["commands"]),
+        _state(t["state"]),
+        tuple(t["stimulus"]),
+        tuple(tuple(r) for r in t["input_counts"]),
+        tuple(SpikeEvent(**s) for s in t["spikes"]),
+        _state(t["stepped"]),
+        tuple(tuple(c) for c in t["contacts"]),
+    )
+
+
 def from_json(text: str) -> Record:
     """Parse a closed-loop record; another schema, an unknown or missing field refuses."""
     try:
@@ -258,19 +275,7 @@ def from_json(text: str) -> Record:
             tuple(d["input_ids"]),
             tuple(d["traced_ids"]),
             tuple(d["silenced_ids"]),
-            tuple(
-                Tick(
-                    t["time_us"],
-                    tuple(tuple(c) for c in t["commands"]),
-                    _state(t["state"]),
-                    tuple(t["stimulus"]),
-                    tuple(tuple(r) for r in t["input_counts"]),
-                    tuple(SpikeEvent(**s) for s in t["spikes"]),
-                    _state(t["stepped"]),
-                    tuple(tuple(c) for c in t["contacts"]),
-                )
-                for t in d["ticks"]
-            ),
+            tuple(_tick(t) for t in d["ticks"]),
             d["schema"],
         )
         record.validate()
@@ -296,6 +301,38 @@ def _held(state: pose.BodyState, time_us: int) -> pose.BodyState:
     return pose.BodyState(time_us, state.pose, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
 
 
+def optical(
+    columns: optics.Columns,
+    registration: pose.Registration,
+    mounts: tuple[pose.EyeMount, pose.EyeMount],
+    spheres: tuple[optics.Sphere, ...],
+    acceptance_deg: float,
+) -> tuple[Callable[[int, pose.BodyState], tuple[float, ...]], str]:
+    """The ADR's stimulus step on `optics.sample`, and its configuration hash.
+
+    Per column with a lens, the largest single-sphere coverage of its acceptance profile:
+    `optics` does not subtract overlapping silhouettes, so where they overlap this is a
+    lower bound on the dark share. Columns without a lens are left out, the same ones at
+    every tick. The world is read at the time of the state given, so the stimulus is a pure
+    function of (time, state). The columns, spheres and mounts must not be mutated during
+    a run: the hash names them, it does not watch them.
+    """
+    config = optics.config_sha256(
+        columns, registration, mounts, spheres, acceptance_deg
+    )
+    has = np.isfinite(columns.direction).all(axis=1)
+
+    def stimulus(time_us: int, state: pose.BodyState) -> tuple[float, ...]:
+        if state.time_us != time_us:
+            raise ContractError("the stimulus is read at the state's own time")
+        sample = optics.sample(
+            columns, registration, mounts, state, spheres, acceptance_deg
+        )
+        return tuple(float(v) for v in sample.coverage[:, has].max(axis=0))
+
+    return stimulus, config
+
+
 def run(
     runtime: CpuRuntime,
     body: Body,
@@ -316,6 +353,8 @@ def run(
     run_identity_sha256: str,
     silenced_ids: tuple[int, ...] = (),
     replay: Record | None = None,
+    checkpoint_dir: Path | None = None,
+    checkpoint_every_us: int | None = None,
 ) -> Record:
     """One arm of a closed loop in the ADR order.
 
@@ -327,6 +366,15 @@ def run(
     the caller declared). `stimulus` must be a pure function of the time and state it is
     given; `transducer` returns one rate in Hz per input; `decoder` turns delivered spikes
     into actuator commands.
+
+    With `checkpoint_dir`, the loop writes a checkpoint every `checkpoint_every_us` at a
+    control tick (runtime, body and loop state, bound by their hashes) and, if the directory
+    holds one, resumes from it: the caller passes a fresh runtime and a body of the same
+    construction, and the arguments must be those of the checkpointed run. A resumed run's
+    record equals the uninterrupted one. The body must offer `snapshot(path)` and
+    `restore(path)`. The identity binds the run's arguments, not the callables or
+    `compiled`: those must be the same and `transducer` and `decoder` stateless, which only
+    the caller can ensure.
     """
     require(evidence, mode)
     provenance.validate()
@@ -362,18 +410,65 @@ def run(
         # the open-loop stimuli in a seeded random order (as in `loop`)
         order = np.random.default_rng(provenance.seed + 1).permutation(n_ticks)
 
-    last = _adapter(body.reset)
-    if not isinstance(last, pose.BodyState) or last.time_us != 0:
-        raise ContractError("a body starts at time 0")
-    initial = last
-    spikes: list[SpikeEvent] = []
+    identity = runstore.digest(
+        {
+            "schema": SCHEMA,
+            "clock": asdict(clock),
+            "duration_us": duration_us,
+            "arm": arm,
+            "mode": mode,
+            "evidence": sorted(evidence.items()),
+            "provenance": asdict(provenance),
+            "ids": [list(input_ids), list(traced_ids), list(silenced_ids)],
+            "hashes": [optics_config_sha256, run_identity_sha256],
+            "replay": None if replay is None else runstore.digest(replay.to_json()),
+        }
+    )
+    if (checkpoint_dir is None) != (checkpoint_every_us is None):
+        raise ContractError("a checkpoint needs both a directory and an interval")
+    if checkpoint_dir is not None:
+        integer(checkpoint_every_us, "checkpoint_every_us", 1)
+        if checkpoint_every_us % clock.control_us:
+            raise ContractError("checkpoints fall on control ticks")
+        checkpoint_dir = Path(checkpoint_dir)
+    if checkpoint_dir is not None and (checkpoint_dir / DONE).exists():
+        return _finished(checkpoint_dir, identity)
+    resumed = (
+        _resume(checkpoint_dir, identity, runtime, body)
+        if checkpoint_dir is not None and (checkpoint_dir / LOOP).exists()
+        else None
+    )
+    if resumed is None:
+        last = _adapter(body.reset)
+        if not isinstance(last, pose.BodyState) or last.time_us != 0:
+            raise ContractError("a body starts at time 0")
+        initial, spikes, ticks, segments, begin = last, [], [], [], 0
+    else:
+        initial, last, spikes, ticks, rng_state, segments, begin = resumed
+        rng.bit_generator.state = rng_state
     delivered = 0
-    ticks = []
     commands: tuple[Command, ...] = ()
     for step in steps:
         t = step.time_us
         k = t // clock.body_us
+        if t < begin:
+            continue
         if step.phase == "command":
+            if (
+                checkpoint_dir is not None
+                and t > begin
+                and t % checkpoint_every_us == 0
+            ):
+                # delivered spikes live in the ticks; keep only the pending ones
+                spikes, delivered = spikes[delivered:], 0
+                segments = _checkpoint(
+                    checkpoint_dir,
+                    identity,
+                    runtime,
+                    body,
+                    t,
+                    (initial, last, spikes, ticks, rng.bit_generator.state, segments),
+                )
             eligible = delivered
             while (
                 eligible < len(spikes)
@@ -396,6 +491,10 @@ def run(
                 stim = replay.ticks[k].stimulus  # what produced the replayed counts
             else:
                 stim = tuple(float(v) for v in stimulus(seen.time_us, seen))
+                if not stim or not all(math.isfinite(v) for v in stim):
+                    raise ContractError(
+                        "the stimulus needs one finite value per column"
+                    )
         elif step.phase == "input":
             if replay is not None:
                 counts = np.asarray(replay.ticks[k].input_counts, dtype=np.int64)
@@ -454,7 +553,134 @@ def run(
         tuple(ticks),
     )
     record.validate()
+    if checkpoint_dir is not None:
+        # a finished run answers a rerun with its record, never by computing again
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        runstore.atomic_json(
+            checkpoint_dir / DONE,
+            {
+                "schema": SCHEMA + "/done",
+                "identity": identity,
+                "record": json.loads(record.to_json()),
+            },
+        )
     return record
+
+
+LOOP = "loop.json"
+DONE = "record.json"
+# the files a checkpoint writes; cleanup touches nothing else in the directory
+OWNED = re.compile(r"(neural|body)-\d+\.npz(\.tmp)?|ticks-\d+\.json")
+
+
+def _sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _fsync(path: Path) -> None:
+    with path.open("rb") as stream:
+        os.fsync(stream.fileno())
+
+
+def _checkpoint(directory, identity, runtime, body, time_us, loop) -> list:
+    """Write the runtime, the body and the ticks since the previous checkpoint under names
+    of this tick, flush them, then the loop state that binds them by hash; files no loop
+    state names go only after the new one is in place. Returns the tick segments so far."""
+    initial, last, pending, ticks, rng_state, segments = loop
+    directory.mkdir(parents=True, exist_ok=True)
+    neural = directory / f"neural-{time_us}.npz"
+    physics = directory / f"body-{time_us}.npz"
+    segment = directory / f"ticks-{time_us}.json"
+    _adapter(runtime.checkpoint, neural, what="runtime")
+    _adapter(body.snapshot, physics)
+    done = sum(n for _, _, n in segments)
+    try:
+        segment.write_bytes(runstore.canonical([asdict(t) for t in ticks[done:]]))
+    except ValueError as err:  # a non-finite value cannot be stored
+        raise ContractError(f"the ticks cannot be checkpointed: {err}") from err
+    for path in (neural, physics, segment):
+        _fsync(path)
+    runstore.sync_dir(directory)
+    segments = [*segments, [segment.name, _sha256_file(segment), len(ticks) - done]]
+    runstore.atomic_json(
+        directory / LOOP,
+        {
+            "schema": SCHEMA + "/checkpoint",
+            "identity": identity,
+            "time_us": time_us,
+            "files": {
+                "neural": [neural.name, _sha256_file(neural)],
+                "body": [physics.name, _sha256_file(physics)],
+            },
+            "segments": segments,
+            "initial": asdict(initial),
+            "last": asdict(last),
+            "pending": [asdict(s) for s in pending],  # spikes not yet delivered
+            "rng": rng_state,
+        },
+    )
+    keep = {neural.name, physics.name, LOOP, *(name for name, _, _ in segments)}
+    for old in directory.iterdir():
+        if old.is_file() and old.name not in keep and OWNED.fullmatch(old.name):
+            old.unlink()
+    return segments
+
+
+def _finished(directory: Path, identity: str) -> Record:
+    try:
+        d = json.loads((directory / DONE).read_text())
+        if d.get("schema") != SCHEMA + "/done" or d.get("identity") != identity:
+            raise ContractError("the finished record belongs to another run")
+        text = json.dumps(d["record"], sort_keys=True, separators=(",", ":"))
+    except ContractError:
+        raise
+    except (AttributeError, KeyError, TypeError, ValueError, OSError) as err:
+        raise ContractError(f"malformed finished record: {err!r}") from err
+    return from_json(text)
+
+
+def _resume(directory, identity, runtime, body):
+    try:
+        d = json.loads((directory / LOOP).read_text())
+        if d.get("schema") != SCHEMA + "/checkpoint" or d.get("identity") != identity:
+            raise ContractError("the checkpoint belongs to another run")
+        paths = {}
+        for key, (name, digest) in d["files"].items():
+            paths[key] = directory / name
+            if _sha256_file(paths[key]) != digest:
+                raise ContractError(f"the {key} checkpoint does not match its hash")
+        ticks = []
+        for name, digest, count in d["segments"]:
+            if _sha256_file(directory / name) != digest:
+                raise ContractError(f"the tick segment {name} does not match its hash")
+            part = json.loads((directory / name).read_text())
+            if len(part) != count:
+                raise ContractError(f"the tick segment {name} has the wrong length")
+            ticks += [_tick(t) for t in part]
+        _adapter(runtime.restore, paths["neural"], what="runtime")
+        _adapter(body.restore, paths["body"])
+        last = _state(d["last"])
+        time_us = d["time_us"]
+        integer(time_us, "checkpoint time")
+        if (
+            last.time_us != time_us
+            or runtime.step * runtime.tick_us != time_us
+            or (ticks and ticks[-1].stepped != last)
+        ):
+            raise ContractError("the checkpoint parts disagree on its time")
+        return (
+            _state(d["initial"]),
+            last,
+            [SpikeEvent(**s) for s in d["pending"]],
+            ticks,
+            d["rng"],
+            [list(seg) for seg in d["segments"]],
+            time_us,
+        )
+    except ContractError:
+        raise
+    except (AttributeError, KeyError, TypeError, ValueError, OSError) as err:
+        raise ContractError(f"malformed checkpoint: {err!r}") from err
 
 
 def _commands(raw, compiled: dict[str, int], mode: str) -> tuple[Command, ...]:
