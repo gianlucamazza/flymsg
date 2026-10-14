@@ -74,7 +74,7 @@ The native path continues to refuse electrical fixtures until explicitly qualifi
 
 ## Solver decision for large components (#155)
 
-Status: proposed, 2026-10-14. Needs the user's acceptance before a scored lock names it.
+Status: accepted by the user, 2026-10-14. Locks may name `flymsg.gap/continuous-clamp-taylor-v1`.
 
 Measurement: on the KC v6/v7 couplings one connected component holds 688 cells (726 with
 lLN1_bc). Each new refractory mask needs a dense exponential of about 2,100 x 2,100, 1.1-1.6
