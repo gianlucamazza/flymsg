@@ -418,6 +418,16 @@ on removing chemical synapses rather than on electrical coupling; the result doe
 the eLNs are electrical, and the default model is unchanged. Outputs:
 `results/kc-sparseness/v7.executions/f8549bf7414656b26cf37dcf99811142bb3b1b3a7743b79d5ebeda941457c3a5/output/`.
 
+**Version 8 (locked 2026-10-14, no run).** Version 7 under the continuous clamp, integrated by
+the Taylor action (`flymsg.gap/continuous-clamp-taylor-v1`, #155), with fresh seeds 95–97.
+Version 7's boundary reset was qualified on 50 ms of one odor and seed; the Taylor action is
+exact to rounding by its truncation bound, and on 50 ms of arm E of each eLN set (seed 0) it
+reproduced the dense continuous clamp spike for spike
+(`docs/evidence/gap-taylor-qualification-2026-10-14.json`) at about the boundary reset's cost,
+so the whole run can use the exact integrator. Arms, bounds and decision are version 7's; the
+version 7 result was read before this lock, so version 8 tests whether it survives the exact
+integrator and new seeds, not a new hypothesis.
+
 ## Electrical synapses (optional, 2026-10-13)
 
 `sim.Gap` (#85) couples pairs of neurons through their potentials. A coupled neuron follows

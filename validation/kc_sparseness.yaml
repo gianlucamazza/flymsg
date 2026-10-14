@@ -1,20 +1,23 @@
-# Kenyon cell sparseness diagnostic (issues 95, 85). Version 7, fixed 2026-10-13 after the
-# interrupted v6 run. Version 1 is the file at b096b4a, version 2 at 374309e, version 3 at
-# c1cf896, version 4 at b1116af, version 5 at 00aff9c, version 6 at dbbfcf2. A diagnosis, not a fix: the default
+# Kenyon cell sparseness diagnostic (issues 95, 85). Version 8, fixed 2026-10-14 after the
+# version 7 result. Version 1 is the file at b096b4a, version 2 at 374309e, version 3 at
+# c1cf896, version 4 at b1116af, version 5 at 00aff9c, version 6 at dbbfcf2, version 7 at
+# 45c0641. A diagnosis, not a fix: the default
 # model is not changed by the result. Changing a locked field requires incrementing `version`
 # and updating `content_sha256` and flymsg.kc_sparseness.VERSION_HASHES. `flymsg
 # kc-sparseness` prints this file.
-version: 7
-content_sha256: de4274eb0bd689aefe8c9bcc9318eb40fbcdb688b9da61980a559f6c040896ef
+version: 8
+content_sha256: 016ad8ca4d274f9eef0f40c568b672df208db2fbeffd7f350a2ed226880f7223
+yaml_subset: 2
+evidence: [eln_pn_coupling, eln_spike_amplitude, sister_pn_coupling, kc_odor_sparseness, kc_odor_overlap]
 
 issue: 95
 supersedes:
-  version: 6
-  verdict: not run
-  reason: "Version 6 locked the continuous refractory clamp (flymsg.gap/continuous-clamp-v1). On its coupled arms the eLN-PN junctions join 688 cells (lLN2T) or 726 (lLN2T+lLN1_bc) in one component, and each new refractory mask needs a dense exponential of about 2,100 x 2,100: measured 1.08 s per map, 46 maps and no cache hit in the first 10 ms (51.7 s against 1.2 s for the boundary reset), so the 96 coupled simulations would take days. The run was stopped after the five uncoupled arms, whose results were saved and not read. Version 7 is version 6 with the boundary reset that version 5 used, qualified against the continuous clamp before this lock (boundary_qualification), and fresh seeds."
+  version: 7
+  verdict: "within: E/lLN2T+lLN1_bc, F/lLN2T+lLN1_bc, E/lLN2T+lLN1_bc+spike0.5ms, E/lLN2T+lLN1_bc+spike1ms, E/lLN2T+lLN1_bc+spike2ms, F/lLN2T+lLN1_bc+spike0ms, F/lLN2T+lLN1_bc+spike0.5ms, F/lLN2T+lLN1_bc+spike1ms, F/lLN2T+lLN1_bc+spike2ms"
+  reason: "Version 7 ran with the boundary reset (flymsg.gap/boundary-reset-v1), qualified against the continuous clamp on 50 ms of one odor and seed only, because the dense per-mask exponential of the continuous clamp made the coupled arms take days (#155). The truncated Taylor action (flymsg.gap/continuous-clamp-taylor-v1, ADR accepted 2026-10-14) integrates the same continuous clamp to rounding at about the boundary reset's cost. Version 8 is version 7 under the continuous clamp, with fresh seeds, so that the result does not rest on the 50 ms qualification."
 question: "With only the local neurons Eckstein et al. 2024 liken to the cholinergic eLNs (lLN2T_a/b/c; with lLN1_bc as a variant) treated as electrical partners of PNs, at the measured asymmetric coupling with sister PNs coupled as measured and eLN spikes crossing as 40 mV spikelets of 0.5-2 ms, and every other cholinergic local neuron kept chemical, do Hige et al. 2015's two odors recruit a sparse, distinct set of Kenyon cells?"
 
-seen_before_lock: "Versions 1-5 (results/kc-sparseness/v1-v5; seeds 60-62, 70-72, 80-82, 83-85, 86-88), the KC -> MBON11 run (seeds 50-52), and version 6, interrupted: its five uncoupled arms (A, E and F per eLN set, seeds 89-91) were computed and saved in the run's step store, and none of their values was read before this lock. Engineering measurements on the lLN2T coupling, seed 0, which no lock uses: component sizes, the cost of the continuous clamp over 10 ms, and the boundary_qualification runs. Version 7 changes only the integrator, the seeds and these notes."
+seen_before_lock: "Versions 1-5 (results/kc-sparseness/v1-v5; seeds 60-62, 70-72, 80-82, 83-85, 86-88), the KC -> MBON11 run (seeds 50-52), and version 6, interrupted: its five uncoupled arms (A, E and F per eLN set, seeds 89-91) were computed and saved in the run's step store, and none of their values was read before this lock. Engineering measurements on the lLN2T coupling, seed 0, which no lock uses: component sizes, the cost of the continuous clamp over 10 ms, and the boundary_qualification runs. Version 7 (results/kc-sparseness/v7.executions/f8549bf.../output, seeds 92-94): its verdict, per-arm fractions and overlaps were read before this lock. Engineering runs of the Taylor action against the dense maps (docs/evidence/gap-taylor-qualification-2026-10-14.json, seed 0). Version 8 changes only the integrator, the seeds and these notes; every arm, bound and decision rule is version 7's."
 
 sources:
   sparseness: "Turner, Bazhenov & Laurent 2008, J Neurophysiol 99:734, doi:10.1152/jn.01283.2007, Fig 2A: an odor evokes spikes in 6 +/- 5% of KCs (n = 71)"
@@ -43,7 +46,7 @@ protocol:
   unmeasured: "ORN types without a DoOR response for the odorant get no input"
   odor_ms: 1000.0
   duration_ms: 1000.0
-  seeds: [92, 93, 94]
+  seeds: [95, 96, 97]
   kc: "^KC"
   apl: APL
   apl_n: 2
@@ -79,8 +82,8 @@ coupling:
   spike_ms_from: "unmeasured: from no spikelet to a 2 ms one around the ~1 ms width of an insect spike; scanned, not chosen"
   arm_names: "<base>/<set>+spike<ms>ms, e.g. E/lLN2T+spike1ms; 16 coupled arms"
 
-electrical_semantics: flymsg.gap/boundary-reset-v1
-boundary_qualification: "scripts/qualify_boundary_reset.py, docs/evidence/kc-boundary-qualification-2026-10-13.json: arm E/lLN2T, 3-octanol, 50 ms, seed 0, spikelets 0 and 1 ms; the boundary reset and the continuous clamp give the same spike count for every neuron (9,798 and 9,634 spikes; Kenyon cells 700 and 608, PNs 1,680 and 1,677) and the same first-spike times, in 2-5 s against 671-696 s. Qualifies 50 ms of one odor and seed, not a whole run."
+electrical_semantics: flymsg.gap/continuous-clamp-taylor-v1
+taylor_qualification: "scripts/qualify_taylor.py, docs/evidence/gap-taylor-qualification-2026-10-14.json: arm E of each eLN set, 3-octanol, 50 ms, seed 0, spikelets 0 and 1 ms; the Taylor action (7 terms) and the dense per-mask maps give the same spike count for every neuron and the same first-spike times (5,255-9,798 spikes), in 3.6-4.9 s against 1,412-1,655 s; one 1000 ms odor took 14.7 s."
 
 compensations:
   - "Chemical contacts stand in for the unseen electrical ones: EM does not show gap junctions. The eLN sets are a morphological match (Eckstein et al. 2024), not a genetic one; lLN1_bc only neighbours the match."
@@ -88,7 +91,7 @@ compensations:
   - "Junctions do not rectify; the depolarizing excess the fly shows is carried by the spikelets, whose duration is not measured and is scanned."
   - "The spikelet is a rectangle of the full spike amplitude; PN spikes do not cross (their amplitude at the junction is not measured)."
   - "Discrete events act at step boundaries (0.1 ms), as everywhere in the model."
-  - "Refractory coupled cells are reset to rest at step boundaries (flymsg.gap/boundary-reset-v1, as version 5) instead of being clamped through the step; the difference measured against the continuous clamp is in boundary_qualification."
+  - "The continuous clamp is integrated by a Taylor series truncated where its bound falls below the float64 unit roundoff (flymsg.gap/continuous-clamp-taylor-v1); against the dense maps the spikes agree for every neuron in taylor_qualification."
 
 decides:
   sparse_min: 0.01
@@ -110,6 +113,9 @@ reported:
   per_duration:
     decides: false
     what: "KC and PN fractions of each coupled arm by spikelet duration, to see whether the answer depends on it"
+  against_v7:
+    decides: false
+    what: "each arm's KC fractions and overlap next to version 7's (boundary reset, seeds 92-94)"
   per_set:
     decides: false
     what: "KC and PN fractions of each arm by eLN set (arms.csv); the result note sets them next to v5's whole cholinergic ALLN class (results/kc-sparseness/v5)"

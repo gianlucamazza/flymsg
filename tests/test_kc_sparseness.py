@@ -10,10 +10,10 @@ from flymsg import cli, kc_sparseness
 
 def test_locked_to_the_measured_bounds_and_the_plasticity_odors():
     doc = kc_sparseness.assert_matches_code()
-    assert doc["version"] == 7
-    assert kc_sparseness.content_hash(doc) == kc_sparseness.VERSION_HASHES[7]
+    assert doc["version"] == 8
+    assert kc_sparseness.content_hash(doc) == kc_sparseness.VERSION_HASHES[8]
     assert list(doc["arms"]) == ["A", "E", "F"]
-    assert doc["supersedes"]["verdict"] == "not run"
+    assert doc["supersedes"]["verdict"].startswith("within")
     assert [a[0] for a in kc_sparseness.plain_arms(doc)] == [
         "A",
         "E/lLN2T",
@@ -66,6 +66,7 @@ def test_prints_the_protocol_without_data(monkeypatch, capsys, tmp_path):
         ([83, 84, 85], 4),
         ([86, 87, 88], 5),
         ([89, 90, 91], 6),
+        ([92, 93, 94], 7),
     ],
 )
 def test_v3_refuses_spent_seeds(seeds, spent):
@@ -115,8 +116,12 @@ def test_the_eln_sets_are_eckstein_types_and_name_the_current_integrator():
     with pytest.raises(kc_sparseness.SparsenessError, match="current integrator"):
         kc_sparseness.assert_matches_code(doc)
     doc = kc_sparseness.load()
-    del doc["boundary_qualification"]
-    with pytest.raises(kc_sparseness.SparsenessError, match="qualification"):
+    doc["electrical_semantics"] = "flymsg.gap/boundary-reset-v1"
+    with pytest.raises(kc_sparseness.SparsenessError, match="boundary reset needs"):
+        kc_sparseness.assert_matches_code(doc)
+    doc = kc_sparseness.load()
+    del doc["taylor_qualification"]
+    with pytest.raises(kc_sparseness.SparsenessError, match="Taylor action needs"):
         kc_sparseness.assert_matches_code(doc)
 
 
@@ -295,9 +300,11 @@ def test_v5_keeps_the_boundary_model_that_was_locked_before_its_run():
     assert kc_sparseness.electrical_semantics(v5) == electrical.BOUNDARY_SEMANTICS
     v6 = {"version": 6, "coupling": {}}
     assert kc_sparseness.electrical_semantics(v6) == electrical.SEMANTICS
+    v7 = {"version": 7, "coupling": {}, "electrical_semantics": electrical.SEMANTICS}
+    assert kc_sparseness.electrical_semantics(v7) == electrical.BOUNDARY_SEMANTICS
     assert (
         kc_sparseness.electrical_semantics(kc_sparseness.load())
-        == electrical.BOUNDARY_SEMANTICS
+        == electrical.TAYLOR_SEMANTICS
     )
     assert sim.Gap.__dataclass_fields__["refractory_mode"].default == "continuous"
 
