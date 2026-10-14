@@ -24,6 +24,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
@@ -568,6 +569,8 @@ def run(
 
 LOOP = "loop.json"
 DONE = "record.json"
+# the files a checkpoint writes; cleanup touches nothing else in the directory
+OWNED = re.compile(r"(neural|body)-\d+\.npz(\.tmp)?|ticks-\d+\.json")
 
 
 def _sha256_file(path: Path) -> str:
@@ -618,7 +621,7 @@ def _checkpoint(directory, identity, runtime, body, time_us, loop) -> list:
     )
     keep = {neural.name, physics.name, LOOP, *(name for name, _, _ in segments)}
     for old in directory.iterdir():
-        if old.name not in keep:
+        if old.is_file() and old.name not in keep and OWNED.fullmatch(old.name):
             old.unlink()
     return segments
 

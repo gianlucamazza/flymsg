@@ -356,12 +356,16 @@ def test_spikes_out_of_order_or_off_grid_refuse():
 
 def test_a_resumed_run_equals_the_uninterrupted_one(tmp_path):
     whole = run()
+    (tmp_path / "notes.txt").write_text("the caller's")
+    (tmp_path / "outputs").mkdir()
     with pytest.raises(ContractError, match="killed"):
         run(body=Crash(23_500), checkpoint_dir=tmp_path, checkpoint_every_us=5000)
     assert sorted(p.name for p in tmp_path.iterdir()) == [
         "body-20000.npz",
         "loop.json",
         "neural-20000.npz",
+        "notes.txt",
+        "outputs",
         "ticks-10000.json",
         "ticks-15000.json",
         "ticks-20000.json",
