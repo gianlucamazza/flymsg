@@ -130,8 +130,9 @@ class Record:
         self.clock.validate()
         if self.arm not in ARMS:
             raise ContractError(f"arm must be one of {', '.join(ARMS)}")
-        names = [e[0] for e in self.evidence]
-        if any(len(e) != 2 for e in self.evidence) or len(set(names)) != len(names):
+        if any(len(e) != 2 for e in self.evidence) or len(
+            {e[0] for e in self.evidence}
+        ) != len(self.evidence):
             raise ContractError("evidence must be unique (component, status) pairs")
         require(dict(self.evidence), self.mode)
         for name in ("optics_config_sha256", "run_identity_sha256"):

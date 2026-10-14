@@ -305,6 +305,7 @@ def _mutate(d, path, value):
         (("ticks", 2, "contacts"), [["ground"]]),
         (("evidence",), [["body", "synthetic"], ["body", "measured"]]),
         (("evidence",), [["body", "synthetic", "x"]]),
+        (("evidence",), [[]]),
         (("ticks", 2, "commands"), [[5, -3, 1.0]]),
         (("ticks", 2, "commands"), [["lift", 0]]),
         (("ticks",), []),
