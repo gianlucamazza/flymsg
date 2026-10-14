@@ -7,9 +7,9 @@
 - **Kenyon cell sparseness v8: within, only with the variant set; v7 replicates** (#85, #95,
   #155). Under the exact continuous clamp (Taylor action) with seeds 95–97, 8 of 10
   lLN2T+lLN1_bc arms are within (2.0–2.3% / 1.4–1.7% of Kenyon cells); the two E arms out miss
-  the 64.6% overlap bound at 65–66%, where v7 lost one. lLN2T alone stays dense (16–23%). Every
-  arm is within 19 cells of its v7 count and coupling moves none by more than 21. Run from the
-  lock commit `ad7b71e` in one attempt (35 min).
+  the 64.6% overlap bound at 65–66%, where v7 lost one. lLN2T alone is not within (16–23% of
+  Kenyon cells, 80–96% shared). Every arm is within 19 cells of its v7 count and coupling moves
+  none by more than 21. Run from the lock commit `ad7b71e` in one attempt (35 min).
 - **T4/T5 v3: robust: neither** (#140, #84). With Mi1, Tm3, Mi4, Mi9 and C3 graded over the in
   vivo voltages of Groschner et al. 2022, no T4 neuron spikes in any of 25 configurations. The
   edge reaches the medulla at ≤1.4 mV (at most about 5% of the measured swings), with the
