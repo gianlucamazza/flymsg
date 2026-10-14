@@ -15,8 +15,11 @@ import pandas as pd
 from flymsg import graph, sim
 
 STATIC = Path(__file__).parent / "viz_static"
-# The bundle the page reads (scene.json, activity.bin, partners.json); the page checks it.
+# The bundle the page reads (scene.json, activity.bin, graded.bin, partners.json); the page
+# checks it.
 SCENE_SCHEMA = "flymsg.scene/v1"
+# graded.bin: signed potential relative to each neuron's reference, in steps of scale/127
+GRADED_STEPS = 127
 
 
 def page_files() -> list[Path]:
@@ -57,10 +60,14 @@ def export(
     result: sim.Result | None = None,
     edges: pd.DataFrame | None = None,
     top: int = 10,
+    graded: dict | None = None,
 ) -> dict:
-    """Write scene.json, activity.bin (replays only), partners.json (with `edges`) and the
-    page into `out`. partners.json holds each neuron's `top` partner types, as `flymsg info`
-    lists them, its totals, and its partners inside the scene."""
+    """Write scene.json, activity.bin (replays only), graded.bin (with `graded`),
+    partners.json (with `edges`) and the page into `out`. partners.json holds each neuron's
+    `top` partner types, as `flymsg info` lists them, its totals, and its partners inside the
+    scene. `graded` = {"rows": neuron rows in `idx`, "mv": (bins, rows) potential relative to
+    each neuron's reference, "scale_mv": (rows,) the potential that reads as full glow,
+    "reference": what 0 mV stands for}; non-spiking neurons glow by that potential."""
     out.mkdir(parents=True, exist_ok=True)
     rates = result.rate(0, result.stim_ms) if result is not None else None
     rows = neurons.iloc[idx]
@@ -94,6 +101,27 @@ def export(
         replay.unlink(
             missing_ok=True
         )  # an anatomy export must not pick up an old replay
+    graded_file = out / "graded.bin"
+    if graded is not None:
+        if result is None:
+            raise ValueError("graded potentials need the replay they come from")
+        position = {int(n): k for k, n in enumerate(idx)}
+        rows = [position[int(n)] for n in graded["rows"]]
+        mv = np.asarray(graded["mv"], dtype=float)
+        scale = np.asarray(graded["scale_mv"], dtype=float)
+        if mv.shape != (counts.shape[0], len(rows)) or scale.shape != (len(rows),):
+            raise ValueError(
+                "graded potentials must be (bins, rows) with one scale per row"
+            )
+        steps = np.clip(np.rint(mv / scale * GRADED_STEPS), -GRADED_STEPS, GRADED_STEPS)
+        steps.astype(np.int8).tofile(graded_file)
+        scene["graded"] = {
+            "k": rows,
+            "scale_mv": [round(float(s), 2) for s in scale],
+            "reference": graded["reference"],
+        }
+    else:
+        graded_file.unlink(missing_ok=True)
     (out / "scene.json").write_text(json.dumps(scene))
     table = out / "partners.json"
     if edges is not None:

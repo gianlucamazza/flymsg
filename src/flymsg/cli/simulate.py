@@ -1,5 +1,6 @@
 """Simulation commands: rates, traces, calibration grids and 3D exports."""
 
+import copy
 import os
 import sys
 from datetime import UTC, datetime
@@ -7,7 +8,7 @@ from datetime import UTC, datetime
 import numpy as np
 import pandas as pd
 
-from flymsg import data, graph, sim, tracing, validate, viz
+from flymsg import data, graph, sim, t4t5, tracing, validate, viz
 from flymsg.cli.common import stamp
 
 
@@ -211,9 +212,71 @@ def cmd_calibrate(a, neurons, edges):
         )
 
 
+def eye_replay(a, neurons, edges):
+    """One edge of the locked T4/T5 protocol at one of its configurations, for the 3D view:
+    the lit photoreceptors, every graded neuron whose potential moves by at least 1 mV, and
+    every spiking neuron that fires. Graded potentials are relative to rest, and to each
+    medulla neuron's dark anchor where the lock sets one; full glow is the configuration's
+    photoreceptor response, LMC range, or the medulla type's measured swing."""
+    polarity, direction = a.eye
+    doc = copy.deepcopy(t4t5.assert_matches_code())
+    proto = doc["protocol"]
+    if polarity not in proto["polarities"] or direction not in proto["directions"]:
+        sys.exit(f"flymsg: --eye takes {proto['polarities']} and {proto['directions']}")
+    grid = t4t5.configurations(doc)
+    if not 0 <= a.eye_config < len(grid):
+        sys.exit(f"flymsg: --eye-config is 0-{len(grid) - 1}")
+    cfg = grid[a.eye_config]
+    proto["directions"], proto["polarities"] = [direction], [polarity]
+    env = proto["envelope"]
+    for key in ("lmc_rate_hz", "medulla_rate_hz", "lamina_medulla_gain"):
+        if key in env:
+            env[key] = [cfg[key]]
+    got = {}
+    t4t5.run(neurons, edges, a.data, doc=doc, on_run=lambda **kw: got.update(kw))
+    r, p = got["result"], sim.Params()
+    order = np.sort(got["graded"].idx)
+    mv = r.graded_v - p.v_rest
+    scale = np.zeros(order.size)
+    scale[np.isin(order, got["receptors"])] = cfg["photoreceptor_mv"]
+    scale[np.isin(order, got["lmc"])] = cfg["lmc_mv"]
+    kind = np.full(order.size, "", dtype=object)
+    kind[np.isin(order, got["receptors"])] = "photoreceptor"
+    kind[np.isin(order, got["lmc"])] = "lamina (L1-L3)"
+    for name, cells in got["medulla_cells"].items():
+        cols = np.searchsorted(order, cells)
+        m = proto["medulla_mv"][name]
+        scale[cols] = max(m["dark"] - m["lowest"], m["highest"] - m["dark"])
+        kind[cols] = "medulla (graded)"
+        if got["anchor"] is not None:
+            mv[:, cols] = r.graded_v[:, cols] - got["anchor"][name]
+    moving = np.abs(mv).max(axis=0) >= 1.0
+    lit = np.isin(order, got["stim"])
+    keep = moving | lit
+    rates = r.rate(0, r.stim_ms)
+    fired = np.setdiff1d(np.flatnonzero(rates > 0), order)
+    idx = np.concatenate([order[keep], fired])
+    groups = [*kind[keep], *["response (spiking)"] * fired.size]
+    graded = {
+        "rows": order[keep],
+        "mv": mv[:, keep],
+        "scale_mv": scale[keep],
+        "reference": "rest; each graded medulla neuron's settled dark potential where "
+        "the lock anchors it",
+    }
+    eye = {
+        "edge": [polarity, direction],
+        "t4t5_version": doc["version"],
+        "configuration": a.eye_config,
+        "seed": proto["seed"],
+        **{k: v for k, v in cfg.items() if k != "config"},
+    }
+    return idx, groups, r, graded, eye
+
+
 def cmd_viz(a, neurons, edges):
     started = datetime.now(UTC)
-    result = None
+    result = graded = eye = None
     if a.types:
         parts = [data.resolve(neurons, q) for q in a.types]
         idx = np.concatenate(parts)
@@ -224,6 +287,8 @@ def cmd_viz(a, neurons, edges):
         if not idx.size:
             sys.exit("flymsg: no path")
         groups = ["path"] * idx.size
+    elif a.eye:
+        idx, groups, result, graded, eye = eye_replay(a, neurons, edges)
     else:
         stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.sim]))
         W = sim.network(neurons, edges, sim.Params())
@@ -246,7 +311,7 @@ def cmd_viz(a, neurons, edges):
         groups = np.where(
             np.isin(idx, stim), "stimulus", np.where(fired, "response", "kept")
         ).tolist()
-    scene = viz.export(a.out, neurons, idx, groups, result, edges)
+    scene = viz.export(a.out, neurons, idx, groups, result, edges, graded=graded)
     print(
         f"{len(scene['neurons'])} neurons exported to {a.out}/ (geometry streams from GCS)\n"
         f"view: python -m http.server -d {a.out} 8000  ->  http://localhost:8000"
@@ -266,8 +331,9 @@ def cmd_viz(a, neurons, edges):
             "stim_ms": a.stim_ms,
             "silence": list(a.silence or []),
             "keep": list(a.keep or []),
+            **({"eye": eye} if eye is not None else {}),
         },
-        {"seed": a.seed},
+        {"seed": eye["seed"] if eye is not None else a.seed},
         started,
         extra={"n_exported": len(scene["neurons"])},
     )

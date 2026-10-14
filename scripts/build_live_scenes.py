@@ -4,7 +4,7 @@ Usage: python scripts/build_live_scenes.py [NAME ...]
 
 Runs the gallery exports on the local MaleCNS tables (`flymsg fetch` and
 `flymsg build` first) and keeps scene.json, activity.bin, partners.json and manifest.json in
-docs/live/<name>/. The page itself is copied by the site build, not stored here. With
+docs/live/<name>/ (graded.bin too for an eye replay). The page itself is copied by the site build, not stored here. With
 names, only those scenes and comparisons are rebuilt, so the others keep their manifests.
 """
 
@@ -42,6 +42,9 @@ SCENES = {
     ],
     "looming-left": ["--sim", "LC4_L", *KEEP_SIDES],
     "looming-bilateral": ["--sim", "LC4", *KEEP_SIDES],
+    # an ON edge of the locked T4/T5 protocol at its strongest lamina gain (configuration 11:
+    # gain 16, LMC and medulla 200 Hz); graded neurons glow by their potential
+    "eye-on": ["--eye", "on", "front_to_back", "--eye-config", "11"],
 }
 # Pairs shown by flymsg viz-compare: (A, B, labels, statuses, notes)
 COMPARISONS = {
@@ -86,7 +89,7 @@ COMPARISONS = {
         ),
     ),
 }
-KEEP = ("scene.json", "activity.bin", "partners.json", "manifest.json")
+KEEP = ("scene.json", "activity.bin", "graded.bin", "partners.json", "manifest.json")
 
 
 def main(names=()) -> None:

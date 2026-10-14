@@ -432,6 +432,13 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="STIM",
         help="simulate and replay; shows every neuron that fires during the stimulus",
     )
+    what.add_argument(
+        "--eye",
+        nargs=2,
+        metavar=("POLARITY", "DIRECTION"),
+        help="replay one edge of the locked T4/T5 protocol through the eye (on/off, "
+        "front_to_back/back_to_front/upward/downward), graded potentials included",
+    )
     s.add_argument("--rate", type=float, default=100.0)
     s.add_argument("--duration", type=float, default=600.0, help="ms")
     s.add_argument("--stim-ms", type=float, default=300.0)
@@ -449,6 +456,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s.add_argument(
         "--silence", nargs="+", help="replay: neurons that never fire (types/bodyIds)"
+    )
+    s.add_argument(
+        "--eye-config",
+        type=int,
+        default=0,
+        help="with --eye: the locked configuration to replay (index, as in its report)",
     )
     s.add_argument("--out", type=Path, default=Path("runs/viz"))
     s = sub.add_parser(

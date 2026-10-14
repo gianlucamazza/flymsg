@@ -49,6 +49,7 @@ import {
   vertsPerTri,
 } from "./budget.js";
 import { activityAt } from "./activity.js";
+import { gradedAt } from "./graded.js";
 import { sceneCaption } from "./caption.js";
 import {
   compareClass,
@@ -58,18 +59,8 @@ import {
   runLines,
   totals,
 } from "./compare.js";
-import {
-  findNeuron,
-  focusRoles,
-  panelLines,
-  selectParam,
-} from "./partners.js";
-import {
-  binAt,
-  rasterRows,
-  selectionExport,
-  selectionRows,
-} from "./raster.js";
+import { findNeuron, focusRoles, panelLines, selectParam } from "./partners.js";
+import { binAt, rasterRows, selectionExport, selectionRows } from "./raster.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
 
@@ -209,6 +200,10 @@ if (meta.schema !== SCENE_SCHEMA)
   );
 const actBuf = meta.activity
   ? await (await fetch("activity.bin")).arrayBuffer()
+  : null;
+// graded (non-spiking) neurons: signed potential per bin, from flymsg viz --eye
+const gradedSteps = meta.graded
+  ? new Int8Array(await (await fetch("graded.bin")).arrayBuffer())
   : null;
 const comparison = meta.comparison ?? null; // two runs, from flymsg viz-compare
 const actBufB = comparison
@@ -420,6 +415,9 @@ const meshMaterial = new THREE.MeshStandardMaterial({
   // (signed volume > 0 from the mesh centroid), so back faces can be culled
   side: THREE.FrontSide,
 });
+// glow of a hyperpolarized graded neuron (negative activity); depolarization keeps the
+// neuron's own colour
+const HYPER_GLSL = /* glsl */ `vec3(0.30, 0.60, 1.00)`;
 // 4x4 ordered dither for screen-door transparency: order independent, so every instance of the
 // one BatchedMesh draw, and every neuron in the one skeleton draw, can have its own opacity
 const BAYER4 = /* glsl */ `
@@ -477,11 +475,12 @@ meshMaterial.onBeforeCompile = (shader) => {
     .replace(
       "#include <clipping_planes_fragment>",
       `#include <clipping_planes_fragment>
-      if (bayer4(gl_FragCoord.xy) >= mix(uInactiveAlpha, 1.0, clamp(4.0 * vActivity, 0.0, 1.0))) discard;`,
+      if (bayer4(gl_FragCoord.xy) >= mix(uInactiveAlpha, 1.0, clamp(4.0 * abs(vActivity), 0.0, 1.0))) discard;`,
     )
     .replace(
       "#include <emissivemap_fragment>",
-      "#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * vActivity * uGain;",
+      `#include <emissivemap_fragment>
+      totalEmissiveRadiance += (vActivity >= 0.0 ? diffuseColor.rgb : ${HYPER_GLSL}) * abs(vActivity) * uGain;`,
     );
 };
 
@@ -750,11 +749,12 @@ const skelMaterial = new THREE.ShaderMaterial({
     varying float vOn; // 0 silent .. 1 active
     void main() {
       ivec2 p = ${neuronIndexGlsl};
-      float act = texelFetch(uAct, p, 0).r;
-      vOn = clamp(4.0 * act, 0.0, 1.0);
+      float act = texelFetch(uAct, p, 0).r; // negative: a hyperpolarized graded neuron
+      vOn = clamp(4.0 * abs(act), 0.0, 1.0);
       vec3 c = texelFetch(uColor, p, 0).rgb;
+      if (act < 0.0) c = ${HYPER_GLSL};
       c = mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, mix(${replay ? "0.35" : "1.0"}, 1.0, vOn));
-      vColor = c * (uBase + uGain * act);
+      vColor = c * (uBase + uGain * abs(act));
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }`,
   fragmentShader: /* glsl */ `
@@ -1014,7 +1014,8 @@ const somataMaterial = new THREE.PointsMaterial({
 });
 const somataLoaded = (async () => {
   if (!somata.visible) return;
-  const url = somataQuery && somataQuery !== "1" ? somataQuery : "../cns/somata.bin";
+  const url =
+    somataQuery && somataQuery !== "1" ? somataQuery : "../cns/somata.bin";
   let buf;
   try {
     const r = await fetch(url);
@@ -1031,7 +1032,8 @@ const somataLoaded = (async () => {
   const col = new Float32Array(3 * n);
   const palette = Object.values(REGION_COLORS).map((c) => new THREE.Color(c));
   for (let i = 0; i < n; i++) {
-    for (let a = 0; a < 3; a++) pos[3 * i + a] = vox[3 * i + a] * scale0.resolution[a];
+    for (let a = 0; a < 3; a++)
+      pos[3 * i + a] = vox[3 * i + a] * scale0.resolution[a];
     const c = palette[Math.min(codes[i], palette.length - 1)];
     col.set([c.r, c.g, c.b], 3 * i);
   }
@@ -1158,7 +1160,9 @@ function swatches(entries) {
 if (!comparison)
   fetch("manifest.json")
     .then((r) => (r.ok ? r.json() : null))
-    .then((m) => (document.getElementById("caption").textContent = sceneCaption(m)))
+    .then(
+      (m) => (document.getElementById("caption").textContent = sceneCaption(m)),
+    )
     .catch(() => {});
 
 function renderLegend() {
@@ -1168,6 +1172,14 @@ function renderLegend() {
     glow.className = "muted";
     glow.textContent = `glow: spikes per ${meta.activity.bin_ms} ms bin (model replay, not a recording)`;
     rows.push(glow);
+    if (meta.graded) {
+      const g = document.createElement("div");
+      g.className = "muted";
+      g.textContent =
+        "graded neurons: glow ∝ potential from rest (medulla: from its dark anchor), full at its " +
+        "measured range; own colour = depolarized, blue = hyperpolarized";
+      rows.push(g);
+    }
   }
   if (somata.points?.visible) {
     const row = swatches(Object.entries(REGION_COLORS));
@@ -1217,7 +1229,8 @@ if (comparison) {
   runSpikes.difference = difference(runSpikes.a, runSpikes.b);
 }
 const RUNS = ["a", "b", "difference"];
-const startRun = comparison && RUNS.includes(query.get("run")) ? query.get("run") : "a";
+const startRun =
+  comparison && RUNS.includes(query.get("run")) ? query.get("run") : "a";
 let spikes = runSpikes[startRun];
 // per neuron: more / less / same spikes in B than in A, or held by one export only
 const compareClasses = comparison
@@ -1225,7 +1238,9 @@ const compareClasses = comparison
       const shape = { n: N, bins: A.bins };
       const ta = totals(runSpikes.a, shape),
         tb = totals(runSpikes.b, shape);
-      return neurons.map((n) => compareClass(n.in[0], n.in[1], ta[n.k], tb[n.k]));
+      return neurons.map((n) =>
+        compareClass(n.in[0], n.in[1], ta[n.k], tb[n.k]),
+      );
     })()
   : null;
 if (comparison) {
@@ -1253,7 +1268,10 @@ const clock = {
   t: Number(query.get("t")) || 0,
   playing:
     replay &&
-    autoplay(location.search, matchMedia("(prefers-reduced-motion: reduce)").matches),
+    autoplay(
+      location.search,
+      matchMedia("(prefers-reduced-motion: reduce)").matches,
+    ),
   speed: 40,
 };
 const clockEl = document.getElementById("clock");
@@ -1267,6 +1285,13 @@ function updateActivity(t) {
     TAU_MS,
     HISTORY_BINS,
   );
+  if (gradedSteps)
+    gradedAt(
+      gradedSteps,
+      { k: meta.graded.k, bins: A.bins, binMs: A.bin_ms },
+      t,
+      activity,
+    );
   for (let k = 0; k < N; k++) skelActivity.image.data[4 * k] = activity[k];
   skelActivity.needsUpdate = true;
   const inst = instanceActivity.image.data;
@@ -1401,7 +1426,10 @@ renderer.domElement.addEventListener(
   (e) => (downAt = [e.clientX, e.clientY]),
 );
 renderer.domElement.addEventListener("pointerup", (e) => {
-  if (!downAt || !isTap(e.pointerType, e.clientX - downAt[0], e.clientY - downAt[1]))
+  if (
+    !downAt ||
+    !isTap(e.pointerType, e.clientX - downAt[0], e.clientY - downAt[1])
+  )
     return; // a drag
   const rect = renderer.domElement.getBoundingClientRect();
   const k = pickAt(e.clientX - rect.left, e.clientY - rect.top);
@@ -1530,7 +1558,12 @@ function drawRaster() {
   ctx.clearRect(0, 0, width, height);
   const plotH = rows.length * RASTER_ROW_PX;
   ctx.fillStyle = "rgba(76, 201, 240, 0.12)"; // stimulus window
-  ctx.fillRect(rasterX(0, width), 0, rasterX(A.stim_ms, width) - rasterX(0, width), plotH);
+  ctx.fillRect(
+    rasterX(0, width),
+    0,
+    rasterX(A.stim_ms, width) - rasterX(0, width),
+    plotH,
+  );
   ctx.font = "10px system-ui, sans-serif";
   ctx.textBaseline = "middle";
   const cellW = Math.max(1, rasterX(A.bin_ms, width) - rasterX(0, width) - 0.5);
@@ -1542,14 +1575,23 @@ function drawRaster() {
     ctx.fillText((n.instance || n.type).slice(0, 18), 2, y + RASTER_ROW_PX / 2);
     if (!total) {
       ctx.fillStyle = "#7b8494";
-      ctx.fillText("no spikes in this replay", RASTER_LABEL_PX, y + RASTER_ROW_PX / 2);
+      ctx.fillText(
+        "no spikes in this replay",
+        RASTER_LABEL_PX,
+        y + RASTER_ROW_PX / 2,
+      );
       return;
     }
     for (let b = 0; b < counts.length; b++) {
       if (!counts[b]) continue;
       ctx.globalAlpha = Math.min(1, 0.35 + counts[b] / 3);
       ctx.fillStyle = colour;
-      ctx.fillRect(rasterX(b * A.bin_ms, width), y + 1, cellW, RASTER_ROW_PX - 2);
+      ctx.fillRect(
+        rasterX(b * A.bin_ms, width),
+        y + 1,
+        cellW,
+        RASTER_ROW_PX - 2,
+      );
     }
     ctx.globalAlpha = 1;
   });
@@ -1565,7 +1607,8 @@ function drawRaster() {
 }
 function rasterTime(e) {
   const r = rasterCanvas.getBoundingClientRect();
-  const frac = (e.clientX - r.left - RASTER_LABEL_PX) / (r.width - RASTER_LABEL_PX - 4);
+  const frac =
+    (e.clientX - r.left - RASTER_LABEL_PX) / (r.width - RASTER_LABEL_PX - 4);
   return Math.max(0, Math.min(rasterSpanMs() - 1, frac * rasterSpanMs()));
 }
 let scrubbing = false;
@@ -1679,7 +1722,9 @@ if (showChrome(location.search)) {
   );
   somataLoaded.then(() => {
     if (!somata.points) return;
-    const f = gui.addFolder(`Whole CNS (${somata.count.toLocaleString()} somata)`).close();
+    const f = gui
+      .addFolder(`Whole CNS (${somata.count.toLocaleString()} somata)`)
+      .close();
     f.add(somata.points, "visible")
       .name("show")
       .onChange(() => {
