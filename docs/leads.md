@@ -87,6 +87,74 @@ the sexes, so female recordings can test non-dimorphic circuits, not fru/dsx one
 Next: lock Pacheco 2021 as the first held-out benchmark (song → neuropil responses, iav null),
 with the scoring rule fixed before any run.
 
+## Sensorimotor gates: registration, transduction, motor map (search of 2026-10-14)
+
+What blocks a biological closed loop under the [body-wiring ADR](adr-body-wiring.md): the
+eye-map registration (G2, [#179](https://github.com/gianlucamazza/flymsg/issues/179)), a measured
+looming transducer (G3, [#34](https://github.com/gianlucamazza/flymsg/issues/34)) and a muscle →
+actuator assignment (G4, [#19](https://github.com/gianlucamazza/flymsg/issues/19),
+[#35](https://github.com/gianlucamazza/flymsg/issues/35)). Searched by three agents; the decisive
+claims were re-read on the source.
+
+### Eye map → body registration (G2)
+
+Zhao et al. 2025 build the eye-map frame from the eye alone: "we used the lens positions from
+both eyes to define the visual field's frontal midline (sagittal plane)", with the equator from
+the inversion in photoreceptor chirality and z = 0 "defined by lens positions" (Methods). No
+neck, thorax or resting posture enters it, although the scanned heads kept "the thorax and
+abdomen intact and glued to the head". No published resting head pitch of _D. melanogaster_
+relative to the thorax, with spread and n, was found.
+
+| Source                                                                                                              | What it gives                                                                                                                                                                                                  | Data, licence                                                                    | Checked      |
+| ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------ |
+| Zhao et al. 2025, _Nature_, doi:10.1038/s41586-025-09276-5                                                          | Eye-intrinsic frame (above); field of view "from directly above to −70° in elevation"; flies "can coordinately redirect all ommatidia by up to about 15°" (citing Fenk et al. 2022)                            | CC BY 4.0; µCT on Janelia figshare 10.25378/janelia.29111339, 0.6–0.7 GB per fly | text         |
+| Lobato-Rios et al. 2022, _Nat Methods_, doi:10.1038/s41592-022-01466-7                                              | NeuroMechFly head posed by hand ("the head is rotated 20° along the Y axis" in the zero pose of the preprint): an authors' choice, not a measurement                                                           | preprint CC BY-NC                                                                | text (agent) |
+| Wang-Chen et al. 2024, _Nat Methods_, doi:10.1038/s41592-024-02497-y                                                | FlyGym's 721-ommatidium eye is an idealised hexagonal grid; the eye cameras were placed by hand against coloured pillars (Supplementary Note 5); no µCT direction map                                          | FlyGym Apache-2.0                                                                | text (agent) |
+| Kim et al. 2017 (_Cell_, doi:10.1016/j.cell.2016.12.005); Klapoetke et al. 2017 (_Nature_, doi:10.1038/nature24626) | Head pitch relative to the rig in glued preparations (eye rows 65.6 ± 5.4° to the horizontal, n = 11; equator 55 ± 5° below it): preparation angles, not body ones                                             | —                                                                                | text (agent) |
+| Ispizua et al. 2026, bioRxiv doi:10.64898/2026.05.03.722293 (preprint)                                              | Free-walking 3D tracking with 50 keypoints (head and thorax landmarks per the agent's reading of the methods): the only data found from which a head-to-thorax pitch could be measured; no head pitch reported | CC BY-NC 4.0; dataset licence not checked                                        | text (agent) |
+
+Next: still blocked. A registration would be a new measurement, e.g. landmarks located in
+Zhao's µCT volume (whether the glued thorax is in the field of view is unchecked) joined to a
+head-to-thorax pitch from free-walking keypoints; yaw and roll, individual variation (n = 3 eye
+maps) and the female eye under a male CNS stay open.
+
+### Looming transduction (G3)
+
+No deposited recording gives LC4 or LPLC2 firing rates for looming; the only LC4/LPLC2 looming
+data are calcium ΔF/F, with no stated conversion to spikes. What is deposited is the giant
+fiber's membrane potential to looming at four r/v values.
+
+| Source                                                                                                          | What it gives                                                                                                                                                                                                                                                                                                                                                                        | Data, licence                                                                | Checked                      |
+| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ---------------------------- |
+| Dombrovski et al. 2025, _Nature_, doi:10.1038/s41586-025-09037-4                                                | Giant fiber (DNp01) whole-cell current clamp to looming at r/v 10, 20, 40, 80 ms (Extended Data Fig. 8), controls and mutants, 20 kHz traces; a second set of 5 flies × 3 elevations × 5 trials, discs 0 → 30° at 500°/s. The controls are genotype controls of the DIP-ε experiments (5 + 5 flies, 2 trials each); disc sizes of the r/v runs and the sex are to be read before use | Zenodo 10.5281/zenodo.14983850, CC BY 4.0, 46 files, 33 MB                   | data (record) ; text (agent) |
+| Ache et al. 2019, _Curr Biol_, doi:10.1016/j.cub.2019.01.079                                                    | Giant fiber model: an LC4 term linear in angular velocity and an LPLC2 term Gaussian in ln θ, both with a 19 ms delay, and their weights (STAR Methods)                                                                                                                                                                                                                              | on request only; ModelDB 230400 holds von Reyn 2017's model code, not Ache's | text (agent)                 |
+| Jang et al. 2023, _J Exp Biol_, doi:10.1242/jeb.244790                                                          | Giant fiber whole-cell at r/v 10–80 ms, discs 10 → 63°, n = 10 females: the protocol the 2025 runs cite                                                                                                                                                                                                                                                                              | on request                                                                   | text (agent)                 |
+| Dombrovski et al. 2025 (as above)                                                                               | LPLC2 GCaMP7f imaging to looming (ΔF/F)                                                                                                                                                                                                                                                                                                                                              | OSF 10.17605/OSF.IO/Z7XFK, CC BY 4.0, 36 MB                                  | text (agent)                 |
+| Klapoetke et al. 2017, 2022 (_Neuron_, doi:10.1016/j.neuron.2022.02.013); Turner et al. 2022, _eLife_ 11:e82587 | LPLC2 and LC4 calcium imaging to looming (ΔF/F only). Turner's set covers both glomeruli                                                                                                                                                                                                                                                                                             | Klapoetke on request; Turner Dryad 10.5061/dryad.h44j0zpp8, CC0, 53 GB       | text (agent)                 |
+
+Next: an M2 transducer can now be scored without a data request on the stage that ends at the
+giant fiber: an input shaped as Ache et al. 2019 drives the model's DNp01, judged against the
+deposited r/v series with a held-out set fixed in the lock. That calibrates gains against the
+giant fiber; it is not a measured LC4 or LPLC2 rate and must be named so.
+
+### Muscle → body actuator (G4)
+
+No source names a MaleCNS/MANC motor neuron or muscle together with a FlyBody actuator, so under
+`validation/motor_map.yaml`'s rule every row stays unmapped. Muscle → joint actions are
+published, and FlyGym 2.1.0 now ships a muscle model.
+
+| Source                                                                                                           | What it gives                                                                                                                                                                                                                                                                                                                                                                                                     | Data, licence                          | Checked                             |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ----------------------------------- |
+| Azevedo et al. 2024, _Nature_, doi:10.1038/s41586-024-07389-x                                                    | Per-muscle joint actions for the female T1 leg (Supplementary Appendix Table A1: tibia extensor/flexors on the femur–tibia joint, trochanter extensors/flexors on the coxa–trochanter joint, tarsus depressor/levator on tibia–tarsus); the tergotrochanter's "role in T2 trochanter–femur extension during jumping"; "It was previously assumed that the Drosophila trochanter and femur are functionally fused" | supplementary PDF; licence not checked | text (main); data (agent, Table A1) |
+| Özdil et al., arXiv 2509.06426 (ICLR 2026), FlyMimic; shipped in FlyGym 2.1.0 as `assets/model/musculoskeletal/` | 15 Hill-type muscles of the left front leg named with their tendons and the joints they cross (coxa yaw/pitch/roll, trochanter yaw/pitch/roll, tibia pitch), grouped after Azevedo 2024 and Soler 2004; on a NeuroMechFly leg, not FlyBody; mid and hind legs not released; FlyGym ships the MJCF and fetches the meshes                                                                                          | CC BY 4.0 (paper), Apache-2.0 (model)  | data (local MJCF)                   |
+| Vaxenburg et al. 2025, _Nature_, doi:10.1038/s41586-025-09029-4                                                  | FlyBody has joint actuators (and tendon actuators coupling abdomen and tarsus DoFs), no muscles and no muscle → actuator table; legs body–coxa, coxa–femur, femur–tibia, tibia–tarsus; no trochanter                                                                                                                                                                                                              | CC BY 4.0                              | text                                |
+| Lesser et al. 2024, _Nature_, doi:10.1038/s41586-024-07600-z                                                     | Motor-neuron modules by joint; the tergotrochanter described as biarticular (Extended Data Fig. 6d)                                                                                                                                                                                                                                                                                                               | —                                      | text (agent, to re-read)            |
+
+Next: still blocked as a published co-naming. Candidate rows (tibia T1 from Table A1; TTMn on
+the T2 coxa–femur actuator) would need a documented two-source join, an antagonist rule and a
+decision on whether FlyBody's coxa–femur joint stands for the coxa–trochanter one, which
+Azevedo et al. 2024 put in doubt; each is an authored choice for a new lock, not a citation.
+
 ## Synapse strength and per-type parameters
 
 | Source                                                      | What it gives                                                                                                                                                                                                                                                                                    | Data, licence                                                                                           | Checked      |
