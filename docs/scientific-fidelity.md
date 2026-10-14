@@ -1,6 +1,6 @@
 # Scientific fidelity, evidence and validation architecture
 
-Status: proposed, 2026-10-13; SF1 implemented 2026-10-14 (#147). No changes to scored results or model defaults.
+Status: proposed, 2026-10-13; SF1 implemented 2026-10-14 (#147); SF2's timestep convergence v1 converged and SF5's replication package ([replication](replication.md)) exists, 2026-10-14, neither stage complete. No changes to scored results or model defaults.
 
 ## Scientific baseline
 

@@ -160,46 +160,46 @@ the final path. A clean committed worktree is required. See
 
 ## Commands
 
-| Command                                                         | What it does                                                                                            |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `compare [--sex \| --fingerprint TYPE… \| --lb3-split]`         | male vs female: synapse density, the same model on both, the FAFB LB3 split                             |
-| `fetch`, `build`                                                | download and compact the connectome (`--dataset fafb` for the female brain, ~135 MB)                    |
-| `info TYPE`                                                     | annotations, top partner types, Neuroglancer link                                                       |
-| `path SRC DST [--alt K]`                                        | strongest chain by input fraction; `--alt` adds routes avoiding the previous intermediate types         |
-| `sim STIM…`                                                     | simulate a Poisson stimulus; per-type rates, reliability across seeds, latency, self-sustained activity |
-| `validate`                                                      | the validation battery (a few minutes)                                                                  |
-| `behavior`                                                      | print the frozen one-bit looming-jump protocol, or run the closed loop with `--run`                     |
-| `wiring-null [--stats]`                                         | N1: shuffle who connects to whom; `--stats` counts self-loops and stops                                 |
-| `nulls [--full]`                                                | four wiring-null families; default 2 draws (CI); `--full` is the locked 20-draw run                     |
-| `calibrate`, `select-model`                                     | parameter grid search and pre-registered model comparison                                               |
-| `audit`                                                         | reconstruction completeness: flags bilateral neurons with one side far below the other                  |
-| `dimorphism [--silencing \| --loop \| --by-type CASE CATEGORY]` | dimorphic neurons among responders; silencing by category, by cell type, or of the predicted dMS9 loop  |
-| `viz --sim STIM \| --path SRC DST \| --types …`                 | export a 3D scene; the page streams geometry from the public volumes                                    |
-| `trace STIM --neurons N…`                                       | record v, g, threshold, spikes and input of chosen neurons; model states, not recordings                |
-| `viz-compare A B --labels … --status …`                         | pair two replay exports; refuses mismatched datasets or time bases; no simulation                       |
-| `sensitivity [--run]`                                           | the locked w_syn × th_jump grid around the defaults: every cell, spreads, a figure; a report            |
-| `convergence [--run]`                                           | the locked timestep convergence check (SF2): the battery's responses at 0.1, 0.05 and 0.025 ms          |
-| `benchmarks [--run \| --corners]`                               | the frozen held-out manifest, scored with `--run`                                                       |
-| `silence-scan [--run]`                                          | the locked residual `TTMn_R` partner scan (#20); prints the protocol without `--run`                    |
-| `partner-followup [--run]`                                      | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                          |
-| `mb-plasticity [--run]`                                         | the locked dopamine-gated KC → MBON11 depression (#85), applied between trials                          |
-| `weight-rule [--areas] [--run]`                                 | the locked count-vs-density comparison on Liu et al. 2022's PN → LHN uEPSPs (#139)                      |
-| `kc-sparseness [--run]`                                         | the locked Kenyon-cell sparseness diagnostic (#95), v1–v8: recurrence, antennal lobe, odors, coupling   |
-| `jump3d [--run]`                                                | the locked TTM-driven jump: TTMn spikes → measured twitch → NeuroMechFly in MuJoCo (#90, #94)           |
-| `t4t5 [--run]`                                                  | the locked T4/T5 test: ON/OFF edges moving through the measured eye; polarity and direction (#84, #140) |
-| `odor NAME`                                                     | a DoOR odorant as a response per MaleCNS ORN type (fetched, CC BY-SA)                                   |
-| `muscles`                                                       | MANC's muscle per MaleCNS motor neuron (Cheong 2024, fetched, CC BY); never an actuator                 |
-| `eye`                                                           | optic-lobe column → viewing direction (Zhao 2025 eye map, fetched) and photoreceptor → column           |
-| `experiment FILE [--check]` · `runs`                            | run an exploratory config into an immutable directory; index every run manifest with its label          |
-| `explore SRC DST` · `confirm LOCK`                              | paths and exploratory silencing; run a registered intervention lock against a matched null              |
-| `jump --sim STIM --gain-n G --mass-kg M`                        | M1: a one-DOF jump body driven by a motor neuron through an engineered decoder (not a motor map)        |
-| `loop --sim STIM …`                                             | M2: looming closed loop with disconnected, shuffled and replay controls; engineered parameters          |
-| `homology`                                                      | versioned male/female type mapping (flywireType) and the LC4 → DNp01 pilot                              |
+| Command                                                          | What it does                                                                                                                       |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `compare [--sex \| --fingerprint TYPE… \| --lb3-split]`          | male vs female: synapse density, the same model on both, the FAFB LB3 split                                                        |
+| `fetch`, `build`                                                 | download and compact the connectome (`--dataset fafb` for the female brain, ~135 MB)                                               |
+| `info TYPE`                                                      | annotations, top partner types, Neuroglancer link                                                                                  |
+| `path SRC DST [--alt K]`                                         | strongest chain by input fraction; `--alt` adds routes avoiding the previous intermediate types                                    |
+| `sim STIM…`                                                      | simulate a Poisson stimulus; per-type rates, reliability across seeds, latency, self-sustained activity                            |
+| `validate`                                                       | the validation battery (a few minutes)                                                                                             |
+| `behavior`                                                       | print the frozen one-bit looming-jump protocol, or run the closed loop with `--run`                                                |
+| `wiring-null [--stats]`                                          | N1: shuffle who connects to whom; `--stats` counts self-loops and stops                                                            |
+| `nulls [--full]`                                                 | four wiring-null families; default 2 draws (CI); `--full` is the locked 20-draw run                                                |
+| `calibrate`, `select-model`                                      | parameter grid search and pre-registered model comparison                                                                          |
+| `audit`                                                          | reconstruction completeness: flags bilateral neurons with one side far below the other                                             |
+| `dimorphism [--silencing \| --loop \| --by-type CASE CATEGORY]`  | dimorphic neurons among responders; silencing by category, by cell type, or of the predicted dMS9 loop                             |
+| `viz --sim STIM \| --path SRC DST \| --types … \| --eye POL DIR` | export a 3D scene; `--eye` replays one locked T4/T5 edge with graded potentials; the page streams geometry from the public volumes |
+| `trace STIM --neurons N…`                                        | record v, g, threshold, spikes and input of chosen neurons; model states, not recordings                                           |
+| `viz-compare A B --labels … --status …`                          | pair two replay exports; refuses mismatched datasets or time bases; no simulation                                                  |
+| `sensitivity [--run]`                                            | the locked w_syn × th_jump grid around the defaults: every cell, spreads, a figure; a report                                       |
+| `convergence [--run]`                                            | the locked timestep convergence check (SF2): the battery's responses at 0.1, 0.05 and 0.025 ms                                     |
+| `benchmarks [--run \| --corners]`                                | the frozen held-out manifest, scored with `--run`                                                                                  |
+| `silence-scan [--run]`                                           | the locked residual `TTMn_R` partner scan (#20); prints the protocol without `--run`                                               |
+| `partner-followup [--run]`                                       | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                                                     |
+| `mb-plasticity [--run]`                                          | the locked dopamine-gated KC → MBON11 depression (#85), applied between trials                                                     |
+| `weight-rule [--areas] [--run]`                                  | the locked count-vs-density comparison on Liu et al. 2022's PN → LHN uEPSPs (#139)                                                 |
+| `kc-sparseness [--run]`                                          | the locked Kenyon-cell sparseness diagnostic (#95), v1–v8: recurrence, antennal lobe, odors, coupling                              |
+| `jump3d [--run]`                                                 | the locked TTM-driven jump: TTMn spikes → measured twitch → NeuroMechFly in MuJoCo (#90, #94)                                      |
+| `t4t5 [--run]`                                                   | the locked T4/T5 test: ON/OFF edges moving through the measured eye; polarity and direction (#84, #140)                            |
+| `odor NAME`                                                      | a DoOR odorant as a response per MaleCNS ORN type (fetched, CC BY-SA)                                                              |
+| `muscles`                                                        | MANC's muscle per MaleCNS motor neuron (Cheong 2024, fetched, CC BY); never an actuator                                            |
+| `eye`                                                            | optic-lobe column → viewing direction (Zhao 2025 eye map, fetched) and photoreceptor → column                                      |
+| `experiment FILE [--check]` · `runs`                             | run an exploratory config into an immutable directory; index every run manifest with its label                                     |
+| `explore SRC DST` · `confirm LOCK`                               | paths and exploratory silencing; run a registered intervention lock against a matched null                                         |
+| `jump --sim STIM --gain-n G --mass-kg M`                         | M1: a one-DOF jump body driven by a motor neuron through an engineered decoder (not a motor map)                                   |
+| `loop --sim STIM …`                                              | M2: looming closed loop with disconnected, shuffled and replay controls; engineered parameters                                     |
+| `homology`                                                       | versioned male/female type mapping (flywireType) and the LC4 → DNp01 pilot                                                         |
 
 The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?detail=`,
 `?adaptive=0`,
-`?neuropils=0|1`, `?somata=0` (hide the whole-CNS soma layer), `?budget=<M triangles>` and
-`?bench=<s>` ([viz](docs/viz.md)).
+`?neuropils=0|1`, `?somata=0` (hide the whole-CNS soma layer), `?budget=<M triangles>`,
+`?bench=<s>` and `?xr=1` (experimental WebXR observer) ([viz](docs/viz.md)).
 
 ## How it works
 
@@ -298,7 +298,8 @@ uv run ruff check && uv run ruff format --check src tests scripts
   brian2 in its own environment.
 - `scripts/shoot.mjs` screenshots the 3D view headless (`GL=gl` for the real GPU).
 - `scripts/vendor-js.sh` refreshes the vendored three.js and lil-gui.
-- `scripts/bench_viewer.py` measures the 3D view on every scene and refuses a loaded machine;
+- `scripts/bench_viewer.py` measures the 3D view on the gallery scenes and the heaviest
+  comparisons (any live scene by name) and refuses a loaded machine;
   `scripts/brain_coverage.py` prints what of MaleCNS the model uses;
   `scripts/archive_results.py` copies cited run outputs into `results/`;
   `scripts/build_figures.py` redraws `docs/img/*.svg` from them.

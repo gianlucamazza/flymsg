@@ -519,7 +519,9 @@ NumPy oracle and `CpuRuntime` agree exactly with random per-neuron membranes; a 
 a `Membrane` names it in its checkpoint identity. A `Membrane` on an electrically coupled
 neuron is refused (`sim.Gap` integrates with the `Params` membrane), and the native executor
 refuses any `Membrane` until it is qualified. Sources that could fill it are in
-[leads](leads.md); none is used yet.
+[leads](leads.md); the only lock using one is T4/T5 v4 (τ_syn of Mi1 and Tm1 from Behnia et al.
+2014's delays, [eye](eye.md)). With a `Membrane` on a minority of neurons the kernel keeps its
+scalar loops and recomputes only those neurons, with bit-identical results (#182).
 
 ## Recording neuron states
 
