@@ -8,12 +8,13 @@ and what each colour means, are in the README gallery.
 
 ## Live on the site
 
-The Pages site serves eight scenes with this page: the LC4_R and pIP10 replays and the
+The Pages site serves nine scenes with this page: the LC4_R and pIP10 replays and the
 pIP10/dPR1/dMS9 anatomy, at <https://gianlucamazza.github.io/flymsg/live/looming/>,
 `…/live/song/` and `…/live/anatomy/`; the LC4_R replay with DNp01, DNp01 + DNp02 and
 DNp01 + DNp06 silenced (`looming-dnp01-silenced`, `looming-dnp01-dnp02-silenced`,
 `looming-dnp01-dnp06-silenced`); and the left-eye and both-eye replays (`looming-left`,
-`looming-bilateral`). Four comparisons pair them (below), and `cns/` holds the whole-CNS
+`looming-bilateral`); and an ON edge through the right eye with graded potentials (`eye-on`,
+[below](#graded-neurons)). Four comparisons pair them (below), and `cns/` holds the whole-CNS
 soma layer shared by all. Their `scene.json`, `activity.bin` and run manifest are committed
 in `docs/live/`; `scripts/build_live_scenes.py [NAME ...]` regenerates them from the local
 tables, all or only the named ones, exporting every requested scene before it writes any, so
@@ -35,6 +36,21 @@ flag is unchanged. The README links
 add `?neuropils=1`, so the 114 brain and VNC shells outline the whole CNS around the
 activity; without it a replay starts with the shells hidden. The shells stream in after the
 neurons and cost GPU time while the replay plays.
+
+## Graded neurons
+
+Non-spiking neurons do not glow by spikes. `flymsg viz --eye POLARITY DIRECTION [--eye-config
+N]` replays one edge of the locked T4/T5 protocol (`validation/t4t5.yaml`) at one of its
+configurations and also writes `graded.bin`: per 10 ms bin, each graded neuron's potential
+relative to rest (and, for the graded medulla under a lock that anchors it, to its settled dark
+potential), as a signed step of its scale over 127. The scale, at which a neuron glows like one spike, is the
+configuration's photoreceptor response for photoreceptors, its LMC range for L1–L3, and the
+measured swing of the type (Groschner et al. 2022) for the medulla. A depolarized graded neuron
+glows in its own colour, a hyperpolarized one in violet, so the lamina's inversion of contrast is
+visible. Spiking neurons glow by spikes as everywhere else. The scene is the right eye: per
+class the `--eye-top` (default 300) graded neurons whose potential moves most, at least 1 mV,
+and as many spiking neurons of the T4/T5 pathway (T4/T5 included) that fire most; the selection
+is written in the manifest.
 
 ## Legend and caption
 

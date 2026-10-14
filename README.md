@@ -69,6 +69,13 @@ goes from 7 spikes to 0 ([DNp02](https://gianlucamazza.github.io/flymsg/live/dnp
 scan named both ([v2](docs/img/silence-scan-v2.svg)) and a replication on fresh seeds named
 them again ([v3](docs/img/silence-scan-v3.svg)).
 
+**An edge through the eye.** An ON edge moves front to back across the right eye under the
+locked T4/T5 v4 protocol at its strongest lamina gain (configuration 11). Photoreceptors,
+L1–L3 and the graded medulla glow by their potential, violet where they hyperpolarize, so the
+lamina's inversion of contrast is visible; spiking neurons of the T4/T5 pathway glow by spikes.
+A replay of one configuration, not the verdict, which is the locked run's
+([eye](docs/eye.md)). [Open live](https://gianlucamazza.github.io/flymsg/live/eye-on/?t=600&paused).
+
 **Left eye and both eyes.** The same looming drive from the left (`LC4_L`) or from both
 sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about half as often as
 `TTMn_R`. [Right against left](https://gianlucamazza.github.io/flymsg/live/right-vs-left/?run=difference&t=60&paused&select=804642),
@@ -271,7 +278,7 @@ under its date.
 | [comparison](docs/comparison.md)                      | engine check against the published model, male vs female, the LB3 split                                   |
 | [dimorphism](docs/dimorphism.md)                      | dimorphic neurons among responders, silencing                                                             |
 | [related](docs/related.md)                            | adjacent whole-CNS models, the raw 211,577 count, wiring null N1                                          |
-| [viz](docs/viz.md)                                    | 3D pipeline, whole-CNS soma layer, sides, levels of detail, GPU measurements                              |
+| [viz](docs/viz.md)                                    | 3D pipeline, whole-CNS soma layer, graded potentials, sides, levels of detail, GPU measurements           |
 | [roadmap](docs/roadmap.md)                            | the results index; brain coverage; what is blocked on evidence, hardware, or an unrun lock                |
 | [CHANGELOG](CHANGELOG.md)                             | what changed in each version                                                                              |
 

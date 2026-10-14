@@ -21,3 +21,23 @@ test("an anatomy scene lists its types; no manifest gives no line", () => {
   assert.equal(sceneCaption(null), "");
   assert.equal(sceneCaption({}), "");
 });
+
+test("an eye replay names its edge and locked configuration", () => {
+  const manifest = {
+    config: {
+      eye: {
+        edge: ["on", "front_to_back"],
+        t4t5_version: 4,
+        configuration: 2,
+        lmc_rate_hz: 50,
+        medulla_rate_hz: 200,
+        lamina_medulla_gain: 4,
+      },
+    },
+  };
+  assert.equal(
+    sceneCaption(manifest),
+    "input: ON edge front to back through the eye · t4t5 v4 configuration 2 " +
+      "(LMC 50 Hz, medulla 200 Hz, lamina gain 4) · model replay",
+  );
+});

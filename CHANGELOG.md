@@ -2,13 +2,6 @@
 
 ## Unreleased
 
-### Engineering
-
-- **Faster per-neuron membranes**: with a `sim.Membrane` on a minority of neurons the kernel
-  keeps its scalar loops and recomputes only those neurons with their own constants, the same
-  float32 operations, so results are bit-identical (oracle tests for a minority and a majority;
-  on the whole CNS with Mi1 and Tm1 membranes, identical spikes in 5.3 s against 7.2 s).
-
 ### Result
 
 - **Timestep convergence v1: converged** (SF2, #148). All ten battery responses converge at the
@@ -29,6 +22,21 @@
   converged when its holds verdict matches the finest step and its seed median lies within
   the finest seed range; `flymsg convergence [--run]`. A numerical lock may declare
   `evidence: none` with a reason. No run.
+
+### Engineering
+
+- **Faster per-neuron membranes**: with a `sim.Membrane` on a minority of neurons the kernel
+  keeps its scalar loops and recomputes only those neurons with their own constants, the same
+  float32 operations, so results are bit-identical (oracle tests for a minority and a majority;
+  on the whole CNS with Mi1 and Tm1 membranes, identical spikes in 5.3 s against 7.2 s).
+
+### Viewer
+
+- **Graded neurons in the 3D replay**: `flymsg viz --eye POLARITY DIRECTION [--eye-config N]
+[--eye-top N]` replays one edge of the locked T4/T5 protocol and writes `graded.bin`, each
+  non-spiking neuron's potential per bin relative to rest (or its dark anchor); the page lets
+  them glow by potential, in their colour when depolarized and violet when hyperpolarized. The
+  site gains the `eye-on` scene (right eye, ON edge, v4 configuration 11).
 
 ### Documentation
 

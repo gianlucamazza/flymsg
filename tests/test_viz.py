@@ -87,6 +87,34 @@ def test_export_replay_bundle(tmp_path):
     assert (tmp_path / "vendor/three/build/three.module.min.js").exists()
 
 
+def test_export_graded_potentials_as_signed_steps_of_their_scale(tmp_path):
+    counts = np.zeros((2, 2), dtype=np.uint16)
+    graded = {
+        "rows": np.array([0]),
+        "mv": np.array([[10.0], [-40.0]]),
+        "scale_mv": np.array([20.0]),
+        "reference": "rest",
+    }
+    scene = viz.export(
+        tmp_path, NEURONS, np.array([1, 0]), ["g1", "g2"], result(counts), graded=graded
+    )
+    assert scene["graded"] == {"k": [1], "scale_mv": [20.0], "reference": "rest"}
+    steps = np.fromfile(tmp_path / "graded.bin", np.int8).reshape(2, 1)
+    assert steps[:, 0].tolist() == [64, -127]  # half the scale, then clipped at -1
+    # a later export without potentials removes the stale file
+    viz.export(tmp_path, NEURONS, np.array([1, 0]), ["g1", "g2"], result(counts))
+    assert not (tmp_path / "graded.bin").exists()
+    with pytest.raises(ValueError, match="one scale per row"):
+        viz.export(
+            tmp_path,
+            NEURONS,
+            np.array([1, 0]),
+            ["g1", "g2"],
+            result(counts),
+            graded={**graded, "scale_mv": np.array([1.0, 2.0])},
+        )
+
+
 def test_anatomy_export_drops_stale_replay(tmp_path):
     (tmp_path / "activity.bin").write_bytes(b"old")
     scene = viz.export(tmp_path, NEURONS, np.array([0]), ["path"])

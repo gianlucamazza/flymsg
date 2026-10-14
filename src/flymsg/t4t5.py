@@ -443,9 +443,11 @@ def protocol(
     doc: dict,
     steps: progress.Steps | None = None,
     report: progress.Progress | None = None,
+    on_run=None,
 ) -> dict:
     """Every configuration of the envelope; `steps` stores each finished configuration so
-    an interrupted run resumes, `report` counts simulations."""
+    an interrupted run resumes, `report` counts simulations. `on_run`, if given, receives
+    every stimulus run (for a 3D replay); it does not enter the scored outputs."""
     proto = doc["protocol"]
     p = sim.Params()
     steps = steps or progress.Steps(None, doc["content_sha256"])
@@ -527,6 +529,19 @@ def protocol(
         for (direction, polarity), (stim, lit, n_steps, settle) in stimuli.items():
             kicks = (gain * lit).astype(np.float32)
             r = simulate(Wc, stim, n_steps, kicks, graded)
+            if on_run is not None:
+                on_run(
+                    cfg=cfg,
+                    direction=direction,
+                    polarity=polarity,
+                    result=r,
+                    stim=stim,
+                    graded=graded,
+                    anchor=anchor,
+                    receptors=receptors_all,
+                    lmc=lmc,
+                    medulla_cells=medulla_cells,
+                )
             first_bin = round(settle * p.dt / r.bin_ms)
             total = r.counts[first_bin:].sum(axis=0)
             key = {
@@ -656,8 +671,11 @@ def run(
     data_dir: Path,
     steps: progress.Steps | None = None,
     report: progress.Progress | None = None,
+    doc: dict | None = None,
+    on_run=None,
 ) -> dict:
-    doc = assert_matches_code()
+    """The locked protocol, or `doc` (a reduced copy, for a 3D replay) with `on_run`."""
+    doc = assert_matches_code() if doc is None else doc
     if "medulla_mv" in doc["protocol"]:
         got = medulla.ranges(data_dir).set_index("type")
         for name, r in doc["protocol"]["medulla_mv"].items():
@@ -680,4 +698,5 @@ def run(
         doc,
         steps,
         report,
+        on_run,
     )
