@@ -430,6 +430,8 @@ def run(
         if checkpoint_every_us % clock.control_us:
             raise ContractError("checkpoints fall on control ticks")
         checkpoint_dir = Path(checkpoint_dir)
+    if checkpoint_dir is not None and (checkpoint_dir / DONE).exists():
+        return _finished(checkpoint_dir, identity)
     resumed = (
         _resume(checkpoint_dir, identity, runtime, body)
         if checkpoint_dir is not None and (checkpoint_dir / LOOP).exists()
@@ -488,6 +490,10 @@ def run(
                 stim = replay.ticks[k].stimulus  # what produced the replayed counts
             else:
                 stim = tuple(float(v) for v in stimulus(seen.time_us, seen))
+                if not stim or not all(math.isfinite(v) for v in stim):
+                    raise ContractError(
+                        "the stimulus needs one finite value per column"
+                    )
         elif step.phase == "input":
             if replay is not None:
                 counts = np.asarray(replay.ticks[k].input_counts, dtype=np.int64)
@@ -546,10 +552,22 @@ def run(
         tuple(ticks),
     )
     record.validate()
+    if checkpoint_dir is not None:
+        # a finished run answers a rerun with its record, never by computing again
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        runstore.atomic_json(
+            checkpoint_dir / DONE,
+            {
+                "schema": SCHEMA + "/done",
+                "identity": identity,
+                "record": json.loads(record.to_json()),
+            },
+        )
     return record
 
 
 LOOP = "loop.json"
+DONE = "record.json"
 
 
 def _sha256_file(path: Path) -> str:
@@ -573,7 +591,10 @@ def _checkpoint(directory, identity, runtime, body, time_us, loop) -> list:
     _adapter(runtime.checkpoint, neural, what="runtime")
     _adapter(body.snapshot, physics)
     done = sum(n for _, _, n in segments)
-    segment.write_bytes(runstore.canonical([asdict(t) for t in ticks[done:]]))
+    try:
+        segment.write_bytes(runstore.canonical([asdict(t) for t in ticks[done:]]))
+    except ValueError as err:  # a non-finite value cannot be stored
+        raise ContractError(f"the ticks cannot be checkpointed: {err}") from err
     for path in (neural, physics, segment):
         _fsync(path)
     runstore.sync_dir(directory)
@@ -600,6 +621,19 @@ def _checkpoint(directory, identity, runtime, body, time_us, loop) -> list:
         if old.name not in keep:
             old.unlink()
     return segments
+
+
+def _finished(directory: Path, identity: str) -> Record:
+    try:
+        d = json.loads((directory / DONE).read_text())
+        if d.get("schema") != SCHEMA + "/done" or d.get("identity") != identity:
+            raise ContractError("the finished record belongs to another run")
+        text = json.dumps(d["record"], sort_keys=True, separators=(",", ":"))
+    except ContractError:
+        raise
+    except (AttributeError, KeyError, TypeError, ValueError, OSError) as err:
+        raise ContractError(f"malformed finished record: {err!r}") from err
+    return from_json(text)
 
 
 def _resume(directory, identity, runtime, body):

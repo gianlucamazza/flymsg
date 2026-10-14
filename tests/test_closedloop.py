@@ -261,6 +261,8 @@ def test_the_record_round_trips_bit_for_bit_and_never_parses_as_a_pose_trace():
 @pytest.mark.parametrize(
     ("kw", "match"),
     [
+        ({"stimulus": lambda t, s: (float("nan"),)}, "one finite value per column"),
+        ({"stimulus": lambda t, s: ()}, "one finite value per column"),
         ({"compiled": {"lift": 3}}, "not compiled actuator"),
         ({"transducer": lambda s: np.array([1.0, 2.0])}, "one finite rate"),
         ({"transducer": lambda s: np.array([np.nan])}, "one finite rate"),
@@ -369,6 +371,11 @@ def test_a_resumed_run_equals_the_uninterrupted_one(tmp_path):
     resumed = run(body=body, checkpoint_dir=tmp_path, checkpoint_every_us=5000)
     assert "reset" not in body.calls
     assert resumed == whole
+    # a finished run answers again with its record and runs nothing
+    idle = ToyBody()
+    assert run(body=idle, checkpoint_dir=tmp_path, checkpoint_every_us=5000) == whole
+    assert idle.calls == []
+    (tmp_path / "record.json").unlink()
     # another run's checkpoint, or a changed part, refuses
     with pytest.raises(ContractError, match="another run"):
         run("disconnected", checkpoint_dir=tmp_path, checkpoint_every_us=5000)

@@ -138,7 +138,7 @@ adapter.
   integration state with its construction, the ticks since the last checkpoint and the loop
   state (bound by hashes, flushed before the loop state replaces the previous one) at
   control ticks, and resumes from them; the callables and compiled actuators are the
-  caller's to keep the same; a resumed run's record equals the uninterrupted one, on the toy body and on
+  caller's to keep the same; a finished run stores its record there and answers a rerun with it; a resumed run's record equals the uninterrupted one, on the toy body and on
   NeuroMechFly.
 
 `uv run pytest tests/test_closedloop.py tests/test_flygym_body.py` runs it on a two-neuron
