@@ -14,6 +14,14 @@ browser to replay the activity.
 
 The same pages are published at <https://gianlucamazza.github.io/flymsg/>.
 
+## Sensorimotor environment completion
+
+A [versioned, evidence-gated completion plan](docs/sensorimotor-environment-plan.md)
+tracks the path from a headless physical visual arena through measured sensory
+and motor interfaces to independently validated closed-loop behavior. The
+existing M0/M2 and NeuroMechFly experiments are retained, including their
+negative results. This is a roadmap, not a claim of achieved biological realism.
+
 ## Gallery
 
 Paused frames from the page `flymsg viz` writes, 1400×900, adaptive quality off, with the
