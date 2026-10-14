@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Engineering
+
+- **Faster per-neuron membranes**: with a `sim.Membrane` on a minority of neurons the kernel
+  keeps its scalar loops and recomputes only those neurons with their own constants, the same
+  float32 operations, so results are bit-identical (oracle tests for a minority and a majority;
+  on the whole CNS with Mi1 and Tm1 membranes, identical spikes in 5.3 s against 7.2 s).
+
 ### Result
 
 - **Timestep convergence v1: converged** (SF2, #148). All ten battery responses converge at the

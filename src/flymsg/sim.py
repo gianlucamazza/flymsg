@@ -756,8 +756,13 @@ def _advance(
 ):
     stim_steps = kicks.shape[0]
     # without a Membrane every neuron has the Params constants: the hot loops then read
-    # scalars, as before per-neuron membranes existed, with the same float32 values
-    per_neuron = False
+    # scalars, as before per-neuron membranes existed, with the same float32 values. A
+    # Membrane on a minority of neurons keeps the scalar loops and recomputes only those
+    # neurons with their own constants (same operations, so the same values); one on most
+    # neurons reads every neuron's constants
+    special = np.empty(n, dtype=np.int64)
+    is_special = np.zeros(n, dtype=np.bool_)
+    n_special = 0
     for i in range(n):
         if (
             em[i] != em[0]
@@ -766,8 +771,13 @@ def _advance(
             or v_rest[i] != v_rest[0]
             or v_th[i] != v_th[0]
         ):
-            per_neuron = True
-            break
+            special[n_special] = i
+            is_special[i] = True
+            n_special += 1
+    few = 0 < 2 * n_special < n
+    per_neuron = n_special > 0 and not few
+    saved_v = np.empty(n_special, dtype=v.dtype)
+    saved_g = np.empty(n_special, dtype=g.dtype)
     em0, es0, gv0, rest0, th0 = em[0], es[0], gv[0], v_rest[0], v_th[0]
     zero, one = np.float32(0.0), np.float32(1.0)
     # Taylor solver: each component's generator [A | C] as rows of nonzeros (A's pattern is
@@ -897,6 +907,9 @@ def _advance(
                 g[i] = g[i] if frozen else gi
                 th[i] = th[i] * decay_th
         else:
+            for k in range(n_special if few else 0):
+                saved_v[k] = v[special[k]]
+                saved_g[k] = g[special[k]]
             for i in range(n):
                 frozen = ref_until[i] > t
                 vi = (v[i] - rest0) * em0 + g[i] * gv0 + rest0
@@ -904,6 +917,13 @@ def _advance(
                 v[i] = rest0 if frozen else vi
                 g[i] = g[i] if frozen else gi
                 th[i] = th[i] * decay_th
+            for k in range(n_special if few else 0):
+                i = special[k]
+                frozen = ref_until[i] > t
+                vi = (saved_v[k] - v_rest[i]) * em[i] + saved_g[k] * gv[i] + v_rest[i]
+                gi = saved_g[k] * es[i]
+                v[i] = v_rest[i] if frozen else vi
+                g[i] = saved_g[k] if frozen else gi
         for k in range(gap_nodes.size):
             if ref_until[gap_nodes[k]] <= t:
                 v[gap_nodes[k]] = gap_buf[k]
@@ -912,6 +932,12 @@ def _advance(
         if per_neuron:
             for i in range(n):
                 if v[i] > v_th[i] + th[i] and not silent[i] and not is_graded[i]:
+                    spiking[ns] = i
+                    ns += 1
+        elif few:
+            for i in range(n):
+                th_i = v_th[i] if is_special[i] else th0
+                if v[i] > th_i + th[i] and not silent[i] and not is_graded[i]:
                     spiking[ns] = i
                     ns += 1
         else:

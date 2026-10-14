@@ -61,15 +61,16 @@ def test_params_values_given_per_neuron_change_nothing():
 
 def test_kernel_matches_the_oracle_with_per_neuron_membranes():
     W = random_network()
-    membrane = random_membrane(W.shape[0])
-    for seed in (0, 1):
-        got = sim.run(W, STIM, 180, 300, seed=seed, membrane=membrane)
-        want = run_reference(W, STIM, 180, 300, seed=seed, membrane=membrane)
-        assert got.counts.sum() > 0
-        np.testing.assert_array_equal(got.counts, want.counts)
-        np.testing.assert_array_equal(got.first_spike_ms, want.first_spike_ms)
-    default = sim.run(W, STIM, 180, 300, seed=0)
-    assert not np.array_equal(default.counts, got.counts)
+    n = W.shape[0]
+    # a minority of neurons takes the scalar loops with a fix-up, a majority the
+    # per-neuron loops; both must match the oracle
+    for membrane in (random_membrane(n), random_membrane(n, k=n * 3 // 4)):
+        for seed in (0, 1):
+            got = sim.run(W, STIM, 180, 300, seed=seed, membrane=membrane)
+            want = run_reference(W, STIM, 180, 300, seed=seed, membrane=membrane)
+            assert got.counts.sum() > 0
+            np.testing.assert_array_equal(got.counts, want.counts)
+            np.testing.assert_array_equal(got.first_spike_ms, want.first_spike_ms)
 
 
 def test_runtime_in_chunks_matches_run_and_names_the_membrane_in_its_identity():
