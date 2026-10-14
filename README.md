@@ -14,6 +14,10 @@ browser to replay the activity.
 
 The same pages are published at <https://gianlucamazza.github.io/flymsg/>.
 
+## Immersive viewer and virtual experiment roadmap
+
+The existing three.js viewer has an **opt-in, experimental WebXR observation mode** (`?xr=1`). It displays exported anatomy and existing neural activity replays; it does not change the simulation or feed sensory input back to the fly. The desktop viewer remains the default. Immersive hardware performance is not yet qualified. See [3D view](docs/viz.md) and the [Virtual Experimental Environment ADR](docs/adr-virtual-experimental-environment.md) for the independent headless scientific roadmap and no-go gates.
+
 ## Gallery
 
 Paused frames from the page `flymsg viz` writes, 1400×900, adaptive quality off, with the
