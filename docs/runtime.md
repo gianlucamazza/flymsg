@@ -1,6 +1,6 @@
 # ADR: scientific semantics and replaceable execution backends
 
-Status: proposed; CPU foundation and a native CPU fixture executor implemented; the HLSL shader, DX12 host and UWP worker build in CI; GPU parity and console qualification remain ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40)). Related: architecture #30, workbench #27, embodiment #31 and sensory feedback #34.
+Status: accepted by the user, 2026-10-14. CPU foundation (R0) and a native CPU fixture executor (R1, CPU) implemented; the HLSL shader, DX12 host and UWP worker build in CI; GPU parity and console qualification remain ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40)). Related: architecture #30, workbench #27, embodiment #31 and sensory feedback #34.
 
 ## Context
 
