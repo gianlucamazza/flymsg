@@ -12,7 +12,7 @@ and what would remove it.
 
 ## Virtual experimental environment (proposed, not a scientific result)
 
-The [VEE ADR](adr-virtual-experimental-environment.md) distinguishes a reproducible virtual *experimental* world from a VR viewer of exported anatomy and replay. The optional `?xr=1` WebXR observation path is an isolated presentation feature and never changes the neural engine. It is not a claim of fly perception, movement, or VR hardware performance.
+The [VEE ADR](adr-virtual-experimental-environment.md) distinguishes a reproducible virtual _experimental_ world from a VR viewer of exported anatomy and replay. The optional `?xr=1` WebXR observation path is an isolated presentation feature and never changes the neural engine. It is not a claim of fly perception, movement, or VR hardware performance.
 
 - **Viewer gate:** desktop parity, explicit opt-in, supported headset checks, session cleanup, and stereo performance on physical hardware. The existing viewer baseline in [viz](viz.md) remains the regression reference.
 - **Scientific sensory gate:** match measured eye directions, retinal response and LC4/LPLC2 / T4/T5 data under preregistered controls. Current T4/T5 outcomes remain failures.
