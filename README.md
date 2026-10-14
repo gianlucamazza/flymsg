@@ -278,7 +278,7 @@ under its date.
 | [comparison](docs/comparison.md)                      | engine check against the published model, male vs female, the LB3 split                                   |
 | [dimorphism](docs/dimorphism.md)                      | dimorphic neurons among responders, silencing                                                             |
 | [related](docs/related.md)                            | adjacent whole-CNS models, the raw 211,577 count, wiring null N1                                          |
-| [viz](docs/viz.md)                                    | 3D pipeline, whole-CNS soma layer, sides, levels of detail, GPU measurements                              |
+| [viz](docs/viz.md)                                    | 3D pipeline, whole-CNS soma layer, graded potentials, sides, levels of detail, GPU measurements           |
 | [roadmap](docs/roadmap.md)                            | the results index; brain coverage; what is blocked on evidence, hardware, or an unrun lock                |
 | [CHANGELOG](CHANGELOG.md)                             | what changed in each version                                                                              |
 
