@@ -49,7 +49,7 @@ walking and real-time whole-CNS execution are out of scope.
 - **Stimuli:** `flymsg.sensory` and `sensory_runtime` are exploratory Poisson drive, kept as a
   named circuit-only baseline, never as a retina.
 - **Motor:** `validation/motor_map.yaml` stays fail-closed; the NeuroMechFly TTM route of
-  jump3d is a separate, sourced experimental path. jump3d v1 left the ground at 0.06–0.07 m/s
+  jump3d is a separate, sourced experimental path. jump3d v1 left the ground at a speed of 0.06–0.07 m/s
   with the TTM alone; Card & Dickinson 2008 measured 0.48 ± 0.01 m/s for escape take-offs
   ([leads](leads.md)).
 - **Experiments and evidence:** locks, manifests, the run store ([run integrity](run-integrity.md)),
