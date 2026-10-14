@@ -126,8 +126,8 @@ seed 94, 200 simulations in one attempt (11.3 h). No T4 neuron spikes in any con
 any edge, direction or polarity, and T5 is `neither` in all 25. The LMCs still carry contrast
 (−20.6 to −25.4 mV at their lowest under light). The graded medulla receives it with the
 measured sign only for Tm3 and C3 (ON, up to +1.4 and +0.8 mV) and Mi9 (OFF, ±0.6 mV); Mi1 and
-Mi4 move by at most 0.5 mV, without a consistent sign at low LMC rates and with the OFF sign
-from 100 Hz. The measured ranges span 12–28 mV, so the evoked swings are at most about 5% of
+Mi4 move by at most 0.5 mV, without a consistent sign (mostly the OFF one at LMC rates of
+100 Hz and above). The measured ranges span 12–28 mV, so the evoked swings are at most about 5% of
 the measured ones. Before the edge, tonic lamina release holds Mi1, Tm3, Mi4 and C3 below the
 measured dark level (Mi9, an OFF cell, above it), the more so the higher the LMC rate (Mi1 −1.0
 to −16.8 mV, Tm3 to −16.7 mV). Below its lowest measured potential a graded type releases
