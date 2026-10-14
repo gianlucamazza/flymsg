@@ -61,11 +61,11 @@ The M0 v1 `BodyState(position_m, velocity_m_s)` and `MotorCommand(force_n)` do n
 
 **Depends on:** G1, existing eye-map source. **Scope:** physical optics, not invented photoreceptor physiology.
 
-Reuse FlyGym 2.1's existing world/scene composition and, where qualified, its CPU vision support. Do not implement a second physics engine or copy the old FlyGym 1.x Gymnasium vision API into v2. The sensory prediction should use the existing *MaleCNS measured-direction column map* rather than silently swapping to FlyGym's approximate 721-ommatidium lattice.
+Reuse FlyGym 2.1's existing world/scene composition and, where qualified, its CPU vision support. Do not implement a second physics engine or copy the old FlyGym 1.x Gymnasium vision API into v2. The sensory prediction should use the existing _MaleCNS measured-direction column map_ rather than silently swapping to FlyGym's approximate 721-ommatidium lattice.
 
 Given an immutable geometric stimulus definition, world/object pose and eye pose at `t`:
 
-1. Transform object geometry into the *fly eye* frame (not the spectator camera).
+1. Transform object geometry into the _fly eye_ frame (not the spectator camera).
 2. Calculate visual angular position, angular extent, change/expansion and dark/bright coverage for each mapped retinal column; explicitly mask unmapped columns and preserve left/right provenance.
 3. Reuse `eye.disk_coverage` or document a prospective geometry change after quantitative tests. Never choose acceptance angles/gains because they make downstream spikes appear.
 4. Verify a stationary scene at fixed pose, monotonic expansion on an approaching disc, mirror symmetry on a deliberately mirrored fixture, head/body rotation effects, occlusion, out-of-field coverage, timestamps and event ordering.
@@ -107,7 +107,7 @@ Use FlyGym 2.1 / MuJoCo already pinned by FlyMSG, not a new FlyBody process, Uni
 
 **Depends on:** G2 + G3 + G4; reuse M2/#34 and E5/#52 behavior and fixtures rather than building a second loop.
 
-Run one authority for time, neural steps and physics. Each iteration must read the current articulated pose, derive optical inputs from the *new pose*, apply evidence-gated sensory transfer, step the unchanged neural network, decode valid motor events, integrate the body and observe the changed pose at a **later** time.
+Run one authority for time, neural steps and physics. Each iteration must read the current articulated pose, derive optical inputs from the _new pose_, apply evidence-gated sensory transfer, step the unchanged neural network, decode valid motor events, integrate the body and observe the changed pose at a **later** time.
 
 - Do not reuse the one-bit “cut stimulus after takeoff” mechanism as a fake camera.
 - Require controls: open-loop fixed pose, feedback disconnected, recorded-input replay, shuffled input, silenced target circuit, no stimulus, mirrored side, and wiring/motor controls only where scientifically justified.
@@ -135,7 +135,7 @@ Run one authority for time, neural steps and physics. Each iteration must read t
 **Depends on:** G1–G6 as available. Observability uses the existing manifest, immutable run lifecycle, tracing, viewer bundle and benchmark utilities.
 
 - Unit and property tests for transforms, units, side asymmetry and geometry; schedule/checkpoint/exception tests for the B6 v2 integration.
-- Small synthetic fixtures may prove *software behavior*, explicitly without being called biological validation. Full MaleCNS+FlyGym scenarios run separately, pinned to source/data/CPU/GPU and captured as immutable artifacts.
+- Small synthetic fixtures may prove _software behavior_, explicitly without being called biological validation. Full MaleCNS+FlyGym scenarios run separately, pinned to source/data/CPU/GPU and captured as immutable artifacts.
 - Measure simulated milliseconds per wall-clock second, peak RAM/VRAM, p50/p95/p99 step latency, sensor cost and end-to-end trace volume on pinned hardware. Real time is **not** a release requirement unless measured and explicitly requested.
 - Support headless batch/replay first; only then provide visual overlays for stimulus pose, eye coverage, neural activity, motor force and body trajectory through the existing viewer. Any WebXR release qualification remains in #177 and is **not** a dependency for E0–E2.
 - No duplicate adapters, secret fallbacks, copied protocol execution logic, implicit NaN-to-zero for mapped science, dead feature flags, or unversioned breaking changes.
@@ -163,7 +163,7 @@ A slice may explicitly end with **no-go** when its measured prerequisites are ab
 - **#84 / #97 / #140** own the eye and non-spiking/medulla physiology; do not duplicate their mechanistic experiments.
 - **#19 / #35** own muscle/actuator evidence and body-selection limitations.
 - **#36** owns prospective held-out neuromechanical validation.
-- **PR #175 / #177** own the immersive *observer*, not the scientific runtime.
+- **PR #175 / #177** own the immersive _observer_, not the scientific runtime.
 - The new narrowly scoped VEE engineering issues introduced with this plan track B6 v2, 3D optical projection and causal 3D runtime acceptance separately.
 
 ## Risk register and non-negotiable no-go decisions
