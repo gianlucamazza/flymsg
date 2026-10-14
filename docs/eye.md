@@ -105,7 +105,7 @@ are graded and the medulla inputs differ in timing (Behnia et al. 2014; [leads](
 here they are spiking point neurons at rest, which disinhibition from the lamina does not
 lift, the outcome the lock's prior names. Outputs: `results/t4t5/v2/`.
 
-**Version 3 (locked 2026-10-13, no run; #140).** T4's medulla inputs Mi1, Tm3, Mi4, Mi9 and
+**Version 3 (locked 2026-10-13; #140).** T4's medulla inputs Mi1, Tm3, Mi4, Mi9 and
 C3 become graded over the potentials Groschner et al. 2022 recorded in vivo to the same
 30°/s edges (Edmond doi:10.17617/3.8G, CC BY 4.0; `flymsg.medulla` fetches the five files by
 sha256 and the run recomputes the ranges). Per type, the mean dark potential stands at the
@@ -120,3 +120,17 @@ subtypes; T5 is reported. Per-type timing (Mi1 71 ms against Tm3 53 ms, Behnia e
 is not set: the model has one membrane time constant. Graded types never spike, so the
 pathway table counts 0 for Mi1, Tm3, Mi4 and Mi9; their potentials are in `medulla.csv`,
 next to the measured range.
+
+**Result of version 3 (2026-10-14): robust: neither.** Run from `406f622`, the lock commit,
+seed 94, 200 simulations in one attempt (11.3 h). No T4 neuron spikes in any configuration, for
+any edge, direction or polarity, and T5 is `neither` in all 25. The LMCs still carry contrast
+(−20.6 to −25.4 mV at their lowest under light). The graded medulla receives it with the
+measured sign only for Tm3 and C3 (ON, up to +1.4 and +0.8 mV) and Mi9 (OFF, ±0.6 mV); Mi1 and
+Mi4 move by at most 0.5 mV, in either direction under either polarity. The measured ranges span
+12–28 mV, so the evoked swings are at most about 5% of the measured ones. Before the edge,
+tonic lamina release holds the medulla below the measured dark level, the more so the higher
+the LMC rate (Mi1 −1.0 to −16.8 mV, Tm3 to −16.7 mV); from an LMC rate of 100 Hz Mi1 sits below
+−4.0 mV, where it releases nothing. T5's spiking inputs fire only at LMC rates of 200–400 Hz
+(Tm1 up to about 381,000 spikes over the eight stimuli). Making the medulla graded therefore
+does not carry the edge to T4: the lamina → medulla step is too weak and, for Mi1 and Mi4,
+unsigned. Outputs: `results/t4t5/v3.executions/d85c3913…/output/`.

@@ -4,6 +4,12 @@
 
 ### Result
 
+- **T4/T5 v3: robust: neither** (#140, #84). With Mi1, Tm3, Mi4, Mi9 and C3 graded over the in
+  vivo voltages of Groschner et al. 2022, no T4 neuron spikes in any of 25 configurations. The
+  edge reaches the medulla at ≤1.4 mV (at most about 5% of the measured swings), with the
+  measured sign only in Tm3, C3 and Mi9; tonic lamina release holds Mi1 below its release
+  threshold from an LMC rate of 100 Hz. Run from the lock commit `406f622` in one attempt. The
+  archive guard rises to 250 kB for its 202 kB of required tables.
 - **Kenyon cell sparseness v7: within, only with the variant set** (#95, #85). With
   lLN2T+lLN1_bc (43 neurons) as eLNs, 9 of 10 arms are sparse and distinct: 2.0–2.2% /
   1.5–1.7% of Kenyon cells, 43–65% shared (one arm misses by 0.5 points of overlap). With

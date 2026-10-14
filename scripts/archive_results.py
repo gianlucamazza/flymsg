@@ -32,6 +32,7 @@ DIRS = (
     "kc-sparseness/v7.executions/f8549bf7414656b26cf37dcf99811142bb3b1b3a7743b79d5ebeda941457c3a5/output",
     "t4t5/v1",
     "t4t5/v2",
+    "t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output",
     "weight-rule/v1.executions/beb2fccf6b8094ee842de39deba87da17448ac37fab0626e1fa15db517762f4f/output",
     "jump3d/v1",
     "partner-followup/v1",
@@ -40,7 +41,9 @@ DIRS = (
     "loop",
     "sensitivity/v1",
 )
-MAX_BYTES = 200_000  # a guard: results/ holds tables, not raw activity
+# A guard: results/ holds tables, not raw activity. 250 kB since t4t5 v3, whose per-type
+# medulla table over 25 configurations brings its required artifacts to 202 kB.
+MAX_BYTES = 250_000
 
 
 def clean_manifest(doc: dict) -> dict:
