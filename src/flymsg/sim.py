@@ -221,9 +221,9 @@ MAX_GAP_COMPONENT = 4000
 
 def gap_arrays(gap: Gap | None, n: int, p: "Params") -> tuple:
     """Kernel arrays of `gap`: the coupled neurons grouped by connected component (indices,
-    component offsets); per component of m neurons the m x 3m float64 step matrix (none for
-    the Taylor solver, whose offsets still count it)
-    [P | Q | S], row-major, with its offsets, such that for free neurons
+    component offsets); per component of m neurons the m x 3m float64 step matrix
+    [P | Q | S], row-major, with its offsets (the Taylor solver builds none; its offsets
+    still count them), such that for free neurons
     v(t + dt) - v_rest = P (v - v_rest) + Q g + S s with s the spike term of each member;
     each neuron's position among the coupled ones (-1 if none); the spike term's length in
     steps (0 when no coupled spike crosses); and each coupled neuron's spike amplitude in
