@@ -578,29 +578,30 @@ xaml::UIElement dashboard() {
   memory_bar.Height(4);
   memory_bar.Maximum(1.0);
   memory_bar.Foreground(dim);
+  auto history_title = label(15, white), history = label(13, dim);
+  history_title.Text(L"Recent jobs");
+  history_title.Margin({0, 16, 0, 0});
   for (auto element : std::initializer_list<xaml::UIElement>{
-           state, id, progress, detail, memory, memory_bar, error})
+           state, id, progress, detail, memory, memory_bar, error,
+           history_title, history})
     job.Children().Append(element);
 
-  // the view button switches the right card between activity and history
   auto side = card(1, 1);
   auto side_title = label(15, white);
   controls::Grid bars; // one column per bar, bottom-aligned
   bars.Height(150);
   bars.ColumnSpacing(1);
-  auto top = label(11, dim), history = label(13, dim);
-  history.Visibility(xaml::Visibility::Collapsed);
+  auto top = label(11, dim);
+  side_title.Text(L"Last completed job: spikes per bin");
   for (auto element :
-       std::initializer_list<xaml::UIElement>{side_title, bars, top, history})
+       std::initializer_list<xaml::UIElement>{side_title, bars, top})
     side.Children().Append(element);
 
   auto hint = label(12, dim);
-  hint.Text(L"Gamepad   B  cancel the running job      View  activity / "
-            L"recent jobs");
+  hint.Text(L"Gamepad   B  cancel the running job");
   place(hint, 2, 0, 2);
 
   auto shown = std::make_shared<uint64_t>(0);
-  auto history_view = std::make_shared<bool>(false);
   auto pressed = std::make_shared<Windows::Gaming::Input::GamepadButtons>(
       Windows::Gaming::Input::GamepadButtons::None);
   xaml::DispatcherTimer timer;
@@ -614,8 +615,6 @@ xaml::UIElement dashboard() {
       const auto fresh = now & ~*pressed; // rising edges only
       if ((fresh & GamepadButtons::B) == GamepadButtons::B)
         worker().request_cancel();
-      if ((fresh & GamepadButtons::View) == GamepadButtons::View)
-        *history_view = !*history_view;
       *pressed = now;
     }
     const auto t = worker().snapshot();
@@ -646,13 +645,6 @@ xaml::UIElement dashboard() {
                 fixed(limit / 1073741824.0, 1) + L" GB");
     error.Text(t.error.empty() ? L"" : L"error: " + wide(t.error));
 
-    side_title.Text(*history_view ? L"Recent jobs"
-                                  : L"Last completed job: spikes per bin");
-    bars.Visibility(*history_view ? xaml::Visibility::Collapsed
-                                  : xaml::Visibility::Visible);
-    top.Visibility(bars.Visibility());
-    history.Visibility(*history_view ? xaml::Visibility::Visible
-                                     : xaml::Visibility::Collapsed);
     if (t.activity_generation != *shown) { // rebuild for a new job's counts
       bars.Children().Clear();
       bars.ColumnDefinitions().Clear();
