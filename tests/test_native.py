@@ -215,7 +215,6 @@ def test_the_console_bench_drives_a_battery_case():
     finally:
         sys.path.remove(str(scripts))
     assert module.CASE in sensitivity.load()["cases"]["positive"]
-||||||| parent of 394154b (Viewer: replay a native or console run (flymsg viz --native OUTPUT FIXTURE))
 
 
 def test_a_native_run_replays_as_a_simulation_result(tmp_path):
