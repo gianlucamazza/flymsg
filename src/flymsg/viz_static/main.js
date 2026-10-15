@@ -1826,6 +1826,12 @@ const pagedScene = pagedEnabled
 function originalObjects() {
   return data.children.filter((o) => o.geometry);
 }
+function diagnosticRender(draw) {
+  if (!pagedScene) return draw();
+  if (pagedScene.state !== "ready")
+    throw new Error("Diagnostic requires ready GPU resources");
+  return pagedScene.render(originalObjects(), draw);
+}
 function prepareOriginalOracle() {
   if (!pagedEnabled) return;
   // Only an explicit diagnostic allocates the legacy global arenas. Production
@@ -2041,6 +2047,9 @@ if (query.has("check")) {
     resources: resourceReport,
     paged: pagedScene,
     gpuInventory: () => pagedScene?.inventory(sha256) ?? null,
+    renderScene: (c = camera) =>
+      diagnosticRender(() => renderer.render(world, c)),
+    renderDesktop: () => diagnosticRender(() => composer.render()),
     raster: () => rasterPainter.report(),
     scheduleLines: (eyes) => {
       prepareOriginalOracle();

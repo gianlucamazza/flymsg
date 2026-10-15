@@ -91,7 +91,7 @@ try {
         fidelity:flymsg.fidelity(),draws:{...flymsg.renderer.info.render},resources:flymsg.resources(),camera:flymsg.camera.matrixWorld.toArray()})},${duration * 1000});
   })`);
   const provenance =
-    await evaluate(`Promise.all(['main.js','geometry-pages.js','page-views.js','fidelity.js'].map(async file=>{
+    await evaluate(`Promise.all(['main.js','geometry-pages.js','page-views.js','fidelity.js','paged-scene.js','gpu-upload.js','primitive-pages.js','source-slots.js'].map(async file=>{
     const b=await(await fetch(file)).arrayBuffer();const h=await crypto.subtle.digest('SHA-256',b);return [file,[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('')];
   })).then(Object.fromEntries)`);
   const values = [...sample.raw_intervals_ms].sort((a, b) => a - b);

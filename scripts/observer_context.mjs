@@ -19,7 +19,11 @@ try {
     if(flymsg.renderer.xr.isPresenting)throw Error('Non-immersive test required');
     const saved=flymsg.diagnostic({continuous:false,time:20,playing:false,residentLines:true});
     try {
-      const options={width:64,height:64,time:20,culling:true};
+      const ready=async()=>{const until=performance.now()+30000;
+        while(flymsg.paged&&flymsg.paged.state!=='ready'&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,100));
+        if(flymsg.paged&&flymsg.paged.state!=='ready')throw Error('GPU recovery incomplete; no completed artifact')};
+      await ready();
+      const options={width:64,height:64,time:20,culling:true,pipeline:flymsg.paged?'paged':'original'};
       const before=await flymsg.reference(options);
       const canvas=flymsg.renderer.domElement,gl=flymsg.renderer.getContext();
       const extension=gl.getExtension('WEBGL_lose_context');
@@ -34,11 +38,12 @@ try {
         extension.loseContext();
       });
       if(gl.isContextLost())throw Error('Context remains lost');
+      await ready();
       const after=await flymsg.reference(options);
       for(const key of Object.keys(before.images))
         if(before.images[key].sha256!==after.images[key].sha256)throw Error('Restored image differs: '+key);
       if(JSON.stringify(before.geometry)!==JSON.stringify(after.geometry))throw Error('Restored geometry differs');
-      return {schema:'flymsg.nonimmersive-context-recovery/v1',events,before,after,
+      return {schema:'flymsg.nonimmersive-context-recovery/v1',renderer_pipeline:options.pipeline,events,before,after,
         resources:flymsg.resources(),fidelity:flymsg.fidelity(),qualification:'Synthetic direct-render recovery only; not immersive lifecycle or compositor qualification'};
     } finally {flymsg.diagnostic(saved)}
   })()`);

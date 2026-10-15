@@ -84,7 +84,7 @@ try {
   );
   // Explicitly prepare original indices/activity even when the runtime suspends rAF.
   const reference = await evaluate(
-    "flymsg.reference({width:32,height:32,time:0,culling:false})",
+    "flymsg.reference({width:32,height:32,time:0,culling:false,pipeline:flymsg.paged?'paged':'original'})",
   );
   const result = await evaluate(
     `(${serializedGpuProbe.toString()})(flymsg,${JSON.stringify(protocol)})`,

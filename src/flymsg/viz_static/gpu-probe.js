@@ -88,7 +88,14 @@ export function serializedGpuProbe(
             gl.disable(gl.RASTERIZER_DISCARD);
             renderer.clear();
             gl[discard ? "enable" : "disable"](gl.RASTERIZER_DISCARD);
-            if (mode !== "clear-readback") renderer.render(world, camera);
+            if (mode !== "clear-readback") {
+              if (view.renderScene) view.renderScene(camera);
+              else if (view.paged)
+                throw new Error(
+                  "Paged diagnostic render entrypoint unavailable",
+                );
+              else renderer.render(world, camera);
+            }
             // A finish call alone did not demonstrate GPU completion on Quest.
             // Read EVERY pixel to require fresh results from the whole target.
             renderer.readRenderTargetPixels(target, 0, 0, size, size, pixels);
@@ -124,6 +131,7 @@ export function serializedGpuProbe(
     }
     return {
       schema: "flymsg.serialized-render-probe/v2",
+      renderer_pipeline: view.paged ? "immutable-pages" : "original",
       records,
       warmup,
       repeats,

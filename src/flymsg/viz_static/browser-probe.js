@@ -130,11 +130,17 @@ export async function browserProbe(
       r.setViewport(0, 0, size, size);
       r.setScissorTest(false);
       if (pipeline === "direct") {
-        r.render(world, c);
+        if (view.renderScene) view.renderScene(c);
+        else if (view.paged)
+          throw new Error("Paged diagnostic render entrypoint unavailable");
+        else r.render(world, c);
         r.readRenderTargetPixels(rt, 0, 0, size, size, pixels);
       } else {
         r.setRenderTarget(null);
-        view.composer.render();
+        if (view.renderDesktop) view.renderDesktop();
+        else if (view.paged)
+          throw new Error("Paged compositor entrypoint unavailable");
+        else view.composer.render();
         gl.readPixels(0, 0, size, size, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
       }
       records.push({
@@ -164,6 +170,7 @@ export async function browserProbe(
     completed = true;
     return {
       schema: "flymsg.browser-probe/v1",
+      renderer_pipeline: view.paged ? "immutable-pages" : "original",
       capabilities,
       pipeline,
       workload_started_at: workloadStartedAt,
@@ -206,7 +213,10 @@ export async function browserProbe(
         time: saved.time,
         culling: saved.pageCulling,
       });
-      if (pipeline === "desktop") view.composer.render();
+      if (pipeline === "desktop") {
+        if (view.renderDesktop) view.renderDesktop();
+        else if (!view.paged) view.composer.render();
+      }
     }
   }
 }

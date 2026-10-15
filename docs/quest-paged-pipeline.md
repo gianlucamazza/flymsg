@@ -67,6 +67,11 @@ colour, neuron ID and packed depth; the default is always the original oracle.
 including checksums and primitive provenance. CPU originals are not replaced by
 candidate-generated expected arrays.
 
+Direct/compositor probes use `flymsg.renderScene()`/`renderDesktop()` to select
+the same pipeline as the application loop, and record that pipeline explicitly.
+The legacy resident-index probe rejects immutable pages instead of accidentally
+timing the hidden reference. Context recovery also waits for the active pipeline.
+
 ```sh
 node --test tests/js/*.test.mjs
 .venv/bin/pytest -q tests

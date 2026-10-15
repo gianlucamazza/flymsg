@@ -1,5 +1,8 @@
 // Real viewer/materials, two explicitly declared source neurons. This fixture
 // tests rendering equivalence; it cannot qualify a reduced scene for performance.
+import { browserProbe } from "./browser-probe.js";
+import { serializedGpuProbe } from "./gpu-probe.js";
+
 export async function observerPipelineOracle() {
   const deadline = performance.now() + 60000;
   while (performance.now() < deadline) {
@@ -59,9 +62,37 @@ export async function observerPipelineOracle() {
         source_geometry: original.geometry,
       });
     }
+  let diagnosticRouting = null;
+  if (api.fidelity().representation === "skeleton") {
+    const gpu = serializedGpuProbe(api, { sizes: [64], warmup: 1, repeats: 1 });
+    const direct = await browserProbe(api, {
+      seconds: 2,
+      size: 64,
+      pipeline: "direct",
+    });
+    const desktop = await browserProbe(api, {
+      seconds: 2,
+      size: 64,
+      pipeline: "desktop",
+    });
+    if (
+      [gpu, direct, desktop].some(
+        (r) => r.renderer_pipeline !== "immutable-pages",
+      )
+    )
+      throw new Error("Diagnostic measured a different pipeline");
+    diagnosticRouting = {
+      gpu_variants: gpu.records.length,
+      direct_frames: direct.records.length,
+      desktop_frames: desktop.records.length,
+      renderer_pipeline: "immutable-pages",
+      qualification: "software fixture routing only; no performance claim",
+    };
+  }
   return {
     status: "pass",
     before_reference_resources: beforeReferenceResources,
+    diagnostic_routing: diagnosticRouting,
     qualification:
       "correctness fixture only; not full-scene hardware performance",
     fidelity: api.fidelity(),

@@ -3,6 +3,10 @@ import { test } from "node:test";
 import * as THREE from "../../src/flymsg/viz_static/vendor/three/build/three.module.min.js";
 import { residentLineProbe } from "../../src/flymsg/viz_static/resident-probe.js";
 
+test("legacy index probe rejects immutable GPU pages before touching renderer state", async () => {
+  await assert.rejects(residentLineProbe({ paged: {} }, () => {}), /cannot measure/);
+});
+
 test("failed reference preparation restores diagnostic and renderer state", async () => {
   const original = {
     time: 7,

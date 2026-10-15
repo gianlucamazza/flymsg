@@ -5,6 +5,10 @@ export async function residentLineProbe(
   localEyePlanes,
   { size = 512, warmup = 3, repeats = 8, time = 20 } = {},
 ) {
+  if (view.paged)
+    throw new Error(
+      "Legacy resident-index probe cannot measure immutable GPU pages",
+    );
   const { THREE: T, renderer: r, world, camera, data, skeletons } = view;
   if (
     r.xr.isPresenting ||

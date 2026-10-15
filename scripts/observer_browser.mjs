@@ -47,7 +47,7 @@ try {
     adb_server_port: process.env.ANDROID_ADB_SERVER_PORT ?? "5037",
   });
   const served =
-    await browser.evaluate(`(async()=>Object.fromEntries(await Promise.all(['main.js','resident-lines.js','geometry-pages.js','page-views.js'].map(async name=>{
+    await browser.evaluate(`(async()=>Object.fromEntries(await Promise.all(['main.js','resident-lines.js','geometry-pages.js','page-views.js','paged-scene.js','gpu-upload.js','primitive-pages.js','source-slots.js'].map(async name=>{
     const response=await fetch(new URL(name,location.href));if(!response.ok)throw Error(name);
     const hash=await crypto.subtle.digest('SHA-256',await response.arrayBuffer());
     return [name,[...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join('')];
