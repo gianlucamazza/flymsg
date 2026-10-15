@@ -30,7 +30,7 @@ jobs:
         run: |
           $sdk = Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin" -Directory | Sort-Object Name -Descending | Where-Object { Test-Path "$($_.FullName)/x64/dxc.exe" } | Select-Object -First 1
           if (-not $sdk) { throw "Windows SDK DXC compiler missing" }
-          & "$($sdk.FullName)/x64/dxc.exe" -T cs_6_2 -denorm preserve -E CSMain -Gis -Ges -Fo build/native/lif.cso native/lif.hlsl
+          & "$($sdk.FullName)/x64/dxc.exe" -T cs_6_0 -E CSMain -Gis -Ges -Fo build/native/lif.cso native/lif.hlsl
           if ($LASTEXITCODE -ne 0) { throw "HLSL compilation failed" }
       - name: Build unsigned UWP worker package
         shell: pwsh

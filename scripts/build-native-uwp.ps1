@@ -12,7 +12,7 @@ $toolset = Get-ChildItem "$($targets.FullName)\Platforms\x64\PlatformToolsets" -
 if (-not $sdk -or -not $toolset) { throw "Windows SDK/MSVC toolset missing" }
 & nuget restore native/uwp/packages.config -PackagesDirectory native/uwp/packages -NonInteractive
 if ($LASTEXITCODE -ne 0) { throw "CppWinRT restore failed" }
-& "$sdkRoot\bin\$($sdk.Name)\x64\dxc.exe" -T cs_6_2 -denorm preserve -E CSMain -Gis -Ges -Fo native/uwp/Assets/lif.cso native/lif.hlsl
+& "$sdkRoot\bin\$($sdk.Name)\x64\dxc.exe" -T cs_6_0 -E CSMain -Gis -Ges -Fo native/uwp/Assets/lif.cso native/lif.hlsl
 if ($LASTEXITCODE -ne 0) { throw "HLSL compile failed" }
 & "$vs\MSBuild\Current\Bin\MSBuild.exe" native/uwp/FlymsgWorker.vcxproj /m /p:Configuration=Release /p:Platform=x64 "/p:FlymsgSdkVersion=$($sdk.Name)" "/p:FlymsgToolset=$($toolset.Name)" "/p:FlymsgCommit=$Commit" /p:AppxPackageSigningEnabled=false /p:UapAppxPackageBuildMode=SideloadOnly
 if ($LASTEXITCODE -ne 0) { throw "UWP build failed" }

@@ -517,9 +517,10 @@ xaml::UIElement dashboard() {
   // rows: header, two columns (job | activity or history), controls
   controls::Grid root;
   root.Background(brush(16, 24, 32));
-  root.Padding({96, 54, 96, 54}); // TV title-safe area, about 5%
-  root.RowSpacing(24);
-  root.ColumnSpacing(48);
+  root.Padding(
+      {48, 27, 48, 27}); // title-safe 5% of the 960 x 540 the console lays out
+  root.RowSpacing(14);
+  root.ColumnSpacing(24);
   for (auto height :
        {xaml::GridLengthHelper::Auto(),
         xaml::GridLengthHelper::FromValueAndType(1, xaml::GridUnitType::Star),
@@ -544,20 +545,20 @@ xaml::UIElement dashboard() {
   auto card = [&](int row, int column) {
     controls::Border border;
     border.Background(panel);
-    border.CornerRadius({12, 12, 12, 12});
-    border.Padding({32, 28, 32, 28});
+    border.CornerRadius({8, 8, 8, 8});
+    border.Padding({18, 14, 18, 14});
     controls::StackPanel stack;
-    stack.Spacing(14);
+    stack.Spacing(8);
     border.Child(stack);
     place(border, row, column);
     return stack;
   };
 
   controls::StackPanel header;
-  header.Spacing(6);
-  auto title = label(40, white);
+  header.Spacing(2);
+  auto title = label(26, white);
   title.Text(L"FlyMSG neural worker");
-  auto build = label(20, dim);
+  auto build = label(12, dim);
   const auto adapter = flymsg::hardware_adapter();
   build.Text(L"commit " + wide(FLYMSG_COMMIT).substr(0, 12) + L"   GPU " +
              (adapter.empty() ? L"none" : adapter) +
@@ -567,14 +568,14 @@ xaml::UIElement dashboard() {
   place(header, 0, 0, 2);
 
   auto job = card(1, 0);
-  auto state = label(34, accent), id = label(20, dim),
-       detail = label(24, white), memory = label(20, dim),
-       error = label(20, warn);
+  auto state = label(22, accent), id = label(13, dim),
+       detail = label(15, white), memory = label(12, dim),
+       error = label(12, warn);
   controls::ProgressBar progress;
-  progress.Height(16);
+  progress.Height(8);
   progress.Foreground(accent);
   controls::ProgressBar memory_bar;
-  memory_bar.Height(8);
+  memory_bar.Height(4);
   memory_bar.Maximum(1.0);
   memory_bar.Foreground(dim);
   for (auto element : std::initializer_list<xaml::UIElement>{
@@ -583,17 +584,17 @@ xaml::UIElement dashboard() {
 
   // the view button switches the right card between activity and history
   auto side = card(1, 1);
-  auto side_title = label(26, white);
+  auto side_title = label(15, white);
   controls::Grid bars; // one column per bar, bottom-aligned
-  bars.Height(260);
-  bars.ColumnSpacing(2);
-  auto top = label(18, dim), history = label(20, dim);
+  bars.Height(150);
+  bars.ColumnSpacing(1);
+  auto top = label(11, dim), history = label(13, dim);
   history.Visibility(xaml::Visibility::Collapsed);
   for (auto element :
        std::initializer_list<xaml::UIElement>{side_title, bars, top, history})
     side.Children().Append(element);
 
-  auto hint = label(18, dim);
+  auto hint = label(12, dim);
   hint.Text(L"Gamepad   B  cancel the running job      View  activity / "
             L"recent jobs");
   place(hint, 2, 0, 2);
@@ -668,7 +669,7 @@ xaml::UIElement dashboard() {
             1, xaml::GridUnitType::Star));
         bars.ColumnDefinitions().Append(column);
         xaml::Shapes::Rectangle bar;
-        bar.Height(peak > 0 ? std::max(2.0, 260.0 * merged[c] / peak) : 2.0);
+        bar.Height(peak > 0 ? std::max(1.0, 150.0 * merged[c] / peak) : 1.0);
         bar.VerticalAlignment(xaml::VerticalAlignment::Bottom);
         bar.Fill(accent);
         controls::Grid::SetColumn(bar, int(c));
