@@ -46,6 +46,7 @@ DIRS = (
     "gf_looming/v1",
     "gf_looming/v2",
     "song/v1",
+    "baselines/v1.executions/f89ed1c350b97a63cb5bfa7c483f1837ad81d585bcea19742800f809674bb7f4/output",
     "apl-claws/v1.executions/b914035a1c1a364adec8e0a880373c104287b3e677f39521f76550e5dbadc0fd/output",
 )
 # A guard: results/ holds tables, not raw activity. 250 kB since t4t5 v3, whose per-type

@@ -125,6 +125,7 @@ recorded on the linked page. Negative results stay in the
 | KC → MBON11 depression v1                  | inconsistent: both odors go silent                           | [model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
 | Synapse weight rule v1                     | undecided: density and count rank Liu et al.'s uEPSPs alike  | [model](docs/model.md#synapse-weight-scaled-for-synapse-density)                                       |
 | Timestep convergence v1 (SF2)              | converged at 0.1 ms                                          | [validation](docs/validation.md#timestep-convergence-sf2-a-check-not-a-score)                          |
+| Simple baselines v1 (SF2)                  | all 7 positive responses specific vs 199 shuffles (Holm)     | [validation](docs/validation.md#simple-baselines-sf2-a-report-not-a-score)                             |
 | Pulse vs sine song v1 (#36, held out)      | uninformative: the no-go (model signs not resolved)          | [benchmarks](docs/benchmarks.md#pulse-vs-sine-song-across-neuropils-lock-2026-10-14-36)                |
 | Looming → giant fiber timing v1 (#34)      | uninformative: the model's giant fiber fires in every cell   | [benchmarks](docs/benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                      |
 | Looming → giant fiber timing v2 (#34)      | locked, not run: passive giant fibers                        | [benchmarks](docs/benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                      |

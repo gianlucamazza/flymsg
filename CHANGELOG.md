@@ -4,6 +4,8 @@
 
 ### Result
 
+- **Simple baselines v1** (#148, SF2): every positive response of the battery is specific. Against 199 degree-preserving shuffles, no shuffle reaches the measured rate in any of the seven positive responses (p = 0.005, Holm 0.04), and the shuffles' 95th percentile is 0 Hz everywhere. The bitter negative stays silent in both, as named in the lock. The measured wiring also recruits several times more neurons. `results/baselines/v1.executions/f89ed1c3…/output/`.
+
 - **Pulse vs sine song v1** (#36): uninformative, the no-go.
   - **The no-go.** At 100 Hz only 14 of 32 neuropils resolve a sign over the seeds (0.44, below 0.5), so the run stopped before the Pacheco et al. 2021 data were opened.
   - **The model.** It barely tells the songs apart: the median |index| is 0.046, and the resolved neuropils split 7 and 7. This is consistent with the no-go's stated reason (LIF neurons without a band-pass may smooth the 27.8 Hz envelope), which the run does not test.

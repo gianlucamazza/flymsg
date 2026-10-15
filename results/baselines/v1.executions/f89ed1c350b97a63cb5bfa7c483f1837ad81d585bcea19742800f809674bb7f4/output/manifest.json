@@ -1,0 +1,1678 @@
+{
+  "command": "baselines --run",
+  "config": {
+    "baseline": {
+      "draws": 199,
+      "draws_why": "the smallest empirical p is 1/200 = 0.005, below Holm's first threshold for the eight responses at alpha 0.05 (0.05 / 8 = 0.00625), so a response can be called specific after the correction; with 99 draws (p >= 0.01) none could",
+      "family": "degree_preserving",
+      "method": "nulls.shuffle_degree_preserving: N1's permutation of post (configuration model; Maslov & Sneppen 2002, Newman 2003); neurons, signs, stimulus rows and target types unchanged",
+      "seeds_why": "disjoint from N1 (seed 0), the null families (draws 0-19) and song (3600-3698)",
+      "shuffle_seed0": 4000
+    },
+    "baselines_sha256": "bff97462896375970c2573fee37f1cca1a14c165033418691f743267d50c07f9",
+    "baselines_version": 1,
+    "battery": {
+      "duration_ms": 600.0,
+      "rate_hz": 100.0,
+      "seed0": 0,
+      "seeds": 5,
+      "stim_ms": 300.0
+    }
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "attempts": [
+      {
+        "checkpoint": "sf2-baselines.ckpt",
+        "computed_jobs": [
+          [
+            "shuffle",
+            4003
+          ],
+          [
+            "shuffle",
+            4002
+          ],
+          [
+            "shuffle",
+            4001
+          ],
+          [
+            "shuffle",
+            4004
+          ],
+          [
+            "shuffle",
+            4000
+          ],
+          [
+            "real"
+          ],
+          [
+            "shuffle",
+            4006
+          ],
+          [
+            "shuffle",
+            4008
+          ],
+          [
+            "shuffle",
+            4005
+          ],
+          [
+            "shuffle",
+            4007
+          ],
+          [
+            "shuffle",
+            4010
+          ],
+          [
+            "shuffle",
+            4009
+          ],
+          [
+            "shuffle",
+            4012
+          ],
+          [
+            "shuffle",
+            4013
+          ],
+          [
+            "shuffle",
+            4011
+          ],
+          [
+            "shuffle",
+            4014
+          ],
+          [
+            "shuffle",
+            4015
+          ],
+          [
+            "shuffle",
+            4016
+          ],
+          [
+            "shuffle",
+            4017
+          ],
+          [
+            "shuffle",
+            4018
+          ],
+          [
+            "shuffle",
+            4019
+          ],
+          [
+            "shuffle",
+            4020
+          ],
+          [
+            "shuffle",
+            4021
+          ],
+          [
+            "shuffle",
+            4022
+          ],
+          [
+            "shuffle",
+            4024
+          ],
+          [
+            "shuffle",
+            4023
+          ],
+          [
+            "shuffle",
+            4025
+          ],
+          [
+            "shuffle",
+            4026
+          ],
+          [
+            "shuffle",
+            4028
+          ],
+          [
+            "shuffle",
+            4027
+          ],
+          [
+            "shuffle",
+            4029
+          ],
+          [
+            "shuffle",
+            4030
+          ],
+          [
+            "shuffle",
+            4031
+          ],
+          [
+            "shuffle",
+            4032
+          ],
+          [
+            "shuffle",
+            4033
+          ],
+          [
+            "shuffle",
+            4034
+          ],
+          [
+            "shuffle",
+            4035
+          ],
+          [
+            "shuffle",
+            4036
+          ],
+          [
+            "shuffle",
+            4038
+          ],
+          [
+            "shuffle",
+            4037
+          ],
+          [
+            "shuffle",
+            4039
+          ],
+          [
+            "shuffle",
+            4040
+          ],
+          [
+            "shuffle",
+            4044
+          ],
+          [
+            "shuffle",
+            4041
+          ],
+          [
+            "shuffle",
+            4043
+          ],
+          [
+            "shuffle",
+            4042
+          ],
+          [
+            "shuffle",
+            4045
+          ],
+          [
+            "shuffle",
+            4046
+          ],
+          [
+            "shuffle",
+            4047
+          ],
+          [
+            "shuffle",
+            4048
+          ],
+          [
+            "shuffle",
+            4049
+          ],
+          [
+            "shuffle",
+            4050
+          ],
+          [
+            "shuffle",
+            4051
+          ],
+          [
+            "shuffle",
+            4052
+          ],
+          [
+            "shuffle",
+            4053
+          ],
+          [
+            "shuffle",
+            4054
+          ],
+          [
+            "shuffle",
+            4055
+          ],
+          [
+            "shuffle",
+            4058
+          ],
+          [
+            "shuffle",
+            4057
+          ],
+          [
+            "shuffle",
+            4056
+          ],
+          [
+            "shuffle",
+            4059
+          ],
+          [
+            "shuffle",
+            4062
+          ],
+          [
+            "shuffle",
+            4064
+          ],
+          [
+            "shuffle",
+            4061
+          ],
+          [
+            "shuffle",
+            4060
+          ],
+          [
+            "shuffle",
+            4063
+          ],
+          [
+            "shuffle",
+            4065
+          ],
+          [
+            "shuffle",
+            4066
+          ],
+          [
+            "shuffle",
+            4069
+          ],
+          [
+            "shuffle",
+            4067
+          ],
+          [
+            "shuffle",
+            4068
+          ],
+          [
+            "shuffle",
+            4070
+          ],
+          [
+            "shuffle",
+            4075
+          ],
+          [
+            "shuffle",
+            4074
+          ],
+          [
+            "shuffle",
+            4071
+          ],
+          [
+            "shuffle",
+            4072
+          ],
+          [
+            "shuffle",
+            4073
+          ],
+          [
+            "shuffle",
+            4076
+          ],
+          [
+            "shuffle",
+            4077
+          ],
+          [
+            "shuffle",
+            4079
+          ],
+          [
+            "shuffle",
+            4078
+          ],
+          [
+            "shuffle",
+            4080
+          ],
+          [
+            "shuffle",
+            4082
+          ],
+          [
+            "shuffle",
+            4081
+          ],
+          [
+            "shuffle",
+            4084
+          ],
+          [
+            "shuffle",
+            4083
+          ],
+          [
+            "shuffle",
+            4086
+          ],
+          [
+            "shuffle",
+            4085
+          ],
+          [
+            "shuffle",
+            4087
+          ],
+          [
+            "shuffle",
+            4088
+          ],
+          [
+            "shuffle",
+            4089
+          ],
+          [
+            "shuffle",
+            4090
+          ],
+          [
+            "shuffle",
+            4091
+          ],
+          [
+            "shuffle",
+            4092
+          ],
+          [
+            "shuffle",
+            4094
+          ],
+          [
+            "shuffle",
+            4093
+          ],
+          [
+            "shuffle",
+            4096
+          ],
+          [
+            "shuffle",
+            4095
+          ],
+          [
+            "shuffle",
+            4097
+          ],
+          [
+            "shuffle",
+            4098
+          ],
+          [
+            "shuffle",
+            4099
+          ],
+          [
+            "shuffle",
+            4100
+          ],
+          [
+            "shuffle",
+            4101
+          ],
+          [
+            "shuffle",
+            4102
+          ],
+          [
+            "shuffle",
+            4103
+          ],
+          [
+            "shuffle",
+            4104
+          ],
+          [
+            "shuffle",
+            4105
+          ],
+          [
+            "shuffle",
+            4106
+          ],
+          [
+            "shuffle",
+            4107
+          ],
+          [
+            "shuffle",
+            4108
+          ],
+          [
+            "shuffle",
+            4109
+          ],
+          [
+            "shuffle",
+            4110
+          ],
+          [
+            "shuffle",
+            4111
+          ],
+          [
+            "shuffle",
+            4112
+          ]
+        ],
+        "finished_at": "2026-10-15T21:05:07.296465+00:00",
+        "host": "lenovo",
+        "id": "84f65da7029248acafa5dd8a0b225821",
+        "kernel": "7.2.9-arch1-1",
+        "resumed_jobs": [],
+        "started_at": "2026-10-15T19:40:07.840764+00:00",
+        "status": "interrupted",
+        "system": "Linux"
+      },
+      {
+        "checkpoint": "sf2-baselines.ckpt",
+        "computed_jobs": [
+          [
+            "shuffle",
+            4117
+          ],
+          [
+            "shuffle",
+            4113
+          ],
+          [
+            "shuffle",
+            4115
+          ],
+          [
+            "shuffle",
+            4114
+          ],
+          [
+            "shuffle",
+            4118
+          ],
+          [
+            "shuffle",
+            4116
+          ],
+          [
+            "shuffle",
+            4120
+          ],
+          [
+            "shuffle",
+            4121
+          ],
+          [
+            "shuffle",
+            4123
+          ],
+          [
+            "shuffle",
+            4119
+          ],
+          [
+            "shuffle",
+            4122
+          ],
+          [
+            "shuffle",
+            4124
+          ],
+          [
+            "shuffle",
+            4125
+          ],
+          [
+            "shuffle",
+            4126
+          ],
+          [
+            "shuffle",
+            4127
+          ],
+          [
+            "shuffle",
+            4128
+          ],
+          [
+            "shuffle",
+            4129
+          ],
+          [
+            "shuffle",
+            4130
+          ],
+          [
+            "shuffle",
+            4131
+          ],
+          [
+            "shuffle",
+            4132
+          ],
+          [
+            "shuffle",
+            4133
+          ],
+          [
+            "shuffle",
+            4134
+          ],
+          [
+            "shuffle",
+            4135
+          ],
+          [
+            "shuffle",
+            4136
+          ],
+          [
+            "shuffle",
+            4137
+          ],
+          [
+            "shuffle",
+            4138
+          ],
+          [
+            "shuffle",
+            4141
+          ],
+          [
+            "shuffle",
+            4139
+          ],
+          [
+            "shuffle",
+            4140
+          ],
+          [
+            "shuffle",
+            4142
+          ],
+          [
+            "shuffle",
+            4143
+          ],
+          [
+            "shuffle",
+            4144
+          ],
+          [
+            "shuffle",
+            4145
+          ],
+          [
+            "shuffle",
+            4147
+          ],
+          [
+            "shuffle",
+            4146
+          ],
+          [
+            "shuffle",
+            4148
+          ],
+          [
+            "shuffle",
+            4149
+          ],
+          [
+            "shuffle",
+            4151
+          ],
+          [
+            "shuffle",
+            4150
+          ],
+          [
+            "shuffle",
+            4152
+          ],
+          [
+            "shuffle",
+            4153
+          ],
+          [
+            "shuffle",
+            4154
+          ],
+          [
+            "shuffle",
+            4155
+          ],
+          [
+            "shuffle",
+            4156
+          ],
+          [
+            "shuffle",
+            4157
+          ],
+          [
+            "shuffle",
+            4158
+          ],
+          [
+            "shuffle",
+            4159
+          ],
+          [
+            "shuffle",
+            4160
+          ],
+          [
+            "shuffle",
+            4161
+          ],
+          [
+            "shuffle",
+            4162
+          ],
+          [
+            "shuffle",
+            4163
+          ],
+          [
+            "shuffle",
+            4164
+          ],
+          [
+            "shuffle",
+            4165
+          ],
+          [
+            "shuffle",
+            4166
+          ],
+          [
+            "shuffle",
+            4167
+          ],
+          [
+            "shuffle",
+            4168
+          ],
+          [
+            "shuffle",
+            4169
+          ],
+          [
+            "shuffle",
+            4170
+          ],
+          [
+            "shuffle",
+            4171
+          ],
+          [
+            "shuffle",
+            4172
+          ],
+          [
+            "shuffle",
+            4173
+          ],
+          [
+            "shuffle",
+            4174
+          ],
+          [
+            "shuffle",
+            4175
+          ],
+          [
+            "shuffle",
+            4176
+          ],
+          [
+            "shuffle",
+            4178
+          ],
+          [
+            "shuffle",
+            4177
+          ],
+          [
+            "shuffle",
+            4179
+          ],
+          [
+            "shuffle",
+            4182
+          ],
+          [
+            "shuffle",
+            4180
+          ],
+          [
+            "shuffle",
+            4184
+          ],
+          [
+            "shuffle",
+            4181
+          ],
+          [
+            "shuffle",
+            4183
+          ],
+          [
+            "shuffle",
+            4185
+          ],
+          [
+            "shuffle",
+            4188
+          ],
+          [
+            "shuffle",
+            4186
+          ],
+          [
+            "shuffle",
+            4187
+          ],
+          [
+            "shuffle",
+            4189
+          ],
+          [
+            "shuffle",
+            4190
+          ],
+          [
+            "shuffle",
+            4191
+          ],
+          [
+            "shuffle",
+            4192
+          ],
+          [
+            "shuffle",
+            4194
+          ],
+          [
+            "shuffle",
+            4195
+          ],
+          [
+            "shuffle",
+            4193
+          ],
+          [
+            "shuffle",
+            4196
+          ],
+          [
+            "shuffle",
+            4197
+          ],
+          [
+            "shuffle",
+            4198
+          ]
+        ],
+        "finished_at": "2026-10-15T22:21:45.224251+00:00",
+        "host": "lenovo",
+        "id": "d17dd47c23b84b818dcc4da7a32f6857",
+        "kernel": "7.2.9-arch1-1",
+        "resumed_jobs": [
+          [
+            "shuffle",
+            4003
+          ],
+          [
+            "shuffle",
+            4002
+          ],
+          [
+            "shuffle",
+            4001
+          ],
+          [
+            "shuffle",
+            4004
+          ],
+          [
+            "shuffle",
+            4000
+          ],
+          [
+            "real"
+          ],
+          [
+            "shuffle",
+            4006
+          ],
+          [
+            "shuffle",
+            4008
+          ],
+          [
+            "shuffle",
+            4005
+          ],
+          [
+            "shuffle",
+            4007
+          ],
+          [
+            "shuffle",
+            4010
+          ],
+          [
+            "shuffle",
+            4009
+          ],
+          [
+            "shuffle",
+            4012
+          ],
+          [
+            "shuffle",
+            4013
+          ],
+          [
+            "shuffle",
+            4011
+          ],
+          [
+            "shuffle",
+            4014
+          ],
+          [
+            "shuffle",
+            4015
+          ],
+          [
+            "shuffle",
+            4016
+          ],
+          [
+            "shuffle",
+            4017
+          ],
+          [
+            "shuffle",
+            4018
+          ],
+          [
+            "shuffle",
+            4019
+          ],
+          [
+            "shuffle",
+            4020
+          ],
+          [
+            "shuffle",
+            4021
+          ],
+          [
+            "shuffle",
+            4022
+          ],
+          [
+            "shuffle",
+            4024
+          ],
+          [
+            "shuffle",
+            4023
+          ],
+          [
+            "shuffle",
+            4025
+          ],
+          [
+            "shuffle",
+            4026
+          ],
+          [
+            "shuffle",
+            4028
+          ],
+          [
+            "shuffle",
+            4027
+          ],
+          [
+            "shuffle",
+            4029
+          ],
+          [
+            "shuffle",
+            4030
+          ],
+          [
+            "shuffle",
+            4031
+          ],
+          [
+            "shuffle",
+            4032
+          ],
+          [
+            "shuffle",
+            4033
+          ],
+          [
+            "shuffle",
+            4034
+          ],
+          [
+            "shuffle",
+            4035
+          ],
+          [
+            "shuffle",
+            4036
+          ],
+          [
+            "shuffle",
+            4038
+          ],
+          [
+            "shuffle",
+            4037
+          ],
+          [
+            "shuffle",
+            4039
+          ],
+          [
+            "shuffle",
+            4040
+          ],
+          [
+            "shuffle",
+            4044
+          ],
+          [
+            "shuffle",
+            4041
+          ],
+          [
+            "shuffle",
+            4043
+          ],
+          [
+            "shuffle",
+            4042
+          ],
+          [
+            "shuffle",
+            4045
+          ],
+          [
+            "shuffle",
+            4046
+          ],
+          [
+            "shuffle",
+            4047
+          ],
+          [
+            "shuffle",
+            4048
+          ],
+          [
+            "shuffle",
+            4049
+          ],
+          [
+            "shuffle",
+            4050
+          ],
+          [
+            "shuffle",
+            4051
+          ],
+          [
+            "shuffle",
+            4052
+          ],
+          [
+            "shuffle",
+            4053
+          ],
+          [
+            "shuffle",
+            4054
+          ],
+          [
+            "shuffle",
+            4055
+          ],
+          [
+            "shuffle",
+            4058
+          ],
+          [
+            "shuffle",
+            4057
+          ],
+          [
+            "shuffle",
+            4056
+          ],
+          [
+            "shuffle",
+            4059
+          ],
+          [
+            "shuffle",
+            4062
+          ],
+          [
+            "shuffle",
+            4064
+          ],
+          [
+            "shuffle",
+            4061
+          ],
+          [
+            "shuffle",
+            4060
+          ],
+          [
+            "shuffle",
+            4063
+          ],
+          [
+            "shuffle",
+            4065
+          ],
+          [
+            "shuffle",
+            4066
+          ],
+          [
+            "shuffle",
+            4069
+          ],
+          [
+            "shuffle",
+            4067
+          ],
+          [
+            "shuffle",
+            4068
+          ],
+          [
+            "shuffle",
+            4070
+          ],
+          [
+            "shuffle",
+            4075
+          ],
+          [
+            "shuffle",
+            4074
+          ],
+          [
+            "shuffle",
+            4071
+          ],
+          [
+            "shuffle",
+            4072
+          ],
+          [
+            "shuffle",
+            4073
+          ],
+          [
+            "shuffle",
+            4076
+          ],
+          [
+            "shuffle",
+            4077
+          ],
+          [
+            "shuffle",
+            4079
+          ],
+          [
+            "shuffle",
+            4078
+          ],
+          [
+            "shuffle",
+            4080
+          ],
+          [
+            "shuffle",
+            4082
+          ],
+          [
+            "shuffle",
+            4081
+          ],
+          [
+            "shuffle",
+            4084
+          ],
+          [
+            "shuffle",
+            4083
+          ],
+          [
+            "shuffle",
+            4086
+          ],
+          [
+            "shuffle",
+            4085
+          ],
+          [
+            "shuffle",
+            4087
+          ],
+          [
+            "shuffle",
+            4088
+          ],
+          [
+            "shuffle",
+            4089
+          ],
+          [
+            "shuffle",
+            4090
+          ],
+          [
+            "shuffle",
+            4091
+          ],
+          [
+            "shuffle",
+            4092
+          ],
+          [
+            "shuffle",
+            4094
+          ],
+          [
+            "shuffle",
+            4093
+          ],
+          [
+            "shuffle",
+            4096
+          ],
+          [
+            "shuffle",
+            4095
+          ],
+          [
+            "shuffle",
+            4097
+          ],
+          [
+            "shuffle",
+            4098
+          ],
+          [
+            "shuffle",
+            4099
+          ],
+          [
+            "shuffle",
+            4100
+          ],
+          [
+            "shuffle",
+            4101
+          ],
+          [
+            "shuffle",
+            4102
+          ],
+          [
+            "shuffle",
+            4103
+          ],
+          [
+            "shuffle",
+            4104
+          ],
+          [
+            "shuffle",
+            4105
+          ],
+          [
+            "shuffle",
+            4106
+          ],
+          [
+            "shuffle",
+            4107
+          ],
+          [
+            "shuffle",
+            4108
+          ],
+          [
+            "shuffle",
+            4109
+          ],
+          [
+            "shuffle",
+            4110
+          ],
+          [
+            "shuffle",
+            4111
+          ],
+          [
+            "shuffle",
+            4112
+          ]
+        ],
+        "started_at": "2026-10-15T21:19:10.698849+00:00",
+        "status": "completed",
+        "system": "Linux"
+      }
+    ],
+    "data_dir": "data",
+    "execution": {
+      "command": "baselines",
+      "config": {
+        "dataset": "malecns",
+        "run": true,
+        "workers": 6
+      },
+      "default_electrical_semantics": "flymsg.gap/continuous-clamp-v1",
+      "environment": {
+        "byteorder": "little",
+        "cpu": {
+          "cpu family": "6",
+          "flags": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid movdiri movdir64b fsrm avx512_vp2intersect md_clear ibt flush_l1d arch_capabilities",
+          "microcode": "0xbe",
+          "model": "140",
+          "model name": "11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz",
+          "stepping": "1",
+          "vendor_id": "GenuineIntel"
+        },
+        "machine": "x86_64",
+        "numerical_threads": {
+          "MKL_NUM_THREADS": null,
+          "NUMBA_NUM_THREADS": null,
+          "OMP_NUM_THREADS": null,
+          "OPENBLAS_NUM_THREADS": null
+        },
+        "packages": {
+          "absl-py": "2.5.1",
+          "asttokens": "3.0.2",
+          "contourpy": "1.4.0",
+          "cycler": "0.12.1",
+          "etils": "1.14.0",
+          "executing": "2.3.0",
+          "flygym": "2.1.0",
+          "flymsg": "0.8.47",
+          "fonttools": "4.66.1",
+          "fsspec": "2026.9.0",
+          "glfw": "2.10.2",
+          "imageio": "2.38.1",
+          "imageio-ffmpeg": "0.6.0",
+          "iniconfig": "2.3.0",
+          "ipython": "9.17.1",
+          "ipython_pygments_lexers": "1.1.1",
+          "jaxtyping": "0.3.7",
+          "jedi": "0.20.1",
+          "kiwisolver": "1.5.1",
+          "llvmlite": "0.50.0",
+          "loguru": "0.7.3",
+          "markdown": "3.11",
+          "matplotlib": "3.11.2",
+          "matplotlib-inline": "0.2.2",
+          "mediapy": "1.2.7",
+          "mujoco": "3.9.0",
+          "numba": "0.68.0",
+          "numpy": "2.5.3",
+          "packaging": "26.3",
+          "pandas": "3.0.6",
+          "parso": "0.8.7",
+          "pexpect": "4.9.0",
+          "pillow": "12.3.0",
+          "pluggy": "1.6.0",
+          "prompt_toolkit": "3.0.53",
+          "psutil": "7.2.2",
+          "ptyprocess": "0.7.0",
+          "pure_eval": "0.2.4",
+          "pyarrow": "25.0.1",
+          "pygments": "2.21.0",
+          "pyopengl": "3.1.10",
+          "pyparsing": "3.3.3",
+          "pytest": "9.1.1",
+          "python-dateutil": "2.9.0.post0",
+          "pyyaml": "6.0.3",
+          "rdata": "1.1.0",
+          "ruff": "0.16.10",
+          "scipy": "1.18.1",
+          "six": "1.17.0",
+          "stack-data": "0.6.3",
+          "tabulate": "0.9.0",
+          "traitlets": "5.16.1",
+          "typing_extensions": "4.16.0",
+          "wadler_lindig": "0.1.7",
+          "wcwidth": "0.9.2",
+          "xarray": "2026.9.0",
+          "zipp": "4.1.1"
+        },
+        "python": "3.13.9",
+        "system": "Linux"
+      },
+      "inputs": {
+        "edges.parquet": {
+          "bytes": 98482393,
+          "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+        },
+        "neurons.parquet": {
+          "bytes": 2375250,
+          "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+        }
+      },
+      "protocol": {
+        "baseline": {
+          "draws": 199,
+          "draws_why": "the smallest empirical p is 1/200 = 0.005, below Holm's first threshold for the eight responses at alpha 0.05 (0.05 / 8 = 0.00625), so a response can be called specific after the correction; with 99 draws (p >= 0.01) none could",
+          "family": "degree_preserving",
+          "method": "nulls.shuffle_degree_preserving: N1's permutation of post (configuration model; Maslov & Sneppen 2002, Newman 2003); neurons, signs, stimulus rows and target types unchanged",
+          "seeds_why": "disjoint from N1 (seed 0), the null families (draws 0-19) and song (3600-3698)",
+          "shuffle_seed0": 4000
+        },
+        "battery": {
+          "duration_ms": 600.0,
+          "rate_hz": 100.0,
+          "seed0": 0,
+          "seeds": 5,
+          "stim_ms": 300.0
+        },
+        "cases": {
+          "negative": [
+            "bitter feeding"
+          ],
+          "positive": [
+            "looming escape",
+            "giant fiber output",
+            "P1 courtship drive",
+            "pIP10 song pathway",
+            "sugar feeding"
+          ]
+        },
+        "claim": {
+          "kind": "baseline_report",
+          "reason": "Asks, response by response, whether the battery needs the measured wiring or only what a degree-preserving shuffle keeps (each neuron's out-weights and the in-degree multiset). It does not select a parameter, does not change sim.Params and does not replace criterion v4, N1, the null families or any frozen score.",
+          "scored": false
+        },
+        "content_sha256": "bff97462896375970c2573fee37f1cca1a14c165033418691f743267d50c07f9",
+        "decides": {
+          "specific": "a response is specific when its Holm-adjusted p is at most alpha",
+          "verdict": "the list of specific and not specific responses; no overall pass or fail",
+          "why": "a response the shuffles reproduce as well needs only the out-weights and degree multiset the shuffle keeps, not who connects to whom; one that they do not reproduce depends on the measured partners"
+        },
+        "defaults_changed": false,
+        "evidence": "none",
+        "evidence_none": "A structural baseline of the model itself: the shuffled connectomes are draws of a configuration model of the measured one, every parameter is the live default of sim.Params, and no biological value is newly sourced.",
+        "holds": {
+          "holds_min_spikes": 3,
+          "holds_seed_share_den": 3,
+          "holds_seed_share_num": 2
+        },
+        "issue": 148,
+        "limits": [
+          "One family: the shuffle keeps each neuron's out-weights and the in-degree multiset, not each neuron's in-degree, cell-type block structure or signs per edge; a response the shuffle reproduces may still depend on what it keeps.",
+          "Default parameters only; the sensitivity grid around them is not repeated on the shuffles.",
+          "Five seeds per graph; the statistic is a seed median, so a response near the v4 floor can move with the seeds as well as with the graph.",
+          "The best neuron of the target type is picked per graph, so a shuffle is credited with whichever neuron of the type responds most.",
+          "The draws are a sample of the configuration model, not its distribution: 199 draws resolve p down to 0.005.",
+          "Responses share stimulus rows and targets across cases, so their p values are not independent; Holm holds under any dependence.",
+          "Holm's thresholds are 0.00625 to 0.05 over the eight responses and p moves in steps of 0.005, and rates in steps of one spike in the window (3.33 Hz) make ties common: in practice a response is specific only when no shuffle, or almost none, reaches the measured rate.",
+          "The measured bitter -> MN9 response is already known to be silent (0 Hz, results/sensitivity/v1 at the defaults); with ties against it, bitter is specific only when shuffles drive MN9 where the measured wiring does not.",
+          "Cost: 200 graphs x 30 battery runs, about twenty times the sensitivity grid (300 runs in 21 min), so several hours; --checkpoint resumes per graph."
+        ],
+        "reported": {
+          "holds_share": {
+            "decides": false,
+            "what": "per response, the share of shuffles on which it holds (the v4 floor over seeds), and whether it holds on the measured connectome"
+          },
+          "latency_recruited": {
+            "decides": false,
+            "what": "seed-median first spike (over the seeds where the neuron fires; silent seeds have none), recruited and persistent counts, measured and shuffle median"
+          },
+          "null_quantiles": {
+            "decides": false,
+            "what": "per response, the 5th, 50th and 95th percentiles of the shuffles' seed-median rates"
+          }
+        },
+        "seen_before_lock": "The battery on the measured connectome at seeds 0-4 (results/sensitivity/v1 at factor 1.0, results/convergence at dt 0.1 ms); N1's one degree-preserving shuffle (seed 0) under criterion v4; the structural null families' one-hop weights (docs/nulls.md, draws 0-19). No battery run on a shuffle with seeds 4000-4198 has been made.",
+        "statistic": {
+          "alpha": 0.05,
+          "correction": "Holm over every response of the battery (positive and negative), fixed before the run",
+          "p": "(1 + number of shuffles at least as extreme as the measured, ties counted against it) / (1 + draws)",
+          "per_response": "the seed-median rate of the target's best neuron during the stimulus (sensitivity.measure, as validate.respond picks it), on the measured connectome and on each shuffle with the same seeds",
+          "tail": "upper for positive cases (the measured wiring drives the target more than a shuffle); lower for the negative case (it drives the bitter target less)"
+        },
+        "version": 1,
+        "yaml_subset": 2
+      },
+      "schema": "flymsg.execution/v1",
+      "source": {
+        "commit": "894a77a509f71e852256f7e1286713030373dab8",
+        "dirty": false
+      }
+    },
+    "execution_sha256": "f89ed1c350b97a63cb5bfa7c483f1837ad81d585bcea19742800f809674bb7f4",
+    "verdict": "specific: looming escape/DNp01, looming escape/TTMn, giant fiber output/TTMn, P1 courtship drive/pIP10, P1 courtship drive/dPR1, pIP10 song pathway/dPR1, sugar feeding/MN9; not specific: bitter feeding/MN9"
+  },
+  "git": {
+    "commit": "894a77a509f71e852256f7e1286713030373dab8",
+    "dirty": false
+  },
+  "packages": {
+    "absl-py": "2.5.1",
+    "asttokens": "3.0.2",
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "etils": "1.14.0",
+    "executing": "2.3.0",
+    "flygym": "2.1.0",
+    "flymsg": "0.8.47",
+    "fonttools": "4.66.1",
+    "fsspec": "2026.9.0",
+    "glfw": "2.10.2",
+    "imageio": "2.38.1",
+    "imageio-ffmpeg": "0.6.0",
+    "iniconfig": "2.3.0",
+    "ipython": "9.17.1",
+    "ipython_pygments_lexers": "1.1.1",
+    "jaxtyping": "0.3.7",
+    "jedi": "0.20.1",
+    "kiwisolver": "1.5.1",
+    "llvmlite": "0.50.0",
+    "loguru": "0.7.3",
+    "markdown": "3.11",
+    "matplotlib": "3.11.2",
+    "matplotlib-inline": "0.2.2",
+    "mediapy": "1.2.7",
+    "mujoco": "3.9.0",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pandas": "3.0.6",
+    "parso": "0.8.7",
+    "pexpect": "4.9.0",
+    "pillow": "12.3.0",
+    "pluggy": "1.6.0",
+    "prompt_toolkit": "3.0.53",
+    "psutil": "7.2.2",
+    "ptyprocess": "0.7.0",
+    "pure_eval": "0.2.4",
+    "pyarrow": "25.0.1",
+    "pygments": "2.21.0",
+    "pyopengl": "3.1.10",
+    "pyparsing": "3.3.3",
+    "pytest": "9.1.1",
+    "python-dateutil": "2.9.0.post0",
+    "pyyaml": "6.0.3",
+    "rdata": "1.1.0",
+    "ruff": "0.16.10",
+    "scipy": "1.18.1",
+    "six": "1.17.0",
+    "stack-data": "0.6.3",
+    "tabulate": "0.9.0",
+    "traitlets": "5.16.1",
+    "typing_extensions": "4.16.0",
+    "wadler_lindig": "0.1.7",
+    "wcwidth": "0.9.2",
+    "xarray": "2026.9.0",
+    "zipp": "4.1.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.9-arch1-1-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.9-arch1-1",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "baseline": {
+      "draws": 199,
+      "draws_why": "the smallest empirical p is 1/200 = 0.005, below Holm's first threshold for the eight responses at alpha 0.05 (0.05 / 8 = 0.00625), so a response can be called specific after the correction; with 99 draws (p >= 0.01) none could",
+      "family": "degree_preserving",
+      "method": "nulls.shuffle_degree_preserving: N1's permutation of post (configuration model; Maslov & Sneppen 2002, Newman 2003); neurons, signs, stimulus rows and target types unchanged",
+      "seeds_why": "disjoint from N1 (seed 0), the null families (draws 0-19) and song (3600-3698)",
+      "shuffle_seed0": 4000
+    },
+    "battery": {
+      "duration_ms": 600.0,
+      "rate_hz": 100.0,
+      "seed0": 0,
+      "seeds": 5,
+      "stim_ms": 300.0
+    },
+    "cases": {
+      "negative": [
+        "bitter feeding"
+      ],
+      "positive": [
+        "looming escape",
+        "giant fiber output",
+        "P1 courtship drive",
+        "pIP10 song pathway",
+        "sugar feeding"
+      ]
+    },
+    "claim": {
+      "kind": "baseline_report",
+      "reason": "Asks, response by response, whether the battery needs the measured wiring or only what a degree-preserving shuffle keeps (each neuron's out-weights and the in-degree multiset). It does not select a parameter, does not change sim.Params and does not replace criterion v4, N1, the null families or any frozen score.",
+      "scored": false
+    },
+    "content_sha256": "bff97462896375970c2573fee37f1cca1a14c165033418691f743267d50c07f9",
+    "decides": {
+      "specific": "a response is specific when its Holm-adjusted p is at most alpha",
+      "verdict": "the list of specific and not specific responses; no overall pass or fail",
+      "why": "a response the shuffles reproduce as well needs only the out-weights and degree multiset the shuffle keeps, not who connects to whom; one that they do not reproduce depends on the measured partners"
+    },
+    "defaults_changed": false,
+    "evidence": "none",
+    "evidence_none": "A structural baseline of the model itself: the shuffled connectomes are draws of a configuration model of the measured one, every parameter is the live default of sim.Params, and no biological value is newly sourced.",
+    "holds": {
+      "holds_min_spikes": 3,
+      "holds_seed_share_den": 3,
+      "holds_seed_share_num": 2
+    },
+    "issue": 148,
+    "limits": [
+      "One family: the shuffle keeps each neuron's out-weights and the in-degree multiset, not each neuron's in-degree, cell-type block structure or signs per edge; a response the shuffle reproduces may still depend on what it keeps.",
+      "Default parameters only; the sensitivity grid around them is not repeated on the shuffles.",
+      "Five seeds per graph; the statistic is a seed median, so a response near the v4 floor can move with the seeds as well as with the graph.",
+      "The best neuron of the target type is picked per graph, so a shuffle is credited with whichever neuron of the type responds most.",
+      "The draws are a sample of the configuration model, not its distribution: 199 draws resolve p down to 0.005.",
+      "Responses share stimulus rows and targets across cases, so their p values are not independent; Holm holds under any dependence.",
+      "Holm's thresholds are 0.00625 to 0.05 over the eight responses and p moves in steps of 0.005, and rates in steps of one spike in the window (3.33 Hz) make ties common: in practice a response is specific only when no shuffle, or almost none, reaches the measured rate.",
+      "The measured bitter -> MN9 response is already known to be silent (0 Hz, results/sensitivity/v1 at the defaults); with ties against it, bitter is specific only when shuffles drive MN9 where the measured wiring does not.",
+      "Cost: 200 graphs x 30 battery runs, about twenty times the sensitivity grid (300 runs in 21 min), so several hours; --checkpoint resumes per graph."
+    ],
+    "reported": {
+      "holds_share": {
+        "decides": false,
+        "what": "per response, the share of shuffles on which it holds (the v4 floor over seeds), and whether it holds on the measured connectome"
+      },
+      "latency_recruited": {
+        "decides": false,
+        "what": "seed-median first spike (over the seeds where the neuron fires; silent seeds have none), recruited and persistent counts, measured and shuffle median"
+      },
+      "null_quantiles": {
+        "decides": false,
+        "what": "per response, the 5th, 50th and 95th percentiles of the shuffles' seed-median rates"
+      }
+    },
+    "seen_before_lock": "The battery on the measured connectome at seeds 0-4 (results/sensitivity/v1 at factor 1.0, results/convergence at dt 0.1 ms); N1's one degree-preserving shuffle (seed 0) under criterion v4; the structural null families' one-hop weights (docs/nulls.md, draws 0-19). No battery run on a shuffle with seeds 4000-4198 has been made.",
+    "statistic": {
+      "alpha": 0.05,
+      "correction": "Holm over every response of the battery (positive and negative), fixed before the run",
+      "p": "(1 + number of shuffles at least as extreme as the measured, ties counted against it) / (1 + draws)",
+      "per_response": "the seed-median rate of the target's best neuron during the stimulus (sensitivity.measure, as validate.respond picks it), on the measured connectome and on each shuffle with the same seeds",
+      "tail": "upper for positive cases (the measured wiring drives the target more than a shuffle); lower for the negative case (it drives the bitter target less)"
+    },
+    "version": 1,
+    "yaml_subset": 2
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "seed0": 0,
+    "seeds": 5
+  },
+  "timestamps": {
+    "finished_at": "2026-10-15T22:21:44.812060+00:00",
+    "started_at": "2026-10-15T19:40:07.828584+00:00"
+  }
+}
