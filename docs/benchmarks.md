@@ -190,7 +190,7 @@ fire the giant fiber. A timing test of the transducer needs either gains low eno
 fiber graded, which the grid does not reach, or a readout of the drive into it; either is a
 new version. `results/gf_looming/v1`.
 
-**Version 2 (locked 2026-10-15, not yet run).** A model-only probe at seed 9000 found the giant
+**Version 2 (locked 2026-10-15).** A model-only probe at seed 9000 found the giant
 fiber firing even at gains 4 to 32 times below the grid (except LC4 alone at r/v 80 ms), so
 lower gains do not reach the graded regime. Version 2 makes the two giant fibers passive: a
 threshold of 10 V (`sim.Membrane`, every other value the default) that no potential of the run
@@ -201,6 +201,14 @@ spikes no longer reach their targets, which the readout does not use. A passive 
 follows its drive, so the stimulus-follower band is the direct path's own prediction: only a
 cell's distance from it is the circuit's. The rate cap and dead time compress the drive late in
 the expansion and can shift α; this is a named limit.
+
+**Result (2026-10-15, run at `21ce984`, seeds 350–354): uninformative.**
+
+- **Model.** All 15 cells respond and stay graded, so all are scored. α is 1.39 to 2.13 (median 1.85). Ten cells lie inside the stimulus-follower band (1.73 to 2.01), and the other five sit within 0.35 of it. A median of 45% of a cell's peaks come within 20 ms of the expansion's end. The passive giant fiber thus peaks as its drive does, and the timing carries almost nothing beyond the direct path.
+- **Data**, opened only after the model and its no-go. Across the ten control flies the median α is 3.32. Three flies have α ≈ 12.6, at the onset slope (11.43), so the 95% interval of the median α runs from 2.95 to 12.58 and holds that slope.
+- **Verdict.** By the lock's rule this is uninformative: the flies' timing cannot separate a circuit from a peak locked to the onset. Outside the verdict, the model's α also lies below the flies' interval in every cell.
+
+`results/gf_looming/v2`.
 
 ## Inventory
 

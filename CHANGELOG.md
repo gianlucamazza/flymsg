@@ -36,6 +36,16 @@
   none is scored; the recordings were not opened. One disc through LC4 or LPLC2 at the lowest
   gains fires it, early in the expansion (`results/gf_looming/v1`).
 
+- **Looming → giant fiber timing v2** (#34, G3): uninformative.
+  - **Model.** With passive giant fibers, all 15 cells respond, stay graded and are scored. α
+    is 1.39 to 2.13; ten cells lie inside the stimulus-follower band (1.73 to 2.01), so the
+    passive giant fiber peaks as its drive does.
+  - **Data.** The ten control flies give a median α of 3.32. Three flies sit at the onset slope,
+    so the flies' interval (2.95 to 12.58) holds the onset slope 11.43, and the timing cannot
+    separate the circuit from a stimulus-locked peak.
+  - **Outside the verdict.** The model's α lies below the flies' interval in every cell
+    (`results/gf_looming/v2`).
+
 ### Validation
 
 - **Looming → giant fiber timing v2 lock** (#34, G3): `validation/gf_looming.yaml` v2. Version

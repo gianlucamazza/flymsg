@@ -1,0 +1,37 @@
+gf_looming v2 (issue #34): LC4 ~ dtheta/dt, LPLC2 ~ theta, 15 gain cells, r/v [10.0, 20.0, 40.0, 80.0] ms, seeds 350-354; timing of DNp01 against Dombrovski et al. 2025
+  g4    g2  responds  graded  scored    alpha  delta_ms  theta_thr_deg  increasing  near_end_share  edge_peaks
+ 0.0  50.0      True    True    True 1.480444 69.952174      68.075945        True            0.00           0
+ 0.0 100.0      True    True    True 1.846444 73.852174      56.878326        True            0.05           0
+ 0.0 200.0      True    True    True 1.746444 52.852174      59.590232        True            0.05           0
+ 2.0   0.0      True    True    True 2.015748  9.526087      52.771446        True            0.50           0
+ 2.0  50.0      True    True    True 1.693618  5.158696      61.119631        True            0.55           0
+ 2.0 100.0      True    True    True 1.392226 23.156522      71.377415        True            0.35           0
+ 2.0 200.0      True    True    True 2.130096 49.339130      50.296586        True            0.35           0
+ 5.0   0.0      True    True    True 1.754878  3.193478      59.352446        True            0.50           0
+ 5.0  50.0      True    True    True 1.849661  5.947826      56.794824        True            0.65           0
+ 5.0 100.0      True    True    True 1.982183  9.217391      53.541373        True            0.60           0
+ 5.0 200.0      True    True    True 1.834270  5.995652      57.196325        True            0.70           0
+10.0   0.0      True    True    True 1.850965  4.721739      56.761036        True            0.45           0
+10.0  50.0      True    True    True 1.972835  7.604348      53.759513        True            0.40           0
+10.0 100.0      True    True    True 1.776965  3.121739      58.737891        True            0.45           0
+10.0 200.0      True    True    True 1.863965  5.671739      56.426285        True            0.50           0
+                 fly     alpha   delta_ms  edge_peaks  near_end      y_10      y_20       y_40       y_80
+DipE_Null_cont_fly18 12.633574 197.569565           0         0 18.550523 61.001046 141.802092 883.404184
+DipE_Null_cont_fly19  2.968965  11.721739           0         1 13.550523 54.801046 104.052092 226.054184
+DipE_Null_cont_fly20  3.063444   1.052174           0         0 19.200523 60.751046 138.852092 236.504184
+DipE_Null_cont_fly21  2.889313 -34.965217           0         0 87.250523 66.851046 148.452092 270.704184
+DipE_Null_cont_fly22  3.018791  -2.584783           0         0 23.700523 72.901046 124.302092 242.254184
+DipE_RNAi_cont_fly06 12.580052 202.950000           0         0 25.650523 42.851046 129.052092 877.654184
+DipE_RNAi_cont_fly07  3.579661  33.097826           0         1 11.800523 33.101046 102.252092 257.404184
+DipE_RNAi_cont_fly08  4.385661 -35.202174           0         0 24.000523 53.301046 411.402092 309.954184
+DipE_RNAi_cont_fly09  1.701096 -10.210870           0         1  6.750523 65.151046  82.702092 141.404184
+DipE_RNAi_cont_fly10 12.594444 204.052174           0         0 17.450523 51.501046 127.002092 877.004184
+no_go: 15 of 15 cells scored (responding and graded); 15 respond, 15 stay graded
+alpha_interval: [2.9540523027613452, 12.580052302761347]
+theta_thr_interval_deg: [9.089875508764354, 37.403774789936406]
+delta_interval_ms: [-18.77499999999993, 197.5695652173915]
+stimulus_locked: {'band': [1.7330957810222118, 2.0112696940656907], 'onset': 11.430052302761343, 'followers': {'theta/raw': 1.7330957810222118, 'theta/tau_syn': 1.7617044766743868, 'theta/tau_m': 2.0094436071091684, 'theta/tau_syn+tau_m': 2.0110088245004727, 'dtheta/raw': 1.9260523027613425, 'dtheta/tau_syn': 1.889878389717865, 'dtheta/tau_m': 1.8474436071091682, 'dtheta/tau_syn+tau_m': 1.8269218679787345, 'theta/raw@data': 1.7335305636309097, 'theta/tau_syn@data': 1.761747954935257, 'theta/tau_m@data': 2.008704476674388, 'theta/tau_syn+tau_m@data': 2.0112696940656907, 'dtheta/raw@data': 1.9258349114569964, 'dtheta/tau_syn@data': 1.8899653462396047, 'dtheta/tau_m@data': 1.8479653462396044, 'dtheta/tau_syn+tau_m@data': 1.8266609984135185}}
+flies: 10
+fly_edge_peaks: 0
+fly_near_end_peaks: 3
+verdict: uninformative: the flies' slope does not separate the circuit from a stimulus-locked peak (onset)
