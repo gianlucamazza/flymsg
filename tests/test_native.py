@@ -154,3 +154,19 @@ def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word
     )
     assert result.returncode != 0
     assert not output.exists()
+
+
+def test_the_console_parity_script_builds_the_twelve_version_one_fixtures(tmp_path):
+    import importlib.util
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "console_gpu_parity.py"
+    spec = importlib.util.spec_from_file_location("console_gpu_parity", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    cases = list(module.fixtures())
+    assert len(cases) == 12
+    for (seed, _, _), oracle in cases:
+        fixture = tmp_path / f"{seed}.bin"
+        export_fixture(oracle, fixture)
+        header = np.frombuffer(fixture.read_bytes(), dtype="<u4")
+        assert int(header[1]) == 1  # the DX12 lane runs version-1 fixtures only

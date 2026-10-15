@@ -132,11 +132,11 @@ three stay off unless a lock names them.
 
 ## Blocked on hardware
 
-| Issue                                                            | Blocked by                                                          | Ready                                                                                       |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | GPU parity needs a D3D12 hardware adapter; CI has only WARP         | The HLSL shader, DX12 host and fixtures build in CI                                         |
-| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | A physical Series S console                                         | The UWP worker, job assets, runbook                                                         |
-| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md)) |
+| Issue                                                            | Blocked by                                                                  | Ready                                                                                       |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Version-2 fixtures (graded, coupled) on the GPU: the DX12 lane refuses them | Series S GPU parity, 12 of 12 version-1 fixtures bit for bit (2026-10-15)                   |
+| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | Suspension, cancellation, recovery, memory and throughput on the console    | The worker launches on a Series S in Dev Mode and completes GPU jobs                        |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss         | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md)) |
 
 ## What an animal test could check
 
@@ -216,7 +216,8 @@ registration has a source. G5 (#180) has its schedule, evidence gate and record 
 components; the [body-wiring ADR](adr-body-wiring.md) is accepted, and a biological closed
 loop refuses until G3 and G4 are measured.
 
-**4. Blocked on hardware.** A D3D12 adapter (#39), a Series S (#40) and a headset for the WebXR
+**4. Hardware.** A Series S in Dev Mode is now available: GPU parity of the version-1 fixtures holds on it
+(#39), and the worker's lifecycle and throughput are next (#40). A headset for the WebXR
 observer (#177); until then the native executor refuses whatever is not qualified, and the
 observer stays experimental.
 
