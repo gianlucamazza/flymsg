@@ -4,48 +4,50 @@
     "ok": true,
     "seen_running": true,
     "state": "cancelled",
-    "step": 54400
+    "step": 51392
   },
+  "date": "2026-10-15",
   "fixture": {
+    "inputs": 2,
     "neurons": 2048,
     "seed": 40,
-    "steps": 100000,
+    "steps": 1000000,
     "synthetic": true
   },
+  "oracle": "the CPU runtime on the same fixture, compared with scripts/native_acceptance.py check() after the last step",
   "package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+  "package_lineage": {
+    "ci_note": "native-runtime workflow on PR #197",
+    "ci_run": 38731029702,
+    "signed_msix_sha256": "a52759323ebccb697d6644cee2d4013a1f3d783d7a09c0452d3d8e3b097bc9e7",
+    "signing": "repacked and signed with the development certificate (CN=uwp-crossbuild-dev); the unpacked payloads of the unsigned and signed packages are identical",
+    "unsigned_msix_sha256": "17e8365601b15293744ab83a5878c57b1a00b3fe7996519599d7df52743a8c1c",
+    "worker_source_commit": "b9969e632ae62ff84e2c78c06ef659137723b407"
+  },
   "passed": true,
+  "platform": "Xbox Series S, Dev Mode",
   "schema": "flymsg.console_lifecycle/v1",
   "scope": "one synthetic version-1 fixture; not full-connectome throughput or biological validation",
+  "script": "scripts/console_lifecycle.py",
   "shader_sha256": "6926c4ab469f4a4efcc3bb676a8db2ed8fc679c1fb0816833804330e576e6b99",
   "stop_and_resume": {
+    "how": "Device Portal stop of the running app, restart, then a flymsg.worker_resume/v1",
     "ok": true,
     "parity": true,
     "parked_as": "suspended",
-    "parked_at_step": 56064,
+    "parked_at_step": 10816,
+    "resumed_advance_steps": 989184,
     "seen_running": true,
-    "state": "completed",
-    "how": "Device Portal stop of the running app, restart, then a flymsg.worker_resume/v1"
+    "state": "completed"
   },
   "throughput": {
-    "app_memory_bytes": 62017536,
+    "app_memory_bytes": 132796416,
     "app_memory_limit_bytes": 5368709120,
     "error": "",
     "neurons": 2048,
     "parity": true,
     "state": "completed",
-    "steps": 100000,
-    "steps_per_s": 44146.9989376709
-  },
-  "date": "2026-10-15",
-  "platform": "Xbox Series S, Dev Mode",
-  "script": "scripts/console_lifecycle.py",
-  "oracle": "the CPU runtime on the same fixture, compared with scripts/native_acceptance.py check() after the last step",
-  "package_lineage": {
-    "ci_run": 38713351055,
-    "ci_source_commit": "3ba45aa124bfbf3ef594a45c5081ba03130d31f6",
-    "ci_source_note": "GitHub merge ref of PR #197 as built by the native-runtime workflow; FLYMSG_COMMIT baked into the worker",
-    "unsigned_msix_sha256": "b241e98f9286680d2e2fef4355d0cf3c1a87678e3de6a99d268292821b011751",
-    "signed_msix_sha256": "3856132b5b25d2b4dae4e2948cea22dfc94724aaccd53b9d147d5d99b553a3c5",
-    "signing": "repacked and signed with the development certificate (CN=uwp-crossbuild-dev); the unpacked payloads of the unsigned and signed packages are identical"
+    "steps": 1000000,
+    "steps_per_s": 44493.27322922619
   }
 }

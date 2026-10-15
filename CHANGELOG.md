@@ -5,9 +5,9 @@
 ### Result
 
 - **Series S worker lifecycle** (#40): on a 2,048-neuron synthetic version-1 fixture of
-  100,000 steps, the worker's lifecycle behaves on the console
+  1,000,000 steps, the worker's lifecycle behaves on the console
   (`docs/evidence/series-s-lifecycle-2026-10-15.json`, `scripts/console_lifecycle.py`):
-  - it advances about 44,000 steps/s, timed by the worker, at about 62 MB of app memory;
+  - it advances about 44,000 steps/s, timed by the worker, at about 133 MB of app memory;
   - a cancel ends the job in `cancelled`;
   - a Device Portal stop suspends the app with a checkpoint, and after a restart and a resume
     the job completes bit for bit with the CPU oracle.
