@@ -175,8 +175,20 @@ spreadsheet an agent had opened during the search, and the structure of the Fig.
   deposited spreadsheet and saw the structure of the Fig. 1 file; the lock records what was
   seen. The scored slope was not computed.
 
-`flymsg gf-looming` prints the lock; `--run` runs the model, its no-go, then the data. No run
-yet.
+`flymsg gf-looming` prints the lock; `--run` runs the model, its no-go, then the data.
+
+**Result (2026-10-15, run at `0579ad8`, seeds 340–344): uninformative, the no-go.** Every one of
+the 15 cells moves both giant fibers by more than one synapse's jump, and in every one of the
+300 runs at least one giant fiber fires inside the window, so no cell stays graded and none
+is scored; the recordings were not opened. The model's giant fiber is reached at the lowest
+gains already: LC4 alone at 2 Hz per rad/s (a peak rate of about 110 Hz at r/v 10 ms) or LPLC2
+alone at 50 Hz per rad. Its peaks come early, a fifth to a quarter of the way through the
+expansion (median 18 ms after onset at r/v 10, 186 ms at r/v 80), so the unscored slopes (α 5.2
+to 10.5, angles 11° to 22°) sit near the onset slope 11.43 rather than the follower band. The recordings are scored as graded potentials (Jang et al. 2023 and Dombrovski et al. 2025
+report peak depolarizations); in this model one looming disc through LC4 or LPLC2 is enough to
+fire the giant fiber. A timing test of the transducer needs either gains low enough to keep the model's giant
+fiber graded, which the grid does not reach, or a readout of the drive into it; either is a
+new version. `results/gf_looming/v1`.
 
 ## Inventory
 

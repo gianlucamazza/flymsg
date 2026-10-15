@@ -1,6 +1,6 @@
 # Roadmap: what the model covers, and what waits on outside evidence
 
-Status on 2026-10-14. This page is the index. Each verdict is recorded on the linked page,
+Status on 2026-10-15. This page is the index. Each verdict is recorded on the linked page,
 and the table adds none. What remains open needs a measurement from an animal, a published
 map, hardware, or a lock that is written and not yet run.
 
@@ -177,7 +177,7 @@ about the fly.
 
 ## Completion plan
 
-Status on 2026-10-14 (after v0.8.47). flymsg is complete when a model prediction passes an
+Status on 2026-10-15 (after v0.8.47). flymsg is complete when a model prediction passes an
 independent held-out benchmark (M4, [#36](https://github.com/gianlucamazza/flymsg/issues/36));
 everything else serves that. An open problem closes with a measurement, a lock and a run,
 never with a chosen value, so the order follows the evidence that exists. The
@@ -196,12 +196,12 @@ it is a plan, not a result.
 
 **2. Next: the evidence exists and must be read and fixed in a lock.**
 
-| Issue                                                      | Work                                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v4 locked: dark anchor, lamina → medulla gain 1–16, Behnia delays (verified); run in progress                                                                                                                                                                                                                   |
-| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc, replicated by v8 under the exact clamp; relational APL tests still open                                                                                                                                                                                                         |
-| [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | Locked (`gf_looming.yaml` v1): the model's DNp01 peak time before collision against Dombrovski et al. 2025's deposited giant-fiber recordings at r/v 10–80 ms, timing only, engineered LC4/LPLC2 forms with scanned gains ([benchmarks](benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)); not yet run |
-| Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                                                                                                                                                                                                                               |
+| Issue                                                      | Work                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v4 locked: dark anchor, lamina → medulla gain 1–16, Behnia delays (verified); run in progress                                                                                                                                                                                                                                                                                                                    |
+| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc, replicated by v8 under the exact clamp; relational APL tests still open                                                                                                                                                                                                                                                                                                          |
+| [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | Locked (`gf_looming.yaml` v1): the model's DNp01 peak time before collision against Dombrovski et al. 2025's deposited giant-fiber recordings at r/v 10–80 ms, timing only, engineered LC4/LPLC2 forms with scanned gains ([benchmarks](benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)); run: uninformative, the model's giant fiber fires in every cell, so no cell stays graded like the recordings |
+| Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                                                                                                                                                                                                                                                                                                                                |
 
 **3. Blocked on measurements that do not exist.** Junctional conductances and a gap-junction
 list (#85), a Drosophila voltage → release curve (#97), muscle → body actuator (#19, #35),
