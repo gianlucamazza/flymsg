@@ -131,7 +131,17 @@ before any response value of the data was read.
   et al. 2025, doi:10.1016/j.isci.2025.113232, data 10.17632/29hpr3nrrv): females, a pan-JO
   driver with two ROIs, a 167 Hz carrier and a 100 Hz tone for the sine.
 
-`flymsg song` prints the lock; `--run` runs the model, its no-go, then the data. No run yet.
+`flymsg song` prints the lock; `--run` runs the model, its no-go, then the data.
+
+**Result (2026-10-15, run at `2c86f71`, the lock commit, seeds 360–364): uninformative, the no-go.**
+
+- **The no-go.** The run took 1,045 simulations: three conditions at three rates on the measured connectome and on 99 shuffles. It was resumed once from its checkpoint, with 6 workers. At the decision rate of 100 Hz, only 14 of the 32 scorable neuropils resolve a sign over the seeds (0.44, below the locked 0.5), so the run stopped before the data file was opened. The Pacheco et al. 2021 responses were never read.
+- **The model barely tells the songs apart.** The median |index| over the neuropils is 0.046, two neuropils are silent, and the resolved ones split 7 pulse-preferring and 7 sine-preferring.
+- **The reason the lock gave.** This is consistent with the no-go's stated reason, that LIF neurons with no intrinsic band-pass may smooth the 27.8 Hz pulse envelope away. The run does not test that mechanism.
+- **Reported, not scored.** The JO-A/B response ratios of Yamakoshi et al. are 3.0 (pulse) and 1.7 (sine).
+- **What a sharper test needs.** A model with frequency selectivity in the JO pathway: a measured JO band-pass or a carrier-tuned input. Neither is in the model.
+
+`results/song/v1`.
 
 ## Looming to giant fiber timing (lock, 2026-10-15, #34)
 

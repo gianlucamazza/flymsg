@@ -4,6 +4,12 @@
 
 ### Result
 
+- **Pulse vs sine song v1** (#36): uninformative, the no-go.
+  - **The no-go.** At 100 Hz only 14 of 32 neuropils resolve a sign over the seeds (0.44, below 0.5), so the run stopped before the Pacheco et al. 2021 data were opened.
+  - **The model.** It barely tells the songs apart: the median |index| is 0.046, and the resolved neuropils split 7 and 7. This is consistent with the no-go's stated reason (LIF neurons without a band-pass may smooth the 27.8 Hz envelope), which the run does not test.
+  - **The run.** 1,045 simulations, including 99 shuffles. `results/song/v1`.
+  - **Archive guard.** `results/` now allows 450 kB for its per-cell table.
+
 - **Exact float32 on the console GPU, and a dashboard** (#40, #203).
   - **The divergence.** A 20,000-step full-connectome run differed from the CPU oracle in `g` alone, in 4,329 subnormal conductances that the console flushed to zero, even with `-denorm preserve`.
   - **The fix.** The shader now does every float32 operation on state through double and rounds once, which is correct since 53 ≥ 2·24 + 2. It handles subnormals as bits. 600,000 random operations, subnormals included, match numpy float32 bit for bit offline.

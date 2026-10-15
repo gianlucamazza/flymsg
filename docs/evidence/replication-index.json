@@ -1307,6 +1307,58 @@
    "verdict": "uninformative: the flies' slope does not separate the circuit from a stimulus-locked peak (onset)"
   },
   {
+   "command": "song --run",
+   "config": {
+    "grid": {
+     "bin_ms": 100.0,
+     "decision_rate_hz": 100.0,
+     "duration_ms": 12000.0,
+     "rate_why": "JO firing rates to song are not measured; the mean per-neuron rate is a free gain, scanned over 50, 100, 200 Hz (the battery's 100 Hz in the middle); the verdict is taken at 100 Hz and the other two are reported",
+     "rates_hz": [
+      50.0,
+      100.0,
+      200.0
+     ],
+     "seed0": 360,
+     "seeds": 5,
+     "seeds_why": "the convergence and sensitivity locks' five seeds; a neuropil's sign is the seed median",
+     "shuffle_seed0": 3600,
+     "shuffles": 99,
+     "shuffles_why": "the smallest empirical p is 1/100, below alpha, so the shuffle test is not passed by its floor alone"
+    },
+    "song_sha256": "a346c59b6fa1729912015d0d32c8f017f7f0ae03cd18006e9a00f09c4d838db3",
+    "song_version": 1
+   },
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.47",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": null,
+   "lock_sha256": "a346c59b6fa1729912015d0d32c8f017f7f0ae03cd18006e9a00f09c4d838db3",
+   "lock_version": 1,
+   "other_results": null,
+   "outputs_sha256": {
+    "cells.jsonl": "75582646ff86ec0f44e5f29f6471a64b69b949c7bee4c4f0f4ad61e897e2d7fa",
+    "model.csv": "7caf3406f795ed31841a359e535e8cba57e7e0d37e74e3e14fa02d63182b884a",
+    "report.txt": "5e0cfa93116ebf2452f2a98910cc96c05ce1745e79081bcc43420344296ec6a2"
+   },
+   "python": "3.13.9",
+   "result": "results/song/v1",
+   "seeds": {
+    "seed0": 360,
+    "seeds": 5
+   },
+   "source_commit": "2c86f7131a617ac7b1d54cf71a6c3bf2331bddff",
+   "verdict": "uninformative: no-go"
+  },
+  {
    "command": "apl-claws --run",
    "config": {
     "apl_claws_sha256": "4478289480e026c72cca984a892b8874c3016412a668889c75ba3f2ef9b0ec45",
