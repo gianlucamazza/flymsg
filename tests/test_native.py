@@ -191,4 +191,7 @@ def test_the_console_lifecycle_fixture_is_version_one_and_long(tmp_path):
     meta = export_fixture(oracle, fixture)
     header = np.frombuffer(fixture.read_bytes()[:64], dtype="<u4")
     assert int(header[1]) == 1  # the DX12 lane runs version-1 fixtures only
-    assert meta["steps"] == module.STEPS > 64 * 100  # many GPU batches to stop between
+    assert meta["steps"] == module.STEPS
+    # at least 20 s of advance at the 44k steps/s measured on the console, so a cancel
+    # or stop sent after a 1 s status poll lands mid-run
+    assert module.STEPS >= 20 * 44_000

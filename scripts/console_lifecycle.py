@@ -40,7 +40,9 @@ from flymsg import sim
 from flymsg.native import export_fixture, read_output
 from flymsg.runtime import CpuRuntime
 
-N, STEPS, SEED = 2048, 100_000, 40  # long enough to stop mid-run; synthetic
+# synthetic; about 23 s of advance at the measured 44k steps/s, so a cancel or a stop sent
+# after a 1 s status poll lands mid-run
+N, STEPS, SEED, INPUTS = 2048, 1_000_000, 40, 2
 
 
 def oracle() -> CpuRuntime:
@@ -50,9 +52,9 @@ def oracle() -> CpuRuntime:
     W.data = rng.integers(-20, 80, W.data.size).astype(np.float32)
     return CpuRuntime(
         W.astype(np.float32),
-        np.arange(16),
+        np.arange(INPUTS),
         steps=STEPS,
-        kicks=sim.poisson_kicks(SEED, 200, p.dt, STEPS, 16),
+        kicks=sim.poisson_kicks(SEED, 200, p.dt, STEPS, INPUTS),
         p=p,
         per_bin=1000,
         trace=np.arange(8),
@@ -117,6 +119,12 @@ class Job:
             time.sleep(1.0)
         return {"state": "timeout"}
 
+    def result(self) -> dict:
+        self.portal.get(
+            self.package, self.rel, "result.json", self.folder / "result.json"
+        )
+        return json.loads((self.folder / "result.json").read_text())
+
     def parity(self) -> bool:
         self.portal.get(
             self.package, self.rel, "output.bin", self.folder / "output.bin"
@@ -138,7 +146,7 @@ def app_call(portal: Portal, method: str, package: str, aumid: str) -> None:
         portal.curl("POST", f"/api/taskmanager/app?appid={app}&package={pkg}")
 
 
-def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
+def run(package: str, aumid: str, shader: Path, out: Path, lineage: dict) -> dict:
     portal = Portal()
     sha = hashlib.sha256(shader.read_bytes()).hexdigest()
     done = {"completed", "failed", "cancelled"}
@@ -146,10 +154,11 @@ def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
     job = Job(portal, package, sha, out)
     job.submit()
     final = job.wait(done)
+    # FLYMSG_COMMIT baked into the worker, as its status reports it
+    lineage = {**lineage, "worker_source_commit": final.get("source_commit")}
     rate = None
     if final.get("state") == "completed":
-        job.portal.get(package, job.rel, "result.json", job.folder / "result.json")
-        result = json.loads((job.folder / "result.json").read_text())
+        result = job.result()
         rate = result["advance_steps"] / (result["advance_ms"] / 1000.0)
     throughput = {
         "state": final.get("state"),
@@ -190,8 +199,13 @@ def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
         "parked_as": waiting.get("state"),
         "parked_at_step": waiting.get("step"),
         "state": final.get("state"),
+        "how": "Device Portal stop of the running app, restart, then a "
+        "flymsg.worker_resume/v1",
         "parity": final.get("state") == "completed" and job.parity(),
     }
+    if final.get("state") == "completed":
+        # a resume from the checkpoint advances only the remaining steps
+        recovery["resumed_advance_steps"] = job.result()["advance_steps"]
     recovery["ok"] = (
         recovery["seen_running"]
         and recovery["parked_as"] in ("suspended", "awaiting_recovery")
@@ -200,10 +214,22 @@ def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
 
     report = {
         "schema": "flymsg.console_lifecycle/v1",
+        "date": time.strftime("%Y-%m-%d"),
+        "platform": "Xbox Series S, Dev Mode",
+        "script": "scripts/console_lifecycle.py",
+        "oracle": "the CPU runtime on the same fixture, compared with "
+        "scripts/native_acceptance.py check() after the last step",
+        "package_lineage": lineage,
         "adapter": ADAPTER,
         "package": package,
         "shader_sha256": sha,
-        "fixture": {"neurons": N, "steps": STEPS, "seed": SEED, "synthetic": True},
+        "fixture": {
+            "neurons": N,
+            "steps": STEPS,
+            "inputs": INPUTS,
+            "seed": SEED,
+            "synthetic": True,
+        },
         "throughput": throughput,
         "cancel": cancel,
         "stop_and_resume": recovery,
@@ -225,8 +251,14 @@ if __name__ == "__main__":
         "--shader", type=Path, required=True, help="the package's lif.cso"
     )
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--lineage",
+        type=Path,
+        required=True,
+        help="JSON of the installed package's lineage (CI run, source commit, msix hashes)",
+    )
     a = parser.parse_args()
-    r = run(a.package, a.aumid, a.shader, a.out)
+    r = run(a.package, a.aumid, a.shader, a.out, json.loads(a.lineage.read_text()))
     keys = ("throughput", "cancel", "stop_and_resume", "passed")
     print(json.dumps({k: r[k] for k in keys}))
     sys.exit(0 if r["passed"] else 1)
