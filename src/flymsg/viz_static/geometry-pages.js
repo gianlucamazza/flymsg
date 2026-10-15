@@ -98,7 +98,8 @@ export function visibleLinePages(
 ) {
   if (visible.length !== pages.sizes.length)
     throw new RangeError("Visibility mask size differs from page count");
-  let edges = 0;
+  let edges = 0,
+    changed = false;
   for (let page = 0; page < visible.length; page++) {
     const o = 6 * page,
       b = pages.bounds;
@@ -115,12 +116,13 @@ export function visibleLinePages(
           return ax + ay + az + d >= -margin;
         }),
       );
+    changed ||= visible[page] !== Number(shown);
     visible[page] = Number(shown);
     if (shown) {
       edges += pages.sizes[page];
     }
   }
-  return { visible, edges };
+  return { visible, edges, changed };
 }
 
 /** Copy in ORIGINAL edge order, retaining deterministic depth ties and neuron ownership. */

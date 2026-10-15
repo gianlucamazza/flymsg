@@ -128,3 +128,29 @@ test("reused visibility masks clear stale bits instead of retaining old pages", 
   assert(mask.every((x) => x === 0));
   assert.throws(() => visibleLinePages(pages, null, new Uint8Array(1)), /size/);
 });
+
+test("compact cache keys track exact visibility changes hidden by coalesced groups", () => {
+  const ns = [neuron(0)], p = new ResidentLineIndex(1);
+  p.sync(ns);
+  const pages = ns[0].skelLod.pages[0];
+  let selected = [1,0,0,1,0,0,0,0,0,0,0,0];
+  const visibility = (_p,_eyes,out) => {
+    const changed=out.some((v,i)=>v!==selected[i]);out.set(selected);
+    return {changed,edges:selected.reduce((a,b)=>a+b),visible:out};
+  };
+  const first=p.plan(null,()=>true,visibility), immutable=p.index.slice();
+  const cache=new Uint32Array(24);
+  assert.equal(p.copyVisible(cache),4);
+  assert.deepEqual([...cache.subarray(0,4)],[0,1,6,7]);
+  assert.equal(p.plan(null,()=>true,visibility).generation,first.generation);
+  selected=[1,1,0,1,0,0,0,0,0,0,0,0];
+  const second=p.plan(null,()=>true,visibility);
+  assert.equal(second.changed,false); // the enclosing group is identical
+  assert(second.generation>first.generation); // but the compact contents differ
+  assert.equal(p.copyVisible(cache),6);
+  assert.deepEqual([...cache.subarray(0,6)],[0,1,2,3,6,7]);
+  assert.deepEqual(p.index,immutable);
+  assert.throws(()=>p.copyVisible(new Uint32Array(1)),/capacity/);
+  const old=p.index;p.releaseArena();assert(!p.arrays().includes(old));
+  assert(p.sync(ns));assert.deepEqual(p.index,immutable);
+});

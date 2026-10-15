@@ -119,7 +119,8 @@ export async function residentLineProbe(
           tally(args, true);
           return bufferSubData.apply(gl, args);
         };
-        const samples = [];
+        const samples = [],
+          warmupSamples = [];
         r.setRenderTarget(rt);
         r.setViewport(0, 0, size, size);
         r.setScissorTest(false);
@@ -148,7 +149,17 @@ export async function residentLineProbe(
           r.render(world, c);
           r.readRenderTargetPixels(rt, 0, 0, size, size, pixels);
           const wall = performance.now() - started;
-          if (i < warmup) continue;
+          if (i < warmup) {
+            warmupSamples.push({
+              selection_ms: selected - started,
+              serialized_wall_ms: wall,
+              index_upload_bytes: bytes,
+              index_upload_calls: uploads,
+              submission,
+              draws: { ...r.info.render },
+            });
+            continue;
+          }
           if (!pixels.some((v, j) => v !== pixels[j % 4]))
             throw new Error(`${name}/${mode}: no rendered-content witness`);
           let different = 0;
@@ -186,6 +197,7 @@ export async function residentLineProbe(
           started_at: startedAt,
           finished_at: new Date().toISOString(),
           samples,
+          warmup_samples: warmupSamples,
         });
       }
     }

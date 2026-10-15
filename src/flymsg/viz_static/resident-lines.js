@@ -11,6 +11,7 @@ export class ResidentLineIndex {
     this.count = 0;
     this.starts = this.ends = this.blocks = new Uint32Array(0);
     this.builds = 0;
+    this.generation = 0;
     this.ranges = [];
   }
 
@@ -27,6 +28,10 @@ export class ResidentLineIndex {
         );
       })
     ) {
+      if (!target && this.index.length < this.count) {
+        this.writeIndex(new Uint32Array(this.count));
+        return true;
+      }
       if (target && target !== this.index) {
         this.writeIndex(target);
         return true;
@@ -57,6 +62,7 @@ export class ResidentLineIndex {
     this.ends = new Uint32Array(runs);
     this.blocks = new Uint32Array(runs);
     this.builds++;
+    this.generation++;
     return true;
   }
 
@@ -77,6 +83,7 @@ export class ResidentLineIndex {
     let count = 0,
       block = 0,
       visibleIndices = 0;
+    let changedEligibility = false;
     const append = (start, end) => {
       if (
         count &&
@@ -91,11 +98,15 @@ export class ResidentLineIndex {
       }
     };
     for (const e of this.entries) {
-      if (!wanted(e.neuron)) {
+      const selected = !!wanted(e.neuron);
+      changedEligibility ||= e.selected !== selected;
+      e.selected = selected;
+      if (!selected) {
         if (e.edges.length) block++;
         continue;
       }
       const result = visibility(e.pages, eyes, e.visible);
+      changedEligibility ||= result.changed ?? true;
       visibleIndices += 2 * result.edges;
       if (!result.edges) continue;
       if (result.edges * 2 === e.edges.length) {
@@ -110,6 +121,9 @@ export class ResidentLineIndex {
         append(start, end);
       }
     }
+    this.exactCount = count;
+    this.visibleIndices = visibleIndices;
+    if (changedEligibility) this.generation++;
     let mandatory = count ? 1 : 0;
     for (let i = 1; i < count; i++)
       if (this.blocks[i] !== this.blocks[i - 1]) mandatory++;
@@ -155,7 +169,21 @@ export class ResidentLineIndex {
       visibleIndices,
       submittedIndices: ranges.reduce((sum, r) => sum + r.count, 0),
       fallback: null,
+      generation: this.generation,
     };
+  }
+
+  copyVisible(target) {
+    if (target.length < this.visibleIndices)
+      throw new RangeError("Compact cache capacity exhausted");
+    let offset = 0;
+    for (let i = 0; i < this.exactCount; i++) {
+      const start = this.starts[i],
+        end = this.ends[i];
+      target.set(this.index.subarray(start, end), offset);
+      offset += end - start;
+    }
+    return offset;
   }
 
   arrays() {

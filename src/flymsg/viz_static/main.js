@@ -816,10 +816,20 @@ const pool = {
 };
 const skelGeometry = new THREE.BufferGeometry();
 const residentLines = new ResidentLineIndex(8);
-let residentIndexValid = false;
+let residentGeometry = null,
+  compactGeneration = -1;
 let lineSubmission = { mode: "compact", draws: 0 };
+function releaseResidentGeometry() {
+  if (!residentGeometry) return;
+  // Vertex attributes belong to skelGeometry; dispose only this index/VAO owner.
+  for (const name of Object.keys(residentGeometry.attributes))
+    residentGeometry.deleteAttribute(name);
+  residentGeometry.dispose();
+  residentGeometry = null;
+}
 function poolAttributes() {
-  residentIndexValid = false;
+  releaseResidentGeometry();
+  compactGeneration = -1;
   residentLines.releaseArena();
   skelGeometry.dispose(); // frees the GPU buffers of the arrays being replaced
   skelGeometry.setAttribute(
@@ -831,6 +841,18 @@ function poolAttributes() {
     new THREE.BufferAttribute(pool.neuron, 1),
   );
   skelGeometry.setIndex(new THREE.BufferAttribute(pool.index, 1));
+}
+function ensureCompactCapacity(count) {
+  if (count <= pool.index.length) return;
+  const attributes = { ...skelGeometry.attributes };
+  for (const name of Object.keys(attributes))
+    skelGeometry.deleteAttribute(name);
+  skelGeometry.dispose(); // shared vertices and their other VAO remain resident
+  for (const [name, attribute] of Object.entries(attributes))
+    skelGeometry.setAttribute(name, attribute);
+  pool.index = new Uint32Array(Math.max(count, 2 * pool.index.length));
+  skelGeometry.setIndex(new THREE.BufferAttribute(pool.index, 1));
+  compactGeneration = -1;
 }
 poolAttributes();
 skelGeometry.setDrawRange(0, 0);
@@ -960,8 +982,35 @@ function applySkeletonVisibility(eyes = null) {
     lastSkeletonRepresentation === settings.representation &&
     lastResidentEnabled === settings.residentLines &&
     sameEyePlanes(lastSkeletonEyes, eyes)
-  )
+  ) {
+    if (
+      lineSubmission.mode === "resident" &&
+      lineSubmission.backend === "groups" &&
+      (lineSubmission.bridged_indices || lineSubmission.draws > 1)
+    ) {
+      ensureCompactCapacity(residentLines.visibleIndices);
+      const count = residentLines.copyVisible(pool.index);
+      const index = skelGeometry.getIndex();
+      index.clearUpdateRanges();
+      index.addUpdateRange(0, count);
+      index.needsUpdate = true;
+      skelGeometry.clearGroups();
+      if (count) skelGeometry.addGroup(0, count, 0);
+      skelGeometry.setDrawRange(0, count);
+      compactGeneration = residentLines.generation;
+      skeletons.geometry = skelGeometry;
+      lineSubmission = {
+        ...lineSubmission,
+        backend: "cached-compact",
+        draws: Number(count > 0),
+        ranges: Number(count > 0),
+        submitted_indices: count,
+        bridged_indices: 0,
+      };
+      invalidate();
+    }
     return;
+  }
   // Copy the stamp: diagnostic callers may reuse and mutate their plane arrays.
   lastSkeletonEyes = eyes?.map((eye) => eye.map((plane) => [...plane])) ?? null;
   lastSkeletonRepresentation = settings.representation;
@@ -974,52 +1023,48 @@ function applySkeletonVisibility(eyes = null) {
     settings.representation === "skeleton" &&
     neurons.every((n) => !isShown(n) || n.skeletonState === "ready")
   ) {
-    const count = neurons.reduce(
-      (sum, n) => sum + (n.skelLod?.levels[0].length ?? 0),
-      0,
-    );
-    if (count > pool.index.length) {
-      pool.index = new Uint32Array(Math.max(count, 2 * pool.index.length));
-      poolAttributes();
+    const rebuilt = residentLines.sync(neurons);
+    if (rebuilt || !residentGeometry) {
+      releaseResidentGeometry();
+      residentGeometry = new THREE.BufferGeometry();
+      for (const [name, attribute] of Object.entries(skelGeometry.attributes))
+        residentGeometry.setAttribute(name, attribute);
+      residentGeometry.setIndex(
+        new THREE.BufferAttribute(residentLines.index, 1),
+      );
+      compactGeneration = -1;
     }
-    const rebuilt = residentLines.sync(neurons, pool.index);
-    if (rebuilt) residentIndexValid = true;
     const plan = residentLines.plan(eyes, skeletonOn, visibleLinePages);
     if (!plan.fallback) {
-      const upload = rebuilt || !residentIndexValid;
-      if (!residentIndexValid) residentLines.writeIndex(pool.index);
-      residentIndexValid = true;
-      if (upload) {
-        const index = skelGeometry.getIndex();
-        index.clearUpdateRanges();
-        index.addUpdateRange(0, residentLines.count);
-        index.needsUpdate = true;
-      }
-      if (upload || plan.changed || lineSubmission.mode !== "resident") {
-        skelGeometry.clearGroups();
-        for (const r of plan.ranges) skelGeometry.addGroup(r.start, r.count, 0);
-        skelGeometry.setDrawRange(0, residentLines.count);
+      const cached = compactGeneration === plan.generation;
+      if (rebuilt || plan.changed || lineSubmission.mode !== "resident") {
+        residentGeometry.clearGroups();
+        for (const r of plan.ranges)
+          residentGeometry.addGroup(r.start, r.count, 0);
+        residentGeometry.setDrawRange(0, residentLines.count);
         invalidate();
       }
+      skeletons.geometry = cached ? skelGeometry : residentGeometry;
       lineSubmission = {
         mode: "resident",
-        backend: "groups",
-        draws: plan.ranges.length,
-        ranges: plan.ranges.length,
+        backend: cached ? "cached-compact" : "groups",
+        draws: cached ? Number(plan.visibleIndices > 0) : plan.ranges.length,
+        ranges: cached ? Number(plan.visibleIndices > 0) : plan.ranges.length,
         visible_indices: plan.visibleIndices,
-        submitted_indices: plan.submittedIndices,
-        bridged_indices: plan.submittedIndices - plan.visibleIndices,
+        submitted_indices: cached ? plan.visibleIndices : plan.submittedIndices,
+        bridged_indices: cached
+          ? 0
+          : plan.submittedIndices - plan.visibleIndices,
         catalog_builds: residentLines.builds,
       };
       return;
     }
     fallback = plan.fallback;
   }
-  // One shared arena: compact captures/fallback invalidate its resident layout.
-  // Restoring the original resident layout requires a single upload.
-  let changed = residentIndexValid || lineSubmission.mode === "resident",
+  // Legacy/reference writes invalidate only the single compact-view cache.
+  let changed = lineSubmission.mode === "resident",
     total = 0;
-  residentIndexValid = false;
+  skeletons.geometry = skelGeometry;
   for (const n of neurons) {
     const st = n.skelLod && skeletonOn(n) ? n.skelLod.level : -1;
     if (st !== pool.state[n.k]) {
@@ -1044,10 +1089,8 @@ function applySkeletonVisibility(eyes = null) {
     lineSubmission = { ...lineSubmission, mode: "compact", fallback };
     return;
   }
-  if (total > pool.index.length) {
-    pool.index = new Uint32Array(Math.max(total, 2 * pool.index.length));
-    poolAttributes();
-  }
+  ensureCompactCapacity(total);
+  compactGeneration = -1;
   let o = 0;
   for (const n of neurons) {
     const st = pool.state[n.k];
@@ -1465,6 +1508,8 @@ function resourceReport() {
     }
   }
   for (const g of lru.values()) arrays.push(...geometryArrays(g));
+  arrays.push(...geometryArrays(skelGeometry));
+  if (residentGeometry) arrays.push(...geometryArrays(residentGeometry));
   arrays.push(...residentLines.arrays());
   return {
     managed_geometry_cpu_bytes: bufferBytes(arrays),

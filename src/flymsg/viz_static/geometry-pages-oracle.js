@@ -145,6 +145,20 @@ export async function geometryPageOracle(THREE) {
         192,
         128,
       );
+      const cachedIndex = new Uint32Array(plan.visibleIndices);
+      residency.copyVisible(cachedIndex);
+      geometry.setIndex(new THREE.BufferAttribute(cachedIndex, 1));
+      geometry.clearGroups();
+      if (cachedIndex.length) geometry.addGroup(0, cachedIndex.length, 0);
+      const cached = capturePasses(
+        THREE,
+        renderer,
+        world,
+        camera,
+        passes,
+        192,
+        128,
+      );
       if (residentAttribute.version !== 0)
         throw new Error("Camera selection dirtied the resident index");
       const idPixels = reference.neuron_id;
@@ -181,6 +195,14 @@ export async function geometryPageOracle(THREE) {
           );
         checks[key].resident_sha256 = await sha256(resident[key]);
         checks[key].resident_different_bytes = residentDifferent;
+        const cachedDifferent = reference[key].reduce(
+          (n, v, i) => n + Number(v !== cached[key][i]),
+          0,
+        );
+        if (cachedDifferent)
+          throw new Error(`${name}/${key}: cached compact output changed`);
+        checks[key].cached_different_bytes = cachedDifferent;
+        checks[key].cached_sha256 = await sha256(cached[key]);
       }
       records.push({
         name,
