@@ -10,10 +10,10 @@ import json
 import os
 import subprocess
 import threading
-from urllib.parse import urlsplit
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from flymsg import manifest, runstore, viz
 
