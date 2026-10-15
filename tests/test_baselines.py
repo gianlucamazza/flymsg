@@ -4,14 +4,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from flymsg import baselines, evidence
+from flymsg import baselines, draws, evidence
 
 
 def test_locked_on_the_battery_with_disjoint_shuffle_seeds():
     doc = baselines.assert_matches_code()
     jobs = baselines.jobs(doc)
-    assert jobs[0] == baselines.REAL and len(jobs) == 1 + doc["baseline"]["draws"]
-    assert not {0, *range(20), *range(3600, 3699)} & set(jobs[1:])
+    assert jobs[0] == ("real",) and len(jobs) == 1 + doc["baseline"]["draws"]
+    assert not {0, *range(20), *range(3600, 3699)} & {s for _, s in jobs[1:]}
     assert len(baselines.responses(doc)) == 8
     assert evidence.check_lock(doc, evidence.load(), "baselines") == []
     edited = baselines.load()
@@ -68,3 +68,14 @@ def test_ties_count_against_the_measured_wiring():
     assert (judged["p"] == 1.0).all() and not judged["specific"].any()
     assert judged["holds_measured"].all() and (judged["holds_share_null"] == 1.0).all()
     assert baselines.verdict(judged).startswith("specific: none")
+
+
+def _echo(job):
+    return [{"job": list(job)}]
+
+
+def test_the_jobs_pass_through_the_checkpointed_map(tmp_path):
+    doc = baselines.load()
+    jobs = baselines.jobs(doc)[:3]
+    rows = draws.map_jobs(_echo, jobs, 1, None, tmp_path / "ck", {"v": 1})
+    assert [tuple(r["job"]) for r in rows] == jobs

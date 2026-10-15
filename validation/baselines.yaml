@@ -2,7 +2,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.baselines.VERSION_HASHES. `flymsg baselines` prints this file; `--run` executes it.
 version: 1
-content_sha256: 2cc8bdaca7028081b2b6ba98552e8c26f6b9ef6cd8dfd1bc79e2e7290ac74611
+content_sha256: bff97462896375970c2573fee37f1cca1a14c165033418691f743267d50c07f9
 yaml_subset: 2
 evidence: none
 evidence_none: "A structural baseline of the model itself: the shuffled connectomes are draws of a configuration model of the measured one, every parameter is the live default of sim.Params, and no biological value is newly sourced."
@@ -60,7 +60,7 @@ reported:
     what: "per response, the 5th, 50th and 95th percentiles of the shuffles' seed-median rates"
   latency_recruited:
     decides: false
-    what: "seed-median first spike, recruited and persistent counts, measured and shuffle median"
+    what: "seed-median first spike (over the seeds where the neuron fires; silent seeds have none), recruited and persistent counts, measured and shuffle median"
 
 limits:
   - "One family: the shuffle keeps each neuron's out-weights and the in-degree multiset, not each neuron's in-degree, cell-type block structure or signs per edge; a response the shuffle reproduces may still depend on what it keeps."
@@ -69,5 +69,8 @@ limits:
   - "The best neuron of the target type is picked per graph, so a shuffle is credited with whichever neuron of the type responds most."
   - "The draws are a sample of the configuration model, not its distribution: 199 draws resolve p down to 0.005."
   - "Responses share stimulus rows and targets across cases, so their p values are not independent; Holm holds under any dependence."
+  - "Holm's thresholds are 0.00625 to 0.05 over the eight responses and p moves in steps of 0.005, and rates in steps of one spike in the window (3.33 Hz) make ties common: in practice a response is specific only when no shuffle, or almost none, reaches the measured rate."
+  - "The measured bitter -> MN9 response is already known to be silent (0 Hz, results/sensitivity/v1 at the defaults); with ties against it, bitter is specific only when shuffles drive MN9 where the measured wiring does not."
+  - "Cost: 200 graphs x 30 battery runs, about twenty times the sensitivity grid (300 runs in 21 min), so several hours; --checkpoint resumes per graph."
 
 defaults_changed: false

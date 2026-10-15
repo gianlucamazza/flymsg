@@ -23,10 +23,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "baselines.yaml"
 
 VERSION_HASHES = {
-    1: "2cc8bdaca7028081b2b6ba98552e8c26f6b9ef6cd8dfd1bc79e2e7290ac74611",
+    1: "bff97462896375970c2573fee37f1cca1a14c165033418691f743267d50c07f9",
 }
 
-REAL = -1  # the shuffle index of the measured connectome
+REAL = -1  # the `shuffle` column of the measured connectome's rows
 
 
 class BaselineError(ValueError):
@@ -96,11 +96,13 @@ def summary(doc: dict | None = None) -> str:
     )
 
 
-def _job(job: int) -> list[dict]:
-    """One graph: the measured connectome (REAL) or one shuffle, every case."""
+def _job(job: tuple) -> list[dict]:
+    """One graph: the measured connectome (`("real",)`) or one shuffle
+    (`("shuffle", seed)`), every case."""
     (neurons, edges, doc), _checkpoint, _meta = parallel.context()
     b = doc["battery"]
-    e = edges if job == REAL else nulls.shuffle_degree_preserving(edges, job)
+    shuffle = REAL if job[0] == "real" else int(job[1])
+    e = edges if shuffle == REAL else nulls.shuffle_degree_preserving(edges, shuffle)
     p = sim.Params()
     W = sim.network(neurons, e, p)
     c = doc["cases"]
@@ -119,15 +121,17 @@ def _job(job: int) -> list[dict]:
             stim_ms=b["stim_ms"],
             duration_ms=b["duration_ms"],
         ):
-            row.update(shuffle=job, case=case)
+            row.update(shuffle=shuffle, case=case)
             rows.append(row)
     return rows
 
 
-def jobs(doc: dict) -> list[int]:
+def jobs(doc: dict) -> list[tuple]:
+    """Tuples, as draws.map_jobs keys its checkpoint: the measured graph, then each
+    shuffle."""
     base = doc["baseline"]
     first = base["shuffle_seed0"]
-    return [REAL, *range(first, first + base["draws"])]
+    return [("real",), *(("shuffle", s) for s in range(first, first + base["draws"]))]
 
 
 def run(
