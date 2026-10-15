@@ -1,12 +1,14 @@
-// Minimal XAML-hosted worker; no rendering clock participates in simulation. The
-// application class only activates the window and starts the job loop.
+// XAML-hosted worker; no rendering clock participates in simulation. The job
+// loop runs on its own thread and publishes a telemetry copy; the dashboard
+// reads that copy on a UI timer and never touches a job's state.
 #include "../dx12.h"
-#include "App.h"
 #include "App.g.cpp"
+#include "App.h"
 #include <atomic>
 #include <bcrypt.h>
 #include <chrono>
 #include <iomanip>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <sstream>
@@ -17,9 +19,13 @@
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Gaming.Input.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.UI.Xaml.Media.h>
+#include <winrt/Windows.UI.Xaml.Shapes.h>
+#include <winrt/Windows.UI.h>
 
 using namespace winrt;
 using namespace Windows::ApplicationModel;
@@ -116,9 +122,66 @@ bool arriving(const fs::path &path) {
 std::string field(const JsonObject &doc, const wchar_t *name) {
   return to_string(doc.GetNamedString(name));
 }
+// What the dashboard shows: a copy the job thread replaces under a lock.
+struct Telemetry {
+  struct Done {
+    std::string id, outcome;
+    double advance_ms = 0;
+    uint32_t steps = 0;
+  };
+  std::string job, state = "idle", error;
+  fs::path folder;
+  uint32_t step = 0, total = 0;
+  double rate = 0, memory = 0, limit = 0;
+  std::vector<Done> history; // newest first, at most 8
+  std::vector<double> bins;  // spikes per count bin of the last completed job
+  std::vector<std::pair<uint32_t, uint32_t>> top; // (neuron row, spikes)
+  uint64_t activity_generation = 0; // bumped for each completed job
+};
 struct Worker {
   std::atomic<bool> shutdown{false}, suspended{false}, started{false};
-  std::mutex mutex;
+  std::mutex mutex, telemetry_mutex;
+  Telemetry telemetry;
+  std::chrono::steady_clock::time_point rate_at{};
+  uint32_t rate_step = 0;
+  Telemetry snapshot() {
+    std::lock_guard guard(telemetry_mutex);
+    return telemetry;
+  }
+  void finished(const std::string &id, const std::string &outcome,
+                double advance_ms, uint32_t steps) {
+    std::lock_guard guard(telemetry_mutex);
+    auto &h = telemetry.history;
+    h.insert(h.begin(), {id, outcome, advance_ms, steps});
+    if (h.size() > 8)
+      h.pop_back();
+  }
+  // Spikes per count bin and the ten most active neurons, from the counts the
+  // completed job holds (bin-major, as flymsg.native.read_output decodes them).
+  void activity(const flymsg::Runtime &runtime) {
+    const auto &in = runtime.input;
+    const uint32_t n = in[2], bins = in[3] / in[4], at = in[30];
+    std::vector<double> per_bin(bins, 0.0);
+    std::vector<uint32_t> per_neuron(n, 0);
+    for (uint32_t b = 0; b < bins; ++b)
+      for (uint32_t i = 0; i < n; ++i) {
+        const auto c = runtime.state[at + size_t(b) * n + i];
+        per_bin[b] += c;
+        per_neuron[i] += c;
+      }
+    std::vector<std::pair<uint32_t, uint32_t>> top;
+    for (uint32_t i = 0; i < n; ++i)
+      if (per_neuron[i])
+        top.push_back({i, per_neuron[i]});
+    const auto keep = std::min<size_t>(10, top.size());
+    std::partial_sort(top.begin(), top.begin() + keep, top.end(),
+                      [](auto &a, auto &b) { return a.second > b.second; });
+    top.resize(keep);
+    std::lock_guard guard(telemetry_mutex);
+    telemetry.bins = std::move(per_bin);
+    telemetry.top = std::move(top);
+    ++telemetry.activity_generation;
+  }
   SuspendingDeferral deferral{nullptr};
   fs::path root;
   void suspend(SuspendingEventArgs const &args) {
@@ -165,6 +228,41 @@ struct Worker {
                    Windows::System::MemoryManager::AppMemoryUsageLimit())));
     // inside a suspending deferral the platform's deadline matters more
     write_json(folder / L"status.json", doc, suspended ? 10 : 50);
+    std::lock_guard guard(telemetry_mutex);
+    auto &t = telemetry;
+    const auto now = std::chrono::steady_clock::now();
+    if (t.job != id || phase != "running") {
+      rate_at = now;
+      rate_step = step;
+    } else if (now - rate_at >= std::chrono::seconds(1)) {
+      // steps per second over the last second or more, smoothed
+      const double fresh = (step - rate_step) /
+                           std::chrono::duration<double>(now - rate_at).count();
+      t.rate = t.rate > 0 ? 0.7 * t.rate + 0.3 * fresh : fresh;
+      rate_at = now;
+      rate_step = step;
+    }
+    if (t.job != id)
+      t.rate = 0;
+    t.job = id;
+    t.folder = folder;
+    t.state = phase;
+    t.step = step;
+    t.error = error;
+    t.memory = double(Windows::System::MemoryManager::AppMemoryUsage());
+    t.limit = double(Windows::System::MemoryManager::AppMemoryUsageLimit());
+  }
+  // The gamepad's cancel: the same flymsg.worker_cancel/v1 file a host would
+  // upload, so a cancel takes the protocol's one path.
+  void request_cancel() {
+    const auto t = snapshot();
+    if (t.state != "running" || t.folder.empty())
+      return;
+    JsonObject doc;
+    doc.Insert(L"schema",
+               JsonValue::CreateStringValue(L"flymsg.worker_cancel/v1"));
+    doc.Insert(L"job_id", JsonValue::CreateStringValue(to_hstring(t.job)));
+    write_json(t.folder / L"cancel.json", doc);
   }
   bool cancelled(const fs::path &folder, const std::string &id) {
     if (!fs::exists(folder / L"cancel.json"))
@@ -198,6 +296,10 @@ struct Worker {
       flymsg::require(sha256(shader) == field(doc, L"shader_sha256"),
                       "shader hash mismatch");
     flymsg::Runtime runtime(flymsg::read_words(fixture));
+    {
+      std::lock_guard guard(telemetry_mutex);
+      telemetry.total = runtime.input[3];
+    }
     const auto estimated = runtime.input.size() * 8ull +
                            runtime.state.size() * 16ull + 64ull * 1024 * 1024;
     const auto limit = Windows::System::MemoryManager::AppMemoryUsageLimit();
@@ -278,8 +380,12 @@ struct Worker {
                     JsonValue::CreateNumberValue(runtime.step - first_step));
       write_json(folder / L"result.json", result);
       status(folder, id, "completed", runtime.step);
+      activity(runtime);
+      finished(id, "completed", advance_ms, runtime.step - first_step);
     } else {
-      status(folder, id, suspended ? "suspended" : "cancelled", runtime.step);
+      const auto outcome = suspended ? "suspended" : "cancelled";
+      status(folder, id, outcome, runtime.step);
+      finished(id, outcome, advance_ms, runtime.step - first_step);
     }
   }
   void loop() {
@@ -334,6 +440,7 @@ struct Worker {
           try {
             status(folder, folder.filename().string(), "failed", 0,
                    error.what());
+            finished(folder.filename().string(), "failed", 0, 0);
           } catch (...) {
           }
           ExitProcess(1);
@@ -341,12 +448,14 @@ struct Worker {
           try {
             status(folder, folder.filename().string(), "failed", 0,
                    error.what());
+            finished(folder.filename().string(), "failed", 0, 0);
           } catch (...) {
           }
         } catch (hresult_error const &error) {
           try {
             status(folder, folder.filename().string(), "failed", 0,
                    to_string(error.message()));
+            finished(folder.filename().string(), "failed", 0, 0);
           } catch (...) {
           }
         }
@@ -361,6 +470,174 @@ Worker &worker() {
   static Worker instance;
   return instance;
 }
+namespace xaml = Windows::UI::Xaml;
+namespace controls = Windows::UI::Xaml::Controls;
+xaml::Media::SolidColorBrush brush(uint8_t r, uint8_t g, uint8_t b) {
+  return xaml::Media::SolidColorBrush(
+      Windows::UI::ColorHelper::FromArgb(255, r, g, b));
+}
+controls::TextBlock label(double size,
+                          xaml::Media::SolidColorBrush const &color) {
+  controls::TextBlock text;
+  text.FontSize(size);
+  text.Foreground(color);
+  text.TextWrapping(xaml::TextWrapping::Wrap);
+  return text;
+}
+std::wstring wide(const std::string &s) { return std::wstring(to_hstring(s)); }
+std::wstring fixed(double value, int digits) {
+  std::wostringstream out;
+  out << std::fixed << std::setprecision(digits) << value;
+  return out.str();
+}
+std::wstring duration(double seconds) {
+  if (!(seconds >= 0) || seconds > 1e7)
+    return L"-";
+  const auto s = uint64_t(seconds + 0.5);
+  std::wostringstream out;
+  if (s >= 3600)
+    out << s / 3600 << L" h " << (s % 3600) / 60 << L" min";
+  else if (s >= 60)
+    out << s / 60 << L" min " << s % 60 << L" s";
+  else
+    out << s << L" s";
+  return out.str();
+}
+// The dashboard: built once, refreshed four times a second from a telemetry
+// copy on the UI thread. It reads; only the gamepad's B writes, and only the
+// cancel file a host could upload.
+xaml::UIElement dashboard() {
+  const auto white = brush(235, 240, 245), dim = brush(150, 165, 180),
+             accent = brush(90, 200, 160), warn = brush(240, 120, 100);
+  controls::Grid root;
+  root.Background(brush(16, 24, 32));
+  root.Padding({96, 54, 96, 54}); // TV title-safe area, about 5%
+  controls::StackPanel page;
+  page.Spacing(18);
+  root.Children().Append(page);
+  auto title = label(44, white);
+  title.Text(L"FlyMSG neural worker");
+  page.Children().Append(title);
+  auto build = label(20, dim);
+  const auto adapter = flymsg::hardware_adapter();
+  build.Text(L"commit " + wide(FLYMSG_COMMIT).substr(0, 12) + L"  |  GPU " +
+             (adapter.empty() ? L"none" : adapter) +
+             L"  |  jobs in LocalState\\inbox");
+  page.Children().Append(build);
+  auto state = label(32, accent), detail = label(24, white),
+       memory = label(20, dim), error = label(20, warn);
+  controls::ProgressBar progress;
+  progress.Height(14);
+  progress.Foreground(accent);
+  controls::ProgressBar memory_bar;
+  memory_bar.Height(8);
+  memory_bar.Maximum(1.0);
+  memory_bar.Foreground(dim);
+  for (auto element : std::initializer_list<xaml::UIElement>{
+           state, progress, detail, memory_bar, memory, error})
+    page.Children().Append(element);
+  // the view button switches between the last job's activity and the history
+  controls::StackPanel activity_panel, history_panel;
+  activity_panel.Spacing(8);
+  auto activity_title = label(26, white);
+  activity_title.Text(L"Last completed job: spikes per count bin");
+  controls::StackPanel bars;
+  bars.Orientation(controls::Orientation::Horizontal);
+  bars.Height(160);
+  bars.Spacing(2);
+  auto top = label(20, dim);
+  for (auto element :
+       std::initializer_list<xaml::UIElement>{activity_title, bars, top})
+    activity_panel.Children().Append(element);
+  auto history_title = label(26, white), history = label(20, dim);
+  history_title.Text(L"Recent jobs");
+  history_panel.Children().Append(history_title);
+  history_panel.Children().Append(history);
+  history_panel.Visibility(xaml::Visibility::Collapsed);
+  page.Children().Append(activity_panel);
+  page.Children().Append(history_panel);
+  auto hint = label(18, dim);
+  hint.Text(L"Gamepad: B cancels the running job  |  View switches activity "
+            L"and history");
+  page.Children().Append(hint);
+
+  auto shown = std::make_shared<uint64_t>(0);
+  auto pressed = std::make_shared<Windows::Gaming::Input::GamepadButtons>(
+      Windows::Gaming::Input::GamepadButtons::None);
+  xaml::DispatcherTimer timer;
+  timer.Interval(std::chrono::milliseconds(250));
+  timer.Tick([=](auto &&, auto &&) {
+    using Windows::Gaming::Input::Gamepad;
+    using Windows::Gaming::Input::GamepadButtons;
+    const auto pads = Gamepad::Gamepads();
+    if (pads.Size() > 0) {
+      const auto now = pads.GetAt(0).GetCurrentReading().Buttons;
+      const auto fresh = now & ~*pressed; // rising edges only
+      if ((fresh & GamepadButtons::B) == GamepadButtons::B)
+        worker().request_cancel();
+      if ((fresh & GamepadButtons::View) == GamepadButtons::View) {
+        const bool activity =
+            activity_panel.Visibility() == xaml::Visibility::Visible;
+        activity_panel.Visibility(activity ? xaml::Visibility::Collapsed
+                                           : xaml::Visibility::Visible);
+        history_panel.Visibility(activity ? xaml::Visibility::Visible
+                                          : xaml::Visibility::Collapsed);
+      }
+      *pressed = now;
+    }
+    const auto t = worker().snapshot();
+    state.Text(t.job.empty() ? L"Idle: waiting for a job"
+                             : wide(t.state) + L"  " + wide(t.job));
+    progress.Maximum(std::max<double>(1.0, t.total));
+    progress.Value(t.step);
+    std::wstring line =
+        L"step " + std::to_wstring(t.step) + L" of " + std::to_wstring(t.total);
+    if (t.state == "running" && t.rate > 0)
+      line += L"  |  " + fixed(t.rate, 0) + L" steps/s  |  ETA " +
+              duration((double(t.total) - t.step) / t.rate);
+    detail.Text(line);
+    memory_bar.Value(t.limit > 0 ? t.memory / t.limit : 0.0);
+    memory.Text(L"app memory " + fixed(t.memory / 1048576.0, 0) + L" MB of " +
+                fixed(t.limit / 1073741824.0, 1) + L" GB");
+    error.Text(t.error.empty() ? L"" : L"error: " + wide(t.error));
+    if (t.activity_generation != *shown) { // rebuild for a new job's counts
+      bars.Children().Clear();
+      const size_t columns = std::min<size_t>(t.bins.size(), 120);
+      double peak = 0;
+      std::vector<double> merged(columns, 0.0);
+      for (size_t b = 0; b < t.bins.size(); ++b)
+        merged[b * columns / t.bins.size()] += t.bins[b];
+      for (auto v : merged)
+        peak = std::max(peak, v);
+      for (auto v : merged) {
+        xaml::Shapes::Rectangle bar;
+        bar.Width(std::max(2.0, 1400.0 / std::max<size_t>(columns, 1) - 2));
+        bar.Height(peak > 0 ? std::max(1.0, 160.0 * v / peak) : 1.0);
+        bar.VerticalAlignment(xaml::VerticalAlignment::Bottom);
+        bar.Fill(accent);
+        bars.Children().Append(bar);
+      }
+      std::wstring most = t.top.empty() ? L"no spikes" : L"most active rows:";
+      for (auto [row, spikes] : t.top)
+        most += L"  " + std::to_wstring(row) + L" (" + std::to_wstring(spikes) +
+                L")";
+      top.Text(most);
+      *shown = t.activity_generation;
+    }
+    std::wstring rows;
+    for (auto const &d : t.history)
+      rows += wide(d.outcome) + L"  " + wide(d.id).substr(0, 8) + L"  " +
+              std::to_wstring(d.steps) + L" steps" +
+              (d.advance_ms > 0
+                   ? L"  " + fixed(d.steps / (d.advance_ms / 1000.0), 0) +
+                         L" steps/s"
+                   : L"") +
+              L"\n";
+    history.Text(rows.empty() ? L"none yet" : rows);
+  });
+  timer.Start();
+  return root;
+}
 } // namespace
 namespace winrt::Flymsg::implementation {
 App::App() {
@@ -373,9 +650,7 @@ void App::OnLaunched(
     Windows::ApplicationModel::Activation::LaunchActivatedEventArgs const &) {
   auto window = Windows::UI::Xaml::Window::Current();
   if (!window.Content()) {
-    Windows::UI::Xaml::Controls::TextBlock text;
-    text.Text(L"FlyMSG neural worker: jobs in LocalState\\inbox");
-    window.Content(text);
+    window.Content(dashboard());
     worker().start();
   }
   window.Activate();
