@@ -1,0 +1,56 @@
+{
+  "backend": "console",
+  "battery": {
+    "cases": [
+      "looming escape",
+      "giant fiber output",
+      "P1 courtship drive",
+      "pIP10 song pathway",
+      "sugar feeding",
+      "bitter feeding"
+    ],
+    "duration_ms": 600.0,
+    "runs": 30,
+    "seeds": 5
+  },
+  "console": {
+    "advance_ms": 69646.22787799999,
+    "advance_steps": 180000,
+    "host_s": {
+      "console_s": 77.31495406499016,
+      "download_s": 12.063936241000192,
+      "export_s": 33.49584371599485,
+      "runtimes_s": 27.895607305021258,
+      "upload_s": 10.087857858015923
+    },
+    "prepare_ms": 5370.99161,
+    "wall_s": 164.31746219599154,
+    "write_ms": 343.68585899999994
+  },
+  "date": "2026-10-16",
+  "host_load_average": [
+    4.2998046875,
+    4.53662109375,
+    4.203125
+  ],
+  "host_sim_run_s": 38.45063354598824,
+  "mismatched_runs": [],
+  "network": {
+    "neurons": 165122,
+    "synapses": 24539704
+  },
+  "note": "164 s end to end: on the host 28 s building the 30 runtimes and 33 s exporting the batch, 10 s hashing and uploading, 77 s waiting for the console (69.6 s advance, 5.4 s rebuilding each run's fixture and runtime, 0.3 s writing outputs, the rest polling), 12 s downloading and removing files; one host core ran the same 30 sim.run calls in 38 s",
+  "output": "counts",
+  "package_lineage": {
+    "ci_note": "native-runtime workflow on PR #213",
+    "ci_run": 38821528689
+  },
+  "passed": true,
+  "platform": "Xbox Series S, Dev Mode",
+  "schema": "flymsg.console_battery/v1",
+  "scope": "one graph's battery; equality of counts and first spikes per run",
+  "script": "scripts/console_battery.py",
+  "worker_adapter": "SraKmd_arden",
+  "worker_package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+  "worker_shader_sha256": "d6a0977507dd905fe0895948441be9bab9033e1c393735aad0095622fd606809"
+}
