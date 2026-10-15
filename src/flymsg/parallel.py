@@ -92,6 +92,7 @@ def imap_shared(
         if exc is None:
             to_lane()
 
+    before = _context
     with pool, lane:
         to_lane()
         for _ in range(max(1, workers)):
@@ -101,5 +102,7 @@ def imap_shared(
             if exc is not None:
                 with lock:
                     todo.clear()  # nothing new starts
+                _init(before)
                 raise exc
             yield result
+    _init(before)  # the lane's context leaves with the batch

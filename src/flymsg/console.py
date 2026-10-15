@@ -23,6 +23,7 @@ import numpy as np
 from flymsg import native, sim
 from flymsg.runtime import CpuRuntime
 
+STOPPED = ("completed", "failed", "cancelled", "suspended", "awaiting_recovery")
 ADAPTER = "SraKmd_arden"  # Xbox Series S, as the FloppyLM trainer's evidence records
 PACKAGE_ENV = "FLYMSG_WORKER_PACKAGE"  # the installed worker's PackageFullName
 SHADER_ENV = "FLYMSG_WORKER_SHADER"  # a local copy of that package's lif.cso
@@ -33,7 +34,8 @@ class Portal:
 
     def __init__(self) -> None:
         self.base = f"https://{os.environ['XBOX_IP']}:11443"
-        self.auth = f"{os.environ['XBOX_USER']}:{os.environ['XBOX_PASS']}"
+        # given to curl on stdin (-K -), never on its command line where ps shows it
+        self.config = f'user = "{os.environ["XBOX_USER"]}:{os.environ["XBOX_PASS"]}"\n'
         fd, self.jar = tempfile.mkstemp(prefix="wdp")
         os.close(fd)
         self.pin = os.environ.get("FLYMSG_DEVICE_PIN")
@@ -48,7 +50,7 @@ class Portal:
     def curl(self, method, path, out=None, upload=None) -> str:
         # an upload of a whole network can take minutes over a local network
         limit = "1800" if upload else "120"
-        cmd = ["curl", "-sS", "-k", "--fail", "-m", limit, "-u", self.auth]
+        cmd = ["curl", "-sS", "-k", "--fail", "-m", limit, "-K", "-"]
         if self.pin:  # -k skips the CA chain only; curl still enforces the pinned key
             cmd += ["--pinnedpubkey", self.pin]
         cmd += ["-b", self.jar, "-c", self.jar, "-X", method]
@@ -65,11 +67,22 @@ class Portal:
         if out:
             cmd += ["-o", out]
         r = subprocess.run(
-            [*cmd, self.base + path], capture_output=True, text=True, check=False
+            [*cmd, self.base + path],
+            input=self.config,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if r.returncode:
             raise RuntimeError(f"{method} {path.split('?')[0]} failed ({r.returncode})")
         return r.stdout
+
+    def close(self) -> None:
+        """Remove the session's cookie jar."""
+        Path(self.jar).unlink(missing_ok=True)
+
+    def __del__(self):
+        self.close()
 
     def mkdir(self, package: str, rel: str) -> None:
         parent = "%5CLocalState"
@@ -123,6 +136,18 @@ def lineage(backend: str) -> dict:
         "worker_shader_sha256": hashlib.sha256(shader.read_bytes()).hexdigest(),
         "worker_adapter": ADAPTER,
     }
+
+
+_DEVICE = None
+
+
+def device() -> Device:
+    """This process's Device, made once from the environment: one Device Portal session
+    and cookie jar for a whole run, not one per graph."""
+    global _DEVICE
+    if _DEVICE is None:
+        _DEVICE = Device()
+    return _DEVICE
 
 
 class Device:
@@ -187,41 +212,52 @@ def run_batch(
     (folder / "job.json").write_text(json.dumps(job, sort_keys=True, indent=2) + "\n")
     rel = f"inbox\\{job_id}"
     p = device.portal
-    p.mkdir(device.package, rel)
-    p.put(device.package, rel, base)
-    p.put(device.package, rel, batch)
-    p.put(device.package, rel, folder / "job.json")  # last: the worker starts on it
-    start, status = time.time(), {}
-    while time.time() - start < timeout_s:
-        time.sleep(2)
-        status = device.status(rel, folder / "status.json")
-        if status.get("state") in ("completed", "failed", "cancelled"):
-            break
-    if status.get("state") != "completed":
-        raise RuntimeError(
-            f"console batch {job_id}: {status.get('state', 'timeout')} "
-            f"{status.get('error', '')}".strip()
-        )
-    p.get(device.package, rel, "result.json", folder / "result.json")
+    remote = ["fixture.bin", "batch.bin"]
     outputs, fixtures = [], []
-    for k in range(len(runtimes)):
-        output, fixture = folder / f"output_{k}.bin", folder / f"fixture_{k}.bin"
-        p.get(device.package, rel, f"output_{k}.bin", output)
-        fixture.write_bytes(native.batch_fixture(base, batch, k).tobytes())
-        outputs.append(output)
-        fixtures.append(fixture)
-    # the console keeps the small records (job, status, results); its copies of the
-    # network and the outputs would fill its storage over a long run
-    for name in ["fixture.bin", "batch.bin"] + [
-        f"output_{k}.bin" for k in range(len(runtimes))
-    ]:
-        try:
-            p.delete(device.package, rel, name)
-        except RuntimeError:
-            pass  # cleanup only: a file left behind costs space, not correctness
-    base.unlink()
-    batch.unlink()
-    return outputs, fixtures, json.loads((folder / "result.json").read_text())
+    try:
+        p.mkdir(device.package, rel)
+        p.put(device.package, rel, base)
+        p.put(device.package, rel, batch)
+        p.put(device.package, rel, folder / "job.json")  # last: the worker starts on it
+        start, status = time.time(), {}
+        while time.time() - start < timeout_s:
+            time.sleep(2)
+            status = device.status(rel, folder / "status.json")
+            # a parked job (suspended, awaiting_recovery) waits for a resume.json this
+            # backend never writes: stop instead of waiting out the timeout
+            if status.get("state") in STOPPED:
+                break
+        if status.get("state") != "completed":
+            raise RuntimeError(
+                f"console batch {job_id}: {status.get('state', 'timeout')} "
+                f"{status.get('error', '')}".strip()
+            )
+        p.get(device.package, rel, "result.json", folder / "result.json")
+        for k in range(len(runtimes)):
+            output, fixture = folder / f"output_{k}.bin", folder / f"fixture_{k}.bin"
+            remote.append(f"output_{k}.bin")
+            p.get(device.package, rel, f"output_{k}.bin", output)
+            # a version-1 output decodes against its fixture's header alone
+            fixture.write_bytes(
+                native.batch_fixture(base, batch, k)[: native.HEADER_WORDS].tobytes()
+            )
+            outputs.append(output)
+            fixtures.append(fixture)
+        return outputs, fixtures, json.loads((folder / "result.json").read_text())
+    except BaseException:
+        for path in [*outputs, *fixtures]:
+            path.unlink(missing_ok=True)
+        raise
+    finally:
+        # the console keeps the small records (job, status, results); its copies of
+        # the network and the outputs would fill its storage over a long run
+        for name in remote:
+            try:
+                p.delete(device.package, rel, name)
+            except RuntimeError:
+                pass  # cleanup only: a file left behind costs space, not correctness
+        base.unlink(missing_ok=True)
+        batch.unlink(missing_ok=True)
 
 
 def sim_runtime(
@@ -233,9 +269,10 @@ def sim_runtime(
     steps = int(duration_ms / p.dt)
     stim_steps = steps if stim_ms is None else int(stim_ms / p.dt)
     kicks = sim.poisson_kicks(seed, rate_hz, p.dt, stim_steps, int(stim.size))
-    return CpuRuntime(
-        W, stim, steps=steps, kicks=kicks, p=p, per_bin=round(10.0 / p.dt)
-    )
+    per_bin = max(1, round(10.0 / p.dt))
+    if steps % per_bin:
+        raise ValueError("duration_ms must be a multiple of the 10 ms bin")
+    return CpuRuntime(W, stim, steps=steps, kicks=kicks, p=p, per_bin=per_bin)
 
 
 def sim_runs(

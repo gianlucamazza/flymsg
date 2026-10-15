@@ -492,7 +492,8 @@ struct Worker {
       write_json(folder / (L"result_" + name + L".json"), result);
       advance_ms += ms;
       advanced += steps;
-      last.emplace(std::move(runtime));
+      if (k + 1 == runs) // only the last run's counts feed the dashboard
+        last.emplace(std::move(runtime));
     }
     JsonObject result;
     result.Insert(L"runs", JsonValue::CreateNumberValue(runs));

@@ -278,7 +278,7 @@ def as_result(
         counts=np.asarray(out["counts"], dtype=np.int64),
         first_spike_ms=np.where(first >= 0, first * dt_ms, np.nan),
         bin_ms=bin_ms,
-        stim_ms=duration if stim_ms is None else min(stim_ms, duration),
+        stim_ms=duration if stim_ms is None else stim_ms,  # as sim.run reports it
     )
 
 

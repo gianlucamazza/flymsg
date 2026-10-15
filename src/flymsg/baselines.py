@@ -123,11 +123,11 @@ def _job(job: tuple) -> list[dict]:
             for s in seeds
         ]
         results, _ = console.sim_runs(
-            console.Device(),
+            console.device(),
             W,
             specs,
             p,
-            Path("runs/console"),
+            ROOT / "runs" / "console",
             dataset="malecns-v1.0",
             seed=b["seed0"],
             scope=f"baselines graph {job}",
@@ -135,6 +135,16 @@ def _job(job: tuple) -> list[dict]:
         # decoded case by case below: a whole-CNS run's counts are tens of megabytes
         for k, case in enumerate(cases):
             computed[case] = slice(k * len(seeds), (k + 1) * len(seeds))
+    rows = []
+    try:
+        rows = _measure_cases(neurons, W, p, b, cases, shuffle, results, computed)
+    finally:
+        if results is not None:
+            results.close()  # its local outputs, whatever happened
+    return rows
+
+
+def _measure_cases(neurons, W, p, b, cases, shuffle, results, computed) -> list[dict]:
     rows = []
     for case in cases:
         stim, targets = sensitivity.case_inputs(case, neurons)
@@ -153,8 +163,6 @@ def _job(job: tuple) -> list[dict]:
         ):
             row.update(shuffle=shuffle, case=case)
             rows.append(row)
-    if results is not None:
-        results.close()
     return rows
 
 
