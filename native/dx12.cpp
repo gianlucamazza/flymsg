@@ -141,6 +141,14 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   require(
       options.DoublePrecisionFloatShaderOps,
       "BLOCKED: ordered double-kick shader needs hardware double precision");
+  // The shader is built for shader model 6.2 with float32 denormals preserved:
+  // a conductance decays into the subnormal range on long runs, and a flush to
+  // zero there diverges from the CPU oracle's float32 arithmetic.
+  D3D12_FEATURE_DATA_SHADER_MODEL model{D3D_SHADER_MODEL_6_2};
+  require(SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL,
+                                                &model, sizeof(model))) &&
+              model.HighestShaderModel >= D3D_SHADER_MODEL_6_2,
+          "BLOCKED: shader model 6.2 (float32 denormals preserved) required");
   std::wcout << L"adapter " << description.Description << L"\n";
   D3D12_COMMAND_QUEUE_DESC q{};
   q.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;

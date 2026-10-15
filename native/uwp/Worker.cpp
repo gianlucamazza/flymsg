@@ -512,60 +512,94 @@ std::wstring duration(double seconds) {
 // cancel file a host could upload.
 xaml::UIElement dashboard() {
   const auto white = brush(235, 240, 245), dim = brush(150, 165, 180),
-             accent = brush(90, 200, 160), warn = brush(240, 120, 100);
+             accent = brush(90, 200, 160), warn = brush(240, 120, 100),
+             panel = brush(24, 36, 48);
+  // rows: header, two columns (job | activity or history), controls
   controls::Grid root;
   root.Background(brush(16, 24, 32));
   root.Padding({96, 54, 96, 54}); // TV title-safe area, about 5%
-  controls::StackPanel page;
-  page.Spacing(18);
-  root.Children().Append(page);
-  auto title = label(44, white);
+  root.RowSpacing(24);
+  root.ColumnSpacing(48);
+  for (auto height :
+       {xaml::GridLengthHelper::Auto(),
+        xaml::GridLengthHelper::FromValueAndType(1, xaml::GridUnitType::Star),
+        xaml::GridLengthHelper::Auto()}) {
+    controls::RowDefinition row;
+    row.Height(height);
+    root.RowDefinitions().Append(row);
+  }
+  for (double share : {5.0, 6.0}) {
+    controls::ColumnDefinition column;
+    column.Width(xaml::GridLengthHelper::FromValueAndType(
+        share, xaml::GridUnitType::Star));
+    root.ColumnDefinitions().Append(column);
+  }
+  auto place = [&](xaml::FrameworkElement const &e, int row, int column,
+                   int span = 1) {
+    controls::Grid::SetRow(e, row);
+    controls::Grid::SetColumn(e, column);
+    controls::Grid::SetColumnSpan(e, span);
+    root.Children().Append(e);
+  };
+  auto card = [&](int row, int column) {
+    controls::Border border;
+    border.Background(panel);
+    border.CornerRadius({12, 12, 12, 12});
+    border.Padding({32, 28, 32, 28});
+    controls::StackPanel stack;
+    stack.Spacing(14);
+    border.Child(stack);
+    place(border, row, column);
+    return stack;
+  };
+
+  controls::StackPanel header;
+  header.Spacing(6);
+  auto title = label(40, white);
   title.Text(L"FlyMSG neural worker");
-  page.Children().Append(title);
   auto build = label(20, dim);
   const auto adapter = flymsg::hardware_adapter();
-  build.Text(L"commit " + wide(FLYMSG_COMMIT).substr(0, 12) + L"  |  GPU " +
+  build.Text(L"commit " + wide(FLYMSG_COMMIT).substr(0, 12) + L"   GPU " +
              (adapter.empty() ? L"none" : adapter) +
-             L"  |  jobs in LocalState\\inbox");
-  page.Children().Append(build);
-  auto state = label(32, accent), detail = label(24, white),
-       memory = label(20, dim), error = label(20, warn);
+             L"   jobs in LocalState\\inbox");
+  header.Children().Append(title);
+  header.Children().Append(build);
+  place(header, 0, 0, 2);
+
+  auto job = card(1, 0);
+  auto state = label(34, accent), id = label(20, dim),
+       detail = label(24, white), memory = label(20, dim),
+       error = label(20, warn);
   controls::ProgressBar progress;
-  progress.Height(14);
+  progress.Height(16);
   progress.Foreground(accent);
   controls::ProgressBar memory_bar;
   memory_bar.Height(8);
   memory_bar.Maximum(1.0);
   memory_bar.Foreground(dim);
   for (auto element : std::initializer_list<xaml::UIElement>{
-           state, progress, detail, memory_bar, memory, error})
-    page.Children().Append(element);
-  // the view button switches between the last job's activity and the history
-  controls::StackPanel activity_panel, history_panel;
-  activity_panel.Spacing(8);
-  auto activity_title = label(26, white);
-  activity_title.Text(L"Last completed job: spikes per count bin");
-  controls::StackPanel bars;
-  bars.Orientation(controls::Orientation::Horizontal);
-  bars.Height(160);
-  bars.Spacing(2);
-  auto top = label(20, dim);
+           state, id, progress, detail, memory, memory_bar, error})
+    job.Children().Append(element);
+
+  // the view button switches the right card between activity and history
+  auto side = card(1, 1);
+  auto side_title = label(26, white);
+  controls::Grid bars; // one column per bar, bottom-aligned
+  bars.Height(260);
+  bars.ColumnSpacing(2);
+  auto top = label(18, dim), history = label(20, dim);
+  history.Visibility(xaml::Visibility::Collapsed);
   for (auto element :
-       std::initializer_list<xaml::UIElement>{activity_title, bars, top})
-    activity_panel.Children().Append(element);
-  auto history_title = label(26, white), history = label(20, dim);
-  history_title.Text(L"Recent jobs");
-  history_panel.Children().Append(history_title);
-  history_panel.Children().Append(history);
-  history_panel.Visibility(xaml::Visibility::Collapsed);
-  page.Children().Append(activity_panel);
-  page.Children().Append(history_panel);
+       std::initializer_list<xaml::UIElement>{side_title, bars, top, history})
+    side.Children().Append(element);
+
   auto hint = label(18, dim);
-  hint.Text(L"Gamepad: B cancels the running job  |  View switches activity "
-            L"and history");
-  page.Children().Append(hint);
+  hint.Text(L"Gamepad   B  cancel the running job      View  activity / "
+            L"recent jobs");
+  place(hint, 2, 0, 2);
 
   auto shown = std::make_shared<uint64_t>(0);
+  auto history_view = std::make_shared<bool>(false);
   auto pressed = std::make_shared<Windows::Gaming::Input::GamepadButtons>(
       Windows::Gaming::Input::GamepadButtons::None);
   xaml::DispatcherTimer timer;
@@ -579,61 +613,83 @@ xaml::UIElement dashboard() {
       const auto fresh = now & ~*pressed; // rising edges only
       if ((fresh & GamepadButtons::B) == GamepadButtons::B)
         worker().request_cancel();
-      if ((fresh & GamepadButtons::View) == GamepadButtons::View) {
-        const bool activity =
-            activity_panel.Visibility() == xaml::Visibility::Visible;
-        activity_panel.Visibility(activity ? xaml::Visibility::Collapsed
-                                           : xaml::Visibility::Visible);
-        history_panel.Visibility(activity ? xaml::Visibility::Visible
-                                          : xaml::Visibility::Collapsed);
-      }
+      if ((fresh & GamepadButtons::View) == GamepadButtons::View)
+        *history_view = !*history_view;
       *pressed = now;
     }
     const auto t = worker().snapshot();
-    state.Text(t.job.empty() ? L"Idle: waiting for a job"
-                             : wide(t.state) + L"  " + wide(t.job));
+    const bool idle = t.job.empty();
+    state.Text(idle ? L"Idle" : wide(t.state));
+    id.Text(idle ? L"waiting for a job" : L"job " + wide(t.job).substr(0, 8));
+    const auto busy =
+        idle ? xaml::Visibility::Collapsed : xaml::Visibility::Visible;
+    progress.Visibility(busy);
+    detail.Visibility(busy);
     progress.Maximum(std::max<double>(1.0, t.total));
     progress.Value(t.step);
     std::wstring line =
         L"step " + std::to_wstring(t.step) + L" of " + std::to_wstring(t.total);
-    if (t.state == "running" && t.rate > 0)
-      line += L"  |  " + fixed(t.rate, 0) + L" steps/s  |  ETA " +
-              duration((double(t.total) - t.step) / t.rate);
+    if (t.state == "running" && t.rate > 0) {
+      const double left = (double(t.total) - t.step) / t.rate;
+      line += L"\n" + fixed(t.rate, 0) + L" steps/s   ETA " +
+              (left < 1 ? std::wstring(L"under 1 s") : duration(left));
+    }
     detail.Text(line);
-    memory_bar.Value(t.limit > 0 ? t.memory / t.limit : 0.0);
-    memory.Text(L"app memory " + fixed(t.memory / 1048576.0, 0) + L" MB of " +
-                fixed(t.limit / 1073741824.0, 1) + L" GB");
+    // read here, so the figure is live between jobs too
+    const double used =
+                     double(Windows::System::MemoryManager::AppMemoryUsage()),
+                 limit = double(
+                     Windows::System::MemoryManager::AppMemoryUsageLimit());
+    memory_bar.Value(limit > 0 ? used / limit : 0.0);
+    memory.Text(L"app memory " + fixed(used / 1048576.0, 0) + L" MB of " +
+                fixed(limit / 1073741824.0, 1) + L" GB");
     error.Text(t.error.empty() ? L"" : L"error: " + wide(t.error));
+
+    side_title.Text(*history_view ? L"Recent jobs"
+                                  : L"Last completed job: spikes per bin");
+    bars.Visibility(*history_view ? xaml::Visibility::Collapsed
+                                  : xaml::Visibility::Visible);
+    top.Visibility(bars.Visibility());
+    history.Visibility(*history_view ? xaml::Visibility::Visible
+                                     : xaml::Visibility::Collapsed);
     if (t.activity_generation != *shown) { // rebuild for a new job's counts
       bars.Children().Clear();
-      const size_t columns = std::min<size_t>(t.bins.size(), 120);
-      double peak = 0;
+      bars.ColumnDefinitions().Clear();
+      const size_t columns = std::min<size_t>(t.bins.size(), 100);
       std::vector<double> merged(columns, 0.0);
       for (size_t b = 0; b < t.bins.size(); ++b)
         merged[b * columns / t.bins.size()] += t.bins[b];
+      double peak = 0;
       for (auto v : merged)
         peak = std::max(peak, v);
-      for (auto v : merged) {
+      for (size_t c = 0; c < columns; ++c) {
+        controls::ColumnDefinition column;
+        column.Width(xaml::GridLengthHelper::FromValueAndType(
+            1, xaml::GridUnitType::Star));
+        bars.ColumnDefinitions().Append(column);
         xaml::Shapes::Rectangle bar;
-        bar.Width(std::max(2.0, 1400.0 / std::max<size_t>(columns, 1) - 2));
-        bar.Height(peak > 0 ? std::max(1.0, 160.0 * v / peak) : 1.0);
+        bar.Height(peak > 0 ? std::max(2.0, 260.0 * merged[c] / peak) : 2.0);
         bar.VerticalAlignment(xaml::VerticalAlignment::Bottom);
         bar.Fill(accent);
+        controls::Grid::SetColumn(bar, int(c));
         bars.Children().Append(bar);
       }
-      std::wstring most = t.top.empty() ? L"no spikes" : L"most active rows:";
+      std::wstring most =
+          t.top.empty() ? L"no spikes" : L"most active rows (spikes):";
       for (auto [row, spikes] : t.top)
         most += L"  " + std::to_wstring(row) + L" (" + std::to_wstring(spikes) +
                 L")";
       top.Text(most);
       *shown = t.activity_generation;
     }
+    if (t.activity_generation == 0)
+      top.Text(L"no completed job yet");
     std::wstring rows;
     for (auto const &d : t.history)
-      rows += wide(d.outcome) + L"  " + wide(d.id).substr(0, 8) + L"  " +
+      rows += wide(d.outcome) + L"   " + wide(d.id).substr(0, 8) + L"   " +
               std::to_wstring(d.steps) + L" steps" +
               (d.advance_ms > 0
-                   ? L"  " + fixed(d.steps / (d.advance_ms / 1000.0), 0) +
+                   ? L"   " + fixed(d.steps / (d.advance_ms / 1000.0), 0) +
                          L" steps/s"
                    : L"") +
               L"\n";
@@ -645,6 +701,9 @@ xaml::UIElement dashboard() {
 } // namespace
 namespace winrt::Flymsg::implementation {
 App::App() {
+  // a gamepad UI, not a pointer one: no mouse-mode cursor on the console
+  RequiresPointerMode(
+      Windows::UI::Xaml::ApplicationRequiresPointerMode::WhenRequested);
   Suspending([](auto const &, SuspendingEventArgs const &args) {
     worker().suspend(args);
   });

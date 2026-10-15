@@ -1,4 +1,6 @@
-// ordered-f32-double-kicks: requires hardware double precision shader ops.
+// ordered-f32-double-kicks: requires hardware double precision shader ops, and
+// shader model 6.2 built with -denorm preserve so float32 subnormals match the
+// CPU oracle (a decaying conductance reaches them on long runs).
 ByteAddressBuffer input : register(t0);
 RWByteAddressBuffer state : register(u0);
 // outgoing synapses (n + 1 offsets, then incoming-CSR positions) and the delivery
