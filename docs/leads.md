@@ -141,7 +141,7 @@ Both versions ran uninformative.
 - **v1:** the model's giant fiber fired in every cell.
 - **v2:** the giant fibers were passive. Their peaks follow the stimulus, and three of the ten control flies peak at onset, so the flies' interval holds the onset slope.
 
-A timing test of this stage needs a measured LC4 or LPLC2 rate, or recordings whose timing excludes the onset; neither is deposited.
+A sharper test of this stage needs a measured LC4 or LPLC2 rate, which no deposited recording gives.
 
 ### Muscle → body actuator (G4)
 
