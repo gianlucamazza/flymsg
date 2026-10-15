@@ -25,7 +25,7 @@ class Handler(SimpleHTTPRequestHandler):
             body = b"""<!doctype html><title>Raster pixel oracle</title>
 <script type="module">
 import {rasterOracle} from "/raster-oracle.js";
-window.oracle=rasterOracle({timingSamples:0});
+window.oracle=rasterOracle({timingSamples:0,cpu:true});
 </script>"""
             self.send_response(200)
             self.send_header("Content-Type", "text/html")

@@ -2,7 +2,7 @@
 import { RasterPainter } from "./raster-painter.js";
 import { rasterReference } from "./raster-reference.js";
 
-export async function rasterOracle({ timingSamples = 200 } = {}) {
+export async function rasterOracle({ timingSamples = 200, cpu = false } = {}) {
   if (
     !Number.isInteger(timingSamples) ||
     timingSamples < 0 ||
@@ -10,7 +10,11 @@ export async function rasterOracle({ timingSamples = 200 } = {}) {
   )
     throw new RangeError("Invalid raster timing sample count");
   await document.fonts.ready;
-  const create = () => document.createElement("canvas");
+  const create = () => {
+    const canvas = document.createElement("canvas");
+    if (cpu) canvas.getContext("2d", { willReadFrequently: true });
+    return canvas;
+  };
   const colours = {
     context: "#7b8494",
     selected: "#4cc9f0",
@@ -130,6 +134,7 @@ export async function rasterOracle({ timingSamples = 200 } = {}) {
   return {
     status: "pass",
     comparisons,
+    canvas_backend: cpu ? "CPU 2D correctness only" : "browser default",
     cases,
     timings,
     rule: "Every RGBA byte must match the independent frozen original; timings include full readback, not frame rate.",
