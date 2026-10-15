@@ -283,25 +283,35 @@ def as_result(
     )
 
 
-def read_counts(path: Path) -> dict[str, np.ndarray | int]:
-    """Decode a sparse counts output (`--counts`, a batch with `"output": "counts"`):
-    the spike counts per bin and the first spikes, as `read_output` gives them."""
+def read_counts(path: Path, fixture: Path) -> dict[str, np.ndarray | int]:
+    """Decode a sparse counts output (`--counts`, a batch with `"output": "counts"`)
+    against its fixture's header: the spike counts per bin and the first spikes, as
+    `read_output` gives them."""
+    h = np.frombuffer(Path(fixture).read_bytes(), dtype="<u4")[:HEADER_WORDS]
+    n, bins = int(h[2]), int(h[3]) // int(h[4])
     w = np.frombuffer(Path(path).read_bytes(), dtype="<u4")
     if w.size < 6 or int(w[0]) != COUNTS:
         raise ValueError("invalid sparse counts output")
-    step, n, bins, nnz = (int(x) for x in w[1:5])
+    step, nnz = int(w[1]), int(w[4])
+    if int(w[2]) != n or int(w[3]) != bins or step > h[3]:
+        raise ValueError("sparse counts output does not match its fixture")
     at = 5 + 2 * nnz
-    if w.size < at + 1:
+    if w.size < at + 1 or w.size != at + 1 + 2 * int(w[at]):
         raise ValueError("truncated sparse counts output")
-    m = int(w[at])
-    if w.size != at + 1 + 2 * m:
-        raise ValueError("truncated sparse counts output")
+    pairs, fp = w[5:at], w[at + 1 :]
+    index, neuron, f = pairs[0::2], fp[0::2], fp[1::2].view("<i4")
+    if (
+        np.any(index >= bins * n)
+        or np.any(neuron >= n)
+        or np.any((f < 0) | (f > step))
+        or np.unique(index).size != index.size
+        or np.unique(neuron).size != neuron.size
+    ):
+        raise ValueError("invalid sparse counts output")
     counts = np.zeros(bins * n, dtype="<u4")
-    pairs = w[5:at]
-    counts[pairs[0::2]] = pairs[1::2]
+    counts[index] = pairs[1::2]
     first = np.full(n, -1, dtype="<i4")
-    fp = w[at + 1 :]
-    first[fp[0::2]] = fp[1::2].view("<i4")
+    first[neuron] = f
     return {"step": step, "counts": counts.reshape(bins, n), "first": first}
 
 

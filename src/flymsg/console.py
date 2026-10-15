@@ -186,7 +186,11 @@ def run_batch(
     output: str = "state",
 ) -> tuple[list[Path], list[Path], dict]:
     """Run fresh runtimes of one network on the console: each run's output file, the
-    fixture it decodes against (`native.read_output`), and the job's result."""
+    fixture it decodes against, and the job's result. `output` is "state" (the whole
+    state, `native.read_output`) or "counts" (counts and first spikes,
+    `native.read_counts`)."""
+    if output not in ("state", "counts"):
+        raise ValueError(f"unknown batch output {output!r}")
     job_id = str(uuid.uuid4())
     folder = out / job_id
     folder.mkdir(parents=True)
@@ -332,7 +336,7 @@ class Results:
             return [self[i] for i in range(*k.indices(len(self)))]
         path = self.outputs[k]
         out = (
-            native.read_counts(path)
+            native.read_counts(path, self.fixtures[k])
             if path.name.startswith("counts_")
             else native.read_output(path, self.fixtures[k])
         )
