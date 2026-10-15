@@ -75,10 +75,21 @@ void write_json(const fs::path &path, const JsonObject &doc) {
   const auto text = to_string(doc.Stringify());
   file.write(text.data(), std::streamsize(text.size()));
   file.close();
-  flymsg::require(bool(file) && MoveFileExW(tmp.c_str(), path.c_str(),
-                                            MOVEFILE_REPLACE_EXISTING |
-                                                MOVEFILE_WRITE_THROUGH),
-                  "status atomic replacement");
+  flymsg::require(bool(file), "status temporary write");
+  // A reader (Device Portal fetching the file) briefly holds it open and the
+  // replacement fails with a sharing error; retry for up to a second.
+  for (int attempt = 0;; ++attempt) {
+    if (MoveFileExW(tmp.c_str(), path.c_str(),
+                    MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+      return;
+    const auto error = GetLastError();
+    flymsg::require((error == ERROR_SHARING_VIOLATION ||
+                     error == ERROR_ACCESS_DENIED ||
+                     error == ERROR_LOCK_VIOLATION) &&
+                        attempt < 50,
+                    "status atomic replacement");
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
 }
 std::string field(const JsonObject &doc, const wchar_t *name) {
   return to_string(doc.GetNamedString(name));
@@ -185,8 +196,14 @@ struct Worker {
                         "checkpoint shader mismatch");
       runtime.restore(folder / L"checkpoint.bin");
     }
+    auto reported = std::chrono::steady_clock::now() - std::chrono::seconds(1);
     const auto stop = [&](uint32_t cursor) {
-      status(folder, id, "running", cursor);
+      // progress at most four times a second: each update is a file replacement
+      const auto now = std::chrono::steady_clock::now();
+      if (now - reported >= std::chrono::milliseconds(250)) {
+        status(folder, id, "running", cursor);
+        reported = now;
+      }
       return shutdown || suspended || cancelled(folder, id);
     };
     if (backend == "dx12") {

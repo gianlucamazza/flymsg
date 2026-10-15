@@ -1,0 +1,232 @@
+"""Worker lifecycle on a console through Windows Device Portal (#40).
+
+Three runs of one synthetic version-1 fixture, long enough to be interrupted, each as a dx12
+job to the installed worker:
+
+- throughput: run to completion; host-side steps per second from the worker's status
+  updates (one every 64 steps), output checked bit for bit against the CPU oracle;
+- cancel: a `flymsg.worker_cancel/v1` while running must end in `cancelled` before the end;
+- recovery: the app is stopped while the job runs and started again; the job must wait in
+  `awaiting_recovery`, and after a `flymsg.worker_resume/v1` complete with the oracle's
+  output.
+
+Suspension through the platform's lifecycle manager is not driven here: Device Portal has no
+call that suspends a running app. Settings as `console_gpu_parity.py` (environment only); the
+report holds no address or credential. Exits nonzero unless all three behave.
+
+Usage: uv run python scripts/console_lifecycle.py --package PFN --aumid AUMID \
+    --shader lif.cso --out DIR
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import hashlib
+import json
+import sys
+import time
+import uuid
+from pathlib import Path
+
+import numpy as np
+from scipy import sparse
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from console_gpu_parity import ADAPTER, Portal
+from native_acceptance import check  # the acceptance comparator, unchanged
+
+from flymsg import sim
+from flymsg.native import export_fixture, read_output
+from flymsg.runtime import CpuRuntime
+
+N, STEPS, SEED = 2048, 100_000, 40  # long enough to stop mid-run; synthetic
+
+
+def oracle() -> CpuRuntime:
+    p = sim.Params()
+    rng = np.random.default_rng(SEED)
+    W = sparse.random(N, N, density=0.01, random_state=rng, format="csc")
+    W.data = rng.integers(-20, 80, W.data.size).astype(np.float32)
+    return CpuRuntime(
+        W.astype(np.float32),
+        np.arange(16),
+        steps=STEPS,
+        kicks=sim.poisson_kicks(SEED, 200, p.dt, STEPS, 16),
+        p=p,
+        per_bin=1000,
+        trace=np.arange(8),
+    )
+
+
+class Job:
+    def __init__(self, portal: Portal, package: str, shader_sha: str, out: Path):
+        self.portal, self.package = portal, package
+        self.id = str(uuid.uuid4())
+        self.folder = out / self.id
+        self.folder.mkdir(parents=True)
+        self.rel = f"inbox\\{self.id}"
+        self.rt = oracle()
+        fixture = self.folder / "fixture.bin"
+        meta = export_fixture(self.rt, fixture)
+        self.fixture = fixture
+        self.job = {
+            "schema": "flymsg.neural_job/v1",
+            "job_id": self.id,
+            "semantics": "flymsg.lif/ordered-f32-v1",
+            "backend": "dx12",
+            "fixture_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
+            "shader_sha256": shader_sha,
+            "expected_adapter": ADAPTER,
+            "dataset": "synthetic",
+            "seed": SEED,
+            "neural_tick_us": 100,
+            "fixture": meta,
+            "scope": "lifecycle qualification fixture, not biological validation",
+        }
+
+    def control(self, name: str, schema: str) -> None:
+        path = self.folder / name
+        path.write_text(json.dumps({"schema": schema, "job_id": self.id}) + "\n")
+        self.portal.put(self.package, self.rel, path)
+
+    def submit(self) -> float:
+        (self.folder / "job.json").write_text(
+            json.dumps(self.job, sort_keys=True, indent=2) + "\n"
+        )
+        self.portal.mkdir(self.package, self.rel)
+        self.portal.put(self.package, self.rel, self.fixture)
+        self.portal.put(self.package, self.rel, self.folder / "job.json")
+        return time.time()
+
+    def status(self) -> dict:
+        try:
+            self.portal.get(
+                self.package, self.rel, "status.json", self.folder / "status.json"
+            )
+            return json.loads((self.folder / "status.json").read_text())
+        except (RuntimeError, json.JSONDecodeError):
+            return {}  # not written yet, or caught mid-replacement
+
+    def wait(self, states: set, timeout_s: float = 900.0) -> tuple[dict, list]:
+        seen, start = [], time.time()
+        while time.time() - start < timeout_s:
+            s = self.status()
+            if s:
+                seen.append((time.time(), s.get("state"), s.get("step", 0)))
+                if s.get("state") in states:
+                    return s, seen
+            time.sleep(1.0)
+        return {"state": "timeout"}, seen
+
+    def parity(self) -> bool:
+        self.portal.get(
+            self.package, self.rel, "output.bin", self.folder / "output.bin"
+        )
+        self.rt.advance_to(STEPS)
+        try:
+            check(self.rt, read_output(self.folder / "output.bin", self.fixture))
+            return True
+        except AssertionError:
+            return False
+
+
+def app_call(portal: Portal, method: str, package: str, aumid: str) -> None:
+    pkg = base64.b64encode(package.encode()).decode()
+    if method == "DELETE":
+        portal.curl("DELETE", f"/api/taskmanager/app?package={pkg}")
+    else:
+        app = base64.b64encode(aumid.encode()).decode()
+        portal.curl("POST", f"/api/taskmanager/app?appid={app}&package={pkg}")
+
+
+def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
+    portal = Portal()
+    sha = hashlib.sha256(shader.read_bytes()).hexdigest()
+    done = {"completed", "failed", "cancelled"}
+
+    job = Job(portal, package, sha, out)
+    job.submit()
+    final, seen = job.wait(done)
+    running = [(t, k) for t, s, k in seen if s == "running" and k > 0]
+    rate = None
+    if len(running) >= 2 and running[-1][1] > running[0][1]:
+        rate = (running[-1][1] - running[0][1]) / (running[-1][0] - running[0][0])
+    throughput = {
+        "state": final.get("state"),
+        "error": final.get("error", ""),
+        "steps": STEPS,
+        "neurons": N,
+        "steps_per_s_host": rate,
+        "app_memory_bytes": final.get("app_memory_bytes"),
+        "app_memory_limit_bytes": final.get("app_memory_limit_bytes"),
+        "parity": final.get("state") == "completed" and job.parity(),
+    }
+
+    job = Job(portal, package, sha, out)
+    job.submit()
+    first, _ = job.wait({"running"} | done)
+    job.control("cancel.json", "flymsg.worker_cancel/v1")
+    final, _ = job.wait(done)
+    cancel = {
+        "seen_running": first.get("state") == "running",
+        "state": final.get("state"),
+        "step": final.get("step"),
+        "ok": first.get("state") == "running"
+        and final.get("state") == "cancelled"
+        and 0 < final.get("step", 0) < STEPS,
+    }
+
+    job = Job(portal, package, sha, out)
+    job.submit()
+    first, _ = job.wait({"running"} | done)
+    app_call(portal, "DELETE", package, aumid)
+    time.sleep(5)
+    app_call(portal, "POST", package, aumid)
+    waiting, _ = job.wait({"awaiting_recovery"} | done, timeout_s=120)
+    job.control("resume.json", "flymsg.worker_resume/v1")
+    final, _ = job.wait(done)
+    recovery = {
+        "seen_running": first.get("state") == "running",
+        "after_restart": waiting.get("state"),
+        "state": final.get("state"),
+        "parity": final.get("state") == "completed" and job.parity(),
+    }
+    recovery["ok"] = (
+        recovery["seen_running"]
+        and recovery["after_restart"] == "awaiting_recovery"
+        and recovery["parity"]
+    )
+
+    report = {
+        "schema": "flymsg.console_lifecycle/v1",
+        "adapter": ADAPTER,
+        "package": package,
+        "shader_sha256": sha,
+        "fixture": {"neurons": N, "steps": STEPS, "seed": SEED, "synthetic": True},
+        "throughput": throughput,
+        "cancel": cancel,
+        "recovery": recovery,
+        "passed": bool(throughput["parity"] and cancel["ok"] and recovery["ok"]),
+        "not_driven": "platform suspension (no Device Portal call suspends a running app)",
+        "scope": "one synthetic version-1 fixture; not full-connectome throughput or "
+        "biological validation",
+    }
+    (out / "report.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n"
+    )
+    return report
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--package", required=True, help="installed PackageFullName")
+    parser.add_argument("--aumid", required=True, help="the worker's AppUserModelId")
+    parser.add_argument(
+        "--shader", type=Path, required=True, help="the package's lif.cso"
+    )
+    parser.add_argument("--out", type=Path, required=True)
+    a = parser.parse_args()
+    r = run(a.package, a.aumid, a.shader, a.out)
+    print(json.dumps({k: r[k] for k in ("throughput", "cancel", "recovery", "passed")}))
+    sys.exit(0 if r["passed"] else 1)
