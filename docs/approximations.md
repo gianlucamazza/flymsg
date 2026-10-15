@@ -70,14 +70,14 @@ new, unsourced approximation. Sources that could lift some of them are collected
 
 Each lock lists its own; the file is the authority.
 
-| Lock                                                        | Count | Main items                                                                                                                                                             |
-| ----------------------------------------------------------- | ----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`kc_sparseness.yaml`](../validation/kc_sparseness.yaml) v8 |     6 | eLNs by morphology (lLN2T, lLN1_bc variant); somatic coefficients; no rectification; rectangular spikelet; Taylor truncation                                           |
-| [`mb_plasticity.yaml`](../validation/mb_plasticity.yaml) v1 |     7 | Eligibility window shape, all-or-none pulses, both sides, no recovery, odors as ORN types                                                                              |
-| [`t4t5.yaml`](../validation/t4t5.yaml) v4                   |    13 | Threshold-linear release, medulla anchored at its settled dark potential, scanned rates and lamina gain, Behnia delays via τ_syn, T5 inputs spiking                    |
-| [`gf_looming.yaml`](../validation/gf_looming.yaml) v1       |     6 | Engineered LC4/LPLC2 forms with scanned gains, both sides driven, inferred disc sizes, genotype controls of unstated sex, spiking vs graded giant fiber, one file seen |
-| [`song.yaml`](../validation/song.yaml) v1                   |     8 | Temporal-only JO input, spike counts for calcium, zero model baseline, synapse-weighted neuropils, free JO rate, unmapped tracts, magnitude sign, dependent neuropils  |
-| [`jump3d.yaml`](../validation/jump3d.yaml) v1               |     6 | Open loop, held posture, fixed moment arm, twitch shape, TTM only, female body                                                                                         |
+| Lock                                                        | Count | Main items                                                                                                                                                                                                      |
+| ----------------------------------------------------------- | ----: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`kc_sparseness.yaml`](../validation/kc_sparseness.yaml) v8 |     6 | eLNs by morphology (lLN2T, lLN1_bc variant); somatic coefficients; no rectification; rectangular spikelet; Taylor truncation                                                                                    |
+| [`mb_plasticity.yaml`](../validation/mb_plasticity.yaml) v1 |     7 | Eligibility window shape, all-or-none pulses, both sides, no recovery, odors as ORN types                                                                                                                       |
+| [`t4t5.yaml`](../validation/t4t5.yaml) v4                   |    13 | Threshold-linear release, medulla anchored at its settled dark potential, scanned rates and lamina gain, Behnia delays via τ_syn, T5 inputs spiking                                                             |
+| [`gf_looming.yaml`](../validation/gf_looming.yaml) v2       |     7 | Engineered LC4/LPLC2 forms with scanned gains, both sides driven, inferred disc sizes, genotype controls of unstated sex, passive giant fibers, follower band as the direct path, what was seen before the lock |
+| [`song.yaml`](../validation/song.yaml) v1                   |     8 | Temporal-only JO input, spike counts for calcium, zero model baseline, synapse-weighted neuropils, free JO rate, unmapped tracts, magnitude sign, dependent neuropils                                           |
+| [`jump3d.yaml`](../validation/jump3d.yaml) v1               |     6 | Open loop, held posture, fixed moment arm, twitch shape, TTM only, female body                                                                                                                                  |
 
 ## What this means for the results
 

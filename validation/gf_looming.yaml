@@ -1,8 +1,9 @@
-# Looming -> giant fiber timing (issue 34, gate G3). Version 1, fixed 2026-10-15 before any run.
+# Looming -> giant fiber timing (issue 34, gate G3). Version 2, fixed 2026-10-15 before its run:
+# version 1 ran uninformative (the model's giant fiber fired in every cell); v2 reads a passive one.
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.gf_looming.VERSION_HASHES. `flymsg gf-looming` prints this file; `--run` executes it.
-version: 1
-content_sha256: c868e4ec8a84cc375492f4a26b3e3f7a47ced35966d4ad575a328a285c65f0c4
+version: 2
+content_sha256: dea19e71409fefdc62d2db657e76322e4f4144d3c7dbe318162326170dcc29f1
 yaml_subset: 2
 evidence: [dombrovski_gf_looming, jang_looming_protocol]
 
@@ -10,11 +11,11 @@ issue: 34
 claim:
   kind: held_out_benchmark
   scored: true
-  what: "How long before a looming disc's virtual collision the giant fiber (DNp01) peaks, as a function of r/v: by a threshold-angle model the time is alpha * r/v - delta, and alpha = 1 / tan(theta_thr / 2) fixes the angular size the response follows. Predicted by the connectome with LC4 and LPLC2 driven by engineered transducers, against the giant fiber's whole-cell recordings (Dombrovski et al. 2025)."
+  what: "How long before a looming disc's virtual collision the giant fiber (DNp01) peaks, as a function of r/v: by a threshold-angle model the time is alpha * r/v - delta, and alpha = 1 / tan(theta_thr / 2) fixes the angular size the response follows. Predicted by the connectome with LC4 and LPLC2 driven by engineered transducers and the two giant fibers made passive (they integrate their drive and cannot fire, as a recorded potential below threshold), against the giant fiber's whole-cell recordings (Dombrovski et al. 2025)."
   scope: "Timing only. No amplitude is scored: the LIF's millivolts are not the recorded ones, and the transducer gains are not measured, so they are scanned as an envelope and never chosen."
   held_out: "The recordings were never used to build, calibrate or tune flymsg. Apart from what seen_before_lock records, they are downloaded after this lock is merged and opened only after the model has run and passed its no-go."
 
-seen_before_lock: "During the 2026-10-14 literature search an agent opened one control file (DipE_Null_cont_fly22_trial01.mat: 80000 x 4, resting about -73 to -76, peak minus baseline 4.7 to 7.1 over the four r/v, units assumed mV) and noted that its peak timing is consistent with a 10 to 63 degree disc (no peak time was recorded), which partly confirms the inferred protocol from the data; it also downloaded and opened the deposited xlsx (r/v column order, 20 kHz, stimulus at 2 s, and per-fly values behind Fig. 3 and Extended Data Fig. 8, whose columns were not reported to the lock's author, so they may include peak latencies) and the structure of the Fig. 1 file. No other file was opened. The scored quantity is the slope of peak time over r/v across ten flies; no slope was computed before the lock."
+seen_before_lock: "During the 2026-10-14 literature search an agent opened one control file (DipE_Null_cont_fly22_trial01.mat: 80000 x 4, resting about -73 to -76, peak minus baseline 4.7 to 7.1 over the four r/v, units assumed mV) and noted that its peak timing is consistent with a 10 to 63 degree disc (no peak time was recorded), which partly confirms the inferred protocol from the data; it also downloaded and opened the deposited xlsx (r/v column order, 20 kHz, stimulus at 2 s, and per-fly values behind Fig. 3 and Extended Data Fig. 8, whose columns were not reported to the lock's author, so they may include peak latencies) and the structure of the Fig. 1 file. No other file was opened. The scored quantity is the slope of peak time over r/v across ten flies; no slope was computed before the lock. Version 1 then ran on the model only (results/gf_looming/v1: every cell fired the giant fiber, so the files were not opened), and a model-only probe at seed 9000 found the giant fiber firing even at gains 4 to 32 times below the grid (except LC4 alone at r/v 80 ms); no data value entered either."
 
 inputs:
   zenodo_doi: "10.5281/zenodo.14983850"
@@ -73,7 +74,7 @@ model:
   pre_ms: 200.0
   post_ms: 150.0
   post_why: "the window ends 150 ms after the expansion stops (Dombrovski et al. 2025 score 150 ms after onset in their Fig. 1); a later peak is no longer driven by expansion"
-  seed0: 340
+  seed0: 350
   seeds: 5
   readout: "the membrane potential of DNp01(GF)_R and DNp01(GF)_L at every neural step (CpuRuntime.read), a sample standing at the end of its step, filtered as the data (data_rule.filter, the same frame in ms, since the distortion it gives an asymmetric peak grows with r/v and would otherwise bias alpha; the run lasts one frame past the window so the filter's edge stays outside it); per giant fiber the baseline is the mean over pre_ms and the peak time the first sample in the window (after onset to the end of the expansion plus post_ms) at reach of its window maximum above baseline; the run's peak time is the mean of the two"
   reach: 0.95
@@ -81,7 +82,9 @@ model:
   near_end_ms: 20.0
   near_end_why: "a peak within 20 ms after the expansion stops follows the stimulus; the share of such peaks is reported per cell and per fly"
   responding: "a cell responds when, in every seed and r/v, both giant fibers rise by at least sim.Params.w_syn (one synapse's jump at rest): a bar for a defined peak, not for strength"
-  graded: "a cell stays graded when neither giant fiber fires in the window in any seed and r/v; the recordings are subthreshold, so only responding and graded cells are scored, and the others are reported"
+  passive_v_th_mv: 10000.0
+  passive_why: "version 1 and the probe show the LIF giant fiber reaches threshold to any looming drive of the grid and below it, while the recordings are graded; the two giant fibers get a threshold of 10 V (sim.Membrane, their other values the defaults), so their potential integrates the drive as in current clamp. Out of reach: with every excitatory input to a giant fiber firing at its maximum rate the bound is about 7.2 V above rest (5.5 V for the other side), and LC4 and LPLC2 at the rate cap reach about 1.0 to 1.4 V. A named compensation: their own spikes no longer reach their targets, which the readout does not use, nor any neuron that feeds back onto the giant fibers' inputs"
+  graded: "a cell stays graded when neither giant fiber fires in the window in any seed and r/v; with passive giant fibers a spike anywhere in the run means the threshold was reached and refuses the run, so every responding cell is graded and scored"
   fit: "per cell, y = collision time - peak time per seed and r/v; the median over seeds per r/v; ordinary least squares y = alpha * rv - delta over the four r/v"
   timing: "a kick at a step reaches the potential at the next; with the sample at the end of its step this is a constant 0.1 to 0.2 ms, which enters delta only"
 
@@ -116,12 +119,12 @@ score:
   reported: "delta per cell and from the data (secondary, decides nothing), the implied threshold angle 2 * atan(1 / alpha), per cell whether the median peak times increase with r/v, the share of peaks near the end of the expansion, edge peaks, and the cells that respond but fire"
 
 limits:
-  - "Engineered transducers: LC4 and LPLC2 rates follow angular velocity and size linearly with scanned gains; no measured LC4 or LPLC2 rate exists."
+  - "Engineered transducers: LC4 and LPLC2 rates follow angular velocity and size linearly with scanned gains; no measured LC4 or LPLC2 rate exists. The rate cap and the dead time compress the drive late in the expansion and can shift alpha."
   - "Both sides of LC4 and LPLC2 are driven and both giant fibers averaged: the recorded side and the disc's azimuth are not stated."
   - "The disc sizes of the 2025 recordings are inferred from the protocol they cite (Jang et al. 2023)."
   - "The control flies are genotype controls of DIP-epsilon experiments; their sex is not stated in the paper."
-  - "Only cells where the LIF giant fibers stay subthreshold are scored, since the recordings are graded; cells where they fire are reported, not scored."
-  - "Graded cells are the weak-gain ones, whose peaks come latest and closest to a stimulus follower; the stimulus-locked band is the guard, and the distance from it is reported."
+  - "The two giant fibers are passive (threshold out of reach), a compensation for a LIF giant fiber that fires to any looming drive while the recordings are graded; their downstream targets lose their input."
+  - "A passive integrator follows its drive, so the stimulus-locked band is the direct path's own prediction: a slope inside it says nothing about the circuit, and only a scored cell's distance from the band is informative."
   - "The scored quantity is a slope across four r/v per fly; one control file and the xlsx had been opened, and the Fig. 1 file's structure seen, before the lock (seen_before_lock)."
 
 defaults_changed: false

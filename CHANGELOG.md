@@ -23,6 +23,12 @@
 
 ### Validation
 
+- **Looming → giant fiber timing v2 lock** (#34, G3): `validation/gf_looming.yaml` v2. Version
+  1's model fired the giant fiber in every cell, and a model-only probe found it firing at gains
+  4 to 32 times lower; v2 makes the two giant fibers passive (threshold out of reach) so their
+  potential integrates the drive as a graded recording. Everything else is v1's; seeds 350–354.
+  No run.
+
 - **Pulse vs sine song lock** (#36, first held-out benchmark of M4): `validation/song.yaml` v1,
   `flymsg song [--run]`.
   - Johnston's organ JO-A, JO-B and JO-D get the same number of kicks in a pulse train

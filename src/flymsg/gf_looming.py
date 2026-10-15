@@ -12,6 +12,10 @@ angular size the response follows, lies in the flies' interval. If that interval
 slope a peak locked to the stimulus would give whatever the circuit (at the expansion's end
 or onset), the run is uninformative. Amplitudes are never compared.
 
+Version 1 found the LIF giant fiber firing to every drive of the grid, while the recordings
+are graded; from version 2 the two giant fibers are passive (a threshold out of reach), so
+their potential integrates the drive.
+
 The model runs and its no-go check finish before any data file is opened.
 """
 
@@ -35,7 +39,9 @@ REACH = 0.95  # a peak's time: the first sample at 95% of the window maximum
 NEAR_END_MS = 20.0  # a peak this soon after the expansion stops follows the stimulus
 
 VERSION_HASHES: dict[int, str] = {
+    # version 1 ran uninformative: the LIF giant fiber fired in every cell
     1: "c868e4ec8a84cc375492f4a26b3e3f7a47ced35966d4ad575a328a285c65f0c4",
+    2: "dea19e71409fefdc62d2db657e76322e4f4144d3c7dbe318162326170dcc29f1",  # passive giant fibers
 }
 
 
@@ -63,6 +69,12 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         raise LoomingError("the model's r/v are not the data's columns")
     if 0.0 not in d["g4_hz_per_rad_s"] or 0.0 not in d["g2_hz_per_rad"]:
         raise LoomingError("the grid covers each population alone")
+    if (doc["version"] >= 2) != passive_gf(doc):
+        raise LoomingError(
+            "versions from 2 on, and only they, make the giant fibers passive"
+        )
+    if passive_gf(doc) and not m["passive_v_th_mv"] > 1000.0:
+        raise LoomingError("a passive giant fiber's threshold must be out of reach")
     if (m["reach"], m["near_end_ms"]) != (REACH, NEAR_END_MS):
         raise LoomingError("the peak rule differs from the code's")
     if doc["claim"]["scored"] is not True or doc.get("defaults_changed") is not False:
@@ -169,13 +181,37 @@ def respond(W, lc4, lplc2, gf, rv_ms, g4, g2, seed, doc, p) -> dict:
         p=p,
         per_bin=steps,  # one count bin: the readout is the traced potential, not counts
         trace=gf,
+        membrane=passive(gf, doc, p),
     )
     v = np.empty((steps, gf.size))
     for k in range(steps):
         rt.advance_to(k + 1)
         v[k] = rt.read(gf)["v"]
     fired = rt.traced_spikes(0, steps).astype(bool)
+    if passive_gf(doc) and fired.any():  # anywhere in the run
+        raise LoomingError("a passive giant fiber reached its threshold")
     return {"v": v, **readout(v, fired, stim, p.dt, doc)}
+
+
+def passive_gf(doc: dict) -> bool:
+    """Whether the lock makes the giant fibers passive (version 2 on)."""
+    return "passive_v_th_mv" in doc["model"]
+
+
+def passive(gf: np.ndarray, doc: dict, p: sim.Params) -> sim.Membrane | None:
+    """From version 2: the giant fibers keep every default but a threshold out of reach,
+    so their potential integrates the drive as a recorded potential below threshold."""
+    if not passive_gf(doc):
+        return None
+    v_th = doc["model"]["passive_v_th_mv"]
+    n = gf.size
+    return sim.Membrane(
+        gf,
+        np.full(n, p.tau_m),
+        np.full(n, p.tau_syn),
+        np.full(n, p.v_rest),
+        np.full(n, float(v_th)),
+    )
 
 
 def peak_time(x: np.ndarray, t: np.ndarray, window: np.ndarray, base: float) -> tuple:
