@@ -97,6 +97,9 @@ def run(args) -> dict:
             args.native, job.fixture, args.steps
         )
     host["load_average"] = list(os.getloadavg())  # a busy host slows its baselines
+    # flymsg.native_fixture header: word 2 the neuron count, word 16 the offset of
+    # the incoming CSR's row pointers
+    words = np.frombuffer(job.fixture.read_bytes(), "<u4")
     report = {
         "schema": "flymsg.console_bench/v1",
         "date": time.strftime("%Y-%m-%d"),
@@ -109,8 +112,8 @@ def run(args) -> dict:
         "shader_sha256": sha,
         "fixture": {
             "dataset": "MaleCNS v1.0, default model",
-            # header word 2 is the neuron count (flymsg.native_fixture)
-            "neurons": int(np.frombuffer(job.fixture.read_bytes()[:12], "<u4")[2]),
+            "neurons": int(words[2]),
+            "synapses": int(words[words[16] + words[2]]),  # the incoming CSR's end
             "state_bytes": job.job["fixture"]["state_bytes"],
             "steps": args.steps,
             "stimulus": f"{CASE} at {validate.RATE_HZ:g} Hz, seed {SEED}",

@@ -185,6 +185,8 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   // q, the order and float sequence of the pull loop, and clears only its own
   // bits.
   const auto words = (uint64_t(runtime.input[runtime.input[16] + n]) + 31) / 32;
+  require(uint64_t(runtime.input[5]) * words * 4 <= max_bytes,
+          "delivery bitset exceeds the native buffer budget");
   const auto outgoing = outgoing_synapses(runtime);
   const auto active_words = bitset(runtime, outgoing, words);
   // Inputs live in a default heap: an upload heap is read uncached every tick.
