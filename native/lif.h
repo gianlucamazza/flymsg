@@ -15,7 +15,8 @@
 #endif
 
 namespace flymsg {
-constexpr uint32_t fixture_magic = 0x314e4d46, output_magic = 0x314f4d46;
+constexpr uint32_t fixture_magic = 0x314e4d46, output_magic = 0x314f4d46,
+                   counts_magic = 0x31534d46; // FMS1: sparse counts
 constexpr uint64_t max_bytes = 512ull * 1024 * 1024;
 inline void require(bool condition, const char *message) {
   if (!condition)
@@ -419,6 +420,31 @@ public:
   void snapshot(const std::filesystem::path &path) const {
     std::vector<uint32_t> words{output_magic, step, uint32_t(state.size())};
     words.insert(words.end(), state.begin(), state.end());
+    write_words(path, words);
+  }
+  // The readout a battery uses, sparse: a whole-CNS run fires a few thousand of
+  // its neurons, so its dense counts (bins x n) are mostly zeros. Words: magic,
+  // step, n, bins, then the nonzero counts as (bin * n + neuron, count) pairs
+  // after their number, then the first spikes as (neuron, step) pairs after
+  // theirs. flymsg.native.read_counts decodes it.
+  void counts(const std::filesystem::path &path) const {
+    const uint64_t n = input[2], bins = input[3] / input[4];
+    std::vector<uint32_t> words{counts_magic, step, uint32_t(n), uint32_t(bins),
+                                0};
+    for (uint64_t k = 0; k < bins * n; ++k)
+      if (const auto c = state[input[30] + k]) {
+        words.push_back(uint32_t(k));
+        words.push_back(c);
+        ++words[4];
+      }
+    const auto firsts = words.size();
+    words.push_back(0);
+    for (uint64_t i = 0; i < n; ++i)
+      if (const auto f = int32_t(state[input[31] + i]); f >= 0) {
+        words.push_back(uint32_t(i));
+        words.push_back(uint32_t(f));
+        ++words[firsts];
+      }
     write_words(path, words);
   }
   void checkpoint(const std::filesystem::path &path) const {

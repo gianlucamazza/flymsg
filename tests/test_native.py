@@ -376,3 +376,39 @@ def test_console_results_read_native_batch_outputs_as_sim_run(native_exe, tmp_pa
         assert np.array_equal(r.counts, expected.counts)
         assert np.array_equal(r.first_spike_ms, expected.first_spike_ms, equal_nan=True)
         assert r.bin_ms == expected.bin_ms and r.stim_ms == expected.stim_ms
+
+
+def test_sparse_counts_decode_as_the_full_output(native_exe, tmp_path):
+    from flymsg import native
+
+    native.export_batch(_battery_runs(), tmp_path / "base.bin", tmp_path / "batch.bin")
+    for k in range(4):
+        out, counts = tmp_path / f"out{k}.bin", tmp_path / f"counts_{k}.bin"
+        subprocess.run(
+            [
+                str(native_exe),
+                "--fixture",
+                str(tmp_path / "base.bin"),
+                "--batch",
+                str(tmp_path / "batch.bin"),
+                "--run",
+                str(k),
+                "--output",
+                str(out),
+                "--counts",
+                str(counts),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        fixture = tmp_path / f"fixture{k}.bin"
+        fixture.write_bytes(
+            native.batch_fixture(
+                tmp_path / "base.bin", tmp_path / "batch.bin", k
+            ).tobytes()
+        )
+        full, sparse = native.read_output(out, fixture), native.read_counts(counts)
+        assert sparse["step"] == full["step"]
+        assert np.array_equal(sparse["counts"], full["counts"])
+        assert np.array_equal(sparse["first"], full["first"])
+        assert counts.stat().st_size < out.stat().st_size

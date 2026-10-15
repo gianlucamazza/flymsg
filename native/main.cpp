@@ -5,7 +5,7 @@
 #endif
 int main(int argc, char **argv) {
   try {
-    std::string fixture, output, resume, checkpoint, shader, batch;
+    std::string fixture, output, resume, checkpoint, shader, batch, counts;
     uint32_t run = 0;
     uint32_t target = 0;
     bool target_set = false;
@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
       if (key == "--help") {
         std::cout << "--fixture FILE --output FILE [--advance STEP] [--resume "
                      "FILE] [--checkpoint FILE] [--gpu SHADER] [--batch FILE "
-                     "--run K]\n";
+                     "--run K] [--counts FILE]\n";
         return 0;
       }
       flymsg::require(i + 1 < argc, "missing argument value");
@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
         shader = value;
       else if (key == "--batch")
         batch = value;
+      else if (key == "--counts")
+        counts = value;
       else if (key == "--run") {
         size_t consumed = 0;
         const auto parsed = std::stoull(value, &consumed);
@@ -38,8 +40,7 @@ int main(int argc, char **argv) {
                             value[0] != '-',
                         "invalid run");
         run = uint32_t(parsed);
-      }
-      else if (key == "--advance") {
+      } else if (key == "--advance") {
         size_t consumed = 0;
         const auto parsed = std::stoull(value, &consumed);
         flymsg::require(consumed == value.size() && parsed <= UINT32_MAX &&
@@ -71,6 +72,8 @@ int main(int argc, char **argv) {
     } else
       runtime.advance_to(target);
     runtime.snapshot(output);
+    if (!counts.empty())
+      runtime.counts(counts);
     if (!checkpoint.empty())
       runtime.checkpoint(checkpoint);
     std::cout << "completed step " << runtime.step << " backend "

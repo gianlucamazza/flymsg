@@ -10,6 +10,7 @@ from flymsg.runtime import CpuRuntime
 
 MAGIC = 0x314E4D46  # FMN1, little endian
 OUTPUT = 0x314F4D46  # FMO1
+COUNTS = 0x31534D46  # FMS1: sparse counts and first spikes
 HEADER_WORDS = 40
 MAX_BYTES = 512 * 1024 * 1024
 
@@ -280,6 +281,28 @@ def as_result(
         bin_ms=bin_ms,
         stim_ms=duration if stim_ms is None else stim_ms,  # as sim.run reports it
     )
+
+
+def read_counts(path: Path) -> dict[str, np.ndarray | int]:
+    """Decode a sparse counts output (`--counts`, a batch with `"output": "counts"`):
+    the spike counts per bin and the first spikes, as `read_output` gives them."""
+    w = np.frombuffer(Path(path).read_bytes(), dtype="<u4")
+    if w.size < 6 or int(w[0]) != COUNTS:
+        raise ValueError("invalid sparse counts output")
+    step, n, bins, nnz = (int(x) for x in w[1:5])
+    at = 5 + 2 * nnz
+    if w.size < at + 1:
+        raise ValueError("truncated sparse counts output")
+    m = int(w[at])
+    if w.size != at + 1 + 2 * m:
+        raise ValueError("truncated sparse counts output")
+    counts = np.zeros(bins * n, dtype="<u4")
+    pairs = w[5:at]
+    counts[pairs[0::2]] = pairs[1::2]
+    first = np.full(n, -1, dtype="<i4")
+    fp = w[at + 1 :]
+    first[fp[0::2]] = fp[1::2].view("<i4")
+    return {"step": step, "counts": counts.reshape(bins, n), "first": first}
 
 
 def read_output(path: Path, fixture: Path) -> dict[str, np.ndarray | int]:
