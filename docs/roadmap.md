@@ -132,11 +132,11 @@ three stay off unless a lock names them.
 
 ## Blocked on hardware
 
-| Issue                                                            | Blocked by                                                                  | Ready                                                                                                   |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Version-2 fixtures (graded, coupled) on the GPU: the DX12 lane refuses them | Series S GPU parity, 12 of 12 version-1 fixtures bit for bit (2026-10-15)                               |
-| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | Full-connectome throughput, GPU fault and hard termination on the console   | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; 44k steps/s at 2,048 neurons |
-| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss         | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))             |
+| Issue                                                            | Blocked by                                                                  | Ready                                                                                                                         |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Version-2 fixtures (graded, coupled) on the GPU: the DX12 lane refuses them | Series S GPU parity, 12 of 12 version-1 fixtures bit for bit (2026-10-15)                                                     |
+| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | GPU fault and hard termination on the console                               | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; full connectome bit for bit at about 1,630 steps/s |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss         | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))                                   |
 
 ## What an animal test could check
 

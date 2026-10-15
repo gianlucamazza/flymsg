@@ -29,7 +29,16 @@ Version 2 fixtures add graded neurons and electrically coupled groups (`sim.Grad
 
 Native checkpoints bind the complete fixture and cursor with a noncryptographic integrity/compatibility token. They do not authenticate an untrusted artifact. The UWP worker wraps them with SHA-256 asset checks and binds backend, shader, source commit and package identity. A job does not resume across a different package or backend implicitly. The Python CPU checkpoint and native checkpoint are distinct formats; conversion is not implemented.
 
-The initial GPU host retains state across batches of up to 64 ticks within one `advance_gpu` call, uses barriers between each of the four phases and reads state at the requested endpoint or a requested lifecycle stop. A new call currently rebuilds/uploads the device state. Persistent device ownership across body/control calls, event-driven sparse dispatch, streaming recordings and complete body/environment checkpoints are subsequent optimizations, not claimed here.
+The GPU host retains state across batches of up to 64 ticks within one `advance_gpu` call, uses barriers between each of the four phases and reads state at the requested endpoint or a requested lifecycle stop.
+
+- **Inputs in a default heap.** The fixture's inputs are copied once into a default heap; an upload heap is read uncached on every tick.
+- **Event-driven delivery, exact.** The host builds each neuron's outgoing synapses, as positions in the targets' incoming CSR, and a delivery bitset with one slot per delay-ring slot, seeded from the ring of the fixture or checkpoint.
+  - Phase 3 ORs the bits of a spiking neuron's synapses into its slot.
+  - Phase 2 sums a target's set bits in ascending order and clears only its own bits.
+
+  The float sequence is the pull loop's, so parity is unchanged; the full connectome runs about 58 times faster on the Series S.
+
+A new call currently rebuilds and uploads the device state. Persistent device ownership across body/control calls, fewer dispatches per tick, streaming recordings and complete body/environment checkpoints are subsequent optimizations, not claimed here.
 
 ## UWP packaging and console runbook
 
