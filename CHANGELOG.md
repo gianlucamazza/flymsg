@@ -136,6 +136,8 @@
   - **Baselines.** `flymsg baselines --backend console` runs each graph's battery that way, and `--backend hybrid` adds the console to the CPU workers on one queue (`parallel.imap_shared`). `sensitivity.measure` accepts results from any backend.
   - **Export cost.** The network's edge order is computed once per batch.
   - **Memory.** Batches export one run at a time, and outputs are decoded on demand.
+  - **Qualification.** One graph's battery on the whole connectome, 30 runs, matches `sim.run` on the console in every run.
+  - **Cost.** The console's advance (70 s) is about one host core's (62 s). End to end, returning whole states makes a batch take 330 s, so the SF2 run stays on the CPU (`docs/evidence/series-s-battery-2026-10-15.json`).
 
 - **The 3D viewer on an Xbox.**
   - **TV layout.** It is on by default in a console's browser, or with `?tv=1`: larger text in the title-safe area, the panel closed, and controller hints.
