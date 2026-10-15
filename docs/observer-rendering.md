@@ -24,9 +24,22 @@ Performance remains unresolved; this work must not be described as a lag fix.
 - `pages=1` enables the candidate spatial scheduler. Workers assign original
   segments to immutable pages. Every endpoint remains unchanged, crossing edges
   belong to exactly one page, and compaction retains original draw order.
-  The shared vertex buffer and single line draw remain; this is not yet a GPU
-  page-residency/eviction implementation. Every frame evaluates the union of
-  eye frusta in geometry coordinates, including a conservative raster margin.
+  Complete strict skeleton scenes use an immutable resident original-order index
+  arena and one compact-view cache. Camera changes update at most eight public
+  geometry groups, without rewriting or uploading the resident arena. Coalesced gaps contain only conservatively rejected
+  pages; hidden neurons remain hard barriers. If those barriers exceed the draw
+  limit, the existing compact path preserves their visibility policy. Reports
+  distinguish eligible, submitted and bridged indices and identify the fallback.
+  A stable view builds one exact compact index from contiguous original runs,
+  then draws once. Its generation key tracks exact page masks and neuron
+  visibility, including changes hidden inside coalesced ranges. A changed view
+  can immediately reuse the resident catalog, or keep the compact cache when
+  its eligibility set is unchanged. Vertex buffers are shared by both index
+  owners; memory reports include both arenas and all planner scratch buffers.
+  This is not per-page GPU eviction or bounded initial/cache allocation/upload.
+  Selection uses the union of eye frusta in
+  geometry coordinates, including a conservative raster margin. Identical view
+  stamps reuse the selection until geometry or visibility policy changes.
   Without the flag, the full reference submission remains available.
 - Decoded mesh cache eviction uses an explicit 128 MiB byte limit. Managed CPU
   backing stores are deduplicated in reports. Driver GPU totals remain unknown;
@@ -37,6 +50,10 @@ Performance remains unresolved; this work must not be described as a lag fix.
 - Normal VR entry requires complete selected anatomy. Mixed diagnostic sessions
   require the explicit `check` mode; an incomplete scene cannot obtain a normal
   VR session merely because an empty view would meet a timing budget.
+- The CPU HUD now includes frame preparation before render submission. Earlier
+  small CPU readings excluded skeleton selection/index rebuilding and cannot
+  establish that the workload was exclusively GPU-bound. GPU timers, when
+  available, retain their render-query scope.
 
 ## Independent references and commands
 
@@ -105,6 +122,22 @@ was collected, but native GPU render-stage timestamps are unavailable.
 node scripts/observer_gpu_probe.mjs http://127.0.0.1:40623 TARGET_ID runs/gpu-probe/new
 ```
 
+For an actual-scheduler residency trial on a complete strict skeleton scene:
+
+```bash
+node scripts/observer_residency.mjs http://127.0.0.1:40623 TARGET_ID runs/residency/new
+node scripts/observer_context.mjs http://127.0.0.1:40623 TARGET_ID runs/context/new
+```
+
+The residency protocol records served-source hashes before running compact /
+resident / resident / compact trials. Dense, anatomical-motion, close-motion and
+close-static views retain original geometry and shaders. Full-source colour/ID/
+depth references and every measured moving colour image must match. Actual
+WebGL index-buffer upload calls/bytes are counted; resident steady state requires
+zero. Diagnostic state and the complete reference must restore identically.
+The context command is an explicit synthetic, non-immersive loss/recovery test;
+it does not simulate headset presence or certify immersive lifecycle behaviour.
+
 This separate offscreen diagnostic remains usable when the headset suspends
 animation callbacks. It reads the whole framebuffer, verifies rendered and
 discarded image witnesses, records a clear/readback control, and restores the
@@ -130,8 +163,9 @@ results justify neither a shader shortcut nor a successful XR timing claim.
 The raster fixture passing does not qualify the real scene. Required next:
 compare the frozen real-scene images with the candidate; measure warmed,
 interleaved full-content trials on Quest, including all-visible and motion;
-refine attribution of the remaining GPU cost before changing production shaders; implement bounded
-GPU page residency/uploads if those measurements require it; verify memory
+refine attribution of the remaining rendering cost before changing production shaders;
+qualify the resident scheduler across workloads, bound initial GPU allocation/uploads
+and implement eviction if required by admission policy; verify memory
 plateau, thermal behaviour, context recovery and repeated XR enter/exit.
 
 A mode that cannot preserve selected content within its resource and refresh
