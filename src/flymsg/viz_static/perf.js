@@ -23,6 +23,7 @@ export class Perf {
     this.intervals = [];
     this.t0 = performance.now();
     this.last = null;
+    this.wasContinuous = false;
     this.loaded = {
       manifests: 0,
       fragments: 0,
@@ -45,17 +46,19 @@ export class Perf {
     }
   }
 
-  end() {
+  end({ continuous = false } = {}) {
     const now = performance.now();
     const push = (a, v) => {
       a.push(v);
       if (a.length > KEEP) a.shift();
     };
     push(this.cpu, now - this.cpuStart);
-    // only consecutive frames count: renders on demand leave long idle gaps
-    if (this.last !== null && now - this.last < 100)
+    // The caller knows whether frames are continuous. A duration cutoff hides slow
+    // active frames from the no-GPU-timer adaptive fallback (notably on Quest).
+    if (this.last !== null && continuous && this.wasContinuous)
       push(this.intervals, now - this.last);
     this.last = now;
+    this.wasContinuous = continuous;
     const r = this.renderer.info.render;
     this.frame = { calls: r.calls, triangles: r.triangles, lines: r.lines };
     if (this.query) {
@@ -93,6 +96,7 @@ export class Perf {
     this.query = null;
     this.pending = [];
     this.last = null;
+    this.wasContinuous = false;
     this.cpu = [];
     this.gpu = [];
     this.intervals = [];
@@ -111,6 +115,7 @@ export class Perf {
   }
 
   get fps() {
+    if (!this.wasContinuous) return 0;
     const i = percentile(this.intervals.slice(-60), 50);
     return i ? 1000 / i : 0;
   }
@@ -130,7 +135,7 @@ export class Perf {
     const gpu = this.gpuMs;
     const sel = percentile(this.selectMs.slice(-20), 50);
     return (
-      `${this.fps.toFixed(0)} fps · cpu ${(percentile(this.cpu.slice(-30), 50) ?? 0).toFixed(1)} ms` +
+      `${this.wasContinuous ? `${this.fps.toFixed(0)} fps` : "idle"} · cpu ${(percentile(this.cpu.slice(-30), 50) ?? 0).toFixed(1)} ms` +
       ` · gpu ${gpu === null ? "n/a" : gpu.toFixed(1) + " ms"} · ${this.frame.calls} draws` +
       ` · ${(this.frame.triangles / 1e6).toFixed(1)} M tris · ${(this.frame.lines / 1e6).toFixed(1)} M lines` +
       ` · ×${pixelRatio.toFixed(2)} px · MSAA ${samples || "off"} · select ${sel === null ? "–" : sel.toFixed(1) + " ms"}`
@@ -141,6 +146,7 @@ export class Perf {
     const elapsed = (performance.now() - this.t0) / 1000;
     const ms = (a) => ({ p50: percentile(a, 50), p95: percentile(a, 95) });
     const fps = (p) => {
+      if (!this.wasContinuous) return null;
       const i = percentile(this.intervals, p);
       return i ? +(1000 / i).toFixed(1) : null;
     };

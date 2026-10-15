@@ -1967,6 +1967,8 @@ renderer.domElement.addEventListener("webglcontextrestored", () => {
 // frame clock when the tab is shown, so the first frame back does not jump.
 const timer = new THREE.Clock();
 document.addEventListener("visibilitychange", () => {
+  perf.last = null;
+  perf.wasContinuous = false;
   if (!document.hidden) timer.getDelta();
 });
 renderer.setAnimationLoop((timestamp) => {
@@ -2002,7 +2004,7 @@ renderer.setAnimationLoop((timestamp) => {
     fitClip();
     composer.render();
   }
-  const measured = perf.end();
+  const measured = perf.end({ continuous: live });
   if (inXR)
     xrMetrics.frame(
       timestamp,
@@ -2034,6 +2036,7 @@ const xrOptions = {
     selectionDirty = true;
     invalidate();
     if (!renderer.xr.isPresenting) {
+      perf.resetContext();
       // the desktop may have been resized while the headset owned its framebuffer
       camera.aspect = innerWidth / innerHeight;
       camera.updateProjectionMatrix();

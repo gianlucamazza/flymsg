@@ -53,6 +53,21 @@ adb devices -l
 uv run python scripts/quest_xr.py --serial QUEST_SERIAL --scene looming --seconds 1800
 ```
 
+For a long trial launched from an agent, run the collector as an owned transient user
+service so it survives the launching command's lifetime (use the checkout's absolute paths):
+
+```bash
+systemd-run --user --collect --unit=flymsg-quest-trial --slice=background.slice \
+  --property=WorkingDirectory=/absolute/flymsg \
+  --property=KillSignal=SIGINT --property=TimeoutStopSec=90s \
+  /absolute/flymsg/.venv/bin/python /absolute/flymsg/scripts/quest_xr.py \
+  --serial QUEST_SERIAL --scene looming --port 8890 --seconds 1800
+journalctl --user -u flymsg-quest-trial.service -f
+```
+
+Stop only that owned service with `systemctl --user stop flymsg-quest-trial.service`.
+No persistent unit or system configuration is installed.
+
 The script refuses another model and dirty source. It builds the current site in an owned
 temporary directory, serves only on loopback, adds a device-specific reverse mapping and
 opens Quest Browser. `localhost` is the trusted context; security bypass flags are not used.
@@ -111,6 +126,17 @@ completed trial. No report means no hardware verdict.
 
 G2's geometric implementation is not its complete qualification. This distinction also
 applies to G5's tested synthetic integration versus biological readiness.
+
+The [cold-clone record](evidence/vee-synthetic-2026-10-15.json) verifies that all five
+scientific traces are byte-identical across the original run and a fresh clone at source
+`1223551`; timing differs as expected. The [first Quest 2 diagnostic](evidence/quest2-first-diagnostic-2026-10-15.json)
+records a **failure** of the default looming view: median active stereo interval 118 ms,
+p95 239 ms, p99 297 ms, with approximately 13 million triangles per stereo frame. It is an
+early failure diagnostic, not the full two-minute qualification matrix. The collector
+process was terminated; the final record was recovered directly from the device. A
+transient collector service is used for subsequent trials. The initial-refresh event
+preceded the first frame; independent scoring uses the runtime's recorded 90 Hz and
+distinguishes estimated missed slots from unavailable compositor drop statistics.
 
 ## Evidence audit and scientific no-go
 
