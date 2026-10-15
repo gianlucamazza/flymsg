@@ -167,6 +167,22 @@ test("XR opt-in defaults off, and display scale checks its units", () => {
   assert.throws(() => xrScaleForExtent(4, NaN), RangeError);
 });
 
+test("incomplete anatomy cannot enter VR, but admission is checked again on retry", async () => {
+  const f = fixture();
+  let error = "Selected anatomy is incomplete";
+  const observer = await installXrObserver({ ...f.options, entryError: () => error });
+  await observer.button.click();
+  assert.deepEqual(f.requestCalls, []);
+  assert.equal(observer.status.textContent, error);
+  assert.equal(observer.button.disabled, false);
+  error = null;
+  await observer.button.click();
+  assert.deepEqual(f.requestCalls, ["immersive-vr"]);
+  error = "unavailable";
+  await observer.button.click(); // exit must remain available regardless of admission
+  assert.equal(f.renderer.xr.isPresenting, false);
+});
+
 test("ordinary viewer has no added UI, XR side effects or API calls", async () => {
   const f = fixture();
   const result = await installXrObserver({ ...f.options, search: "?t=120" });

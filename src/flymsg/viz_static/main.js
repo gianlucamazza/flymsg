@@ -156,7 +156,8 @@ class Queue {
 // HTTP/2 multiplexes requests to the one GCS host, so wide queues are cheap
 const manifestQueue = new Queue(32),
   fragmentQueue = new Queue(8),
-  skeletonQueue = new Queue(GEOMETRY_WORKERS),
+  skeletonQueue = new Queue(24),
+  skeletonPreparationQueue = new Queue(GEOMETRY_WORKERS),
   roiQueue = new Queue(6);
 
 // ---------- fragment finishing off the main thread ----------
@@ -858,8 +859,14 @@ async function loadSkeleton(n) {
     return;
   }
   perf.count("skeletons", buf.byteLength);
-  const s = parseSkeleton(buf);
-  const lod = await skeletonLod(s.vertices, s.edges);
+  const { s, lod } = await skeletonPreparationQueue.push(
+    priorityOf(n, eyeView()),
+    async () => {
+      const s = parseSkeleton(buf);
+      const lod = await skeletonLod(s.vertices, s.edges);
+      return { s, lod };
+    },
+  );
   appendVertices(n, s.vertices);
   n.skelLod = {
     eps: lod.eps,
@@ -2403,6 +2410,13 @@ const xrOptions = {
   camera,
   controls,
   extentUm: extent,
+  entryError: () => {
+    const fidelity = fidelityReport();
+    return fidelity.status === "ready" ||
+      (settings.representation === "mixed" && query.has("check"))
+      ? null
+      : `Selected anatomy is ${fidelity.status}. VR requires a complete representation.`;
+  },
   onTransition: () => {
     selectionDirty = true;
     invalidate();

@@ -40,6 +40,7 @@ export async function installXrObserver({
   documentRef = document,
   xrSystem = navigator.xr,
   onTransition = () => {},
+  entryError = () => null,
 }) {
   if (!xrRequested(search))
     return { available: false, reason: "not-requested" };
@@ -144,6 +145,11 @@ export async function installXrObserver({
       if (current) {
         await current.end();
       } else {
+        const admissionError = entryError();
+        if (admissionError) {
+          status.textContent = admissionError;
+          return;
+        }
         // requestSession needs the click's user activation: it is the first await on
         // this path
         const session = await xrSystem.requestSession("immersive-vr");

@@ -28,8 +28,12 @@ adaptive-controller fixes did not establish that the original workload fits.
 - Decoded mesh cache eviction uses an explicit 128 MiB byte limit. Managed CPU
   backing stores are deduplicated in reports. Driver GPU totals remain unknown;
   JavaScript heap, managed bytes and process RSS are distinct measurements.
-- Worker concurrency bounds skeleton preparation. Reports retain full-session
+- A separate preparation queue bounds worker concurrency while the existing
+  network queue continues to overlap downloads. Reports retain full-session
   frame stalls and sample expensive memory inventories only at report intervals.
+- Normal VR entry requires complete selected anatomy. Mixed diagnostic sessions
+  require the explicit `check` mode; an incomplete scene cannot obtain a normal
+  VR session merely because an empty view would meet a timing budget.
 
 ## Independent references and commands
 
@@ -92,14 +96,38 @@ If using an isolated ADB server, set `ANDROID_ADB_SERVER_PORT=5038` for the
 commands. No rules, persistent unit, clocks or safety settings are changed.
 The native sampler records all browser child processes and raw KGSL counters;
 counter reset semantics are not inferred. A bounded Perfetto capability trace
-was collected, but GPU render-stage attribution has not yet been established.
+was collected, but native GPU render-stage timestamps are unavailable.
+
+```bash
+node scripts/observer_gpu_probe.mjs http://127.0.0.1:40623 TARGET_ID runs/gpu-probe/new
+```
+
+This separate offscreen diagnostic remains usable when the headset suspends
+animation callbacks. It reads the whole framebuffer, verifies rendered and
+discarded image witnesses, records a clear/readback control, and restores the
+original shader and raster state. Altered shaders and discarded rasterization
+are experiments, never a faster fidelity mode. The metric includes CPU command
+submission, driver synchronization and readback; it is not a pure GPU timer or
+an XR frame rate. An earlier `gl.finish`-only attempt was rejected because it did
+not independently establish completed rendering. Readback equality for colour,
+ID and depth verified restoration on the physical Quest.
+
+The [recorded evidence](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/observer-rendering-2026-10-15.json)
+includes the six-case raster pass and real Quest image comparisons. Culling on
+the same loaded scene preserves all three image buffers exactly and submits
+about 4.2% fewer line indices in that view. This does not establish sufficient
+performance. Four interleaved timing attempts produced no animation callbacks
+and were rejected. With explicit readback, the direct 1024-square scene took
+about 61–64 ms wall time; the no-raster diagnostic took about 30 ms. Removing
+line vertex shading naively made that diagnostic slower, not faster. Those
+results justify neither a shader shortcut nor a successful XR timing claim.
 
 ## Remaining gates
 
 The raster fixture passing does not qualify the real scene. Required next:
 compare the frozen real-scene images with the candidate; measure warmed,
 interleaved full-content trials on Quest, including all-visible and motion;
-attribute the remaining GPU cost before changing shaders; implement bounded
+refine attribution of the remaining GPU cost before changing production shaders; implement bounded
 GPU page residency/uploads if those measurements require it; verify memory
 plateau, thermal behaviour, context recovery and repeated XR enter/exit.
 

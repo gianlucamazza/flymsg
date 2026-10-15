@@ -72,7 +72,7 @@ try {
     if(document.hidden||flymsg.renderer.xr.isPresenting)throw Error('Visible desktop page required');
     if(typeof flymsg.diagnosticState!=='function')throw Error('Trial requires diagnostic state restoration support');
     const stats=document.getElementById('stats').textContent;
-    if(!stats.includes('0 loading'))throw Error('Geometry is still loading');
+    if(!/(?:^| · )0 loading(?: · |$)/.test(stats))throw Error('Geometry is still loading');
     return {fidelity:flymsg.fidelity(),resources:flymsg.resources(),camera:flymsg.camera.matrixWorld.toArray(),stats};
   })()`);
   restore = await evaluate("flymsg.diagnosticState()");

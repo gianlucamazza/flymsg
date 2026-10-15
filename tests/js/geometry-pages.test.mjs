@@ -2,8 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Box3, Frustum, Matrix4, PerspectiveCamera, Vector3, Vector4 } from "../../src/flymsg/viz_static/vendor/three/build/three.module.min.js";
 import { linePages, visibleLinePages, writeVisibleEdges } from "../../src/flymsg/viz_static/geometry-pages.js";
+import { localEyePlanes } from "../../src/flymsg/viz_static/page-views.js";
 
 const cube = (lo, hi) => [[1,0,0,-lo],[-1,0,0,hi],[0,1,0,-lo],[0,-1,0,hi],[0,0,1,-lo],[0,0,-1,hi]];
+test("an XR frame without eye poses keeps the full source submission", () => {
+  assert.equal(localEyePlanes(null, null, []), null);
+});
 test("partition preserves every original edge, including duplicates and long cross-page edges", () => {
   const v = new Float32Array([-100,0,0,100,0,0,2,2,2,3,3,3]);
   const edges = new Uint32Array([2,3,0,1,2,3,1,0]);
