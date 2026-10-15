@@ -1,13 +1,13 @@
 # Native execution lane
 
-This implements the R1 fixture executor and the initial R2 worker source. It builds on the CPU architecture in [runtime.md](../docs/runtime.md). Its GPU lane is qualified on a Series S for the version-1 fixtures; lifecycle and throughput are not yet.
+This implements the R1 fixture executor and the initial R2 worker source. It builds on the CPU architecture in [runtime.md](../docs/runtime.md). Its GPU lane is qualified on a Series S for the version-1 fixtures; its cancel, suspension with checkpoint and resume pass there on a synthetic fixture.
 
-| Component               | Current evidence                                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| Python fixture exporter | Contract tests; incoming edge order preserves CPU source traversal                                   |
-| C++ CPU executor        | Exact synthetic state/spike parity, chunk/resume and corruption rejection on Linux                   |
-| DX12 host and HLSL      | Windows compile gate; bit-for-bit parity on the 12 version-1 fixtures on a Series S GPU (2026-10-15) |
-| UWP worker              | Launches on a Series S in Dev Mode and completes GPU jobs; real suspension and throughput remain     |
+| Component               | Current evidence                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| Python fixture exporter | Contract tests; incoming edge order preserves CPU source traversal                                     |
+| C++ CPU executor        | Exact synthetic state/spike parity, chunk/resume and corruption rejection on Linux                     |
+| DX12 host and HLSL      | Windows compile gate; bit-for-bit parity on the 12 version-1 fixtures on a Series S GPU (2026-10-15)   |
+| UWP worker              | On a Series S: cancel, suspension with checkpoint and bit-for-bit resume; 44k steps/s at 2,048 neurons |
 
 ## Build and acceptance
 
@@ -47,7 +47,7 @@ Retrieve artifacts and validate `output.bin` against the original Python oracle.
 
 To cancel, publish `cancel.json` containing `{"schema":"flymsg.worker_cancel/v1","job_id":"<id>"}`. It is checked at completed scientific boundaries. To recover a suspended or interrupted job, publish `resume.json` containing `{"schema":"flymsg.worker_resume/v1","job_id":"<id>"}` and restart/resume the worker. Interrupted jobs wait for explicit recovery. Completed jobs are not rerun. Failed/cancelled jobs are terminal; create a new job ID for a new attempt.
 
-Suspension requests a deferral and stops at a completed boundary, then writes checkpoint metadata. The OS may terminate a stalled process before checkpointing completes; only a matching completed checkpoint can be recovered. An in-flight GPU fault quarantines resources, writes failure status where possible and exits the worker. Physical suspension timing and GPU-fault lifecycle remain acceptance requirements for #40.
+Suspension requests a deferral and stops at a completed boundary, then writes checkpoint metadata. The OS may terminate a stalled process before checkpointing completes; only a matching completed checkpoint can be recovered. An in-flight GPU fault quarantines resources, writes failure status where possible and exits the worker. On a Series S a Device Portal stop suspends the app at a boundary with a checkpoint, from which a resume completes bit for bit (`scripts/console_lifecycle.py`); GPU-fault lifecycle and a termination that bypasses suspension remain acceptance requirements for #40.
 
 ## Reuse and license
 

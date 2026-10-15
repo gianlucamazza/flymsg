@@ -8,6 +8,7 @@
 #include <chrono>
 #include <iomanip>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <thread>
 #include <winrt/Windows.ApplicationModel.Activation.h>
@@ -68,17 +69,49 @@ JsonObject read_json(const fs::path &path) {
   std::string raw((std::istreambuf_iterator<char>(file)), {});
   return JsonObject::Parse(to_hstring(raw));
 }
-void write_json(const fs::path &path, const JsonObject &doc) {
+// retries: 20 ms attempts at replacing a file a reader holds open
+void write_json(const fs::path &path, const JsonObject &doc, int retries = 50) {
   auto tmp = path;
   tmp += ".tmp";
   std::ofstream file(tmp, std::ios::binary | std::ios::trunc);
   const auto text = to_string(doc.Stringify());
   file.write(text.data(), std::streamsize(text.size()));
   file.close();
-  flymsg::require(bool(file) && MoveFileExW(tmp.c_str(), path.c_str(),
-                                            MOVEFILE_REPLACE_EXISTING |
-                                                MOVEFILE_WRITE_THROUGH),
-                  "status atomic replacement");
+  flymsg::require(bool(file), "status temporary write");
+  // A reader (Device Portal fetching the file) briefly holds it open and the
+  // replacement fails with a sharing error; retry (a second by default).
+  for (int attempt = 0;; ++attempt) {
+    if (MoveFileExW(tmp.c_str(), path.c_str(),
+                    MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+      return;
+    const auto error = GetLastError();
+    if (!(error == ERROR_SHARING_VIOLATION || error == ERROR_ACCESS_DENIED ||
+          error == ERROR_LOCK_VIOLATION) ||
+        attempt >= retries)
+      throw std::runtime_error("status atomic replacement, Win32 error " +
+                               std::to_string(error));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+}
+// Device Portal uploads are not atomic: a control file may be seen empty or
+// partial. One that does not parse yet and was written in the last 10 s is
+// still arriving and is read on a later pass; older, it is malformed.
+std::optional<JsonObject> try_read(const fs::path &path) {
+  try {
+    return read_json(path);
+  } catch (...) {
+    return std::nullopt;
+  }
+}
+bool arriving(const fs::path &path) {
+  if (try_read(path))
+    return false;
+  try {
+    return fs::file_time_type::clock::now() - fs::last_write_time(path) <
+           std::chrono::seconds(10);
+  } catch (...) {
+    return true;
+  }
 }
 std::string field(const JsonObject &doc, const wchar_t *name) {
   return to_string(doc.GetNamedString(name));
@@ -130,14 +163,16 @@ struct Worker {
     doc.Insert(L"app_memory_limit_bytes",
                JsonValue::CreateNumberValue(double(
                    Windows::System::MemoryManager::AppMemoryUsageLimit())));
-    write_json(folder / L"status.json", doc);
+    // inside a suspending deferral the platform's deadline matters more
+    write_json(folder / L"status.json", doc, suspended ? 10 : 50);
   }
   bool cancelled(const fs::path &folder, const std::string &id) {
     if (!fs::exists(folder / L"cancel.json"))
       return false;
-    auto doc = read_json(folder / L"cancel.json");
-    return field(doc, L"schema") == "flymsg.worker_cancel/v1" &&
-           field(doc, L"job_id") == id;
+    // parsed once: a cancel still uploading is seen on a later check
+    const auto doc = try_read(folder / L"cancel.json");
+    return doc && field(*doc, L"schema") == "flymsg.worker_cancel/v1" &&
+           field(*doc, L"job_id") == id;
   }
   void execute(const fs::path &folder) {
     const auto doc = read_json(folder / L"job.json");
@@ -185,10 +220,19 @@ struct Worker {
                         "checkpoint shader mismatch");
       runtime.restore(folder / L"checkpoint.bin");
     }
+    auto reported = std::chrono::steady_clock::now() - std::chrono::seconds(1);
     const auto stop = [&](uint32_t cursor) {
-      status(folder, id, "running", cursor);
+      // progress at most four times a second: each update is a file replacement
+      const auto now = std::chrono::steady_clock::now();
+      if (now - reported >= std::chrono::milliseconds(250)) {
+        status(folder, id, "running", cursor);
+        reported = now;
+      }
       return shutdown || suspended || cancelled(folder, id);
     };
+    // wall time and steps of this execution's advance, for throughput only
+    const auto first_step = runtime.step;
+    const auto began = std::chrono::steady_clock::now();
     if (backend == "dx12") {
       const auto adapter = field(doc, L"expected_adapter");
       flymsg::require(!adapter.empty(), "GPU job requires adapter identity");
@@ -200,6 +244,9 @@ struct Worker {
         if (stop(runtime.step))
           break;
       }
+    const double advance_ms = std::chrono::duration<double, std::milli>(
+                                  std::chrono::steady_clock::now() - began)
+                                  .count();
     status(folder, id, "checkpointing", runtime.step);
     runtime.checkpoint(folder / L"checkpoint.bin");
     JsonObject saved;
@@ -216,7 +263,7 @@ struct Worker {
     saved.Insert(L"shader_sha256",
                  JsonValue::CreateStringValue(
                      to_hstring(backend == "dx12" ? sha256(shader) : "")));
-    write_json(folder / L"checkpoint.json", saved);
+    write_json(folder / L"checkpoint.json", saved, suspended ? 10 : 50);
     if (runtime.step == runtime.input[3]) {
       runtime.snapshot(folder / L"output.bin");
       JsonObject result;
@@ -226,6 +273,9 @@ struct Worker {
                     JsonValue::CreateStringValue(to_hstring(hash)));
       result.Insert(L"backend",
                     JsonValue::CreateStringValue(to_hstring(backend)));
+      result.Insert(L"advance_ms", JsonValue::CreateNumberValue(advance_ms));
+      result.Insert(L"advance_steps",
+                    JsonValue::CreateNumberValue(runtime.step - first_step));
       write_json(folder / L"result.json", result);
       status(folder, id, "completed", runtime.step);
     } else {
@@ -265,11 +315,17 @@ struct Worker {
               }
             }
           }
+          // checked after the terminal states, so finished jobs are not parsed
+          if (arriving(folder / L"job.json"))
+            continue;
           if (fs::exists(folder / L"resume.json")) {
-            auto resume = read_json(folder / L"resume.json");
+            const auto resume = try_read(folder / L"resume.json");
+            if (!resume && arriving(folder / L"resume.json"))
+              continue;
             flymsg::require(
-                field(resume, L"schema") == "flymsg.worker_resume/v1" &&
-                    field(resume, L"job_id") == folder.filename().string(),
+                resume &&
+                    field(*resume, L"schema") == "flymsg.worker_resume/v1" &&
+                    field(*resume, L"job_id") == folder.filename().string(),
                 "resume identity mismatch");
             fs::remove(folder / L"resume.json");
           }

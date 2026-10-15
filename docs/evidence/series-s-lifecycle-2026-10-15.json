@@ -1,0 +1,53 @@
+{
+  "adapter": "SraKmd_arden",
+  "cancel": {
+    "ok": true,
+    "seen_running": true,
+    "state": "cancelled",
+    "step": 51392
+  },
+  "date": "2026-10-15",
+  "fixture": {
+    "inputs": 2,
+    "neurons": 2048,
+    "seed": 40,
+    "steps": 1000000,
+    "synthetic": true
+  },
+  "oracle": "the CPU runtime on the same fixture, compared with scripts/native_acceptance.py check() after the last step",
+  "package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+  "package_lineage": {
+    "ci_note": "native-runtime workflow on PR #197",
+    "ci_run": 38731029702,
+    "signed_msix_sha256": "a52759323ebccb697d6644cee2d4013a1f3d783d7a09c0452d3d8e3b097bc9e7",
+    "signing": "repacked and signed with the development certificate (CN=uwp-crossbuild-dev); the unpacked payloads of the unsigned and signed packages are identical",
+    "unsigned_msix_sha256": "17e8365601b15293744ab83a5878c57b1a00b3fe7996519599d7df52743a8c1c",
+    "worker_source_commit": "b9969e632ae62ff84e2c78c06ef659137723b407"
+  },
+  "passed": true,
+  "platform": "Xbox Series S, Dev Mode",
+  "schema": "flymsg.console_lifecycle/v1",
+  "scope": "one synthetic version-1 fixture; not full-connectome throughput or biological validation",
+  "script": "scripts/console_lifecycle.py",
+  "shader_sha256": "6926c4ab469f4a4efcc3bb676a8db2ed8fc679c1fb0816833804330e576e6b99",
+  "stop_and_resume": {
+    "how": "Device Portal stop of the running app, restart, then a flymsg.worker_resume/v1",
+    "ok": true,
+    "parity": true,
+    "parked_as": "suspended",
+    "parked_at_step": 10816,
+    "resumed_advance_steps": 989184,
+    "seen_running": true,
+    "state": "completed"
+  },
+  "throughput": {
+    "app_memory_bytes": 132796416,
+    "app_memory_limit_bytes": 5368709120,
+    "error": "",
+    "neurons": 2048,
+    "parity": true,
+    "state": "completed",
+    "steps": 1000000,
+    "steps_per_s": 44493.27322922619
+  }
+}
