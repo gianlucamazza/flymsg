@@ -2090,6 +2090,9 @@ if (query.has("check")) {
         residentLines: settings.residentLines,
       };
       diagnosticContinuous = continuous;
+      // Suspended tabs/headsets may emit no callbacks at all. Probe wall time
+      // must not become replay time on the first ordinary frame after resume.
+      if (previous.suspended !== suspended) timer.getDelta();
       diagnosticSuspended = suspended;
       xrObserver?.refresh?.();
       clock.playing = playing;
