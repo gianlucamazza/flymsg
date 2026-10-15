@@ -156,6 +156,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--checkpoint", type=Path)
     s = sub.add_parser(
+        "apl-claws",
+        help="print the locked APL claw contrast benchmark (Prisco et al. 2021), or run it with --run (#85)",
+    )
+    s.add_argument("--run", action="store_true")
+    s.add_argument("--workers", type=int, default=1)
+    s.add_argument("--checkpoint", type=Path)
+    s = sub.add_parser(
         "trace",
         help="record v, g, threshold, spikes and input of chosen neurons (exploratory)",
     )

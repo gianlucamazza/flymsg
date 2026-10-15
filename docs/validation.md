@@ -380,6 +380,18 @@ Outputs: `results/convergence/v1.executions/be1ac274…/output/`.
 
 `flymsg baselines --run` writes every cell, the judgement and a report. Not yet run.
 
+## APL and the odor contrast at KC claws (#85)
+
+`validation/apl_claws.yaml` v1 was locked on 2026-10-15, before any run. It asks whether the model's APL equalises 3-octanol (OCT) and 4-methylcyclohexanol (MCH) at the Kenyon cells' input, as Prisco et al. 2021 measured (Figure 4B, Figure 4-figure supplement 1): with APL output intact the OCT/MCH contrast at KC claws is smaller than at PN boutons, and with it blocked the claw contrast rises to the boutons'.
+
+- **Arms.** `on` is the default model; `off` removes every synapse from the two APL neurons, onto KCs and PN boutons alike, as TNT blocks APL release.
+- **Drive.** The KC sparseness locks' DoOR odors at 100 Hz per unit response for 1 s, seeds 420–424.
+- **Readouts.** Per seed and odor, the KCs' mean potential above rest over the odor window stands for the claws (point neurons have no claw compartment), and the ALPNs' spikes for the boutons. Each readout enters only through its own contrast c = (x_OCT − x_MCH)/(x_OCT + x_MCH): c_on and c_off for the claws, c_pn for the boutons in arm on.
+- **No-go.** If c_pn is not positive, or the claw depolarization is zero for either odor in either arm, the run is uninformative.
+- **Verdict.** On the seed medians, _raises_ is c*off > c_on and \_restores* is |c_off − c_pn| < |c_on − c_pn|. Pass if both hold, partial if only raises does, fail if raises does not. The share of seeds in which each holds, the KC spiking fractions and c_on's sign are reported, not scored.
+
+`flymsg apl-claws --run` writes every cell, the judgement and a report. Not yet run.
+
 ## Findings log
 
 Negative and surprising results, kept so they are not rediscovered. Confirmatory results

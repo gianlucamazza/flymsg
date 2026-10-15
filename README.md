@@ -185,6 +185,7 @@ the final path. A clean committed worktree is required. See
 | `convergence [--run]`                                            | the locked timestep convergence check (SF2): the battery's responses at 0.1, 0.05 and 0.025 ms                                     |
 | `song [--run]`                                                   | the locked pulse/sine benchmark against Pacheco et al. 2021 (#36): model and no-go first, then the data                            |
 | `gf-looming [--run]`                                             | the locked looming → giant fiber timing benchmark against Dombrovski et al. 2025 (#34): model and no-go first, then the data       |
+| `apl-claws [--run]`                                              | the locked APL claw contrast benchmark against Prisco et al. 2021 (#85): OCT/MCH contrast at KC claws with APL on and off          |
 | `benchmarks [--run \| --corners]`                                | the frozen held-out manifest, scored with `--run`                                                                                  |
 | `silence-scan [--run]`                                           | the locked residual `TTMn_R` partner scan (#20); prints the protocol without `--run`                                               |
 | `partner-followup [--run]`                                       | the locked left mirror and direct drive of DNp02 + DNp06 (#76)                                                                     |
