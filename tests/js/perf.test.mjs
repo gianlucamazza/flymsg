@@ -41,4 +41,10 @@ test("slow continuous frames reach the adaptive fallback without a GPU timer", (
   frame(20000, true);
   frame(20250, true);
   assert.deepEqual(p.intervals, [250, 250, 250]);
+  // After changing quality, tuneQuality waits 12 frames. Its no-GPU decision must
+  // use those new samples, not the HUD window dominated by the prior slow tier.
+  for (let i = 1; i <= 40; i++) frame(20250 + i * 250, true);
+  for (let i = 1; i <= 12; i++) frame(30250 + i * 20, true);
+  assert.equal(p.fps, 4);
+  assert.equal(p.recentFrameMs(8), 20);
 });

@@ -1835,7 +1835,7 @@ function tuneQuality(live) {
     return;
   }
   if (++tuneFrames < 12) return;
-  const frameMs = perf.recentGpuMs(8) ?? (perf.fps ? 1000 / perf.fps : 0);
+  const frameMs = perf.recentGpuMs(8) ?? perf.recentFrameMs(8);
   if (!frameMs) return;
   // fewer pixels only help when rasterization dominates; otherwise keep the sharper image
   if (lastStep && ratio < lastStep.ratio) {

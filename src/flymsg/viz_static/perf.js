@@ -114,6 +114,13 @@ export class Perf {
     return this.gpu.length >= n ? percentile(this.gpu.slice(-n), 50) : null;
   }
 
+  /** Match the GPU tuning window when timers are unavailable; don't reuse the HUD's 60. */
+  recentFrameMs(n) {
+    return this.intervals.length >= n
+      ? percentile(this.intervals.slice(-n), 50)
+      : null;
+  }
+
   get fps() {
     if (!this.wasContinuous) return 0;
     const i = percentile(this.intervals.slice(-60), 50);
