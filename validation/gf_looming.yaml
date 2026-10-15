@@ -3,7 +3,7 @@
 # Changing a locked field requires incrementing `version` and updating `content_sha256` and
 # flymsg.gf_looming.VERSION_HASHES. `flymsg gf-looming` prints this file; `--run` executes it.
 version: 2
-content_sha256: 8849a524fd6d38f36227e28faa79eca3518699f4cd27d1d95543a7901870ea4f
+content_sha256: dea19e71409fefdc62d2db657e76322e4f4144d3c7dbe318162326170dcc29f1
 yaml_subset: 2
 evidence: [dombrovski_gf_looming, jang_looming_protocol]
 
@@ -83,8 +83,8 @@ model:
   near_end_why: "a peak within 20 ms after the expansion stops follows the stimulus; the share of such peaks is reported per cell and per fly"
   responding: "a cell responds when, in every seed and r/v, both giant fibers rise by at least sim.Params.w_syn (one synapse's jump at rest): a bar for a defined peak, not for strength"
   passive_v_th_mv: 10000.0
-  passive_why: "version 1 and the probe show the LIF giant fiber reaches threshold to any looming drive of the grid and below it, while the recordings are graded; the two giant fibers get a threshold of 10 V (sim.Membrane, their other values the defaults), out of reach of any potential the run produces, so their potential integrates the drive as in current clamp. A named compensation: their own spikes no longer reach their targets, which the readout does not use"
-  graded: "a cell stays graded when neither giant fiber fires in the window in any seed and r/v; with passive giant fibers a spike means the threshold was reached and refuses the run; only responding and graded cells are scored"
+  passive_why: "version 1 and the probe show the LIF giant fiber reaches threshold to any looming drive of the grid and below it, while the recordings are graded; the two giant fibers get a threshold of 10 V (sim.Membrane, their other values the defaults), so their potential integrates the drive as in current clamp. Out of reach: with every excitatory input to a giant fiber firing at its maximum rate the bound is about 7.2 V above rest (5.5 V for the other side), and LC4 and LPLC2 at the rate cap reach about 1.0 to 1.4 V. A named compensation: their own spikes no longer reach their targets, which the readout does not use, nor any neuron that feeds back onto the giant fibers' inputs"
+  graded: "a cell stays graded when neither giant fiber fires in the window in any seed and r/v; with passive giant fibers a spike anywhere in the run means the threshold was reached and refuses the run, so every responding cell is graded and scored"
   fit: "per cell, y = collision time - peak time per seed and r/v; the median over seeds per r/v; ordinary least squares y = alpha * rv - delta over the four r/v"
   timing: "a kick at a step reaches the potential at the next; with the sample at the end of its step this is a constant 0.1 to 0.2 ms, which enters delta only"
 
@@ -119,12 +119,12 @@ score:
   reported: "delta per cell and from the data (secondary, decides nothing), the implied threshold angle 2 * atan(1 / alpha), per cell whether the median peak times increase with r/v, the share of peaks near the end of the expansion, edge peaks, and the cells that respond but fire"
 
 limits:
-  - "Engineered transducers: LC4 and LPLC2 rates follow angular velocity and size linearly with scanned gains; no measured LC4 or LPLC2 rate exists."
+  - "Engineered transducers: LC4 and LPLC2 rates follow angular velocity and size linearly with scanned gains; no measured LC4 or LPLC2 rate exists. The rate cap and the dead time compress the drive late in the expansion and can shift alpha."
   - "Both sides of LC4 and LPLC2 are driven and both giant fibers averaged: the recorded side and the disc's azimuth are not stated."
   - "The disc sizes of the 2025 recordings are inferred from the protocol they cite (Jang et al. 2023)."
   - "The control flies are genotype controls of DIP-epsilon experiments; their sex is not stated in the paper."
   - "The two giant fibers are passive (threshold out of reach), a compensation for a LIF giant fiber that fires to any looming drive while the recordings are graded; their downstream targets lose their input."
-  - "A passive integrator may follow its drive closely, so its peaks may come near the stimulus followers; the stimulus-locked band is the guard, and the distance from it is reported."
+  - "A passive integrator follows its drive, so the stimulus-locked band is the direct path's own prediction: a slope inside it says nothing about the circuit, and only a scored cell's distance from the band is informative."
   - "The scored quantity is a slope across four r/v per fly; one control file and the xlsx had been opened, and the Fig. 1 file's structure seen, before the lock (seen_before_lock)."
 
 defaults_changed: false

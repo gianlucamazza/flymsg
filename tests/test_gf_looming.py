@@ -80,6 +80,9 @@ def test_a_passive_giant_fiber_integrates_without_firing():
         gf_looming.assert_matches_code(
             {**DOC, "model": {**DOC["model"], "passive_v_th_mv": P.v_th}}
         )
+    reached = {**DOC, "model": {**DOC["model"], "passive_v_th_mv": P.v_th}}
+    with pytest.raises(LoomingError, match="reached its threshold"):
+        gf_looming.respond(W, lc4, lplc2, gf, 20.0, 10.0, 200.0, 7, reached, P)
 
 
 def test_fit_recovers_the_threshold_model():

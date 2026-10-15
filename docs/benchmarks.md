@@ -197,7 +197,10 @@ threshold of 10 V (`sim.Membrane`, every other value the default) that no potent
 reaches, so their potential integrates the drive as a recorded potential below threshold; a
 spike refuses the run. Everything else is version 1's (grid, filter, peak rule, follower band,
 data rule), with seeds 350–354. The compensation is named in the lock: the giant fibers' own
-spikes no longer reach their targets, which the readout does not use.
+spikes no longer reach their targets, which the readout does not use. A passive integrator
+follows its drive, so the stimulus-follower band is the direct path's own prediction: only a
+cell's distance from it is the circuit's. The rate cap and dead time compress the drive late in
+the expansion and can shift α; this is a named limit.
 
 ## Inventory
 
