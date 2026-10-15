@@ -9,6 +9,16 @@ function session(rate = 72) {
   return s;
 }
 
+test("resource inventory runs only when sampled, never on every headset frame", () => {
+  const m = new XrMetrics({}, () => {});
+  m.start(session(), 0);
+  let calls = 0;
+  const inventory = () => ({ bytes: ++calls });
+  for (let i = 0; i <= 10000; i += 10) m.frame(i, 1, [], inventory);
+  assert.equal(calls, 2);
+  assert.deepEqual(m.report().resources.map((r) => r.bytes), [1, 2]);
+});
+
 test("XR budgets use actual refresh and retain long stalls beyond the desktop idle filter", () => {
   const smooth = Array(1000).fill(1000 / 72);
   assert.equal(xrTiming(smooth, 72).verdict, "pass");

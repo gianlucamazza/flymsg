@@ -52,11 +52,22 @@ export function signedVolume(positions, index, origin = [0, 0, 0]) {
   const [ox, oy, oz] = origin;
   let v = 0;
   for (let t = 0; t < index.length; t += 3) {
-    const a = 3 * index[t], b = 3 * index[t + 1], c = 3 * index[t + 2];
-    const ax = positions[a] - ox, ay = positions[a + 1] - oy, az = positions[a + 2] - oz;
-    const bx = positions[b] - ox, by = positions[b + 1] - oy, bz = positions[b + 2] - oz;
-    const cx = positions[c] - ox, cy = positions[c + 1] - oy, cz = positions[c + 2] - oz;
-    v += ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx);
+    const a = 3 * index[t],
+      b = 3 * index[t + 1],
+      c = 3 * index[t + 2];
+    const ax = positions[a] - ox,
+      ay = positions[a + 1] - oy,
+      az = positions[a + 2] - oz;
+    const bx = positions[b] - ox,
+      by = positions[b + 1] - oy,
+      bz = positions[b + 2] - oz;
+    const cx = positions[c] - ox,
+      cy = positions[c + 1] - oy,
+      cz = positions[c + 2] - oz;
+    v +=
+      ax * (by * cz - bz * cy) -
+      ay * (bx * cz - bz * cx) +
+      az * (bx * cy - by * cx);
   }
   return v / 6;
 }
@@ -78,11 +89,20 @@ export function centroid(arrays) {
 
 /** Distance from point i to the segment a-b, all indices into a flat xyz array. */
 function segmentDistance(p, i, a, b) {
-  const ax = p[3 * a], ay = p[3 * a + 1], az = p[3 * a + 2];
-  const dx = p[3 * b] - ax, dy = p[3 * b + 1] - ay, dz = p[3 * b + 2] - az;
-  const px = p[3 * i] - ax, py = p[3 * i + 1] - ay, pz = p[3 * i + 2] - az;
+  const ax = p[3 * a],
+    ay = p[3 * a + 1],
+    az = p[3 * a + 2];
+  const dx = p[3 * b] - ax,
+    dy = p[3 * b + 1] - ay,
+    dz = p[3 * b + 2] - az;
+  const px = p[3 * i] - ax,
+    py = p[3 * i + 1] - ay,
+    pz = p[3 * i + 2] - az;
   const len2 = dx * dx + dy * dy + dz * dz;
-  const t = len2 > 0 ? Math.max(0, Math.min(1, (px * dx + py * dy + pz * dz) / len2)) : 0;
+  const t =
+    len2 > 0
+      ? Math.max(0, Math.min(1, (px * dx + py * dy + pz * dz) / len2))
+      : 0;
   return Math.hypot(px - t * dx, py - t * dy, pz - t * dz);
 }
 
@@ -97,6 +117,14 @@ function segmentDistance(p, i, a, b) {
  * is the full skeleton, and a coarser level is only listed when it drops segments.
  */
 export function skeletonLevels(vertices, edges, base, count) {
+  const min = [Infinity, Infinity, Infinity],
+    max = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < vertices.length; i += 3)
+    for (let a = 0; a < 3; a++) {
+      min[a] = Math.min(min[a], vertices[i + a]);
+      max[a] = Math.max(max[a], vertices[i + a]);
+    }
+  if (count === 0) return { eps: [0], levels: [edges], bounds: { min, max } };
   const nv = vertices.length / 3;
   const degree = new Uint32Array(nv);
   for (let e = 0; e < edges.length; e++) degree[edges[e]]++;
@@ -106,24 +134,38 @@ export function skeletonLevels(vertices, edges, base, count) {
   const adj = new Uint32Array(edges.length);
   const fill = start.slice(0, nv);
   for (let e = 0; e < edges.length; e += 2) {
-    const a = edges[e], b = edges[e + 1];
+    const a = edges[e],
+      b = edges[e + 1];
     adj[fill[a]++] = b;
     adj[fill[b]++] = a;
   }
   const used = new Uint8Array(edges.length); // per adjacency slot: edge already walked
   const markUsed = (a, b) => {
-    for (let s = start[a]; s < start[a + 1]; s++) if (adj[s] === b && !used[s]) { used[s] = 1; break; }
-    for (let s = start[b]; s < start[b + 1]; s++) if (adj[s] === a && !used[s]) { used[s] = 1; break; }
+    for (let s = start[a]; s < start[a + 1]; s++)
+      if (adj[s] === b && !used[s]) {
+        used[s] = 1;
+        break;
+      }
+    for (let s = start[b]; s < start[b + 1]; s++)
+      if (adj[s] === a && !used[s]) {
+        used[s] = 1;
+        break;
+      }
   };
   const paths = []; // arrays of vertex ids
   const walk = (from, slot) => {
     const path = [from];
-    let prev = from, cur = adj[slot];
+    let prev = from,
+      cur = adj[slot];
     markUsed(prev, cur);
     path.push(cur);
     while (degree[cur] === 2 && cur !== from) {
       let next = -1;
-      for (let s = start[cur]; s < start[cur + 1]; s++) if (!used[s]) { next = adj[s]; break; }
+      for (let s = start[cur]; s < start[cur + 1]; s++)
+        if (!used[s]) {
+          next = adj[s];
+          break;
+        }
       if (next < 0) break;
       markUsed(cur, next);
       prev = cur;
@@ -133,16 +175,19 @@ export function skeletonLevels(vertices, edges, base, count) {
     paths.push(path);
   };
   for (let v = 0; v < nv; v++)
-    if (degree[v] !== 2) for (let s = start[v]; s < start[v + 1]; s++) if (!used[s]) walk(v, s);
+    if (degree[v] !== 2)
+      for (let s = start[v]; s < start[v + 1]; s++) if (!used[s]) walk(v, s);
   // what is left are cycles made only of degree-2 vertices
-  for (let v = 0; v < nv; v++) for (let s = start[v]; s < start[v + 1]; s++) if (!used[s]) walk(v, s);
+  for (let v = 0; v < nv; v++)
+    for (let s = start[v]; s < start[v + 1]; s++) if (!used[s]) walk(v, s);
 
   const err = paths.map((path) => {
     const e = new Float64Array(path.length).fill(Infinity); // ends are always kept
     const stack = [[0, path.length - 1, Infinity]];
     while (stack.length) {
       const [i, j, cap] = stack.pop();
-      let best = -1, d = -1;
+      let best = -1,
+        d = -1;
       for (let k = i + 1; k < j; k++) {
         const dk = segmentDistance(vertices, path[k], path[i], path[j]);
         if (dk > d) [best, d] = [k, dk];
@@ -154,7 +199,8 @@ export function skeletonLevels(vertices, edges, base, count) {
     return e;
   });
 
-  const eps = [0], levels = [edges];
+  const eps = [0],
+    levels = [edges];
   for (let l = 0; l < count; l++) {
     const tol = base * 2 ** l;
     const out = [];
@@ -171,12 +217,6 @@ export function skeletonLevels(vertices, edges, base, count) {
       levels.push(Uint32Array.from(out));
     }
   }
-  const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
-  for (let i = 0; i < vertices.length; i += 3)
-    for (let a = 0; a < 3; a++) {
-      min[a] = Math.min(min[a], vertices[i + a]);
-      max[a] = Math.max(max[a], vertices[i + a]);
-    }
   return { eps, levels, bounds: { min, max } };
 }
 
@@ -184,10 +224,17 @@ export function skeletonLevels(vertices, edges, base, count) {
 export function meshArea(positions, index) {
   let area = 0;
   for (let t = 0; t < index.length; t += 3) {
-    const a = 3 * index[t], b = 3 * index[t + 1], c = 3 * index[t + 2];
-    const ux = positions[b] - positions[a], uy = positions[b + 1] - positions[a + 1], uz = positions[b + 2] - positions[a + 2];
-    const vx = positions[c] - positions[a], vy = positions[c + 1] - positions[a + 1], vz = positions[c + 2] - positions[a + 2];
-    area += Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2;
+    const a = 3 * index[t],
+      b = 3 * index[t + 1],
+      c = 3 * index[t + 2];
+    const ux = positions[b] - positions[a],
+      uy = positions[b + 1] - positions[a + 1],
+      uz = positions[b + 2] - positions[a + 2];
+    const vx = positions[c] - positions[a],
+      vy = positions[c + 1] - positions[a + 1],
+      vz = positions[c + 2] - positions[a + 2];
+    area +=
+      Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2;
   }
   return area;
 }

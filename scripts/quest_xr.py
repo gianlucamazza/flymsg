@@ -83,6 +83,19 @@ def main():
     p.add_argument("--scene", choices=("looming", "anatomy"), default="looming")
     p.add_argument("--seconds", type=int, default=1800)
     p.add_argument("--port", type=int, default=8765)
+    p.add_argument(
+        "--representation", choices=("surface", "skeleton", "mixed"), default="surface"
+    )
+    p.add_argument(
+        "--pages",
+        action="store_true",
+        help="enable candidate conservative page culling",
+    )
+    p.add_argument(
+        "--check",
+        action="store_true",
+        help="expose local read-only/observer diagnostic hooks",
+    )
     p.add_argument("--out", type=Path)
     a = p.parse_args()
     if a.seconds <= 0 or not 1024 <= a.port <= 65535:
@@ -104,6 +117,12 @@ def main():
         "fingerprint": adb(a.serial, "shell", "getprop", "ro.build.fingerprint"),
         "browser": adb(a.serial, "shell", "dumpsys", "package", "com.oculus.browser"),
         "scene": a.scene,
+        "viewer": {
+            "representation": a.representation,
+            "page_culling": a.pages,
+            "check": a.check,
+        },
+        "adb_server_port": os.environ.get("ANDROID_ADB_SERVER_PORT", "5037"),
         "qualification": "not-scored",
         "before": snapshot(a.serial),
     }
@@ -145,6 +164,8 @@ def main():
                 owned_reverse = True
                 url = (
                     f"http://localhost:{a.port}/live/{a.scene}/?xr=1&xrcollect=1&paused"
+                    f"&representation={a.representation}&pages={int(a.pages)}&adaptive=0"
+                    + ("&check" if a.check else "")
                 )
                 adb(
                     a.serial,

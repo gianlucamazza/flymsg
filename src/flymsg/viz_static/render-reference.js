@@ -86,9 +86,13 @@ export function capturePasses(
     scissorTest: renderer.getScissorTest(),
     background: world.background,
     override: world.overrideMaterial,
+    shaderError: renderer.debug.onShaderError,
   };
   const out = {};
   try {
+    renderer.debug.onShaderError = () => {
+      throw new Error("Reference shader compilation failed");
+    };
     for (const [name, install] of Object.entries(passes)) {
       let restore;
       try {
@@ -108,6 +112,7 @@ export function capturePasses(
   } finally {
     world.background = saved.background;
     world.overrideMaterial = saved.override;
+    renderer.debug.onShaderError = saved.shaderError;
     renderer.setRenderTarget(saved.target);
     renderer.setViewport(saved.viewport);
     renderer.setScissor(saved.scissor);

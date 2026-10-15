@@ -69,6 +69,8 @@ PAGES = (
     ("related", "docs/related.md", "Related"),
     ("viz", "docs/viz.md", "3D view"),
     ("vee-qualification", "docs/vee-qualification.md", "VEE qualification"),
+    ("observer-rendering", "docs/observer-rendering.md", "Observer rendering"),
+    ("adr-observer-rendering", "docs/adr-observer-rendering.md", "Rendering ADR"),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("approximations", "docs/approximations.md", "Approximations"),
     ("leads", "docs/leads.md", "Leads"),

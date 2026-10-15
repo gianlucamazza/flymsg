@@ -1,10 +1,12 @@
 // Capture only an explicitly selected local FlyMSG diagnostic page over CDP.
 // node scripts/render_reference.mjs http://127.0.0.1:40621 TARGET_ID new-directory [time-ms]
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 
 const [endpoint, targetId, out, timestamp = "0"] = process.argv.slice(2);
+const options = process.env.REFERENCE ? JSON.parse(readFileSync(process.env.REFERENCE,"utf8")) : {};
+if (options.schema === "flymsg.render-reference/v1") options.cameraWorld = options.camera_world;
 if (!endpoint || !targetId || !out || !Number.isFinite(Number(timestamp)))
   throw new Error("usage: render_reference.mjs CDP_ENDPOINT TARGET_ID NEW_DIRECTORY [time-ms]");
 const url = new URL(endpoint);
@@ -26,7 +28,7 @@ try {
       else resolve(message.result.result.value);
     });
     ws.send(JSON.stringify({ id: 1, method: "Runtime.evaluate", params: {
-      expression: `flymsg.reference({time:${Number(timestamp)}})`, awaitPromise: true, returnByValue: true,
+      expression: `flymsg.reference(${JSON.stringify({ ...options, time: Number(timestamp), culling:process.env.CULLING === "1" })})`, awaitPromise: true, returnByValue: true,
     } }));
   });
   const images = result.images;

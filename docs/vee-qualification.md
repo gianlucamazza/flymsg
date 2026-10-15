@@ -4,6 +4,11 @@ Execution plan accepted on 2026-10-15. The [WebXR ADR](adr-virtual-experimental-
 and [body-wiring ADR](adr-body-wiring.md) remain the decisions. This page records operational
 criteria; it does not promote a synthetic experiment to an animal result.
 
+The subsequent accepted [rendering ADR](adr-observer-rendering.md) and
+[implementation status](observer-rendering.md) address the failed Quest workload.
+The collector now requires an explicit representation for diagnostic comparisons;
+its default requests full surfaces and never silently substitutes skeletons.
+
 ## Run the headless engineering fixture
 
 From clean committed source, with Python 3.13 and the locked dependencies:

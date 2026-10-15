@@ -105,7 +105,7 @@ export class XrMetrics {
     if (resources && (a.frames === 1 || timestamp - a.last_emit_ms >= 10000)) {
       a.resource_samples.push({
         elapsed_ms: timestamp - a.started_ms,
-        ...resources,
+        ...(typeof resources === "function" ? resources() : resources),
       });
       a.last_emit_ms = timestamp;
       const { raw_intervals_ms, ...summary } = this.report(timestamp);
