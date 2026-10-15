@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
+from flymsg import sim
 from flymsg.runtime import CpuRuntime
 
 MAGIC = 0x314E4D46  # FMN1, little endian
@@ -144,6 +145,31 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
         "precision": "ordered-f32-double-kicks",
         "steps": steps,
     }
+
+
+def stimulated(fixture: Path) -> np.ndarray:
+    """Rows of the fixture's stimulated neurons (those with an input column)."""
+    words = np.frombuffer(Path(fixture).read_bytes(), dtype="<u4")
+    n = int(words[2])
+    cols = words[int(words[23]) : int(words[23]) + n].view("<i4")
+    return np.flatnonzero(cols >= 0)
+
+
+def as_result(
+    out: dict, fixture: Path, dt_ms: float, stim_ms: float | None = None
+) -> sim.Result:
+    """A decoded native output as a `sim.Result`: its spike counts per bin and first
+    spikes, for the viewer. `stim_ms` defaults to the whole run."""
+    h = np.frombuffer(Path(fixture).read_bytes(), dtype="<u4")[:HEADER_WORDS]
+    bin_ms = int(h[4]) * dt_ms
+    duration = out["counts"].shape[0] * bin_ms
+    first = np.asarray(out["first"], dtype=float)
+    return sim.Result(
+        counts=np.asarray(out["counts"], dtype=np.int64),
+        first_spike_ms=np.where(first >= 0, first * dt_ms, np.nan),
+        bin_ms=bin_ms,
+        stim_ms=duration if stim_ms is None else min(stim_ms, duration),
+    )
 
 
 def read_output(path: Path, fixture: Path) -> dict[str, np.ndarray | int]:
