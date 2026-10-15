@@ -8,6 +8,7 @@ import {
 } from "./geometry-pages.js";
 import { localEyePlanes } from "./page-views.js";
 import { capturePasses, sha256 } from "./render-reference.js";
+import { ResidentLineIndex } from "./resident-lines.js";
 
 export async function geometryPageOracle(THREE) {
   const renderer = new THREE.WebGLRenderer();
@@ -42,6 +43,11 @@ export async function geometryPageOracle(THREE) {
   const position = new Float32Array(vertices),
     original = new Uint32Array(edges);
   const pages = linePages(position, original, 32);
+  const residency = new ResidentLineIndex(8);
+  residency.sync([
+    { skelBase: 0, skelLod: { levels: [original], pages: [pages] } },
+  ]);
+  const residentAttribute = new THREE.BufferAttribute(residency.index, 1);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(position, 3));
   geometry.setAttribute(
@@ -101,6 +107,9 @@ export async function geometryPageOracle(THREE) {
           },
         ]),
       );
+      lines.material = material;
+      geometry.clearGroups();
+      geometry.setDrawRange(0, Infinity);
       geometry.setIndex(new THREE.BufferAttribute(original, 1));
       const reference = capturePasses(
         THREE,
@@ -121,6 +130,34 @@ export async function geometryPageOracle(THREE) {
         192,
         128,
       );
+      const plan = residency.plan(eyes, () => true, visibleLinePages);
+      if (plan.fallback) throw new Error("Unexpected resident oracle fallback");
+      geometry.setIndex(residentAttribute);
+      geometry.clearGroups();
+      for (const r of plan.ranges) geometry.addGroup(r.start, r.count, 0);
+      lines.material = [material];
+      const resident = capturePasses(
+        THREE,
+        renderer,
+        world,
+        camera,
+        passes,
+        192,
+        128,
+      );
+      if (residentAttribute.version !== 0)
+        throw new Error("Camera selection dirtied the resident index");
+      const idPixels = reference.neuron_id;
+      if (
+        !idPixels.some(
+          (v, i) =>
+            i % 4 === 0 &&
+            v > 0 &&
+            idPixels[i + 1] === 0 &&
+            idPixels[i + 2] === 0,
+        )
+      )
+        throw new Error(`${name}: reference has no neuron-ID witness`);
       const checks = {};
       for (const key of Object.keys(reference)) {
         let different = 0;
@@ -134,11 +171,23 @@ export async function geometryPageOracle(THREE) {
         };
         if (different)
           throw new Error(`${name}/${key}: ${different} changed bytes`);
+        let residentDifferent = 0;
+        reference[key].forEach((v, i) => {
+          if (v !== resident[key][i]) residentDifferent++;
+        });
+        if (residentDifferent)
+          throw new Error(
+            `${name}/${key}: ${residentDifferent} resident bytes changed`,
+          );
+        checks[key].resident_sha256 = await sha256(resident[key]);
+        checks[key].resident_different_bytes = residentDifferent;
       }
       records.push({
         name,
         source_edges: original.length / 2,
         submitted_edges: selected.edges,
+        resident_submitted_edges: plan.submittedIndices / 2,
+        resident_draws: plan.ranges.length,
         checks,
       });
     }

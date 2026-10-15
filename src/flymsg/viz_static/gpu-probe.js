@@ -6,6 +6,14 @@ export function serializedGpuProbe(
   { sizes = [256, 512, 1024], warmup = 2, repeats = 5 } = {},
 ) {
   const { THREE, renderer, world, camera, skeletons } = view;
+  const material = Array.isArray(skeletons.material)
+    ? skeletons.material[0]
+    : skeletons.material;
+  if (
+    !material ||
+    (Array.isArray(skeletons.material) && skeletons.material.length !== 1)
+  )
+    throw new Error("Probe requires one shared line material");
   if (renderer.xr.isPresenting)
     throw new Error("Probe requires a non-immersive context");
   if (
@@ -27,7 +35,7 @@ export function serializedGpuProbe(
     scissor: renderer.getScissor(new THREE.Vector4()),
     scissorTest: renderer.getScissorTest(),
     discard: gl.isEnabled(gl.RASTERIZER_DISCARD),
-    shader: skeletons.material.vertexShader,
+    shader: material.vertexShader,
     shaderError: renderer.debug.onShaderError,
   };
   const minimalVertex = `varying vec3 vColor; varying float vOn;
@@ -60,11 +68,11 @@ export function serializedGpuProbe(
         ]) {
           const discard = mode.startsWith("raster-discard");
           gl[discard ? "enable" : "disable"](gl.RASTERIZER_DISCARD);
-          skeletons.material.vertexShader =
+          material.vertexShader =
             mode === "raster-discard-minimal-line-vertex"
               ? minimalVertex
               : saved.shader;
-          skeletons.material.needsUpdate = true;
+          material.needsUpdate = true;
           const wall = [];
           let draws;
           for (let i = 0; i < warmup + repeats; i++) {
@@ -128,8 +136,8 @@ export function serializedGpuProbe(
       projection: camera.projectionMatrix.toArray(),
     };
   } finally {
-    skeletons.material.vertexShader = saved.shader;
-    skeletons.material.needsUpdate = true;
+    material.vertexShader = saved.shader;
+    material.needsUpdate = true;
     renderer.debug.onShaderError = saved.shaderError;
     gl[saved.discard ? "enable" : "disable"](gl.RASTERIZER_DISCARD);
     renderer.setRenderTarget(saved.target);

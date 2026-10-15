@@ -66,6 +66,7 @@ import { Perf } from "./perf.js";
 import { installXrObserver } from "./xr.js";
 import { XrMetrics } from "./xr-metrics.js";
 import { visibleLinePages, writeVisibleEdges } from "./geometry-pages.js";
+import { ResidentLineIndex } from "./resident-lines.js";
 import { localEyePlanes } from "./page-views.js";
 import { selectFidelity } from "./fidelity.js";
 import { bufferBytes, geometryArrays } from "./resource-bytes.js";
@@ -125,6 +126,7 @@ const settings = {
   neuropils: query.has("neuropils") ? query.get("neuropils") !== "0" : null,
   adaptive: representation === "mixed" && query.get("adaptive") !== "0",
   pageCulling: query.get("pages") === "1", // qualification candidate; full reference remains the default until visual/device gates pass
+  residentLines: query.get("resident") !== "0", // applies only to strict skeleton page culling
 };
 
 // ---------- a small priority queue for network work ----------
@@ -814,7 +816,12 @@ const pool = {
   state: new Int8Array(N).fill(-1), // level drawn per neuron, -1 = off
 };
 const skelGeometry = new THREE.BufferGeometry();
+const residentLines = new ResidentLineIndex(8);
+let residentIndexValid = false;
+let lineSubmission = { mode: "compact", draws: 0 };
 function poolAttributes() {
+  residentIndexValid = false;
+  residentLines.releaseArena();
   skelGeometry.dispose(); // frees the GPU buffers of the arrays being replaced
   skelGeometry.setAttribute(
     "position",
@@ -828,7 +835,8 @@ function poolAttributes() {
 }
 poolAttributes();
 skelGeometry.setDrawRange(0, 0);
-const skeletons = new THREE.LineSegments(skelGeometry, skelMaterial);
+// Arrays make geometry groups apply to colour AND picking/depth passes.
+const skeletons = new THREE.LineSegments(skelGeometry, [skelMaterial]);
 skeletons.frustumCulled = false; // bounds change as skeletons stream in
 data.add(skeletons);
 
@@ -947,8 +955,57 @@ function skeletonEyes(
 /** Rebuild the shared index when some neuron's skeleton turned on or off or changed level. */
 function applySkeletonVisibility(eyes = null) {
   skeletonsDirty = false;
-  let changed = false,
+  let fallback = null;
+  if (
+    eyes !== null &&
+    settings.residentLines &&
+    settings.representation === "skeleton" &&
+    neurons.every((n) => !isShown(n) || n.skeletonState === "ready")
+  ) {
+    const count = neurons.reduce(
+      (sum, n) => sum + (n.skelLod?.levels[0].length ?? 0),
+      0,
+    );
+    if (count > pool.index.length) {
+      pool.index = new Uint32Array(Math.max(count, 2 * pool.index.length));
+      poolAttributes();
+    }
+    const rebuilt = residentLines.sync(neurons, pool.index);
+    if (rebuilt) residentIndexValid = true;
+    const plan = residentLines.plan(eyes, skeletonOn, visibleLinePages);
+    if (!plan.fallback) {
+      const upload = rebuilt || !residentIndexValid;
+      if (!residentIndexValid) residentLines.writeIndex(pool.index);
+      residentIndexValid = true;
+      if (upload) {
+        const index = skelGeometry.getIndex();
+        index.clearUpdateRanges();
+        index.addUpdateRange(0, residentLines.count);
+        index.needsUpdate = true;
+      }
+      if (upload || plan.changed || lineSubmission.mode !== "resident") {
+        skelGeometry.clearGroups();
+        for (const r of plan.ranges) skelGeometry.addGroup(r.start, r.count, 0);
+        skelGeometry.setDrawRange(0, residentLines.count);
+        invalidate();
+      }
+      lineSubmission = {
+        mode: "resident",
+        draws: plan.ranges.length,
+        visible_indices: plan.visibleIndices,
+        submitted_indices: plan.submittedIndices,
+        bridged_indices: plan.submittedIndices - plan.visibleIndices,
+        catalog_builds: residentLines.builds,
+      };
+      return;
+    }
+    fallback = plan.fallback;
+  }
+  // One shared arena: compact captures/fallback invalidate its resident layout.
+  // Restoring the original resident layout requires a single upload.
+  let changed = residentIndexValid || lineSubmission.mode === "resident",
     total = 0;
+  residentIndexValid = false;
   for (const n of neurons) {
     const st = n.skelLod && skeletonOn(n) ? n.skelLod.level : -1;
     if (st !== pool.state[n.k]) {
@@ -969,7 +1026,10 @@ function applySkeletonVisibility(eyes = null) {
       total += 2 * result.edges;
     }
   }
-  if (!changed) return;
+  if (!changed) {
+    lineSubmission = { ...lineSubmission, mode: "compact", fallback };
+    return;
+  }
   if (total > pool.index.length) {
     pool.index = new Uint32Array(Math.max(total, 2 * pool.index.length));
     poolAttributes();
@@ -992,6 +1052,16 @@ function applySkeletonVisibility(eyes = null) {
   index.addUpdateRange(0, total);
   index.needsUpdate = true;
   skelGeometry.setDrawRange(0, total);
+  skelGeometry.clearGroups();
+  if (total) skelGeometry.addGroup(0, total, 0);
+  lineSubmission = {
+    mode: "compact",
+    draws: Number(total > 0),
+    visible_indices: total,
+    submitted_indices: total,
+    bridged_indices: 0,
+    fallback,
+  };
   invalidate();
 }
 
@@ -1377,15 +1447,17 @@ function resourceReport() {
     if (n.skelLod) {
       arrays.push(...n.skelLod.levels);
       for (const p of n.skelLod.pages)
-        arrays.push(p.edgePage, p.bounds, p.sizes);
+        arrays.push(p.edgePage, p.bounds, p.sizes, p.runs);
     }
   }
   for (const g of lru.values()) arrays.push(...geometryArrays(g));
+  arrays.push(...residentLines.arrays());
   return {
     managed_geometry_cpu_bytes: bufferBytes(arrays),
     decoded_cache_bytes: lruBytes,
     decoded_cache_limit_bytes: DECODED_CACHE_BYTES,
     gpu_total_bytes: null,
+    line_submission: { ...lineSubmission },
     browser_heap_bytes: performance.memory?.usedJSHeapSize ?? null,
   };
 }
@@ -1567,7 +1639,7 @@ function pickAt(x, y) {
   const somataShown = somata.points?.visible ?? false;
   if (somata.points) somata.points.visible = false; // context, not pickable
   batched.material = pickMeshMaterial;
-  skeletons.material = pickLineMaterial;
+  skeletons.material = [pickLineMaterial];
   renderer.setRenderTarget(pickTarget);
   renderer.setClearColor(0x000000, 0);
   renderer.clear();
@@ -1576,7 +1648,7 @@ function pickAt(x, y) {
   renderer.readRenderTargetPixels(pickTarget, 0, 0, PICK, PICK, px);
   renderer.setRenderTarget(null);
   batched.material = meshMaterial;
-  skeletons.material = skelMaterial;
+  skeletons.material = [skelMaterial];
   saved.shells.forEach((o) => (o.visible = true));
   if (somata.points) somata.points.visible = somataShown;
   world.background = saved.background;
@@ -1613,17 +1685,23 @@ if (query.has("check")) {
     meshMaterial,
     fidelity: fidelityReport,
     resources: resourceReport,
+    scheduleLines: (eyes) => {
+      applySkeletonVisibility(eyes);
+      return { ...lineSubmission };
+    },
     diagnosticState: () => ({
       continuous: diagnosticContinuous,
       time: clock.t,
       playing: clock.playing,
       pageCulling: settings.pageCulling,
+      residentLines: settings.residentLines,
     }),
     diagnostic({
       continuous = false,
       time = 0,
       playing = false,
       pageCulling = settings.pageCulling,
+      residentLines = settings.residentLines,
     } = {}) {
       if (
         !Number.isFinite(time) ||
@@ -1636,11 +1714,13 @@ if (query.has("check")) {
         time: clock.t,
         playing: clock.playing,
         pageCulling: settings.pageCulling,
+        residentLines: settings.residentLines,
       };
       diagnosticContinuous = continuous;
       clock.playing = playing;
       clock.t = time;
       settings.pageCulling = pageCulling;
+      settings.residentLines = residentLines;
       skeletonsDirty = true;
       invalidate();
       return previous;
@@ -1712,7 +1792,7 @@ if (query.has("check")) {
             o.visible = false;
           });
           batched.material = mesh;
-          skeletons.material = line;
+          skeletons.material = [line];
           const background = world.background;
           world.background = null;
           renderer.setClearColor(0, 0);

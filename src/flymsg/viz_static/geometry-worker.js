@@ -19,6 +19,7 @@ function process(data) {
         p.edgePage.buffer,
         p.bounds.buffer,
         p.sizes.buffer,
+        p.runs.buffer,
       ]),
     ]);
     return;

@@ -48,6 +48,7 @@ def main():
     source = manifest.git_info()
     files = (
         "geometry-pages.js",
+        "resident-lines.js",
         "geometry-pages-oracle.js",
         "page-views.js",
         "render-reference.js",

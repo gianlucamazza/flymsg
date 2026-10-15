@@ -71,15 +71,33 @@ export function linePages(vertices, edges, maxEdges = 2048) {
     edgePage,
     bounds: new Float64Array(boxes),
     sizes: new Uint32Array(sizes),
+    runs: linePageRuns(edgePage),
   };
+}
+
+export function linePageRuns(edgePage) {
+  const runs = [];
+  for (let start = 0; start < edgePage.length; ) {
+    const page = edgePage[start];
+    let end = start + 1;
+    while (end < edgePage.length && edgePage[end] === page) end++;
+    runs.push(page, start, end - start);
+    start = end;
+  }
+  return new Uint32Array(runs);
 }
 
 /** Planes are inward [x,y,z,d], in the same coordinates as source vertices.
  * A union of eyes is required: reject only if every eye excludes the whole box.
  * null disables culling for independent full-geometry reference captures.
  */
-export function visibleLinePages(pages, eyePlanes) {
-  const visible = new Uint8Array(pages.sizes.length);
+export function visibleLinePages(
+  pages,
+  eyePlanes,
+  visible = new Uint8Array(pages.sizes.length),
+) {
+  if (visible.length !== pages.sizes.length)
+    throw new RangeError("Visibility mask size differs from page count");
   let edges = 0;
   for (let page = 0; page < visible.length; page++) {
     const o = 6 * page,
@@ -97,8 +115,8 @@ export function visibleLinePages(pages, eyePlanes) {
           return ax + ay + az + d >= -margin;
         }),
       );
+    visible[page] = Number(shown);
     if (shown) {
-      visible[page] = 1;
       edges += pages.sizes[page];
     }
   }
