@@ -46,7 +46,7 @@ Run `scripts/build-native-uwp.ps1` from a Windows Visual Studio environment. It 
 
 - **What it shows:** the build commit and GPU adapter; the current job's state, progress, steps per second, ETA and app memory; the last error; the jobs since the app started (kept in memory, so a restart clears them); and the last completed job's spikes per count bin with its most active rows.
 - **How it reads.** The job thread publishes a telemetry copy under a lock, and a UI timer reads it four times a second, so the dashboard never touches a job's state.
-- **Controls.** The gamepad's B cancels the running job by writing the same `flymsg.worker_cancel/v1` file a host would upload. Y opens the 3D viewer in the console's browser, at the address in `LocalState/viewer.json` (`flymsg.worker_viewer/v1`), and an uploaded `LocalState/open_viewer.json` does the same from the host (see [viz.md](../docs/viz.md)). The app asks for no pointer, so the console shows no mouse-mode cursor.
+- **Controls.** The gamepad's B cancels the running job by writing the same `flymsg.worker_cancel/v1` file a host would upload. Y opens the 3D viewer in the system browser, at the address in `LocalState/viewer.json` (`flymsg.worker_viewer/v1`), and an uploaded `LocalState/open_viewer.json` does the same from the host. Edge on an Xbox has no WebGL, so there the page loads but draws no scene (see [viz.md](../docs/viz.md)). The app asks for no pointer, so the console shows no mouse-mode cursor.
 
 Prepare a GPU qualification job against the exact packaged shader:
 

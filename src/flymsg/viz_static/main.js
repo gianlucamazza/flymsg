@@ -95,8 +95,10 @@ const coarse = matchMedia(COARSE).matches;
 const tv = tvMode(location.search, navigator.userAgent);
 if (tv) document.documentElement.classList.add("tv");
 const settings = {
-  detailPx: Number(query.get("detail")) || 256, // refine a fragment when its chunk exceeds this on screen
-  budgetM: Number(query.get("budget")) || 8, // million triangles held on the GPU
+  // a console's browser stops a tab far below a desktop's memory (Edge on a Series S at
+  // the desktop defaults: SBOX_FATAL_MEMORY_EXCEEDED), so the TV layout starts leaner
+  detailPx: Number(query.get("detail")) || (tv ? 512 : 256), // refine a fragment when its chunk exceeds this on screen
+  budgetM: Number(query.get("budget")) || (tv ? 1 : 8), // million triangles held on the GPU
   // ?neuropils=0|1: start with every shell hidden (and not downloaded) or shown; by default
   // shown in anatomy views and hidden in replays, where the silent skeletons already outline
   // the whole CNS and the 11 M translucent shell triangles cost ~40 ms per frame on an Iris Xe
