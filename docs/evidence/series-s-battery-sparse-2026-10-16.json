@@ -1,0 +1,43 @@
+{
+  "backend": "console",
+  "battery": {
+    "cases": [
+      "looming escape",
+      "giant fiber output",
+      "P1 courtship drive",
+      "pIP10 song pathway",
+      "sugar feeding",
+      "bitter feeding"
+    ],
+    "duration_ms": 600.0,
+    "runs": 30,
+    "seeds": 5
+  },
+  "console": {
+    "advance_ms": 69278.460901,
+    "advance_steps": 180000,
+    "wall_s": 180.09103375897394
+  },
+  "date": "2026-10-16",
+  "host_load_average": [2.38623046875, 3.41259765625, 4.15576171875],
+  "host_sim_run_s": 29.192781937948894,
+  "mismatched_runs": [],
+  "network": {
+    "neurons": 165122,
+    "synapses": 24539704
+  },
+  "passed": true,
+  "platform": "Xbox Series S, Dev Mode",
+  "schema": "flymsg.console_battery/v1",
+  "scope": "one graph's battery; equality of counts and first spikes per run",
+  "script": "scripts/console_battery.py",
+  "worker_adapter": "SraKmd_arden",
+  "worker_package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+  "worker_shader_sha256": "d6a0977507dd905fe0895948441be9bab9033e1c393735aad0095622fd606809",
+  "output": "counts",
+  "package_lineage": {
+    "ci_run": 38819215610,
+    "ci_note": "native-runtime workflow on PR #211"
+  },
+  "note": "each run returns only its nonzero counts and first spikes; the console advances the 30 runs in about 69 s and the batch takes 180 s end to end, against 243 s when each run returned its whole state (docs/evidence/series-s-battery-2026-10-15.json); the other 111 s are outside the advance and not broken down; one host core ran the same 30 sim.run calls in 29 s"
+}

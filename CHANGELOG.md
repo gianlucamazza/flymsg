@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Sparse counts from the console** (#40, #211). A batch can ask each run for only its nonzero counts and first spikes (`FMS1`, `native.read_counts`), and the console backend does. The whole-connectome battery matched in all 30 runs and took 180 s end to end instead of 243 s; the advance is 69 s, and one host core runs the same battery in 29–62 s.
+
 ## 0.8.48 — 2026-10-16
 
 ### Result
