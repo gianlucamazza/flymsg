@@ -333,3 +333,46 @@ def test_the_native_executor_runs_a_batch_bit_for_bit(native_exe, tmp_path):
         )
         oracle.advance_to(400)
         _acceptance().check(oracle, read_output(out, fixture))
+
+
+def test_console_results_read_native_batch_outputs_as_sim_run(native_exe, tmp_path):
+    """The console path end to end, with the native CPU executor standing in for the
+    worker: a batch of sim.run calls, run by run, read back as sim.Results."""
+    from flymsg import console, native, sim
+
+    rng = np.random.default_rng(2)
+    W = sparse.random(80, 80, density=0.12, random_state=rng, format="csc")
+    W.data = rng.integers(-20, 80, W.data.size).astype(np.float32)
+    W, p = W.astype(np.float32), sim.Params()
+    specs = [([0, 3, 5], 300.0, 60.0, 30.0, 7), ([11], 300.0, 60.0, None, 8)]
+    runtimes = [console.sim_runtime(W, np.array(s[0]), *s[1:4], p, s[4]) for s in specs]
+    base, batch = tmp_path / "base.bin", tmp_path / "batch.bin"
+    native.export_batch(runtimes, base, batch)
+    outputs, fixtures = [], []
+    for k in range(len(specs)):
+        out, fixture = tmp_path / f"output_{k}.bin", tmp_path / f"fixture_{k}.bin"
+        subprocess.run(
+            [
+                str(native_exe),
+                "--fixture",
+                str(base),
+                "--batch",
+                str(batch),
+                "--run",
+                str(k),
+                "--output",
+                str(out),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        fixture.write_bytes(native.batch_fixture(base, batch, k).tobytes())
+        outputs.append(out)
+        fixtures.append(fixture)
+    results = console.as_results(outputs, fixtures, p.dt, [30.0, 60.0])
+    assert len(results) == 2 and len(results[0:2]) == 2
+    for s, r in zip(specs, results[:], strict=True):
+        expected = sim.run(W, np.array(s[0]), s[1], s[2], s[3], p, s[4])
+        assert np.array_equal(r.counts, expected.counts)
+        assert np.array_equal(r.first_spike_ms, expected.first_spike_ms, equal_nan=True)
+        assert r.bin_ms == expected.bin_ms and r.stim_ms == expected.stim_ms

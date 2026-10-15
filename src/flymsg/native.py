@@ -160,42 +160,44 @@ def export_batch(runtimes: list[CpuRuntime], base: Path, batch: Path) -> list[di
     differ from the base (stimulated rows, their threshold jumps and columns, the
     stimulus count and the input size) and then the run's own kicks. The patch rebuilds
     that run's fixture word for word, which is checked here before anything is written.
+    Runs are exported one at a time, so memory holds the base and one run, not all.
     """
     if not runtimes:
         raise ValueError("a batch needs at least one run")
-    words, metas = [], []
+    scratch = Path(batch).with_name(Path(batch).name + ".run")
+    metas, parts, first, cut = [], [], None, 0
     for k, rt in enumerate(runtimes):
-        path = base.with_name(f"{base.name}.run{k}")
-        metas.append(export_fixture(rt, path))
-        words.append(np.frombuffer(path.read_bytes(), dtype="<u4").copy())
-        path.unlink()
-    first = words[0]
-    if int(first[1]) != 1:
-        raise NativeCapabilityError("batches cover version-1 fixtures only")
-    cut = int(first[24])  # the kicks start here
-    out = [np.array([BATCH, 1, len(words), cut], dtype="<u4")]
-    for k, w in enumerate(words):
+        metas.append(export_fixture(rt, scratch))
+        w = np.frombuffer(scratch.read_bytes(), dtype="<u4")
+        if first is None:
+            if int(w[1]) != 1:
+                raise NativeCapabilityError("batches cover version-1 fixtures only")
+            first, cut = w.copy(), int(w[24])  # the kicks start at `cut`
+            parts.append(
+                np.array([BATCH, 1, len(runtimes), cut], dtype="<u4").tobytes()
+            )
         if int(w[1]) != 1 or int(w[24]) != cut:
             raise ValueError(f"run {k} does not share the base's network layout")
         changed = np.flatnonzero(w[:cut] != first[:cut]).astype("<u4")
         kicks = w[cut:]
         rebuilt = first[:cut].copy()
         rebuilt[changed] = w[changed]
-        if not np.array_equal(np.concatenate([rebuilt, kicks]), w):
+        if not (np.array_equal(rebuilt, w[:cut]) and kicks.size == w.size - cut):
             raise AssertionError(f"run {k} does not rebuild exactly")
         pairs = np.empty(2 * changed.size, dtype="<u4")
         pairs[0::2], pairs[1::2] = changed, w[changed]
-        out += [
-            np.array([changed.size], dtype="<u4"),
-            pairs,
-            np.array([kicks.size], dtype="<u4"),
-            kicks,
+        parts += [
+            np.array([changed.size], dtype="<u4").tobytes(),
+            pairs.tobytes(),
+            np.array([kicks.size], dtype="<u4").tobytes(),
+            kicks.tobytes(),
         ]
-    blob = b"".join(x.tobytes() for x in out)
-    if len(blob) > MAX_BYTES:
+        del w, rebuilt
+    scratch.unlink()
+    if sum(len(x) for x in parts) > MAX_BYTES:
         raise ValueError("batch exceeds the native memory cap")
     Path(base).write_bytes(first.tobytes())
-    Path(batch).write_bytes(blob)
+    Path(batch).write_bytes(b"".join(parts))
     return metas
 
 

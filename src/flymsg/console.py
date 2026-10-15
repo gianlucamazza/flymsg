@@ -150,9 +150,9 @@ def run_batch(
     seed: int,
     scope: str,
     timeout_s: float = 7200.0,
-) -> tuple[list[dict], list[Path], dict]:
-    """Run fresh runtimes of one network on the console: the decoded output of each run
-    (as `native.read_output`), the fixture it decodes against, and the job's result."""
+) -> tuple[list[Path], list[Path], dict]:
+    """Run fresh runtimes of one network on the console: each run's output file, the
+    fixture it decodes against (`native.read_output`), and the job's result."""
     job_id = str(uuid.uuid4())
     folder = out / job_id
     folder.mkdir(parents=True)
@@ -200,7 +200,7 @@ def run_batch(
         output, fixture = folder / f"output_{k}.bin", folder / f"fixture_{k}.bin"
         p.get(device.package, rel, f"output_{k}.bin", output)
         fixture.write_bytes(native.batch_fixture(base, batch, k).tobytes())
-        outputs.append(native.read_output(output, fixture))
+        outputs.append(output)
         fixtures.append(fixture)
     return outputs, fixtures, json.loads((folder / "result.json").read_text())
 
@@ -229,7 +229,7 @@ def sim_runs(
     dataset: str,
     seed: int,
     scope: str,
-) -> tuple[list[sim.Result], dict]:
+) -> tuple[Results, dict]:
     """`sim.run(W, stim, rate_hz, duration_ms, stim_ms, p, seed)` for each spec
     `(stim, rate_hz, duration_ms, stim_ms, seed)`, as one batch on the console. The runs
     must share a horizon; the results are `sim.run`'s, bit for bit."""
@@ -243,11 +243,32 @@ def sim_runs(
     return as_results(outputs, fixtures, p.dt, stim_ms), result
 
 
+class Results:
+    """Runs' outputs read as `sim.Result`s on demand: a whole-CNS run's counts are tens of
+    megabytes, so a batch is decoded one run, or one slice, at a time."""
+
+    def __init__(
+        self, outputs: list[Path], fixtures: list[Path], dt_ms: float, stim_ms
+    ):
+        self.outputs, self.fixtures, self.dt, self.stim_ms = (
+            outputs,
+            fixtures,
+            dt_ms,
+            stim_ms,
+        )
+
+    def __len__(self) -> int:
+        return len(self.outputs)
+
+    def __getitem__(self, k):
+        if isinstance(k, slice):
+            return [self[i] for i in range(*k.indices(len(self)))]
+        out = native.read_output(self.outputs[k], self.fixtures[k])
+        return native.as_result(out, self.fixtures[k], self.dt, self.stim_ms[k])
+
+
 def as_results(
-    outputs: list[dict], fixtures: list[Path], dt_ms: float, stim_ms: list[float]
-) -> list[sim.Result]:
-    """Decoded outputs as `sim.Result`s: counts per bin and first spikes."""
-    return [
-        native.as_result(out, fixture, dt_ms, s)
-        for out, fixture, s in zip(outputs, fixtures, stim_ms, strict=True)
-    ]
+    outputs: list[Path], fixtures: list[Path], dt_ms: float, stim_ms: list[float]
+) -> Results:
+    """The runs' outputs as `sim.Result`s, decoded on demand."""
+    return Results(outputs, fixtures, dt_ms, stim_ms)

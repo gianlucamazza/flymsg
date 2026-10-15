@@ -54,17 +54,19 @@ def run(out: Path, seeds: int) -> dict:
         scope="battery qualification, not a baseline result",
     )
     console_s = time.perf_counter() - start
-    start = time.perf_counter()
-    expected = [sim.run(W, spec[0], *spec[1:4], p, spec[4]) for spec in specs]
-    host_s = time.perf_counter() - start
-    mismatches = [
-        k
-        for k, (g, e) in enumerate(zip(got, expected, strict=True))
+    # one run at a time: a whole-CNS run's counts are tens of megabytes
+    host_s, mismatches = 0.0, []
+    for k, spec in enumerate(specs):
+        start = time.perf_counter()
+        e = sim.run(W, spec[0], *spec[1:4], p, spec[4])
+        host_s += time.perf_counter() - start
+        g = got[k]
         if not (
             np.array_equal(g.counts, e.counts)
             and np.array_equal(g.first_spike_ms, e.first_spike_ms, equal_nan=True)
-        )
-    ]
+        ):
+            mismatches.append(k)
+        del e, g
     report = {
         "schema": "flymsg.console_battery/v1",
         "date": time.strftime("%Y-%m-%d"),

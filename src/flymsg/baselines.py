@@ -132,8 +132,9 @@ def _job(job: tuple) -> list[dict]:
             seed=b["seed0"],
             scope=f"baselines graph {job}",
         )
+        # decoded case by case below: a whole-CNS run's counts are tens of megabytes
         for k, case in enumerate(cases):
-            computed[case] = results[k * len(seeds) : (k + 1) * len(seeds)]
+            computed[case] = slice(k * len(seeds), (k + 1) * len(seeds))
     rows = []
     for case in cases:
         stim, targets = sensitivity.case_inputs(case, neurons)
@@ -148,7 +149,7 @@ def _job(job: tuple) -> list[dict]:
             rate_hz=b["rate_hz"],
             stim_ms=b["stim_ms"],
             duration_ms=b["duration_ms"],
-            results=computed.get(case),
+            results=results[computed[case]] if case in computed else None,
         ):
             row.update(shuffle=shuffle, case=case)
             rows.append(row)
