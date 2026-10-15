@@ -1,0 +1,9 @@
+case,target,tail,rate_measured,null_q05,null_q50,null_q95,p,holds_measured,holds_share_null,latency_measured,latency_null_median,recruited_measured,recruited_null_median,persistent_measured,persistent_null_median,p_holm,specific
+looming escape,DNp01,upper,210.0,0.0,0.0,0.0,0.005,True,0.005025125628140704,4.9,112.80000000000001,1081.0,249.0,0.0,0.0,0.04,True
+looming escape,TTMn,upper,70.0,0.0,0.0,0.0,0.005,True,0.005025125628140704,17.1,55.0,1081.0,249.0,0.0,0.0,0.04,True
+giant fiber output,TTMn,upper,16.666666666666668,0.0,0.0,0.0,0.005,True,0.0,35.4,,2.0,2.0,0.0,0.0,0.04,True
+P1 courtship drive,pIP10,upper,106.66666666666667,0.0,0.0,0.0,0.005,True,0.005025125628140704,7.6000000000000005,102.05000000000001,1882.0,437.0,0.0,0.0,0.04,True
+P1 courtship drive,dPR1,upper,100.0,0.0,0.0,0.0,0.005,True,0.010050251256281407,10.0,152.0,1882.0,437.0,0.0,0.0,0.04,True
+pIP10 song pathway,dPR1,upper,90.0,0.0,0.0,0.0,0.005,True,0.0,12.9,,245.0,144.0,0.0,0.0,0.04,True
+sugar feeding,MN9,upper,30.0,0.0,0.0,0.0,0.005,True,0.0,40.5,,439.0,30.0,0.0,0.0,0.04,True
+bitter feeding,MN9,lower,0.0,0.0,0.0,0.0,1.0,False,0.0,,,117.0,32.0,0.0,0.0,1.0,False

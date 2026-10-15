@@ -380,6 +380,19 @@ Outputs: `results/convergence/v1.executions/be1ac274…/output/`.
 
 `flymsg baselines --run` writes every cell, the judgement and a report. With `--backend console`, each graph's battery runs as one batch on the console worker, bit for bit with the CPU (see [runtime](runtime.md)). `--backend hybrid` runs the CPU workers and the console together on one queue of graphs. The manifest records the backend.
 
+**Result of version 1 (2026-10-15, run at `894a77a` on the CPU, 6 workers, seeds 0–4, 200 graphs): every positive response is specific.**
+
+- **The run.** It was interrupted once and resumed from its checkpoint. One resume attempt with a different worker count was refused as another execution identity.
+- **Positive responses.** No shuffle reaches the measured rate in any of the seven, so p = 0.005, the floor, and Holm gives 0.04 ≤ 0.05.
+  - The shuffles' 95th percentile is 0 Hz for every target, against 210 Hz for DNp01 under looming, 70 Hz for TTMn, 16.7 Hz for TTMn under giant fiber output, 107 and 100 Hz for pIP10 and dPR1 under P1, 90 Hz for dPR1 under pIP10, and 30 Hz for MN9 under sugar.
+  - At most 2 of the 199 shuffles hold any response at the v4 floor.
+- **The bitter negative is not specific.** As the lock named in advance, both the measured wiring and the shuffles leave MN9 silent (p = 1).
+- **Reported.** The measured connectome recruits more neurons than its shuffles' median: 1,081 against 249 under looming, 1,882 against 437 under P1, and 439 against 30 under sugar. Under giant fiber output the count is 2 in both, so that pathway is direct.
+
+So every response the battery scores needs the measured partners, not only the out-weights and the in-degree multiset a degree-preserving shuffle keeps.
+
+Outputs: `results/baselines/v1.executions/f89ed1c3…/output/`.
+
 ## APL and the odor contrast at KC claws (#85)
 
 `validation/apl_claws.yaml` v1 was locked on 2026-10-15, before any run. It asks whether the model's APL equalises 3-octanol (OCT) and 4-methylcyclohexanol (MCH) at the Kenyon cells' input, as Prisco et al. 2021 measured (Figure 4B, Figure 4-figure supplement 1): with APL output intact the OCT/MCH contrast at KC claws is smaller than at PN boutons, and with it blocked the claw contrast rises to the boutons'.

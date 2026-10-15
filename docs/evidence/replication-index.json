@@ -1359,6 +1359,56 @@
    "verdict": "uninformative: no-go"
   },
   {
+   "command": "baselines --run",
+   "config": {
+    "baseline": {
+     "draws": 199,
+     "draws_why": "the smallest empirical p is 1/200 = 0.005, below Holm's first threshold for the eight responses at alpha 0.05 (0.05 / 8 = 0.00625), so a response can be called specific after the correction; with 99 draws (p >= 0.01) none could",
+     "family": "degree_preserving",
+     "method": "nulls.shuffle_degree_preserving: N1's permutation of post (configuration model; Maslov & Sneppen 2002, Newman 2003); neurons, signs, stimulus rows and target types unchanged",
+     "seeds_why": "disjoint from N1 (seed 0), the null families (draws 0-19) and song (3600-3698)",
+     "shuffle_seed0": 4000
+    },
+    "baselines_sha256": "bff97462896375970c2573fee37f1cca1a14c165033418691f743267d50c07f9",
+    "baselines_version": 1,
+    "battery": {
+     "duration_ms": 600.0,
+     "rate_hz": 100.0,
+     "seed0": 0,
+     "seeds": 5,
+     "stim_ms": 300.0
+    }
+   },
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": "f89ed1c350b97a63cb5bfa7c483f1837ad81d585bcea19742800f809674bb7f4",
+   "flymsg": "0.8.47",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/baselines.yaml",
+   "lock_sha256": "bff97462896375970c2573fee37f1cca1a14c165033418691f743267d50c07f9",
+   "lock_version": 1,
+   "other_results": null,
+   "outputs_sha256": {
+    "cells.csv": "1941f8c226dac2a51f5bd4d43faa44b3deef2d261afec7d68ebeb9c3d8f840cf",
+    "judged.csv": "94f43a1600160bfab088c96b057c6000354d84d3adacb9c5bf2fa7ef5d6c71f3",
+    "report.txt": "9532e94d446a5ac0585d90fd7ca31d0a2802044838e6f3a3f21110549e05dad9"
+   },
+   "python": "3.13.9",
+   "result": "results/baselines/v1.executions/f89ed1c350b97a63cb5bfa7c483f1837ad81d585bcea19742800f809674bb7f4/output",
+   "seeds": {
+    "seed0": 0,
+    "seeds": 5
+   },
+   "source_commit": "894a77a509f71e852256f7e1286713030373dab8",
+   "verdict": "specific: looming escape/DNp01, looming escape/TTMn, giant fiber output/TTMn, P1 courtship drive/pIP10, P1 courtship drive/dPR1, pIP10 song pathway/dPR1, sugar feeding/MN9; not specific: bitter feeding/MN9"
+  },
+  {
    "command": "apl-claws --run",
    "config": {
     "apl_claws_sha256": "4478289480e026c72cca984a892b8874c3016412a668889c75ba3f2ef9b0ec45",
