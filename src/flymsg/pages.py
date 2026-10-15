@@ -70,6 +70,11 @@ PAGES = (
     ("viz", "docs/viz.md", "3D view"),
     ("vee-qualification", "docs/vee-qualification.md", "VEE qualification"),
     ("observer-rendering", "docs/observer-rendering.md", "Observer rendering"),
+    (
+        "quest-rendering-diagnosis",
+        "docs/quest-rendering-diagnosis.md",
+        "Quest diagnosis",
+    ),
     ("adr-observer-rendering", "docs/adr-observer-rendering.md", "Rendering ADR"),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("approximations", "docs/approximations.md", "Approximations"),

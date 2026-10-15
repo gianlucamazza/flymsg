@@ -17,8 +17,8 @@ response neurons made the page faster but changed the observation. That is not
 an admissible resolution. Conservative page culling removed only about 4.2% of
 line indices in the recorded anatomical view and cannot alone establish a fix.
 
-The new [evidence summary](evidence/quest2-rendering-diagnosis-2026-10-15.json)
-and [raw archive](evidence/quest2-rendering-diagnosis-2026-10-15.zip) distinguish
+The new [evidence summary](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-rendering-diagnosis-2026-10-15.json)
+and [raw archive](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-rendering-diagnosis-2026-10-15.zip) distinguish
 the old mixed scene from the complete, unsimplified skeleton representation:
 
 - Frozen source `8a76f6a40ef5cb7527d66e54039216335657ce01`, clean at site build.
