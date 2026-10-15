@@ -1,0 +1,10 @@
+apl-claws v1 (issue #85): arms on (default) and off (every synapse from the 2 APL neurons removed); odors 3-octanol, 4-methylcyclohexanol (DoOR, 100 Hz at response 1) for 1000 ms; seeds 420, 421, 422, 423, 424; OCT/MCH contrast of KC depolarization per arm against ALPN spikes; pass if raises and restores hold on the seed medians
+  seed  claw_on_oct  kc_spiking_on_oct  bouton_oct  claw_on_mch  kc_spiking_on_mch  bouton_mch  claw_off_oct  kc_spiking_off_oct  claw_off_mch  kc_spiking_off_mch      c_on     c_off     c_pn  raises  restores
+   420    -0.697319           0.375738     52752.0    -0.967757           0.296506     48424.0      2.145648                 1.0      2.154199                 1.0 -0.162418 -0.001989 0.042777    True      True
+   421    -0.677116           0.371309     52570.0    -0.981275           0.304626     48375.0      2.143974                 1.0      2.158998                 1.0 -0.183406 -0.003492 0.041557    True      True
+   422    -0.691896           0.369341     52721.0    -0.984393           0.296506     48469.0      2.144431                 1.0      2.162059                 1.0 -0.174491 -0.004094 0.042020    True      True
+   423    -0.688068           0.364173     52648.0    -0.949049           0.303888     48417.0      2.144850                 1.0      2.155499                 1.0 -0.159415 -0.002476 0.041864    True      True
+   424    -0.706748           0.362451     52414.0    -0.965691           0.299705     48484.0      2.145574                 1.0      2.158261                 1.0 -0.154830 -0.002948 0.038950    True      True
+median    -0.691896           0.369341     52648.0    -0.967757           0.299705     48424.0      2.144850                 1.0      2.158261                 1.0 -0.162418 -0.002948 0.041864    True      True
+medians: c_on -0.1624, c_off -0.002948, c_pn 0.04186; raises True (5/5 seeds), restores True (5/5 seeds); c_on sign negative (reported, not scored); no-go True
+verdict: uninformative
