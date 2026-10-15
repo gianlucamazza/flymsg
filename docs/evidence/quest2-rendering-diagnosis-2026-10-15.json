@@ -1,0 +1,345 @@
+{
+  "schema": "flymsg.quest-rendering-diagnosis/v1",
+  "status": "unresolved-performance; not-qualified",
+  "decision": "No measured production shader optimization admitted. Current pipeline is not qualified for full-content Quest VR; no hardware impossibility claim.",
+  "full_skeleton_device": {
+    "model": "Quest 2",
+    "source": {
+      "commit": "8a76f6a40ef5cb7527d66e54039216335657ce01",
+      "dirty": false
+    },
+    "site_sha256": "c390982e63e59d538400a3f4f24cff86fb0ca393a9b0b8fe124ca39253912b06",
+    "viewer": {
+      "check": true,
+      "page_culling": false,
+      "representation": "skeleton"
+    },
+    "development": {
+      "adb_enabled": "1",
+      "adb_wifi_enabled": "0",
+      "stay_on_while_plugged_in": "0"
+    },
+    "overrides": {
+      "cpuLevel": "",
+      "foveation.level": "",
+      "gpuLevel": "",
+      "refreshRate": "",
+      "textureHeight": "",
+      "textureWidth": ""
+    }
+  },
+  "full_skeleton": {
+    "selected_neurons": 1128,
+    "represented_neurons": 1128,
+    "segments": 8258589,
+    "managed_geometry_cpu_bytes": 303051944,
+    "restoration_reference_identical": true,
+    "records": [
+      {
+        "size": 256,
+        "mode": "clear-readback",
+        "median_serialized_wall_ms": 1.0999999977648258,
+        "samples": 5,
+        "non_uniform_readback": false
+      },
+      {
+        "size": 256,
+        "mode": "full",
+        "median_serialized_wall_ms": 32,
+        "samples": 5,
+        "non_uniform_readback": true
+      },
+      {
+        "size": 256,
+        "mode": "raster-discard",
+        "median_serialized_wall_ms": 23.299999997019768,
+        "samples": 5,
+        "non_uniform_readback": false
+      },
+      {
+        "size": 256,
+        "mode": "raster-discard-minimal-line-vertex",
+        "median_serialized_wall_ms": 21.5,
+        "samples": 5,
+        "non_uniform_readback": false
+      },
+      {
+        "size": 256,
+        "mode": "full-repeat",
+        "median_serialized_wall_ms": 23.100000001490116,
+        "samples": 5,
+        "non_uniform_readback": true
+      },
+      {
+        "size": 512,
+        "mode": "clear-readback",
+        "median_serialized_wall_ms": 1.8999999985098839,
+        "samples": 5,
+        "non_uniform_readback": false
+      },
+      {
+        "size": 512,
+        "mode": "full",
+        "median_serialized_wall_ms": 51,
+        "samples": 5,
+        "non_uniform_readback": true
+      },
+      {
+        "size": 512,
+        "mode": "raster-discard",
+        "median_serialized_wall_ms": 17.699999999254942,
+        "samples": 5,
+        "non_uniform_readback": false
+      },
+      {
+        "size": 512,
+        "mode": "raster-discard-minimal-line-vertex",
+        "median_serialized_wall_ms": 32.400000002235174,
+        "samples": 5,
+        "non_uniform_readback": false
+      },
+      {
+        "size": 512,
+        "mode": "full-repeat",
+        "median_serialized_wall_ms": 51,
+        "samples": 5,
+        "non_uniform_readback": true
+      },
+      {
+        "size": 1024,
+        "mode": "clear-readback",
+        "median_serialized_wall_ms": 3.800000000745058,
+        "samples": 5,
+        "non_uniform_readback": false
+      },
+      {
+        "size": 1024,
+        "mode": "full",
+        "median_serialized_wall_ms": 66,
+        "samples": 5,
+        "non_uniform_readback": true
+      },
+      {
+        "size": 1024,
+        "mode": "raster-discard",
+        "median_serialized_wall_ms": 18.800000000745058,
+        "samples": 5,
+        "non_uniform_readback": false
+      },
+      {
+        "size": 1024,
+        "mode": "raster-discard-minimal-line-vertex",
+        "median_serialized_wall_ms": 34.100000001490116,
+        "samples": 5,
+        "non_uniform_readback": false
+      },
+      {
+        "size": 1024,
+        "mode": "full-repeat",
+        "median_serialized_wall_ms": 65.89999999850988,
+        "samples": 5,
+        "non_uniform_readback": true
+      }
+    ]
+  },
+  "metric": "CPU wall including submission, browser/driver IPC and complete RGBA8 readback. Zero MSAA, no desktop composer, single view. Not pure GPU time, frame cadence or immersive qualification.",
+  "exploratory_experiments": {
+    "mixed_components": [
+      {
+        "mode": "full",
+        "size": 512,
+        "median_serialized_wall_ms": 46.65000000037253,
+        "nonuniform": true,
+        "draws": {
+          "frame": 206,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        }
+      },
+      {
+        "mode": "lines",
+        "size": 512,
+        "median_serialized_wall_ms": 23.449999999254942,
+        "nonuniform": true,
+        "draws": {
+          "frame": 215,
+          "calls": 1,
+          "triangles": 0,
+          "points": 0,
+          "lines": 3429447
+        }
+      },
+      {
+        "mode": "surfaces",
+        "size": 512,
+        "median_serialized_wall_ms": 24.399999998509884,
+        "nonuniform": true,
+        "draws": {
+          "frame": 224,
+          "calls": 2,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 0
+        }
+      },
+      {
+        "mode": "lines-flat-fragment",
+        "size": 512,
+        "median_serialized_wall_ms": 33.95000000111759,
+        "nonuniform": true,
+        "draws": {
+          "frame": 233,
+          "calls": 1,
+          "triangles": 0,
+          "points": 0,
+          "lines": 3429447
+        }
+      },
+      {
+        "mode": "lines-minimal-vertex",
+        "size": 512,
+        "median_serialized_wall_ms": 29.299999998882413,
+        "nonuniform": true,
+        "draws": {
+          "frame": 242,
+          "calls": 1,
+          "triangles": 0,
+          "points": 0,
+          "lines": 3429447
+        }
+      },
+      {
+        "mode": "lines",
+        "size": 512,
+        "median_serialized_wall_ms": 27.75,
+        "nonuniform": true,
+        "draws": {
+          "frame": 251,
+          "calls": 1,
+          "triangles": 0,
+          "points": 0,
+          "lines": 3429447
+        }
+      },
+      {
+        "mode": "full",
+        "size": 512,
+        "median_serialized_wall_ms": 53.94999999925494,
+        "nonuniform": true,
+        "draws": {
+          "frame": 260,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        }
+      }
+    ],
+    "mixed_precomputed_appearance": [
+      {
+        "mode": "baseline",
+        "size": 512,
+        "median_serialized_wall_ms": 46.69999999925494,
+        "different": 0,
+        "maxDelta": 0
+      },
+      {
+        "mode": "candidate",
+        "size": 512,
+        "median_serialized_wall_ms": 47.25,
+        "different": 0,
+        "maxDelta": 0
+      },
+      {
+        "mode": "candidate",
+        "size": 512,
+        "median_serialized_wall_ms": 47.05000000074506,
+        "different": 0,
+        "maxDelta": 0
+      },
+      {
+        "mode": "baseline",
+        "size": 512,
+        "median_serialized_wall_ms": 46.30000000074506,
+        "different": 0,
+        "maxDelta": 0
+      }
+    ],
+    "full_skeleton_bayer_bitwise": [
+      {
+        "mode": "baseline",
+        "size": 512,
+        "median_serialized_wall_ms": 50.80000000074506,
+        "different": 0,
+        "maxDelta": 0,
+        "nonuniform": true
+      },
+      {
+        "mode": "candidate",
+        "size": 512,
+        "median_serialized_wall_ms": 50.69999999925494,
+        "different": 0,
+        "maxDelta": 0,
+        "nonuniform": true
+      },
+      {
+        "mode": "candidate",
+        "size": 512,
+        "median_serialized_wall_ms": 50.350000001490116,
+        "different": 0,
+        "maxDelta": 0,
+        "nonuniform": true
+      },
+      {
+        "mode": "baseline",
+        "size": 512,
+        "median_serialized_wall_ms": 50.899999998509884,
+        "different": 0,
+        "maxDelta": 0,
+        "nonuniform": true
+      },
+      {
+        "mode": "baseline",
+        "size": 1024,
+        "median_serialized_wall_ms": 66.85000000149012,
+        "different": 0,
+        "maxDelta": 0,
+        "nonuniform": true
+      },
+      {
+        "mode": "candidate",
+        "size": 1024,
+        "median_serialized_wall_ms": 67.44999999925494,
+        "different": 0,
+        "maxDelta": 0,
+        "nonuniform": true
+      },
+      {
+        "mode": "candidate",
+        "size": 1024,
+        "median_serialized_wall_ms": 67.5,
+        "different": 0,
+        "maxDelta": 0,
+        "nonuniform": true
+      },
+      {
+        "mode": "baseline",
+        "size": 1024,
+        "median_serialized_wall_ms": 67.70000000111759,
+        "different": 0,
+        "maxDelta": 0,
+        "nonuniform": true
+      }
+    ]
+  },
+  "limits": [
+    "Exploratory trials; not preregistered confirmatory performance tests.",
+    "Original mixed scene remains diagnostic only; component and appearance trials used that retained loaded scene, not full anatomical fidelity.",
+    "Thermal, GPU clock and cache drift are not excluded across variants.",
+    "Shader equivalence experiments use one fixed replay time and camera; they are not general fidelity certification.",
+    "No active XR session or motion tests in this run. No compositor drop counts or GPU stage timers.",
+    "No device clocks, refresh, resolution, foveation, proximity or safety overrides were applied."
+  ]
+}
