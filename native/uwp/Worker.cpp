@@ -2,6 +2,7 @@
 // application class only activates the window and starts the job loop.
 #include "../dx12.h"
 #include "App.h"
+#include "App.g.cpp"
 #include <atomic>
 #include <bcrypt.h>
 #include <chrono>
