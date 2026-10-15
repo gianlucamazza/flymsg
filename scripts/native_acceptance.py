@@ -199,8 +199,14 @@ def check(oracle: CpuRuntime, actual: dict) -> None:
     expected = oracle.snapshot()
     if actual["step"] != oracle.step:
         raise AssertionError("wrong cursor")
-    for name in ("v", "g", "th", "ref_until", "counts", "first", "traced"):
+    for name in ("v", "g", "th", "ref_until", "counts", "first"):
         np.testing.assert_array_equal(actual[name], expected[name], err_msg=name)
+    # the runtime keeps one placeholder column when nothing is traced; compare the
+    # traced neurons only
+    width = oracle.traced_spikes(0, 0).shape[1]
+    np.testing.assert_array_equal(
+        actual["traced"], expected["traced"][:, :width], err_msg="traced"
+    )
     ring_mask = np.zeros_like(actual["ring_mask"])
     for slot, length in enumerate(expected["ring_len"]):
         ring_mask[slot, expected["ring"][slot, :length]] = 1

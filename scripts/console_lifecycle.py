@@ -62,15 +62,29 @@ def oracle() -> CpuRuntime:
 
 
 class Job:
-    def __init__(self, portal: Portal, package: str, shader_sha: str, out: Path):
+    """One dx12 job on the console: its fixture, oracle, upload, status and output."""
+
+    def __init__(
+        self,
+        portal: Portal,
+        package: str,
+        shader_sha: str,
+        out: Path,
+        rt: CpuRuntime | None = None,
+        *,
+        dataset: str = "synthetic",
+        seed: int = SEED,
+        scope: str = "lifecycle qualification fixture, not biological validation",
+    ):
         self.portal, self.package = portal, package
         self.id = str(uuid.uuid4())
         self.folder = out / self.id
         self.folder.mkdir(parents=True)
         self.rel = f"inbox\\{self.id}"
-        self.rt = oracle()
+        self.rt = oracle() if rt is None else rt
         fixture = self.folder / "fixture.bin"
         meta = export_fixture(self.rt, fixture)
+        self.steps = int(meta["steps"])
         self.fixture = fixture
         self.job = {
             "schema": "flymsg.neural_job/v1",
@@ -80,11 +94,11 @@ class Job:
             "fixture_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
             "shader_sha256": shader_sha,
             "expected_adapter": ADAPTER,
-            "dataset": "synthetic",
-            "seed": SEED,
+            "dataset": dataset,
+            "seed": seed,
             "neural_tick_us": 100,
             "fixture": meta,
-            "scope": "lifecycle qualification fixture, not biological validation",
+            "scope": scope,
         }
 
     def control(self, name: str, schema: str) -> None:
@@ -129,7 +143,7 @@ class Job:
         self.portal.get(
             self.package, self.rel, "output.bin", self.folder / "output.bin"
         )
-        self.rt.advance_to(STEPS)
+        self.rt.advance_to(self.steps)
         try:
             check(self.rt, read_output(self.folder / "output.bin", self.fixture))
             return True

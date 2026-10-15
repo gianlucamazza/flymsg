@@ -1,7 +1,11 @@
 // ordered-f32-double-kicks: requires hardware double precision shader ops.
 ByteAddressBuffer input : register(t0);
 RWByteAddressBuffer state : register(u0);
-cbuffer Tick : register(b0) { uint tick; uint phase; }
+// outgoing synapses (n + 1 offsets, then incoming-CSR positions) and the delivery
+// bitset (one slot of `words` per delay-ring slot, a bit per incoming synapse)
+ByteAddressBuffer outs : register(t1);
+RWByteAddressBuffer active : register(u1);
+cbuffer Tick : register(b0) { uint tick; uint phase; uint words; }
 uint h(uint slot) { return input.Load(slot * 4); }
 uint inp(uint slot, uint i) { return input.Load((h(slot) + i) * 4); }
 uint word(uint slot, uint i) { return state.Load((h(slot) + i) * 4); }
@@ -26,9 +30,19 @@ void CSMain(uint3 thread : SV_DispatchThreadID) {
         precise float threshold=c(14)+val(27,i);
         put(33,i,val(25,i)>threshold && inp(20,i)==0 ? 1:0);
     } else if(phase==2) {
+        // the set bits of this neuron's synapses, ascending q: the pull loop's sum
         precise float delivered=0;
-        for(uint q=inp(16,i);q<inp(16,i+1);++q)
-            if(word(29,(tick%h(5))*n+inp(17,q))!=0) delivered=delivered+asfloat(inp(18,q));
+        uint q0=inp(16,i),q1=inp(16,i+1),base=(tick%h(5))*words;
+        for(uint w=q0>>5;q0<q1 && w<=((q1-1)>>5);++w) {
+            uint lo=w==(q0>>5)?(q0&31):0,hi=w==((q1-1)>>5)?((q1-1)&31):31;
+            uint mask=(hi==31?0xffffffffu:((1u<<(hi+1))-1u))&~((1u<<lo)-1u);
+            uint bits=active.Load((base+w)*4)&mask;
+            if(bits!=0) {
+                for(uint m=bits;m!=0;m&=m-1)
+                    delivered=delivered+asfloat(inp(18,(w<<5)+firstbitlow(m)));
+                uint prior;active.InterlockedAnd((base+w)*4,~bits,prior);
+            }
+        }
         if(word(28,i)<=tick) {precise float g=val(26,i)+delivered;putf(26,i,g);}
         int col=asint(inp(23,i));
         if(col>=0) {
@@ -48,6 +62,11 @@ void CSMain(uint3 thread : SV_DispatchThreadID) {
             uint at=(tick/h(4))*n+i;put(30,at,word(30,at)+1);
             if(asint(word(31,i))<0)put(31,i,tick);
             int col=asint(inp(22,i));if(col>=0)put(32,tick*h(8)+(uint)col,1);
+            uint base=(tick%h(5))*words,prior;
+            for(uint k=outs.Load(i*4);k<outs.Load((i+1)*4);++k) {
+                uint q=outs.Load(k*4);
+                active.InterlockedOr((base+(q>>5))*4,1u<<(q&31),prior);
+            }
         }
         put(29,(tick%h(5))*n+i,emitted);
     }

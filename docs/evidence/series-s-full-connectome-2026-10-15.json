@@ -1,0 +1,80 @@
+{
+  "adapter": "SraKmd_arden",
+  "date": "2026-10-15",
+  "event_driven_delivery": {
+    "app_memory_bytes": 248152064,
+    "gpu_parity_v1_fixtures": "12 of 12",
+    "lifecycle": {
+      "cancel": true,
+      "fixture": {
+        "inputs": 2,
+        "neurons": 2048,
+        "seed": 40,
+        "steps": 1000000,
+        "synthetic": true
+      },
+      "parity": true,
+      "steps_per_s": 69866.80438077079,
+      "stop_and_resume": true
+    },
+    "package_lineage": {
+      "ci_note": "native-runtime workflow on PR #202",
+      "ci_run": 38774209758,
+      "signed_msix_sha256": "135b5b42de0877772e5fbbba3479597bf9b1d1d25dfb63b244af2a81289ab0a4",
+      "signing": "repacked and signed with the development certificate (CN=uwp-crossbuild-dev); the unpacked payloads of the unsigned and signed packages are identical",
+      "unsigned_msix_sha256": "45c96a66e3886e1414b00ecb3cea834fc93d366b2ae59e2aebca13145f76e2eb",
+      "worker_source_commit": "6fb0e0a802e56e7f1cce2d6ba77ae21c3773d4ce"
+    },
+    "parity": true,
+    "shader_sha256": "2e84e0b51697d9d9a62d74f9105f33db468729b1fa91b93090dfdc10455fab19",
+    "steps_per_s": 1630.2145942191814
+  },
+  "fixture": {
+    "bytes": 201160724,
+    "dataset": "MaleCNS v1.0, default model",
+    "neurons": 165122,
+    "state_bytes": 29061472,
+    "steps": 2000,
+    "stimulus": "looming escape at 100 Hz, seed 500",
+    "synapses": 24539704
+  },
+  "host": {
+    "load_average_runs": [
+      [
+        8.24658203125,
+        10.58837890625,
+        15.16162109375
+      ],
+      [
+        20.53173828125,
+        19.6376953125,
+        16.142578125
+      ]
+    ],
+    "native_cpu_steps_per_s": 9.550417931521125,
+    "note": "the host was running a 6-worker simulation during both runs; its baselines are lower bounds",
+    "python_steps_per_s_runs": [
+      1129.5091503882497,
+      853.4062341657686
+    ]
+  },
+  "platform": "Xbox Series S, Dev Mode",
+  "pull_delivery": {
+    "app_memory_bytes": 248537088,
+    "package_lineage": {
+      "ci_note": "native-runtime workflow on PR #197",
+      "ci_run": 38731029702,
+      "signed_msix_sha256": "a52759323ebccb697d6644cee2d4013a1f3d783d7a09c0452d3d8e3b097bc9e7",
+      "signing": "repacked and signed with the development certificate (CN=uwp-crossbuild-dev); the unpacked payloads of the unsigned and signed packages are identical",
+      "unsigned_msix_sha256": "17e8365601b15293744ab83a5878c57b1a00b3fe7996519599d7df52743a8c1c",
+      "worker_source_commit": "b9969e632ae62ff84e2c78c06ef659137723b407"
+    },
+    "parity": true,
+    "parity_note": "the run report said false: native_acceptance.check compared the runtime placeholder traced column (nothing traced); with the corrected comparator every state array matches, as does the native CPU executor",
+    "shader_sha256": "6926c4ab469f4a4efcc3bb676a8db2ed8fc679c1fb0816833804330e576e6b99",
+    "steps_per_s": 28.361691511516682
+  },
+  "schema": "flymsg.console_bench/v1",
+  "scope": "one stimulus, 2,000 steps; throughput of the version-1 lane only, not biological validation",
+  "script": "scripts/console_bench.py"
+}

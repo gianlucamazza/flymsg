@@ -4,6 +4,17 @@
 
 ### Result
 
+- **Full connectome on the Series S** (#40, #202): the MaleCNS default model (165,122 neurons,
+  24.5 million synapses) runs on the console bit for bit with the CPU oracle
+  (`docs/evidence/series-s-full-connectome-2026-10-15.json`, `scripts/console_bench.py`).
+  - Event-driven delivery raises its throughput from 28 to about 1,630 steps/s. Inputs move to
+    a default heap, spiking neurons set delivery bits, and targets sum their set bits in the
+    pull loop's order.
+  - The 2,048-neuron fixture rises from about 44,000 to about 70,000 steps/s.
+  - Parity holds on the 12 version-1 fixtures, and cancel, suspension and resume pass.
+  - `native_acceptance.check` now compares only the traced neurons, not the runtime's
+    placeholder column.
+
 - **APL claw contrast v1** (#85): uninformative, the no-go.
   - **APL intact.** The KCs' mean potential sits below rest for both odors (−0.69 and −0.97
     mV), with 30–37% of KCs spiking, so the claws have no positive depolarization to contrast.

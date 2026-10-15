@@ -195,3 +195,22 @@ def test_the_console_lifecycle_fixture_is_version_one_and_long(tmp_path):
     # at least 20 s of advance at the 44k steps/s measured on the console, so a cancel
     # or stop sent after a 1 s status poll lands mid-run
     assert module.STEPS >= 20 * 44_000
+
+
+def test_the_console_bench_drives_a_battery_case():
+    import importlib.util
+    import sys
+
+    from flymsg import sensitivity
+
+    scripts = Path(__file__).resolve().parents[1] / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "console_bench", scripts / "console_bench.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.remove(str(scripts))
+    assert module.CASE in sensitivity.load()["cases"]["positive"]

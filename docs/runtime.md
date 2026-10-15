@@ -114,6 +114,13 @@ R0 is implemented here. Native implementation is tracked in [#39](https://github
 - a cancel ends the job in `cancelled`;
 - a Device Portal stop suspends the app with a checkpoint, and after a restart and a resume the job completes bit for bit with the CPU oracle.
 
-Full-connectome throughput, a GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
+The full MaleCNS default model (165,122 neurons, 24.5 million synapses; looming stimulus, 2,000 steps; `scripts/console_bench.py`, evidence `docs/evidence/series-s-full-connectome-2026-10-15.json`) runs on the console bit for bit with the CPU oracle.
+
+- **Pull delivery.** With the original kernel, which pulls every incoming synapse every tick from an upload heap, the console ran at 28 steps/s.
+- **Event-driven delivery** (#202) runs at about 1,630 steps/s. Inputs are copied once to a default heap. A spiking neuron sets the bit of each outgoing synapse, and a target sums its set bits in ascending order, the pull loop's float sequence, so the result is unchanged.
+- **The host's Python oracle** ran at 850–1,130 steps/s, measured while the host was busy.
+- **The 2,048-neuron lifecycle fixture** rises from about 44,000 to about 70,000 steps/s.
+
+A GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
 
 Run `uv run pytest tests/test_runtime.py tests/test_core.py tests/test_embodiment.py`. Existing CI also checks all synthetic regressions, documentation links, formatting and browser modules.

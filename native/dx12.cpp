@@ -54,6 +54,39 @@ void transition(ID3D12GraphicsCommandList *list, ID3D12Resource *resource,
   b.Transition = {resource, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, from, to};
   list->ResourceBarrier(1, &b);
 }
+// Outgoing synapses of every neuron as one word array: n + 1 offsets, then the
+// incoming-CSR positions q of each neuron's synapses, ascending.
+std::vector<uint32_t> outgoing_synapses(const Runtime &runtime) {
+  const auto &in = runtime.input;
+  const uint32_t n = in[2];
+  const uint32_t ptr = in[16], pre = in[17];
+  const uint32_t nnz = in[ptr + n];
+  std::vector<uint32_t> out(n + 1 + nnz, 0);
+  for (uint32_t q = 0; q < nnz; ++q)
+    ++out[in[pre + q] + 1];
+  for (uint32_t i = 0; i < n; ++i)
+    out[i + 1] += out[i];
+  std::vector<uint32_t> fill(out.begin(), out.begin() + n);
+  for (uint32_t q = 0; q < nnz; ++q)
+    out[n + 1 + fill[in[pre + q]]++] = q;
+  for (uint32_t i = 0; i <= n; ++i)
+    out[i] += n + 1; // offsets into the same array
+  return out;
+}
+// The delivery bitset of the current delay ring (fixture or checkpoint): one
+// slot per ring slot, a bit per incoming synapse whose source spiked there.
+std::vector<uint32_t> bitset(const Runtime &runtime,
+                             const std::vector<uint32_t> &out, uint64_t words) {
+  const auto &in = runtime.input;
+  const uint32_t n = in[2], d = in[5], ring = in[29];
+  std::vector<uint32_t> bits(size_t(d) * words, 0);
+  for (uint32_t slot = 0; slot < d; ++slot)
+    for (uint32_t i = 0; i < n; ++i)
+      if (runtime.state[ring + size_t(slot) * n + i] != 0)
+        for (uint32_t k = out[i]; k < out[i + 1]; ++k)
+          bits[slot * words + out[k] / 32] |= 1u << (out[k] % 32);
+  return bits;
+}
 } // namespace
 void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
                  const std::function<bool(uint32_t)> &stop,
@@ -66,7 +99,8 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
           "BLOCKED: graded and electrical synapses are not in the GPU lane");
   if (target == runtime.step)
     return;
-  const auto groups = (uint64_t(runtime.input[2]) + 63) / 64;
+  const uint32_t n = runtime.input[2];
+  const auto groups = (uint64_t(n) + 63) / 64;
   require(groups <= 65535, "GPU fixture exceeds dispatch limit");
   ComPtr<IDXGIFactory4> factory;
   check(CreateDXGIFactory1(IID_PPV_ARGS(&factory)), "DXGI factory");
@@ -110,15 +144,19 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   check(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)),
         "fence");
   Event event;
-  D3D12_ROOT_PARAMETER parameters[3]{};
+  D3D12_ROOT_PARAMETER parameters[5]{};
   parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-  parameters[0].Constants = {0, 0, 2};
+  parameters[0].Constants = {0, 0, 3};
   parameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
   parameters[1].Descriptor = {0, 0};
   parameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
   parameters[2].Descriptor = {0, 0};
+  parameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+  parameters[3].Descriptor = {1, 0};
+  parameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
+  parameters[4].Descriptor = {1, 0};
   D3D12_ROOT_SIGNATURE_DESC root_desc{};
-  root_desc.NumParameters = 3;
+  root_desc.NumParameters = 5;
   root_desc.pParameters = parameters;
   ComPtr<ID3DBlob> signature, error;
   check(D3D12SerializeRootSignature(&root_desc, D3D_ROOT_SIGNATURE_VERSION_1,
@@ -141,16 +179,42 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
                                            IID_PPV_ARGS(&pipeline)),
         "pipeline");
   const auto bytes = runtime.state.size() * 4;
-  auto inputs =
+  // Event-driven delivery, exact: a spiking neuron sets the bit of each of its
+  // outgoing synapses (by position q in the target's incoming CSR) in the slot
+  // of its delay ring; a target sums the weights of its set bits in ascending
+  // q, the order and float sequence of the pull loop, and clears only its own
+  // bits.
+  const auto words = (uint64_t(runtime.input[runtime.input[16] + n]) + 31) / 32;
+  require(uint64_t(runtime.input[5]) * words * 4 <= max_bytes,
+          "delivery bitset exceeds the native buffer budget");
+  const auto outgoing = outgoing_synapses(runtime);
+  const auto active_words = bitset(runtime, outgoing, words);
+  // Inputs live in a default heap: an upload heap is read uncached every tick.
+  auto inputs_upload =
       buffer(device.Get(), runtime.input.size() * 4, D3D12_HEAP_TYPE_UPLOAD,
              D3D12_RESOURCE_STATE_GENERIC_READ);
+  auto inputs = buffer(device.Get(), runtime.input.size() * 4,
+                       D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_DEST);
+  auto outs_upload =
+      buffer(device.Get(), outgoing.size() * 4, D3D12_HEAP_TYPE_UPLOAD,
+             D3D12_RESOURCE_STATE_GENERIC_READ);
+  auto outs = buffer(device.Get(), outgoing.size() * 4, D3D12_HEAP_TYPE_DEFAULT,
+                     D3D12_RESOURCE_STATE_COPY_DEST);
+  auto active_upload =
+      buffer(device.Get(), active_words.size() * 4, D3D12_HEAP_TYPE_UPLOAD,
+             D3D12_RESOURCE_STATE_GENERIC_READ);
+  auto active =
+      buffer(device.Get(), active_words.size() * 4, D3D12_HEAP_TYPE_DEFAULT,
+             D3D12_RESOURCE_STATE_COPY_DEST, true);
   auto initial = buffer(device.Get(), bytes, D3D12_HEAP_TYPE_UPLOAD,
                         D3D12_RESOURCE_STATE_GENERIC_READ);
   auto state = buffer(device.Get(), bytes, D3D12_HEAP_TYPE_DEFAULT,
                       D3D12_RESOURCE_STATE_COPY_DEST, true);
   auto readback = buffer(device.Get(), bytes, D3D12_HEAP_TYPE_READBACK,
                          D3D12_RESOURCE_STATE_COPY_DEST);
-  upload(inputs.Get(), runtime.input);
+  upload(inputs_upload.Get(), runtime.input);
+  upload(outs_upload.Get(), outgoing);
+  upload(active_upload.Get(), active_words);
   upload(initial.Get(), runtime.state);
   uint64_t serial = 0;
   bool in_flight = false;
@@ -179,20 +243,35 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
     list->CopyBufferRegion(state.Get(), 0, initial.Get(), 0, bytes);
     transition(list.Get(), state.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
                D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    list->CopyBufferRegion(inputs.Get(), 0, inputs_upload.Get(), 0,
+                           runtime.input.size() * 4);
+    transition(list.Get(), inputs.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
+               D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    list->CopyBufferRegion(outs.Get(), 0, outs_upload.Get(), 0,
+                           outgoing.size() * 4);
+    transition(list.Get(), outs.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
+               D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    list->CopyBufferRegion(active.Get(), 0, active_upload.Get(), 0,
+                           active_words.size() * 4);
+    transition(list.Get(), active.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
+               D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     for (uint32_t tick = runtime.step; tick < target;) {
       const auto end = std::min(target, tick + 64);
       list->SetComputeRootSignature(root.Get());
       list->SetPipelineState(pipeline.Get());
       list->SetComputeRootShaderResourceView(1, inputs->GetGPUVirtualAddress());
       list->SetComputeRootUnorderedAccessView(2, state->GetGPUVirtualAddress());
+      list->SetComputeRootShaderResourceView(3, outs->GetGPUVirtualAddress());
+      list->SetComputeRootUnorderedAccessView(4,
+                                              active->GetGPUVirtualAddress());
       for (; tick < end; ++tick)
         for (uint32_t phase = 0; phase < 4; ++phase) {
-          const uint32_t constants[] = {tick, phase};
-          list->SetComputeRoot32BitConstants(0, 2, constants, 0);
+          const uint32_t constants[] = {tick, phase, uint32_t(words)};
+          list->SetComputeRoot32BitConstants(0, 3, constants, 0);
           list->Dispatch(UINT(groups), 1, 1);
           D3D12_RESOURCE_BARRIER barrier{};
           barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-          barrier.UAV.pResource = state.Get();
+          barrier.UAV.pResource = nullptr; // state and the delivery bitset
           list->ResourceBarrier(1, &barrier);
         }
       submit();
@@ -217,6 +296,11 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
     // forever.
     if (in_flight) {
       inputs.Detach();
+      inputs_upload.Detach();
+      outs.Detach();
+      outs_upload.Detach();
+      active.Detach();
+      active_upload.Detach();
       initial.Detach();
       state.Detach();
       readback.Detach();
