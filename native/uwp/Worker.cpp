@@ -2,8 +2,11 @@
 // loop runs on its own thread and publishes a telemetry copy; the dashboard
 // reads that copy on a UI timer and never touches a job's state.
 #include "../dx12.h"
-#include "App.g.cpp"
 #include "App.h"
+// the generated implementation needs App.h first; kept apart so include
+// sorting cannot reorder it
+#include "App.g.cpp"
+
 #include <atomic>
 #include <bcrypt.h>
 #include <chrono>
@@ -23,6 +26,7 @@
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.UI.Xaml.Shapes.h>
 #include <winrt/Windows.UI.h>
