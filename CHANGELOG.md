@@ -5,8 +5,9 @@
 ### Result
 
 - **T4/T5 v4** (#140): robust neither. The dark anchor settles, and a 16-fold lamina → medulla
-  gain brings the graded medulla to about ±10 mV, the order of the measured swings, but T4
-  fires without the preferred polarity or direction (indices −0.15 to 0.18) and T5 is neither
+  gain at an LMC rate of 200 Hz brings the graded medulla to about ±10 mV, the order of the
+  measured swings, but where T4 fires in thousands it lacks the preferred polarity and
+  direction (indices −0.15 to 0.18) and T5 is neither
   in all 12 configurations (`results/t4t5/v4.executions/7a550844…/output/`).
 - **Looming → giant fiber timing v1** (#34, G3): uninformative, the no-go. In all 15 gain cells
   and 300 runs the model's giant fiber fires, so no cell stays graded like the recordings and

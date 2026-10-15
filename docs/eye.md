@@ -180,18 +180,21 @@ four T4 subtypes; the Gruntman et al. recordings stay held out. The membrane is 
 at high gain the anchored dark potentials lie far from rest; only potentials relative to the
 anchor carry meaning. Not run when locked.
 
-**Result of version 4 (2026-10-15): robust: neither.** Run from `111e3c5`, the lock commit,
-seed 98, 96 simulations in one attempt (18.3 h). The dark anchor settles: after six passes the
-median change per neuron is below 0.5 mV in 52 of the 60 type and configuration cells and at
+**Result of version 4 (2026-10-15): robust: neither.** Run from `111e3c5` (the lock
+is `8d0660b`, unchanged since), seed 98, 96 simulations in one attempt (18.9 h). The dark anchor settles: after six passes the
+median change per type is below 0.5 mV in 52 of the 60 type and configuration cells and at
 most 2.0 mV. The lamina → medulla gain carries the edge into the medulla: the swings around the
 anchor grow from at most 0.6 mV at gain 1 and 2.1 mV at gain 4 to about ±10 mV at gain 16
-(Tm3 +10.2/−9.9, Mi1 +7.6/−6.7, C3 +6.6/−6.5, Mi9 ±5; Mi4 at most 0.6), the order of the
-measured 12–28 mV, but each type swings about as far each way, and at gain 16 the anchored dark
-potentials lie up to 113 mV from rest (the current-based membrane's limit the lock names). T4
+with an LMC rate of 200 Hz (Tm3 +10.2/−9.9, Mi1 +7.6/−6.8, C3 +6.6/−7.7, Mi9 ±5; Mi4 at most
+0.6; with LMC 50 Hz at most 2.0 mV), the order of the
+measured 12–28 mV, but each type swings about as far each way, and at gain 16 with LMC 200 Hz the
+anchored dark potentials lie up to 113 mV from rest (the current-based membrane's limit the lock names). T4
 fires only at a medulla release rate of 200 Hz: a few tens of spikes at gains 1 and 4
-(configurations 3 and 5, too few for an index), thousands at gain 4 with LMC 200 Hz and at gain
+(configurations 3 and 5, single-digit counts per subtype whose indices of 1.0 mean
+nothing), thousands at gain 4 with LMC 200 Hz and at gain
 16 (configurations 7, 9 and 11, up to about 350,000 spikes), where the other polarity fires more
 than the preferred one and the direction selectivity indices lie between −0.15 and 0.18. T5 is
 `neither` in all 12. A larger lamina → medulla step therefore brings the medulla to measured
 amplitudes but not T4 to selectivity: the edge reaches T4 without the ON/OFF split or the
-direction the recordings show. Outputs: `results/t4t5/v4.executions/7a550844…/output/`.
+direction the recordings show (by the lock's criterion; T4a and T4d point the measured way in
+some of these configurations). Outputs: `results/t4t5/v4.executions/7a550844…/output/`.
