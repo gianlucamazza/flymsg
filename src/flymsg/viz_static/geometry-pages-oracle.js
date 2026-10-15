@@ -108,6 +108,7 @@ export async function geometryPageOracle(THREE) {
         ]),
       );
       lines.material = material;
+      lines.isMultiDrawLineSegments = false;
       geometry.clearGroups();
       geometry.setDrawRange(0, Infinity);
       geometry.setIndex(new THREE.BufferAttribute(original, 1));
@@ -130,11 +131,21 @@ export async function geometryPageOracle(THREE) {
         192,
         128,
       );
-      const plan = residency.plan(eyes, () => true, visibleLinePages);
+      const native =
+        THREE.FLYMSG_LINE_RANGES === 1 &&
+        renderer.extensions.has("WEBGL_multi_draw");
+      const plan = residency.plan(eyes, () => true, visibleLinePages, native);
       if (plan.fallback) throw new Error("Unexpected resident oracle fallback");
       geometry.setIndex(residentAttribute);
       geometry.clearGroups();
-      for (const r of plan.ranges) geometry.addGroup(r.start, r.count, 0);
+      lines.isMultiDrawLineSegments = !!plan.native;
+      if (plan.native) {
+        lines.lineStarts = residency.drawStarts;
+        lines.lineCounts = residency.drawCounts;
+        lines.lineDrawCount = plan.rangeCount;
+        if (plan.rangeCount) geometry.addGroup(0, original.length, 0);
+      } else
+        for (const r of plan.ranges) geometry.addGroup(r.start, r.count, 0);
       lines.material = [material];
       const resident = capturePasses(
         THREE,
@@ -187,7 +198,11 @@ export async function geometryPageOracle(THREE) {
         source_edges: original.length / 2,
         submitted_edges: selected.edges,
         resident_submitted_edges: plan.submittedIndices / 2,
-        resident_draws: plan.ranges.length,
+        resident_backend: plan.native ? "multi-draw" : "groups",
+        resident_draws: plan.native
+          ? Number(plan.rangeCount > 0)
+          : plan.ranges.length,
+        resident_ranges: plan.native ? plan.rangeCount : plan.ranges.length,
         checks,
       });
     }

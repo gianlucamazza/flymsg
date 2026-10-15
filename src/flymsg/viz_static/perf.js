@@ -37,9 +37,9 @@ export class Perf {
     this.frame = { calls: 0, triangles: 0, lines: 0 };
   }
 
-  begin() {
+  begin(cpuStart = performance.now()) {
     this.renderer.info.reset();
-    this.cpuStart = performance.now();
+    this.cpuStart = cpuStart;
     if (this.timer && !this.query) {
       this.query = this.gl.createQuery();
       this.gl.beginQuery(this.timer.TIME_ELAPSED_EXT, this.query);

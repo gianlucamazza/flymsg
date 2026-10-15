@@ -1,5 +1,21 @@
 // Camera adapters are shared by live culling and diagnostic reference captures.
 // THREE is injected so tests use the pinned vendor without a browser import map.
+export function sameEyePlanes(previous, current) {
+  if (previous === null || current === null) return previous === current;
+  return (
+    previous?.length === current.length &&
+    previous.every(
+      (eye, i) =>
+        eye.length === current[i].length &&
+        eye.every(
+          (plane, p) =>
+            plane.length === current[i][p].length &&
+            plane.every((v, j) => v === current[i][p][j]),
+        ),
+    )
+  );
+}
+
 export function localEyePlanes(THREE, dataWorld, cameras) {
   if (!cameras.length) return null; // no pose yet: retain all geometry conservatively
   return cameras.map(({ projection, inverseWorld, width, height }) => {

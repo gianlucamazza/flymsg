@@ -42,7 +42,7 @@ try {
       {
         options,
         hashes,
-        rule: "Require full-source colour/ID/depth parity, identical moving colour output, zero resident steady-state index uploads, bounded draws. Compare compact/resident/resident/compact selection and serialized wall times per view. Reject >10% dense-view wall regression; timing remains diagnostic, not XR qualification.",
+      rule: "Require full-source colour/ID/depth parity, identical moving colour output, zero resident steady-state index uploads and bounded ranges. Compare compact/resident/resident/compact selection and serialized wall times per view. Reject >10% dense or close-static wall regression; timing remains diagnostic, not XR qualification.",
       },
       null,
       2,
@@ -101,8 +101,10 @@ try {
     ) + "\n",
     { flag: "wx" },
   );
-  const median = (xs) =>
-    [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+  const median = (xs) => {
+    const sorted = [...xs].sort((a, b) => a - b), middle = Math.floor(xs.length / 2);
+    return xs.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+  };
   console.log(
     JSON.stringify(
       result.records.map((r) => ({

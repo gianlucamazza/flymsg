@@ -3,6 +3,19 @@ import { test } from "node:test";
 
 import { Perf, percentile } from "../../src/flymsg/viz_static/perf.js";
 
+test("CPU wall time includes frame preparation before render submission", (t) => {
+  let now = 0;
+  t.mock.method(performance, "now", () => now);
+  const p = new Perf({info: {reset() {}, render: {calls: 1, triangles: 0, lines: 1}},
+    getContext: () => ({getExtension: () => null})});
+  const started = now;
+  now = 75; // visibility/index work precedes the render scope and GPU query
+  p.begin(started);
+  now = 78;
+  assert.equal(p.end({continuous: true}).cpu_ms, 78);
+  assert.equal(p.summary().cpu_ms.p50, 78);
+});
+
 test("percentile picks a sample (0..100), never interpolating", () => {
   const v = [1, 2, 3, 4];
   assert.equal(percentile(v, 0), 1);

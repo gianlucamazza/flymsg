@@ -62,6 +62,7 @@ export async function residentLineProbe(
       ["dense-all", 1, false, true],
       ["anatomical-motion", 1, true, false],
       ["close-motion", 0.35, true, false],
+      ["close-static", 0.35, false, false],
     ]) {
       const base = camera.clone();
       base.aspect = 1;
@@ -108,6 +109,7 @@ export async function residentLineProbe(
         "resident",
         "compact",
       ].entries()) {
+        const startedAt = new Date().toISOString();
         view.diagnostic({ time, residentLines: mode === "resident" });
         gl.bufferData = function (...args) {
           tally(args, false);
@@ -177,7 +179,14 @@ export async function residentLineProbe(
         }
         gl.bufferData = bufferData;
         gl.bufferSubData = bufferSubData;
-        records.push({ name, mode, order, samples });
+        records.push({
+          name,
+          mode,
+          order,
+          started_at: startedAt,
+          finished_at: new Date().toISOString(),
+          samples,
+        });
       }
     }
     return {

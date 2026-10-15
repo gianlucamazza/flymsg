@@ -2,7 +2,19 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Box3, Frustum, Matrix4, PerspectiveCamera, Vector3, Vector4 } from "../../src/flymsg/viz_static/vendor/three/build/three.module.min.js";
 import { linePages, visibleLinePages, writeVisibleEdges } from "../../src/flymsg/viz_static/geometry-pages.js";
-import { localEyePlanes } from "../../src/flymsg/viz_static/page-views.js";
+import { localEyePlanes, sameEyePlanes } from "../../src/flymsg/viz_static/page-views.js";
+
+test("visibility stamp distinguishes missing poses, both eyes and changed planes", () => {
+  assert(!sameEyePlanes(undefined, null));
+  assert(!sameEyePlanes(null, []));
+  assert(sameEyePlanes(null, null));
+  assert(sameEyePlanes([[]], [[]]));
+  const previous = [[[1, 0, 0, 3]], [[1, 0, 0, 4]]];
+  const current = previous.map(eye => eye.map(plane => [...plane]));
+  assert(sameEyePlanes(previous, current));
+  current[1][0][3]++;
+  assert(!sameEyePlanes(previous, current));
+});
 
 const cube = (lo, hi) => [[1,0,0,-lo],[-1,0,0,hi],[0,1,0,-lo],[0,-1,0,hi],[0,0,1,-lo],[0,0,-1,hi]];
 test("an XR frame without eye poses keeps the full source submission", () => {

@@ -67,7 +67,7 @@ import { installXrObserver } from "./xr.js";
 import { XrMetrics } from "./xr-metrics.js";
 import { visibleLinePages, writeVisibleEdges } from "./geometry-pages.js";
 import { ResidentLineIndex } from "./resident-lines.js";
-import { localEyePlanes } from "./page-views.js";
+import { localEyePlanes, sameEyePlanes } from "./page-views.js";
 import { selectFidelity } from "./fidelity.js";
 import { bufferBytes, geometryArrays } from "./resource-bytes.js";
 import {
@@ -928,6 +928,7 @@ function setSkeletonLevel(n, v) {
 let skeletonWanted = new Set();
 let skeletonsDirty = true,
   lastSkeletonBuild = 0;
+let lastSkeletonEyes, lastSkeletonRepresentation, lastResidentEnabled;
 const skeletonOn = (n) =>
   isShown(n) &&
   (settings.representation === "skeleton" ||
@@ -954,6 +955,18 @@ function skeletonEyes(
 }
 /** Rebuild the shared index when some neuron's skeleton turned on or off or changed level. */
 function applySkeletonVisibility(eyes = null) {
+  if (
+    !skeletonsDirty &&
+    !selectionDirty &&
+    lastSkeletonRepresentation === settings.representation &&
+    lastResidentEnabled === settings.residentLines &&
+    sameEyePlanes(lastSkeletonEyes, eyes)
+  )
+    return;
+  // Copy the stamp: diagnostic callers may reuse and mutate their plane arrays.
+  lastSkeletonEyes = eyes?.map((eye) => eye.map((plane) => [...plane])) ?? null;
+  lastSkeletonRepresentation = settings.representation;
+  lastResidentEnabled = settings.residentLines;
   skeletonsDirty = false;
   let fallback = null;
   if (
@@ -972,26 +985,46 @@ function applySkeletonVisibility(eyes = null) {
     }
     const rebuilt = residentLines.sync(neurons, pool.index);
     if (rebuilt) residentIndexValid = true;
-    const plan = residentLines.plan(eyes, skeletonOn, visibleLinePages);
+    const native =
+      THREE.FLYMSG_LINE_RANGES === 1 &&
+      renderer.extensions.has("WEBGL_multi_draw");
+    const plan = residentLines.plan(eyes, skeletonOn, visibleLinePages, native);
     if (!plan.fallback) {
       const upload = rebuilt || !residentIndexValid;
       if (!residentIndexValid) residentLines.writeIndex(pool.index);
       residentIndexValid = true;
+      skeletons.isMultiDrawLineSegments = !!plan.native;
+      if (plan.native) {
+        skeletons.lineStarts = residentLines.drawStarts;
+        skeletons.lineCounts = residentLines.drawCounts;
+        skeletons.lineDrawCount = plan.rangeCount;
+      }
       if (upload) {
         const index = skelGeometry.getIndex();
         index.clearUpdateRanges();
         index.addUpdateRange(0, residentLines.count);
         index.needsUpdate = true;
       }
-      if (upload || plan.changed || lineSubmission.mode !== "resident") {
+      if (
+        upload ||
+        plan.changed ||
+        lineSubmission.mode !== "resident" ||
+        lineSubmission.backend !== (plan.native ? "multi-draw" : "groups")
+      ) {
         skelGeometry.clearGroups();
-        for (const r of plan.ranges) skelGeometry.addGroup(r.start, r.count, 0);
+        if (plan.native) {
+          if (plan.rangeCount) skelGeometry.addGroup(0, residentLines.count, 0);
+        } else
+          for (const r of plan.ranges)
+            skelGeometry.addGroup(r.start, r.count, 0);
         skelGeometry.setDrawRange(0, residentLines.count);
         invalidate();
       }
       lineSubmission = {
         mode: "resident",
-        draws: plan.ranges.length,
+        backend: plan.native ? "multi-draw" : "groups",
+        draws: plan.native ? Number(plan.rangeCount > 0) : plan.ranges.length,
+        ranges: plan.native ? plan.rangeCount : plan.ranges.length,
         visible_indices: plan.visibleIndices,
         submitted_indices: plan.submittedIndices,
         bridged_indices: plan.submittedIndices - plan.visibleIndices,
@@ -1005,6 +1038,7 @@ function applySkeletonVisibility(eyes = null) {
   // Restoring the original resident layout requires a single upload.
   let changed = residentIndexValid || lineSubmission.mode === "resident",
     total = 0;
+  skeletons.isMultiDrawLineSegments = false;
   residentIndexValid = false;
   for (const n of neurons) {
     const st = n.skelLod && skeletonOn(n) ? n.skelLod.level : -1;
@@ -2503,7 +2537,7 @@ renderer.setAnimationLoop((timestamp) => {
   }
   if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
   flushInstanceTextures();
-  perf.begin();
+  perf.begin(frameStart); // include activity, visibility, index preparation and uploads
   if (inXR) {
     // Three.js supplies the two eye cameras; never run desktop postprocessing
     // against the XR framebuffer. One existing animation loop owns both modes.
