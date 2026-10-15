@@ -131,7 +131,7 @@ recorded on the linked page. Negative results stay in the
 | Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                              | [behavior](docs/behavior.md#residual-partner-scan)                                                     |
 | Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit | [behavior](docs/behavior.md#residual-partner-follow-up)                                                |
 | T4/T5 through the eye v1                   | neither                                                      | [eye](docs/eye.md)                                                                                     |
-| T4/T5 v2 and v3                            | robust: neither                                              | [eye](docs/eye.md)                                                                                     |
+| T4/T5 v2, v3 and v4                        | robust: neither                                              | [eye](docs/eye.md)                                                                                     |
 | NeuroMechFly jump v1                       | short                                                        | [embodiment](docs/embodiment.md)                                                                       |
 | Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference | [comparison](docs/comparison.md)                                                                       |
 | Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                        | [comparison](docs/comparison.md)                                                                       |
@@ -269,7 +269,7 @@ under its date.
 | [behavior](docs/behavior.md)                                                          | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated                                    |
 | [architecture](docs/architecture.md)                                                  | module layers, the six contracts and their tests, migration order                                               |
 | [embodiment](docs/embodiment.md)                                                      | M0 contract, B6 v2 pose types, M1/M2 engineering bodies, NeuroMechFly jump v1 (short); FlyBody unselected       |
-| [eye](docs/eye.md)                                                                    | column directions, column stimuli, T4/T5 v1–v3 (neither), v4 locked                                             |
+| [eye](docs/eye.md)                                                                    | column directions, column stimuli, T4/T5 v1–v4 (neither)                                                        |
 | [runtime](docs/runtime.md)                                                            | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                                             |
 | [nulls](docs/nulls.md)                                                                | pre-registered null families, scores, draw counts, methods                                                      |
 | [scientific fidelity](docs/scientific-fidelity.md)                                    | numerical, physiological and behavioral validation gates; evidence records (SF1)                                |
