@@ -7,6 +7,7 @@
 // sorting cannot reorder it
 #include "App.g.cpp"
 
+#include <algorithm>
 #include <atomic>
 #include <bcrypt.h>
 #include <chrono>
@@ -22,7 +23,6 @@
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.Gaming.Input.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.Core.h>
@@ -257,16 +257,21 @@ struct Worker {
     t.limit = double(Windows::System::MemoryManager::AppMemoryUsageLimit());
   }
   // The gamepad's cancel: the same flymsg.worker_cancel/v1 file a host would
-  // upload, so a cancel takes the protocol's one path.
-  void request_cancel() {
-    const auto t = snapshot();
-    if (t.state != "running" || t.folder.empty())
-      return;
-    JsonObject doc;
-    doc.Insert(L"schema",
-               JsonValue::CreateStringValue(L"flymsg.worker_cancel/v1"));
-    doc.Insert(L"job_id", JsonValue::CreateStringValue(to_hstring(t.job)));
-    write_json(t.folder / L"cancel.json", doc);
+  // upload, so a cancel takes the protocol's one path. Called on the UI thread:
+  // it never throws and never waits long, so a failed write leaves the job
+  // running rather than ending the app.
+  void request_cancel() noexcept {
+    try {
+      const auto t = snapshot();
+      if (t.state != "running" || t.folder.empty())
+        return;
+      JsonObject doc;
+      doc.Insert(L"schema",
+                 JsonValue::CreateStringValue(L"flymsg.worker_cancel/v1"));
+      doc.Insert(L"job_id", JsonValue::CreateStringValue(to_hstring(t.job)));
+      write_json(t.folder / L"cancel.json", doc, 5);
+    } catch (...) {
+    }
   }
   bool cancelled(const fs::path &folder, const std::string &id) {
     if (!fs::exists(folder / L"cancel.json"))
@@ -384,12 +389,18 @@ struct Worker {
                     JsonValue::CreateNumberValue(runtime.step - first_step));
       write_json(folder / L"result.json", result);
       status(folder, id, "completed", runtime.step);
-      activity(runtime);
-      finished(id, "completed", advance_ms, runtime.step - first_step);
+      try { // the dashboard's view of a valid result never fails the job
+        activity(runtime);
+        finished(id, "completed", advance_ms, runtime.step - first_step);
+      } catch (...) {
+      }
     } else {
       const auto outcome = suspended ? "suspended" : "cancelled";
       status(folder, id, outcome, runtime.step);
-      finished(id, outcome, advance_ms, runtime.step - first_step);
+      try {
+        finished(id, outcome, advance_ms, runtime.step - first_step);
+      } catch (...) {
+      }
     }
   }
   void loop() {
@@ -559,7 +570,12 @@ xaml::UIElement dashboard() {
   auto title = label(26, white);
   title.Text(L"FlyMSG neural worker");
   auto build = label(12, dim);
-  const auto adapter = flymsg::hardware_adapter();
+  std::wstring adapter;
+  try {
+    adapter = flymsg::hardware_adapter();
+  } catch (...) {
+    adapter = L"unknown";
+  }
   build.Text(L"commit " + wide(FLYMSG_COMMIT).substr(0, 12) + L"   GPU " +
              (adapter.empty() ? L"none" : adapter) +
              L"   jobs in LocalState\\inbox");
@@ -602,21 +618,17 @@ xaml::UIElement dashboard() {
   place(hint, 2, 0, 2);
 
   auto shown = std::make_shared<uint64_t>(0);
-  auto pressed = std::make_shared<Windows::Gaming::Input::GamepadButtons>(
-      Windows::Gaming::Input::GamepadButtons::None);
+  // B arrives as a key event, so a short press is never missed between ticks
+  Windows::UI::Core::CoreWindow::GetForCurrentThread().KeyDown(
+      [](auto &&, Windows::UI::Core::KeyEventArgs const &args) {
+        if (args.VirtualKey() == Windows::System::VirtualKey::GamepadB) {
+          worker().request_cancel();
+          args.Handled(true);
+        }
+      });
   xaml::DispatcherTimer timer;
   timer.Interval(std::chrono::milliseconds(250));
   timer.Tick([=](auto &&, auto &&) {
-    using Windows::Gaming::Input::Gamepad;
-    using Windows::Gaming::Input::GamepadButtons;
-    const auto pads = Gamepad::Gamepads();
-    if (pads.Size() > 0) {
-      const auto now = pads.GetAt(0).GetCurrentReading().Buttons;
-      const auto fresh = now & ~*pressed; // rising edges only
-      if ((fresh & GamepadButtons::B) == GamepadButtons::B)
-        worker().request_cancel();
-      *pressed = now;
-    }
     const auto t = worker().snapshot();
     const bool idle = t.job.empty();
     state.Text(idle ? L"Idle" : wide(t.state));
@@ -706,8 +718,8 @@ void App::OnLaunched(
     Windows::ApplicationModel::Activation::LaunchActivatedEventArgs const &) {
   auto window = Windows::UI::Xaml::Window::Current();
   if (!window.Content()) {
+    worker().start(); // jobs run whatever happens to the dashboard
     window.Content(dashboard());
-    worker().start();
   }
   window.Activate();
 }

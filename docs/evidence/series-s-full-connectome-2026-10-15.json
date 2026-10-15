@@ -92,6 +92,7 @@
         "unsigned_msix_sha256": "6a3405b80259b0226236a001d87683dbfa44a2b16c4339c2f529253da8bf5edd",
         "worker_source_commit": "eed799854dd237d8cf0f81aaaf36b748300de571"
       },
+      "package_note": "built from 7d2237e (GitHub merge eed7998); later commits of PR #203 change only the dashboard and its robustness, not lif.hlsl or the GPU host",
       "parity": true,
       "shader_sha256": "d6a0977507dd905fe0895948441be9bab9033e1c393735aad0095622fd606809",
       "steps_per_s": 2323.2961817735927
