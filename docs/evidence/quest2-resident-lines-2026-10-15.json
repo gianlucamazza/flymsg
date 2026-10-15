@@ -1,0 +1,376 @@
+{
+  "schema": "flymsg.resident-lines-evidence/v1",
+  "component_admission": "pass; original-order resident catalog plus one exact compact-view cache",
+  "xr_qualification": "not-qualified; dense workload and lifecycle/frame-clock gates remain open",
+  "source": {
+    "commit": "d0c461077cd877702eaf1feb128fcbd6e9292a35",
+    "dirty": false
+  },
+  "site_sha256": "4b71d09e63a4ca65ee961fbaf6f83f6588bd93d4b9ea482d306bc556596e655a",
+  "model": "Quest 2",
+  "content": {
+    "representation": "skeleton",
+    "selected": 1128,
+    "represented": 1128,
+    "original_segments": 8258589,
+    "skeleton_level": 0,
+    "production_quality_reductions": false
+  },
+  "metric": "CPU selection and serialized render/readback wall time; not GPU timer or XR cadence",
+  "pipeline": "original geometry, original shaders, one view, zero MSAA, no composer",
+  "rows": [
+    {
+      "view": "dense-all",
+      "mode": "compact",
+      "order": 0,
+      "selection_ms": 0.0,
+      "serialized_wall_ms": 50.5,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "reference"
+      ]
+    },
+    {
+      "view": "dense-all",
+      "mode": "resident",
+      "order": 1,
+      "selection_ms": 0.0,
+      "serialized_wall_ms": 50.399999998509884,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "groups"
+      ]
+    },
+    {
+      "view": "dense-all",
+      "mode": "resident",
+      "order": 2,
+      "selection_ms": 0.0,
+      "serialized_wall_ms": 50.5,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "groups"
+      ]
+    },
+    {
+      "view": "dense-all",
+      "mode": "compact",
+      "order": 3,
+      "selection_ms": 0.0,
+      "serialized_wall_ms": 50.0,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "reference"
+      ]
+    },
+    {
+      "view": "anatomical-motion",
+      "mode": "compact",
+      "order": 0,
+      "selection_ms": 71.20000000298023,
+      "serialized_wall_ms": 253.15000000223517,
+      "mean_index_upload_bytes": 64640229,
+      "backends": [
+        "reference"
+      ]
+    },
+    {
+      "view": "anatomical-motion",
+      "mode": "resident",
+      "order": 1,
+      "selection_ms": 6.449999999254942,
+      "serialized_wall_ms": 105.64999999850988,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "groups"
+      ]
+    },
+    {
+      "view": "anatomical-motion",
+      "mode": "resident",
+      "order": 2,
+      "selection_ms": 4.800000000745058,
+      "serialized_wall_ms": 57.05000000074506,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "groups"
+      ]
+    },
+    {
+      "view": "anatomical-motion",
+      "mode": "compact",
+      "order": 3,
+      "selection_ms": 108.55000000074506,
+      "serialized_wall_ms": 293.05000000074506,
+      "mean_index_upload_bytes": 64640229,
+      "backends": [
+        "reference"
+      ]
+    },
+    {
+      "view": "close-motion",
+      "mode": "compact",
+      "order": 0,
+      "selection_ms": 47.100000001490116,
+      "serialized_wall_ms": 99.30000000074506,
+      "mean_index_upload_bytes": 17788143,
+      "backends": [
+        "reference"
+      ]
+    },
+    {
+      "view": "close-motion",
+      "mode": "resident",
+      "order": 1,
+      "selection_ms": 7.949999999254942,
+      "serialized_wall_ms": 32.600000001490116,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "groups"
+      ]
+    },
+    {
+      "view": "close-motion",
+      "mode": "resident",
+      "order": 2,
+      "selection_ms": 3.7000000029802322,
+      "serialized_wall_ms": 29.899999998509884,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "groups"
+      ]
+    },
+    {
+      "view": "close-motion",
+      "mode": "compact",
+      "order": 3,
+      "selection_ms": 36.100000001490116,
+      "serialized_wall_ms": 87.45000000298023,
+      "mean_index_upload_bytes": 17788143,
+      "backends": [
+        "reference"
+      ]
+    },
+    {
+      "view": "close-static",
+      "mode": "compact",
+      "order": 0,
+      "selection_ms": 0.0,
+      "serialized_wall_ms": 27.149999998509884,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "reference"
+      ]
+    },
+    {
+      "view": "close-static",
+      "mode": "resident",
+      "order": 1,
+      "selection_ms": 0.0,
+      "serialized_wall_ms": 25.949999999254942,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "cached-compact"
+      ]
+    },
+    {
+      "view": "close-static",
+      "mode": "resident",
+      "order": 2,
+      "selection_ms": 0.0,
+      "serialized_wall_ms": 26.149999998509884,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "cached-compact"
+      ]
+    },
+    {
+      "view": "close-static",
+      "mode": "compact",
+      "order": 3,
+      "selection_ms": 0.0,
+      "serialized_wall_ms": 25.899999998509884,
+      "mean_index_upload_bytes": 0,
+      "backends": [
+        "reference"
+      ]
+    }
+  ],
+  "warmup": [
+    {
+      "view": "dense-all",
+      "mode": "compact",
+      "order": 0,
+      "max_wall_ms": 331.70000000298023,
+      "index_upload_bytes": 66068712
+    },
+    {
+      "view": "dense-all",
+      "mode": "resident",
+      "order": 1,
+      "max_wall_ms": 115.70000000298023,
+      "index_upload_bytes": 0
+    },
+    {
+      "view": "dense-all",
+      "mode": "resident",
+      "order": 2,
+      "max_wall_ms": 60.20000000298023,
+      "index_upload_bytes": 0
+    },
+    {
+      "view": "dense-all",
+      "mode": "compact",
+      "order": 3,
+      "max_wall_ms": 357.1000000014901,
+      "index_upload_bytes": 66068712
+    },
+    {
+      "view": "anatomical-motion",
+      "mode": "compact",
+      "order": 0,
+      "max_wall_ms": 327.30000000447035,
+      "index_upload_bytes": 182760072
+    },
+    {
+      "view": "anatomical-motion",
+      "mode": "resident",
+      "order": 1,
+      "max_wall_ms": 182.09999999403954,
+      "index_upload_bytes": 0
+    },
+    {
+      "view": "anatomical-motion",
+      "mode": "resident",
+      "order": 2,
+      "max_wall_ms": 58.5,
+      "index_upload_bytes": 0
+    },
+    {
+      "view": "anatomical-motion",
+      "mode": "compact",
+      "order": 3,
+      "max_wall_ms": 437.79999999701977,
+      "index_upload_bytes": 182760072
+    },
+    {
+      "view": "close-motion",
+      "mode": "compact",
+      "order": 0,
+      "max_wall_ms": 88.10000000149012,
+      "index_upload_bytes": 62119432
+    },
+    {
+      "view": "close-motion",
+      "mode": "resident",
+      "order": 1,
+      "max_wall_ms": 71.29999999701977,
+      "index_upload_bytes": 0
+    },
+    {
+      "view": "close-motion",
+      "mode": "resident",
+      "order": 2,
+      "max_wall_ms": 35.899999998509884,
+      "index_upload_bytes": 0
+    },
+    {
+      "view": "close-motion",
+      "mode": "compact",
+      "order": 3,
+      "max_wall_ms": 173.70000000298023,
+      "index_upload_bytes": 62119432
+    },
+    {
+      "view": "close-static",
+      "mode": "compact",
+      "order": 0,
+      "max_wall_ms": 83.39999999850988,
+      "index_upload_bytes": 19455384
+    },
+    {
+      "view": "close-static",
+      "mode": "resident",
+      "order": 1,
+      "max_wall_ms": 68.5,
+      "index_upload_bytes": 19455384
+    },
+    {
+      "view": "close-static",
+      "mode": "resident",
+      "order": 2,
+      "max_wall_ms": 30.30000000447035,
+      "index_upload_bytes": 0
+    },
+    {
+      "view": "close-static",
+      "mode": "compact",
+      "order": 3,
+      "max_wall_ms": 135.60000000149012,
+      "index_upload_bytes": 19455384
+    }
+  ],
+  "correctness": {
+    "source_colour_id_depth_views": 4,
+    "moving_and_static_colour_samples": 128,
+    "resident_zero_index_upload_samples": 64,
+    "restoration_reference_identical": true,
+    "frozen_original_8a76f6a_colour_id_depth_identical": true,
+    "raster_oracle_views": 6,
+    "cached_raster_different_bytes": 0,
+    "nonimmersive_context_recovery": "colour, ID, depth and geometry identical"
+  },
+  "memory": {
+    "original_full_scene_managed_cpu_bytes": 303051944,
+    "candidate_managed_cpu_bytes": 373953917,
+    "delta_managed_cpu_bytes": 70901973,
+    "gpu_total_bytes": null,
+    "ownership": "shared vertex attributes; one immutable catalog and one mutable compact-view index owner; no unbounded per-view cache"
+  },
+  "rejected": {
+    "native_multi_draw": {
+      "source": "318737e",
+      "reason": "close-static regression exceeds preregistered 10% threshold",
+      "compact_medians_ms": [
+        25.85,
+        25.75
+      ],
+      "resident_medians_ms": [
+        46.25,
+        44.65
+      ],
+      "final_vendor_modified": false
+    },
+    "groups_without_compact_cache": {
+      "source": "a9f9f4e",
+      "reason": "close-static regression; corrected by exact compact cache",
+      "compact_medians_ms": [
+        25.9,
+        26.5
+      ],
+      "resident_medians_ms": [
+        41.45,
+        39.65
+      ]
+    },
+    "capability_mask_trial": "invalid reference shader compilation; not a performance result"
+  },
+  "frameclock": {
+    "eligibility": {
+      "visible": false,
+      "camera_unchanged": true,
+      "full_anatomy": true
+    },
+    "intervals": 0,
+    "qualification": "not scored"
+  },
+  "limits": [
+    "Serialized wall measurements are exploratory and include driver/IPC/readback, not pure GPU time or XR frame cadence.",
+    "Interleaved order retains strong timing drift; GPU/CPU clock and cache/GC effects are not excluded.",
+    "Initial reference captures/graphics allocations are outside timing; measured warmup samples, including cache builds, are retained separately.",
+    "Initial and compact-cache allocation/uploads are not bounded per-frame yet. Cache-build and warmup stalls do not qualify for a refresh budget.",
+    "Managed byte accounting is not OS RSS, a browser memory plateau or GPU allocation telemetry.",
+    "Context recovery uses direct non-immersive rendering, not an immersive session/compositor lifecycle.",
+    "No native renderer, device clocks, refresh/foveation/resolution overrides, safety changes or geometry simplification admitted."
+  ]
+}

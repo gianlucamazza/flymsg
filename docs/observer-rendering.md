@@ -158,6 +158,57 @@ about 61–64 ms wall time; the no-raster diagnostic took about 30 ms. Removing
 line vertex shading naively made that diagnostic slower, not faster. Those
 results justify neither a shader shortcut nor a successful XR timing claim.
 
+## Resident catalog and compact-cache result
+
+The [resident evidence summary](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-resident-lines-2026-10-15.json)
+and [raw archive](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-resident-lines-2026-10-15.zip)
+record clean frozen source `d0c4610` on the physical Quest 2. Every selected
+original skeleton is present: 1,128 neurons and 8,258,589 source segments.
+
+Paired A/B/B/A medians below are **serialized selection/render/readback wall
+times**, one view, 512 square, zero MSAA, no composer. They are not XR intervals
+or pure GPU time. Strong timing drift remains visible in the raw samples;
+clocks, GC/cache effects and thermal behaviour are not controlled away.
+
+| View              | Compact A / A-repeat | Resident B / B-repeat |
+| ----------------- | -------------------- | --------------------- |
+| Dense all-visible | 50.50 / 50.00 ms     | 50.40 / 50.50 ms      |
+| Anatomical motion | 253.15 / 293.05 ms   | 105.65 / 57.05 ms     |
+| Close motion      | 99.30 / 87.45 ms     | 32.60 / 29.90 ms      |
+| Close static      | 27.15 / 25.90 ms     | 25.95 / 26.15 ms      |
+
+The original compactor uploaded on average 64,640,229 bytes per anatomical-motion
+sample and 17,788,143 per close-motion sample. All 64 measured resident samples
+uploaded **zero index bytes/calls**. Close-static samples used the exact compact
+cache, not the more expensive coalesced groups. The independent arithmetic
+verifier passes both paired motion comparisons and the predeclared <=10%
+dense/close-static regression limit. This admits a component optimization only.
+
+Four physical full-source colour/ID/depth comparisons and all 128 measured colour
+images matched exactly. The prior frozen `8a76f6a` reference also matches all three
+channels at its exact camera/projection/time. Six software-raster views additionally
+check resident and cached indices against original indices, with nonempty ID
+witnesses. Synthetic non-immersive context loss/recovery preserved colour, ID,
+depth and geometry. None substitutes for physical immersive lifecycle testing.
+
+Managed CPU geometry grows from 303,051,944 to 373,953,917 bytes: the extra
+66,068,712-byte immutable catalog plus 4,833,261 bytes of page-run/planner metadata.
+Vertex attributes are shared; one compact cache is retained. GPU totals remain
+unknown. Warmup samples retain cache-build uploads and stalls separately: the
+first close-static cache build reached 68.5 ms and uploaded about 18.55 MiB.
+Prerequisite reference captures/initial graphics allocations are outside these
+timings. Initial/cache uploads, OS memory plateau and thermal qualification remain
+open; steady-state improvements must not hide those costs.
+
+Two alternatives were rejected before final admission. `WEBGL_multi_draw` in a
+narrow renderer prototype preserved images but made close-static rendering
+roughly 45 ms versus 26 ms. Public groups without a compact cache also regressed
+that view. Their raw trials are retained. The final tree restores the exact
+upstream Three.js renderer; no vendor patch or capability override is shipped.
+One capability-masked fallback diagnostic failed shader compilation and has no
+performance result. The final frame-clock attempt had no eligible callbacks and
+is unscored. The dense-scene/XR performance issue remains open.
+
 ## Remaining gates
 
 The raster fixture passing does not qualify the real scene. Required next:

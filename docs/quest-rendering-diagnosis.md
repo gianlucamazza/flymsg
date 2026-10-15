@@ -1,7 +1,9 @@
 # Quest rendering diagnosis
 
-Status, 2026-10-15: **performance unresolved; Quest 2 not qualified**.
-PR #205 supplies fidelity and measurement contracts, not a demonstrated lag fix.
+Status, 2026-10-15: **dense-scene/XR performance unresolved; Quest 2 not qualified**.
+The [resident scheduler follow-up](observer-rendering.md#resident-catalog-and-compact-cache-result)
+corrects the measured culling/index-streaming component and the CPU HUD's omitted
+preparation time. It does not establish smooth immersive rendering.
 Passing software checks or loading every neuron does not close this issue.
 
 ## Findings
@@ -75,8 +77,8 @@ reference, no resource-driven substitutions or hidden quality reductions.
 Its implementation has corrected that fidelity failure and prevents normal XR
 entry with incomplete anatomy. It has **not** demonstrated acceptable performance.
 
-Do not merge or release this work as a Quest performance resolution. Outstanding
-work remains a measured GPU submission/residency change and full-content XR
+Do not merge or release this work as a complete Quest performance resolution. Outstanding
+work remains bounded initial/cache uploads, remaining dense-scene cost and full-content XR
 qualification, including dense views, motion, memory plateau, thermal behaviour,
 context recovery and repeated entry/exit. No production shader change is justified
 by the experiments above. Page scheduling alone is not an adequate resolution.
