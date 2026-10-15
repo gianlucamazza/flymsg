@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from flymsg import draws, locks, nulls, parallel, sensitivity, sim, validate
+from flymsg import console, draws, locks, nulls, parallel, sensitivity, sim, validate
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "baselines.yaml"
@@ -99,15 +99,54 @@ def summary(doc: dict | None = None) -> str:
 def _job(job: tuple) -> list[dict]:
     """One graph: the measured connectome (`("real",)`) or one shuffle
     (`("shuffle", seed)`), every case."""
-    (neurons, edges, doc), _checkpoint, _meta = parallel.context()
+    (neurons, edges, doc, backend), _checkpoint, _meta = parallel.context()
     b = doc["battery"]
     shuffle = REAL if job[0] == "real" else int(job[1])
     e = edges if shuffle == REAL else nulls.shuffle_degree_preserving(edges, shuffle)
     p = sim.Params()
     W = sim.network(neurons, e, p)
     c = doc["cases"]
+    cases = [*c["positive"], *c["negative"]]
+    seeds = range(b["seed0"], b["seed0"] + b["seeds"])
+    computed, results = {}, None
+    if backend == "console":
+        # every case and seed of this graph as one batch: the network goes up once
+        specs = [
+            (
+                sensitivity.case_inputs(case, neurons)[0],
+                b["rate_hz"],
+                b["duration_ms"],
+                b["stim_ms"],
+                s,
+            )
+            for case in cases
+            for s in seeds
+        ]
+        results, _ = console.sim_runs(
+            console.device(),
+            W,
+            specs,
+            p,
+            ROOT / "runs" / "console",
+            dataset="malecns-v1.0",
+            seed=b["seed0"],
+            scope=f"baselines graph {job}",
+        )
+        # decoded case by case below: a whole-CNS run's counts are tens of megabytes
+        for k, case in enumerate(cases):
+            computed[case] = slice(k * len(seeds), (k + 1) * len(seeds))
     rows = []
-    for case in [*c["positive"], *c["negative"]]:
+    try:
+        rows = _measure_cases(neurons, W, p, b, cases, shuffle, results, computed)
+    finally:
+        if results is not None:
+            results.close()  # its local outputs, whatever happened
+    return rows
+
+
+def _measure_cases(neurons, W, p, b, cases, shuffle, results, computed) -> list[dict]:
+    rows = []
+    for case in cases:
         stim, targets = sensitivity.case_inputs(case, neurons)
         for row in sensitivity.measure(
             W,
@@ -120,6 +159,7 @@ def _job(job: tuple) -> list[dict]:
             rate_hz=b["rate_hz"],
             stim_ms=b["stim_ms"],
             duration_ms=b["duration_ms"],
+            results=results[computed[case]] if case in computed else None,
         ):
             row.update(shuffle=shuffle, case=case)
             rows.append(row)
@@ -134,14 +174,42 @@ def jobs(doc: dict) -> list[tuple]:
     return [("real",), *(("shuffle", s) for s in range(first, first + base["draws"]))]
 
 
+BACKENDS = ("cpu", "console", "hybrid")
+
+
 def run(
-    neurons, edges, workers: int = 1, checkpoint: Path | None = None
+    neurons,
+    edges,
+    workers: int = 1,
+    checkpoint: Path | None = None,
+    backend: str = "cpu",
 ) -> pd.DataFrame:
+    """`backend="console"` runs each graph's battery as one batch on the console worker
+    (`flymsg.console`, bit for bit with `sim.run`), one graph at a time; `"hybrid"` runs
+    `workers` CPU processes and the console together on one queue of graphs."""
+    if backend not in BACKENDS:
+        raise BaselineError(f"unknown backend {backend!r}")
     doc = assert_matches_code()
     meta = {"version": doc["version"], "sha256": doc["content_sha256"]}
-    rows = draws.map_jobs(
-        _job, jobs(doc), workers, (neurons, edges, doc), checkpoint, meta
-    )
+    if backend == "hybrid":
+        rows = draws.map_jobs(
+            _job,
+            jobs(doc),
+            workers,
+            (neurons, edges, doc, "cpu"),
+            checkpoint,
+            meta,
+            lane_ctx=(neurons, edges, doc, "console"),
+        )
+    else:
+        rows = draws.map_jobs(
+            _job,
+            jobs(doc),
+            1 if backend == "console" else workers,  # one console, one batch at a time
+            (neurons, edges, doc, backend),
+            checkpoint,
+            meta,
+        )
     return pd.DataFrame(rows)
 
 

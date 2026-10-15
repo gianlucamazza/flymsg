@@ -18,11 +18,31 @@ class NativeCapabilityError(ValueError):
     """A numerical mode has no qualified native implementation."""
 
 
-def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
+def edge_chunks(runtime: CpuRuntime) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Incoming edges as the fixture stores them: row pointers, sources (stable by
+    source, then original CSC position) and weights. The costly part of an export on a
+    whole connectome; a batch computes it once for its network."""
+    n = runtime._n
+    sources = np.repeat(np.arange(n), np.diff(runtime._indptr))
+    order = np.argsort(runtime._indices, kind="stable")
+    counts = np.bincount(runtime._indices, minlength=n)
+    return (
+        np.r_[0, np.cumsum(counts)].astype("<u4"),
+        sources[order].astype("<u4"),
+        runtime._data[order].astype("<f4"),
+    )
+
+
+def export_fixture(
+    runtime: CpuRuntime,
+    path: Path,
+    edges: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
+) -> dict:
     """Export a fresh initialized CPU runtime; scientific authority stays Python.
 
     This qualification format is intentionally separate from the run manifest.
     Kicks are converted to double counts, matching the kernel's kick arithmetic.
+    `edges` is `edge_chunks(runtime)` when the caller already has it.
     """
     if runtime.step != 0:
         raise ValueError("native fixtures require fresh state")
@@ -74,12 +94,10 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
         cursor += len(raw) // 4
 
     # Incoming edges, stable by source then original CSC edge position.
-    sources = np.repeat(np.arange(n), np.diff(runtime._indptr))
-    order = np.argsort(runtime._indices, kind="stable")
-    counts = np.bincount(runtime._indices, minlength=n)
-    add(16, np.r_[0, np.cumsum(counts)])
-    add(17, sources[order])
-    add(18, runtime._data[order], "<f4")
+    ptr, sources, weights = edge_chunks(runtime) if edges is None else edges
+    add(16, ptr)
+    add(17, sources)
+    add(18, weights, "<f4")
     add(19, runtime._is_stim)
     add(20, runtime._silent)
     add(21, runtime._jump, "<f4")
@@ -133,7 +151,7 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
         # graded release ring, release of this step, voltage sums (f64), gap buffer, steps
         # left of each coupled neuron's spike term
         state_cursor += d * ng + ng + 2 * bins * ng + nc + nc
-    header[34:37] = [cursor, state_cursor, len(order)]
+    header[34:37] = [cursor, state_cursor, len(sources)]
     if (cursor + state_cursor) * 4 > MAX_BYTES:
         raise ValueError("fixture exceeds native qualification memory cap")
     path = Path(path)
@@ -145,6 +163,88 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
         "precision": "ordered-f32-double-kicks",
         "steps": steps,
     }
+
+
+BATCH = 0x314E4246  # FBN1: several runs of one network
+
+
+def export_batch(runtimes: list[CpuRuntime], base: Path, batch: Path) -> list[dict]:
+    """Export runs that share one network (the same W, parameters, horizon and
+    recording) as one base fixture and a batch of exact patches, so a worker uploads the
+    network once.
+
+    A version-1 fixture ends with its kicks (slot 24); every word before them is the
+    network or a per-neuron mask. Each run's patch lists the words before the kicks that
+    differ from the base (stimulated rows, their threshold jumps and columns, the
+    stimulus count and the input size) and then the run's own kicks. The patch rebuilds
+    that run's fixture word for word, which is checked here before anything is written.
+    Runs are exported one at a time, so memory holds the base and one run, not all.
+    """
+    if not runtimes:
+        raise ValueError("a batch needs at least one run")
+    scratch = Path(batch).with_name(Path(batch).name + ".run")
+    metas, parts, first, cut = [], [], None, 0
+    edges, net = edge_chunks(runtimes[0]), runtimes[0]
+    for k, rt in enumerate(runtimes):
+        same = all(
+            np.array_equal(getattr(rt, a), getattr(net, a))
+            for a in ("_indptr", "_indices", "_data")
+        )
+        # the edges are the network's: computed once, reused while it is the same
+        metas.append(export_fixture(rt, scratch, edges if same else None))
+        w = np.frombuffer(scratch.read_bytes(), dtype="<u4")
+        if first is None:
+            if int(w[1]) != 1:
+                raise NativeCapabilityError("batches cover version-1 fixtures only")
+            first, cut = w.copy(), int(w[24])  # the kicks start at `cut`
+            parts.append(
+                np.array([BATCH, 1, len(runtimes), cut], dtype="<u4").tobytes()
+            )
+        if int(w[1]) != 1 or int(w[24]) != cut:
+            raise ValueError(f"run {k} does not share the base's network layout")
+        changed = np.flatnonzero(w[:cut] != first[:cut]).astype("<u4")
+        kicks = w[cut:]
+        rebuilt = first[:cut].copy()
+        rebuilt[changed] = w[changed]
+        if not (np.array_equal(rebuilt, w[:cut]) and kicks.size == w.size - cut):
+            raise AssertionError(f"run {k} does not rebuild exactly")
+        pairs = np.empty(2 * changed.size, dtype="<u4")
+        pairs[0::2], pairs[1::2] = changed, w[changed]
+        parts += [
+            np.array([changed.size], dtype="<u4").tobytes(),
+            pairs.tobytes(),
+            np.array([kicks.size], dtype="<u4").tobytes(),
+            kicks.tobytes(),
+        ]
+        del w, rebuilt
+    scratch.unlink()
+    if sum(len(x) for x in parts) > MAX_BYTES:
+        raise ValueError("batch exceeds the native memory cap")
+    Path(base).write_bytes(first.tobytes())
+    Path(batch).write_bytes(b"".join(parts))
+    return metas
+
+
+def batch_fixture(base: Path, batch: Path, run: int) -> np.ndarray:
+    """The words of one run's fixture, rebuilt from a base and its batch (as the native
+    side does)."""
+    first = np.frombuffer(Path(base).read_bytes(), dtype="<u4")
+    b = np.frombuffer(Path(batch).read_bytes(), dtype="<u4")
+    if int(b[0]) != BATCH or int(b[1]) != 1 or not 0 <= run < int(b[2]):
+        raise ValueError("invalid batch or run")
+    cut, at = int(b[3]), 4
+    for k in range(run + 1):
+        npairs = int(b[at])
+        pairs = b[at + 1 : at + 1 + 2 * npairs]
+        at += 1 + 2 * npairs
+        nk = int(b[at])
+        kicks = b[at + 1 : at + 1 + nk]
+        at += 1 + nk
+        if k == run:
+            words = first[:cut].copy()
+            words[pairs[0::2]] = pairs[1::2]
+            return np.concatenate([words, kicks])
+    raise AssertionError("unreachable")
 
 
 def stimulated(fixture: Path) -> np.ndarray:
@@ -178,7 +278,7 @@ def as_result(
         counts=np.asarray(out["counts"], dtype=np.int64),
         first_spike_ms=np.where(first >= 0, first * dt_ms, np.nan),
         bin_ms=bin_ms,
-        stim_ms=duration if stim_ms is None else min(stim_ms, duration),
+        stim_ms=duration if stim_ms is None else stim_ms,  # as sim.run reports it
     )
 
 

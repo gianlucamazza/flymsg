@@ -27,6 +27,12 @@ All formats are little endian, versioned and reject incompatible dimensions/offs
 
 Version 2 fixtures add graded neurons and electrically coupled groups (`sim.Graded`, `sim.Gap`). Header word 37 points to an extension block (graded and coupled counts, matrix size, spike-term length and amplitude, the per-neuron graded column and coupled position, release parameters, group offsets and the float64 step matrices [P | Q | S]); word 38 points to its state (release ring, this step's release, per-bin potential sums in float64, the coupled-group buffer, the steps left of each spike term). The C++ executor validates every extension field and reproduces the CPU runtime bit for bit, including checkpoint and resume; the acceptance runs each synthetic case without extension, with graded neurons, with coupling, with asymmetric coupling and spikelets, and with graded neurons and spikelets together (60 cases). The DX12 lane refuses version 2 fixtures: its float64 group step and graded release need hardware qualification first (#39).
 
+**Batches** (`flymsg.native.export_batch`, `batch_fixture` in `lif.h`) carry several runs of one network: a base fixture, then for each run the words before the kicks that differ from the base, as (offset, word) pairs, and its own kicks.
+
+- **Exactness.** A version-1 fixture ends with its kicks, so the network goes up once. The exporter checks that every run rebuilds its own fixture word for word, and the rebuilt words go through the same validation as any fixture.
+- **Executor.** `flymsg_native --fixture BASE --batch FILE --run K` runs one of them.
+- **Worker.** It runs a batch job (`"batch": {"sha256": ..., "runs": N}` in `job.json`, files `fixture.bin` and `batch.bin`) in order. It writes `output_<k>.bin` and `result_<k>.json` per run, and after an interruption resumes at the first run without a result.
+
 Native checkpoints bind the complete fixture and cursor with a noncryptographic integrity/compatibility token. They do not authenticate an untrusted artifact. The UWP worker wraps them with SHA-256 asset checks and binds backend, shader, source commit and package identity. A job does not resume across a different package or backend implicitly. The Python CPU checkpoint and native checkpoint are distinct formats; conversion is not implemented.
 
 The GPU host retains state across batches of up to 64 ticks within one `advance_gpu` call, uses barriers between each of the four phases and reads state at the requested endpoint or a requested lifecycle stop.

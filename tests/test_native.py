@@ -244,3 +244,135 @@ def test_a_native_run_replays_as_a_simulation_result(tmp_path):
     fired = snap["first"] >= 0
     assert np.allclose(result.first_spike_ms[fired], snap["first"][fired] * p.dt)
     assert np.isnan(result.first_spike_ms[~fired]).all()
+
+
+def _acceptance():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "native_acceptance", ROOT / "scripts" / "native_acceptance.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _battery_runs():
+    """Runs of one network as a battery makes them: different stimulus sets, seeds and
+    input lengths, the same horizon."""
+    from flymsg import sim
+
+    rng = np.random.default_rng(5)
+    W = sparse.random(60, 60, density=0.15, random_state=rng, format="csc")
+    W.data = rng.integers(-20, 80, W.data.size).astype(np.float32)
+    W = W.astype(np.float32)
+    p = sim.Params()
+    runs = []
+    for k, (stim, stim_steps) in enumerate(
+        [([0, 1, 2], 300), ([5], 300), ([7, 9], 120), ([0, 1, 2], 300)]
+    ):
+        runs.append(
+            CpuRuntime(
+                W,
+                np.array(stim),
+                steps=400,
+                kicks=sim.poisson_kicks(30 + k, 300.0, p.dt, stim_steps, len(stim)),
+                p=p,
+                per_bin=100,
+                trace=np.arange(4),
+            )
+        )
+    return runs
+
+
+def test_a_batch_rebuilds_every_run_word_for_word(tmp_path):
+    from flymsg import native
+
+    runs = _battery_runs()
+    native.export_batch(runs, tmp_path / "base.bin", tmp_path / "batch.bin")
+    for k, rt in enumerate(_battery_runs()):
+        single = tmp_path / f"single{k}.bin"
+        export_fixture(rt, single)
+        expected = np.frombuffer(single.read_bytes(), dtype="<u4")
+        rebuilt = native.batch_fixture(tmp_path / "base.bin", tmp_path / "batch.bin", k)
+        assert np.array_equal(rebuilt, expected)
+    with pytest.raises(ValueError, match="invalid batch or run"):
+        native.batch_fixture(tmp_path / "base.bin", tmp_path / "batch.bin", 4)
+    # the batch carries the network once
+    assert (tmp_path / "batch.bin").stat().st_size < 4 * (
+        tmp_path / "base.bin"
+    ).stat().st_size
+
+
+def test_the_native_executor_runs_a_batch_bit_for_bit(native_exe, tmp_path):
+    from flymsg import native
+
+    native.export_batch(_battery_runs(), tmp_path / "base.bin", tmp_path / "batch.bin")
+    for k, oracle in enumerate(_battery_runs()):
+        out = tmp_path / f"out{k}.bin"
+        subprocess.run(
+            [
+                str(native_exe),
+                "--fixture",
+                str(tmp_path / "base.bin"),
+                "--batch",
+                str(tmp_path / "batch.bin"),
+                "--run",
+                str(k),
+                "--output",
+                str(out),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        fixture = tmp_path / f"fixture{k}.bin"
+        fixture.write_bytes(
+            native.batch_fixture(
+                tmp_path / "base.bin", tmp_path / "batch.bin", k
+            ).tobytes()
+        )
+        oracle.advance_to(400)
+        _acceptance().check(oracle, read_output(out, fixture))
+
+
+def test_console_results_read_native_batch_outputs_as_sim_run(native_exe, tmp_path):
+    """The console path end to end, with the native CPU executor standing in for the
+    worker: a batch of sim.run calls, run by run, read back as sim.Results."""
+    from flymsg import console, native, sim
+
+    rng = np.random.default_rng(2)
+    W = sparse.random(80, 80, density=0.12, random_state=rng, format="csc")
+    W.data = rng.integers(-20, 80, W.data.size).astype(np.float32)
+    W, p = W.astype(np.float32), sim.Params()
+    specs = [([0, 3, 5], 300.0, 60.0, 30.0, 7), ([11], 300.0, 60.0, None, 8)]
+    runtimes = [console.sim_runtime(W, np.array(s[0]), *s[1:4], p, s[4]) for s in specs]
+    base, batch = tmp_path / "base.bin", tmp_path / "batch.bin"
+    native.export_batch(runtimes, base, batch)
+    outputs, fixtures = [], []
+    for k in range(len(specs)):
+        out, fixture = tmp_path / f"output_{k}.bin", tmp_path / f"fixture_{k}.bin"
+        subprocess.run(
+            [
+                str(native_exe),
+                "--fixture",
+                str(base),
+                "--batch",
+                str(batch),
+                "--run",
+                str(k),
+                "--output",
+                str(out),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        fixture.write_bytes(native.batch_fixture(base, batch, k).tobytes())
+        outputs.append(out)
+        fixtures.append(fixture)
+    results = console.as_results(outputs, fixtures, p.dt, [30.0, 60.0])
+    assert len(results) == 2 and len(results[0:2]) == 2
+    for s, r in zip(specs, results[:], strict=True):
+        expected = sim.run(W, np.array(s[0]), s[1], s[2], s[3], p, s[4])
+        assert np.array_equal(r.counts, expected.counts)
+        assert np.array_equal(r.first_spike_ms, expected.first_spike_ms, equal_nan=True)
+        assert r.bin_ms == expected.bin_ms and r.stim_ms == expected.stim_ms

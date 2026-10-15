@@ -304,6 +304,10 @@ struct Worker {
     if (backend == "dx12")
       flymsg::require(sha256(shader) == field(doc, L"shader_sha256"),
                       "shader hash mismatch");
+    if (doc.HasKey(L"batch")) {
+      execute_batch(folder, doc, id, hash, backend, shader);
+      return;
+    }
     flymsg::Runtime runtime(flymsg::read_words(fixture));
     {
       std::lock_guard guard(telemetry_mutex);
@@ -401,6 +405,116 @@ struct Worker {
         finished(id, outcome, advance_ms, runtime.step - first_step);
       } catch (...) {
       }
+    }
+  }
+  // Several runs of one network (flymsg.native.export_batch): fixture.bin is
+  // the base, batch.bin the runs. They run in order; each completed run leaves
+  // output_<k>.bin and result_<k>.json, and a resumed job skips those, so an
+  // interruption costs at most the run it stopped. Progress counts steps over
+  // the whole batch.
+  void execute_batch(const fs::path &folder, const JsonObject &doc,
+                     const std::string &id, const std::string &hash,
+                     const std::string &backend, const fs::path &shader) {
+    const auto spec = doc.GetNamedObject(L"batch");
+    const auto batch_path = folder / L"batch.bin";
+    flymsg::require(sha256(batch_path) == field(spec, L"sha256"),
+                    "batch hash mismatch");
+    const auto base = flymsg::read_words(folder / L"fixture.bin");
+    const auto batch = flymsg::read_words(batch_path);
+    const uint32_t runs = flymsg::batch_runs(batch);
+    flymsg::require(runs == uint32_t(spec.GetNamedNumber(L"runs")),
+                    "batch run count mismatch");
+    const uint64_t steps = base[3];
+    {
+      std::lock_guard guard(telemetry_mutex);
+      telemetry.total = uint32_t(std::min<uint64_t>(steps * runs, UINT32_MAX));
+    }
+    auto reported = std::chrono::steady_clock::now() - std::chrono::seconds(1);
+    double advance_ms = 0;
+    uint64_t advanced = 0;
+    std::optional<flymsg::Runtime> last;
+    for (uint32_t k = 0; k < runs; ++k) {
+      const auto name = std::to_wstring(k);
+      if (fs::exists(folder / (L"result_" + name + L".json")))
+        continue; // done before an interruption
+      flymsg::Runtime runtime(flymsg::batch_fixture(base, batch, k));
+      flymsg::require(runtime.input[3] == steps, "batch runs differ in length");
+      const auto estimated = (base.size() + batch.size()) * 4ull +
+                             runtime.input.size() * 8ull +
+                             runtime.state.size() * 16ull + 64ull * 1024 * 1024;
+      const auto limit = Windows::System::MemoryManager::AppMemoryUsageLimit();
+      const auto usage = Windows::System::MemoryManager::AppMemoryUsage();
+      flymsg::require(limit > usage && estimated < limit - usage,
+                      "batch run exceeds available app memory budget");
+      const uint64_t done = k * steps;
+      const auto stop = [&](uint32_t cursor) {
+        const auto now = std::chrono::steady_clock::now();
+        if (now - reported >= std::chrono::milliseconds(250)) {
+          status(folder, id, "running",
+                 uint32_t(std::min<uint64_t>(done + cursor, UINT32_MAX)));
+          reported = now;
+        }
+        return shutdown || suspended || cancelled(folder, id);
+      };
+      const auto began = std::chrono::steady_clock::now();
+      if (backend == "dx12") {
+        const auto adapter = field(doc, L"expected_adapter");
+        flymsg::require(!adapter.empty(), "GPU job requires adapter identity");
+        flymsg::advance_gpu(runtime, runtime.input[3], shader.string(), stop,
+                            adapter);
+      } else
+        while (runtime.step < runtime.input[3]) {
+          runtime.advance_to(std::min(runtime.input[3], runtime.step + 64));
+          if (stop(runtime.step))
+            break;
+        }
+      const double ms = std::chrono::duration<double, std::milli>(
+                            std::chrono::steady_clock::now() - began)
+                            .count();
+      if (runtime.step != runtime.input[3]) { // stopped inside run k
+        const auto outcome = suspended ? "suspended" : "cancelled";
+        status(folder, id, outcome,
+               uint32_t(std::min<uint64_t>(done + runtime.step, UINT32_MAX)));
+        try {
+          finished(id, outcome, advance_ms, uint32_t(advanced));
+        } catch (...) {
+        }
+        return;
+      }
+      const auto output = folder / (L"output_" + name + L".bin");
+      runtime.snapshot(output);
+      JsonObject result;
+      result.Insert(L"output_sha256",
+                    JsonValue::CreateStringValue(to_hstring(sha256(output))));
+      result.Insert(L"advance_ms", JsonValue::CreateNumberValue(ms));
+      result.Insert(L"advance_steps",
+                    JsonValue::CreateNumberValue(double(steps)));
+      write_json(folder / (L"result_" + name + L".json"), result);
+      advance_ms += ms;
+      advanced += steps;
+      if (k + 1 == runs) // only the last run's counts feed the dashboard
+        last.emplace(std::move(runtime));
+    }
+    JsonObject result;
+    result.Insert(L"runs", JsonValue::CreateNumberValue(runs));
+    result.Insert(L"fixture_sha256",
+                  JsonValue::CreateStringValue(to_hstring(hash)));
+    result.Insert(L"batch_sha256",
+                  JsonValue::CreateStringValue(spec.GetNamedString(L"sha256")));
+    result.Insert(L"backend",
+                  JsonValue::CreateStringValue(to_hstring(backend)));
+    // this execution's advance only; per-run timings are in result_<k>.json
+    result.Insert(L"advance_ms", JsonValue::CreateNumberValue(advance_ms));
+    result.Insert(L"advance_steps",
+                  JsonValue::CreateNumberValue(double(advanced)));
+    write_json(folder / L"result.json", result);
+    status(folder, id, "completed",
+           uint32_t(std::min<uint64_t>(steps * runs, UINT32_MAX)));
+    try {
+      if (last)
+        activity(*last);
+      finished(id, "completed", advance_ms, uint32_t(advanced));
+    } catch (...) {
     }
   }
   void loop() {
