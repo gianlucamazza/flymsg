@@ -108,15 +108,28 @@ def case_inputs(name: str, neurons: pd.DataFrame) -> tuple[np.ndarray, list[str]
 
 
 def measure(
-    W, neurons, stim, targets, p, *, seed0, seeds, rate_hz, stim_ms, duration_ms
+    W,
+    neurons,
+    stim,
+    targets,
+    p,
+    *,
+    seed0,
+    seeds,
+    rate_hz,
+    stim_ms,
+    duration_ms,
+    results: list[sim.Result] | None = None,
 ) -> list[dict]:
     """Per seed and target: the best neuron's rate and first spike, plus the recruited and
     persistent counts of the run. The best neuron is the one with the highest mean rate
-    over the seeds, as `validate.respond` picks it."""
-    results = [
-        sim.run(W, stim, rate_hz, duration_ms, stim_ms, p, s)
-        for s in range(seed0, seed0 + seeds)
-    ]
+    over the seeds, as `validate.respond` picks it. `results` are the seeds' runs when
+    another backend computed them (`sim.run`'s, bit for bit); by default they run here."""
+    if results is None:
+        results = [
+            sim.run(W, stim, rate_hz, duration_ms, stim_ms, p, s)
+            for s in range(seed0, seed0 + seeds)
+        ]
     types = neurons["type"].to_numpy()
     on = [r.rate(0, stim_ms) for r in results]
     rows = []

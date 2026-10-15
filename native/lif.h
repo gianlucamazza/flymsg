@@ -62,6 +62,47 @@ inline double word_double(const std::vector<uint32_t> &words, uint64_t at) {
   return std::bit_cast<double>(uint64_t(words[at]) | uint64_t(words[at + 1])
                                                          << 32);
 }
+constexpr uint32_t batch_magic = 0x314e4246; // FBN1
+// Runs of one network: the base fixture's words before its kicks, each run's
+// changed words among them and its own kicks (flymsg.native.export_batch), so
+// the network is read once. The rebuilt words go through the same validation
+// as any fixture.
+inline uint32_t batch_runs(const std::vector<uint32_t> &batch) {
+  require(batch.size() >= 4 && batch[0] == batch_magic && batch[1] == 1 &&
+              batch[2] > 0,
+          "invalid batch");
+  return batch[2];
+}
+inline std::vector<uint32_t> batch_fixture(const std::vector<uint32_t> &base,
+                                           const std::vector<uint32_t> &batch,
+                                           uint32_t run) {
+  require(run < batch_runs(batch), "batch run out of range");
+  const uint64_t cut = batch[3];
+  require(base.size() >= 40 && base[24] == cut && cut <= base.size(),
+          "batch does not match its base");
+  uint64_t at = 4;
+  for (uint32_t k = 0;; ++k) {
+    require(at < batch.size(), "truncated batch");
+    const uint64_t pairs = batch[at];
+    require(at + 1 + 2 * pairs < batch.size(), "truncated batch pairs");
+    const uint64_t kicks_at = at + 1 + 2 * pairs;
+    const uint64_t kicks = batch[kicks_at];
+    require(kicks_at + 1 + kicks <= batch.size(), "truncated batch kicks");
+    if (k == run) {
+      require((cut + kicks) * 4 <= max_bytes, "batch run exceeds budget");
+      std::vector<uint32_t> words(base.begin(), base.begin() + cut);
+      for (uint64_t i = 0; i < pairs; ++i) {
+        const uint64_t offset = batch[at + 1 + 2 * i];
+        require(offset < cut, "batch patch outside the network words");
+        words[offset] = batch[at + 2 + 2 * i];
+      }
+      words.insert(words.end(), batch.begin() + kicks_at + 1,
+                   batch.begin() + kicks_at + 1 + kicks);
+      return words;
+    }
+    at = kicks_at + 1 + kicks;
+  }
+}
 class Runtime {
 public:
   std::vector<uint32_t> input, state;

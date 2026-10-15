@@ -19,10 +19,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
-import subprocess
 import sys
-import tempfile
 import time
 import uuid
 from pathlib import Path
@@ -34,83 +31,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from native_acceptance import check  # the acceptance comparator, unchanged
 
 from flymsg import sim
+from flymsg.console import (  # the scripts beside this one import them here
+    ADAPTER,
+    Portal,
+)
 from flymsg.native import export_fixture, read_output
 from flymsg.runtime import CpuRuntime
-
-ADAPTER = "SraKmd_arden"  # Xbox Series S, as the FloppyLM trainer's evidence records
-
-
-class Portal:
-    """The few Device Portal calls a job needs, through curl."""
-
-    def __init__(self) -> None:
-        self.base = f"https://{os.environ['XBOX_IP']}:11443"
-        self.auth = f"{os.environ['XBOX_USER']}:{os.environ['XBOX_PASS']}"
-        fd, self.jar = tempfile.mkstemp(prefix="wdp")
-        os.close(fd)
-        self.pin = os.environ.get("FLYMSG_DEVICE_PIN")
-        self.curl("GET", "/", out=os.devnull)
-        token = [
-            line.split("\t")[6]
-            for line in Path(self.jar).read_text().splitlines()
-            if "\tCSRF-Token\t" in line
-        ]
-        self.token = token[0] if token else ""
-
-    def curl(self, method, path, out=None, upload=None) -> str:
-        cmd = ["curl", "-sS", "-k", "--fail", "-m", "120", "-u", self.auth]
-        if self.pin:  # -k skips the CA chain only; curl still enforces the pinned key
-            cmd += ["--pinnedpubkey", self.pin]
-        cmd += ["-b", self.jar, "-c", self.jar, "-X", method]
-        if method != "GET":
-            cmd += ["-H", f"X-CSRF-Token:{getattr(self, 'token', '')}"]
-        if upload:
-            name = Path(upload).name
-            cmd += [
-                "-F",
-                f"file=@{upload};type=application/octet-stream;filename={name}",
-            ]
-        elif method == "POST":
-            cmd += ["-d", ""]
-        if out:
-            cmd += ["-o", out]
-        r = subprocess.run(
-            [*cmd, self.base + path], capture_output=True, text=True, check=False
-        )
-        if r.returncode:
-            raise RuntimeError(f"{method} {path.split('?')[0]} failed ({r.returncode})")
-        return r.stdout
-
-    def mkdir(self, package: str, rel: str) -> None:
-        parent = "%5CLocalState"
-        for part in rel.split("\\"):
-            try:
-                self.curl(
-                    "POST",
-                    f"/api/filesystem/apps/folder?knownfolderid=LocalAppData"
-                    f"&packagefullname={package}&path={parent}&newfoldername={part}",
-                )
-            except RuntimeError:
-                pass  # it exists
-            parent += "%5C" + part
-
-    def put(self, package: str, rel: str, local: Path) -> None:
-        path = "%5CLocalState%5C" + rel.replace("\\", "%5C")
-        self.curl(
-            "POST",
-            f"/api/filesystem/apps/file?knownfolderid=LocalAppData"
-            f"&packagefullname={package}&path={path}&extract=false",
-            upload=str(local),
-        )
-
-    def get(self, package: str, rel: str, name: str, local: Path) -> None:
-        path = "%5CLocalState%5C" + rel.replace("\\", "%5C")
-        self.curl(
-            "GET",
-            f"/api/filesystem/apps/file?knownfolderid=LocalAppData"
-            f"&packagefullname={package}&path={path}&filename={name}",
-            out=str(local),
-        )
 
 
 def fixtures():

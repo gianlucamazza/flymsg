@@ -9,6 +9,7 @@ from flymsg import (
     baselines,
     benchmarks,
     compare,
+    console,
     convergence,
     data,
     gf_looming,
@@ -348,7 +349,7 @@ def cmd_baselines(a, neurons, edges):
     started = datetime.now(UTC)
     doc = baselines.assert_matches_code()
     print(baselines.summary(doc))
-    cells = baselines.run(neurons, edges, a.workers, a.checkpoint)
+    cells = baselines.run(neurons, edges, a.workers, a.checkpoint, a.backend)
     out = managed.output(a, Path("runs/baselines") / f"v{doc['version']}")
     out.mkdir(parents=True, exist_ok=True)
     cells.to_csv(out / "cells.csv", index=False)
@@ -369,12 +370,13 @@ def cmd_baselines(a, neurons, edges):
         {
             "baselines_version": doc["version"],
             "baselines_sha256": doc["content_sha256"],
+            "backend": a.backend,
             "battery": doc["battery"],
             "baseline": doc["baseline"],
         },
         {"seed0": doc["battery"]["seed0"], "seeds": doc["battery"]["seeds"]},
         started,
-        {"verdict": verdict},
+        {"verdict": verdict, **console.lineage(a.backend)},
     )
     print(f"report -> {out / 'report.txt'}")
 

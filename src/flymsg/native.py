@@ -147,6 +147,80 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
     }
 
 
+BATCH = 0x314E4246  # FBN1: several runs of one network
+
+
+def export_batch(runtimes: list[CpuRuntime], base: Path, batch: Path) -> list[dict]:
+    """Export runs that share one network (the same W, parameters, horizon and
+    recording) as one base fixture and a batch of exact patches, so a worker uploads the
+    network once.
+
+    A version-1 fixture ends with its kicks (slot 24); every word before them is the
+    network or a per-neuron mask. Each run's patch lists the words before the kicks that
+    differ from the base (stimulated rows, their threshold jumps and columns, the
+    stimulus count and the input size) and then the run's own kicks. The patch rebuilds
+    that run's fixture word for word, which is checked here before anything is written.
+    """
+    if not runtimes:
+        raise ValueError("a batch needs at least one run")
+    words, metas = [], []
+    for k, rt in enumerate(runtimes):
+        path = base.with_name(f"{base.name}.run{k}")
+        metas.append(export_fixture(rt, path))
+        words.append(np.frombuffer(path.read_bytes(), dtype="<u4").copy())
+        path.unlink()
+    first = words[0]
+    if int(first[1]) != 1:
+        raise NativeCapabilityError("batches cover version-1 fixtures only")
+    cut = int(first[24])  # the kicks start here
+    out = [np.array([BATCH, 1, len(words), cut], dtype="<u4")]
+    for k, w in enumerate(words):
+        if int(w[1]) != 1 or int(w[24]) != cut:
+            raise ValueError(f"run {k} does not share the base's network layout")
+        changed = np.flatnonzero(w[:cut] != first[:cut]).astype("<u4")
+        kicks = w[cut:]
+        rebuilt = first[:cut].copy()
+        rebuilt[changed] = w[changed]
+        if not np.array_equal(np.concatenate([rebuilt, kicks]), w):
+            raise AssertionError(f"run {k} does not rebuild exactly")
+        pairs = np.empty(2 * changed.size, dtype="<u4")
+        pairs[0::2], pairs[1::2] = changed, w[changed]
+        out += [
+            np.array([changed.size], dtype="<u4"),
+            pairs,
+            np.array([kicks.size], dtype="<u4"),
+            kicks,
+        ]
+    blob = b"".join(x.tobytes() for x in out)
+    if len(blob) > MAX_BYTES:
+        raise ValueError("batch exceeds the native memory cap")
+    Path(base).write_bytes(first.tobytes())
+    Path(batch).write_bytes(blob)
+    return metas
+
+
+def batch_fixture(base: Path, batch: Path, run: int) -> np.ndarray:
+    """The words of one run's fixture, rebuilt from a base and its batch (as the native
+    side does)."""
+    first = np.frombuffer(Path(base).read_bytes(), dtype="<u4")
+    b = np.frombuffer(Path(batch).read_bytes(), dtype="<u4")
+    if int(b[0]) != BATCH or int(b[1]) != 1 or not 0 <= run < int(b[2]):
+        raise ValueError("invalid batch or run")
+    cut, at = int(b[3]), 4
+    for k in range(run + 1):
+        npairs = int(b[at])
+        pairs = b[at + 1 : at + 1 + 2 * npairs]
+        at += 1 + 2 * npairs
+        nk = int(b[at])
+        kicks = b[at + 1 : at + 1 + nk]
+        at += 1 + nk
+        if k == run:
+            words = first[:cut].copy()
+            words[pairs[0::2]] = pairs[1::2]
+            return np.concatenate([words, kicks])
+    raise AssertionError("unreachable")
+
+
 def stimulated(fixture: Path) -> np.ndarray:
     """Rows of the fixture's stimulated neurons (those with an input column)."""
     words = np.frombuffer(Path(fixture).read_bytes(), dtype="<u4")

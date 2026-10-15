@@ -134,6 +134,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--run", action="store_true")
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--checkpoint", type=Path)
+    s.add_argument(
+        "--backend",
+        choices=("cpu", "console"),
+        default="cpu",
+        help="console: each graph's battery as one batch on the console worker "
+        "(FLYMSG_WORKER_PACKAGE, FLYMSG_WORKER_SHADER and the Device Portal settings "
+        "from the environment); bit for bit with cpu",
+    )
     s = sub.add_parser(
         "convergence",
         help="print the locked timestep convergence check, or run it with --run (SF2)",
