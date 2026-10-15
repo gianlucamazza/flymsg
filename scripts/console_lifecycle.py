@@ -3,8 +3,8 @@
 Three runs of one synthetic version-1 fixture, long enough to be interrupted, each as a dx12
 job to the installed worker:
 
-- throughput: run to completion; host-side steps per second from the worker's status
-  updates (one every 64 steps), output checked bit for bit against the CPU oracle;
+- throughput: run to completion; steps per second over the advance, timed by the worker
+  (`result.json`), output checked bit for bit against the CPU oracle;
 - cancel: a `flymsg.worker_cancel/v1` while running must end in `cancelled` before the end;
 - stop and resume: the app is stopped through Device Portal while the job runs and started
   again; the job must be parked, `suspended` with a checkpoint when the platform suspended
@@ -108,16 +108,14 @@ class Job:
         except (RuntimeError, json.JSONDecodeError):
             return {}  # not written yet, or caught mid-replacement
 
-    def wait(self, states: set, timeout_s: float = 900.0) -> tuple[dict, list]:
-        seen, start = [], time.time()
+    def wait(self, states: set, timeout_s: float = 900.0) -> dict:
+        start = time.time()
         while time.time() - start < timeout_s:
             s = self.status()
-            if s:
-                seen.append((time.time(), s.get("state"), s.get("step", 0)))
-                if s.get("state") in states:
-                    return s, seen
+            if s.get("state") in states:
+                return s
             time.sleep(1.0)
-        return {"state": "timeout"}, seen
+        return {"state": "timeout"}
 
     def parity(self) -> bool:
         self.portal.get(
@@ -147,17 +145,18 @@ def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
 
     job = Job(portal, package, sha, out)
     job.submit()
-    final, seen = job.wait(done)
-    running = [(t, k) for t, s, k in seen if s == "running" and k > 0]
+    final = job.wait(done)
     rate = None
-    if len(running) >= 2 and running[-1][1] > running[0][1]:
-        rate = (running[-1][1] - running[0][1]) / (running[-1][0] - running[0][0])
+    if final.get("state") == "completed":
+        job.portal.get(package, job.rel, "result.json", job.folder / "result.json")
+        result = json.loads((job.folder / "result.json").read_text())
+        rate = result["advance_steps"] / (result["advance_ms"] / 1000.0)
     throughput = {
         "state": final.get("state"),
         "error": final.get("error", ""),
         "steps": STEPS,
         "neurons": N,
-        "steps_per_s_host": rate,
+        "steps_per_s": rate,  # the worker's own clock over the advance
         "app_memory_bytes": final.get("app_memory_bytes"),
         "app_memory_limit_bytes": final.get("app_memory_limit_bytes"),
         "parity": final.get("state") == "completed" and job.parity(),
@@ -165,9 +164,9 @@ def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
 
     job = Job(portal, package, sha, out)
     job.submit()
-    first, _ = job.wait({"running"} | done)
+    first = job.wait({"running"} | done)
     job.control("cancel.json", "flymsg.worker_cancel/v1")
-    final, _ = job.wait(done)
+    final = job.wait(done)
     cancel = {
         "seen_running": first.get("state") == "running",
         "state": final.get("state"),
@@ -179,13 +178,13 @@ def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
 
     job = Job(portal, package, sha, out)
     job.submit()
-    first, _ = job.wait({"running"} | done)
+    first = job.wait({"running"} | done)
     app_call(portal, "DELETE", package, aumid)
     time.sleep(5)
     app_call(portal, "POST", package, aumid)
-    waiting, _ = job.wait({"suspended", "awaiting_recovery"} | done, timeout_s=120)
+    waiting = job.wait({"suspended", "awaiting_recovery"} | done, timeout_s=120)
     job.control("resume.json", "flymsg.worker_resume/v1")
-    final, _ = job.wait(done)
+    final = job.wait(done)
     recovery = {
         "seen_running": first.get("state") == "running",
         "parked_as": waiting.get("state"),

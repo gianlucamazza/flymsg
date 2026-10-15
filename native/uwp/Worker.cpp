@@ -223,6 +223,9 @@ struct Worker {
       }
       return shutdown || suspended || cancelled(folder, id);
     };
+    // wall time and steps of this execution's advance, for throughput only
+    const auto first_step = runtime.step;
+    const auto began = std::chrono::steady_clock::now();
     if (backend == "dx12") {
       const auto adapter = field(doc, L"expected_adapter");
       flymsg::require(!adapter.empty(), "GPU job requires adapter identity");
@@ -234,6 +237,9 @@ struct Worker {
         if (stop(runtime.step))
           break;
       }
+    const double advance_ms = std::chrono::duration<double, std::milli>(
+                                  std::chrono::steady_clock::now() - began)
+                                  .count();
     status(folder, id, "checkpointing", runtime.step);
     runtime.checkpoint(folder / L"checkpoint.bin");
     JsonObject saved;
@@ -260,6 +266,9 @@ struct Worker {
                     JsonValue::CreateStringValue(to_hstring(hash)));
       result.Insert(L"backend",
                     JsonValue::CreateStringValue(to_hstring(backend)));
+      result.Insert(L"advance_ms", JsonValue::CreateNumberValue(advance_ms));
+      result.Insert(L"advance_steps",
+                    JsonValue::CreateNumberValue(runtime.step - first_step));
       write_json(folder / L"result.json", result);
       status(folder, id, "completed", runtime.step);
     } else {
