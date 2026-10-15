@@ -93,6 +93,14 @@ class Portal:
             upload=str(local),
         )
 
+    def delete(self, package: str, rel: str, name: str) -> None:
+        path = "%5CLocalState%5C" + rel.replace("\\", "%5C")
+        self.curl(
+            "DELETE",
+            f"/api/filesystem/apps/file?knownfolderid=LocalAppData"
+            f"&packagefullname={package}&path={path}&filename={name}",
+        )
+
     def get(self, package: str, rel: str, name: str, local: Path) -> None:
         path = "%5CLocalState%5C" + rel.replace("\\", "%5C")
         self.curl(
@@ -106,11 +114,11 @@ class Portal:
 def lineage(backend: str) -> dict:
     """What a manifest records of the backend: the worker package and the shader's
     hash for the console (never an address or a credential), nothing for the CPU."""
-    if backend != "console":
+    if backend not in ("console", "hybrid"):
         return {}
     shader = Path(os.environ[SHADER_ENV])
     return {
-        "backend": "console",
+        "backend": backend,
         "worker_package": os.environ[PACKAGE_ENV],
         "worker_shader_sha256": hashlib.sha256(shader.read_bytes()).hexdigest(),
         "worker_adapter": ADAPTER,
@@ -202,6 +210,17 @@ def run_batch(
         fixture.write_bytes(native.batch_fixture(base, batch, k).tobytes())
         outputs.append(output)
         fixtures.append(fixture)
+    # the console keeps the small records (job, status, results); its copies of the
+    # network and the outputs would fill its storage over a long run
+    for name in ["fixture.bin", "batch.bin"] + [
+        f"output_{k}.bin" for k in range(len(runtimes))
+    ]:
+        try:
+            p.delete(device.package, rel, name)
+        except RuntimeError:
+            pass  # cleanup only: a file left behind costs space, not correctness
+    base.unlink()
+    batch.unlink()
     return outputs, fixtures, json.loads((folder / "result.json").read_text())
 
 
@@ -256,6 +275,11 @@ class Results:
             dt_ms,
             stim_ms,
         )
+
+    def close(self) -> None:
+        """Remove the local outputs and fixtures once the results have been read."""
+        for path in [*self.outputs, *self.fixtures]:
+            path.unlink(missing_ok=True)
 
     def __len__(self) -> int:
         return len(self.outputs)

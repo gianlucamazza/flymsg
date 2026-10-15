@@ -136,11 +136,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--checkpoint", type=Path)
     s.add_argument(
         "--backend",
-        choices=("cpu", "console"),
+        choices=("cpu", "console", "hybrid"),
         default="cpu",
         help="console: each graph's battery as one batch on the console worker "
         "(FLYMSG_WORKER_PACKAGE, FLYMSG_WORKER_SHADER and the Device Portal settings "
-        "from the environment); bit for bit with cpu",
+        "from the environment); hybrid: --workers CPU processes and the console on one "
+        "queue of graphs; all bit for bit with cpu",
     )
     s = sub.add_parser(
         "convergence",

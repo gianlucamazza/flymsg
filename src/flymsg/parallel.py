@@ -7,7 +7,11 @@ through the pool initializer, and reads it with `context()`.
 """
 
 import multiprocessing as mp
+import queue
+import threading
+from collections import deque
 from collections.abc import Callable, Iterator
+from concurrent.futures import ThreadPoolExecutor
 
 _context = None
 
@@ -41,3 +45,61 @@ def imap(fn: Callable, jobs: list, workers: int, ctx) -> Iterator[tuple]:
     )
     with pool:
         yield from pool.imap_unordered(_tagged, [(fn, j) for j in jobs])
+
+
+def _lane_job(fn_job):
+    fn, job, ctx = fn_job
+    _init(ctx)  # the lane's thread shares this process's context slot
+    return job, fn(job)
+
+
+def imap_shared(
+    fn: Callable, jobs: list, workers: int, ctx, lane_ctx
+) -> Iterator[tuple]:
+    """Yield (job, fn(job)) as jobs finish, from one shared queue served by up to
+    `workers` processes with context `ctx` and by a lane in this process with context
+    `lane_ctx` (another backend, such as the console). Each takes its next job only when
+    it is free, so the faster one runs more. A failure in either stops the batch."""
+    todo, lock, finished = deque(jobs), threading.Lock(), queue.Queue()
+
+    def take():
+        with lock:
+            return todo.popleft() if todo else None
+
+    pool = mp.get_context("forkserver").Pool(
+        max(1, workers), initializer=_init, initargs=(ctx,)
+    )
+    lane = ThreadPoolExecutor(1)
+
+    def to_pool():
+        job = take()
+        if job is not None:
+            pool.apply_async(
+                _tagged,
+                ((fn, job),),
+                callback=lambda r: (finished.put((r, None)), to_pool()),
+                error_callback=lambda exc: finished.put((None, exc)),
+            )
+
+    def to_lane():
+        job = take()
+        if job is not None:
+            lane.submit(_lane_job, (fn, job, lane_ctx)).add_done_callback(done_lane)
+
+    def done_lane(future):
+        exc = future.exception()
+        finished.put((None if exc else future.result(), exc))
+        if exc is None:
+            to_lane()
+
+    with pool, lane:
+        to_lane()
+        for _ in range(max(1, workers)):
+            to_pool()
+        for _ in range(len(jobs)):
+            result, exc = finished.get()
+            if exc is not None:
+                with lock:
+                    todo.clear()  # nothing new starts
+                raise exc
+            yield result

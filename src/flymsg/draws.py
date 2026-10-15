@@ -200,6 +200,7 @@ def map_jobs(
     checkpoint: Path | None,
     meta: dict,
     first=(),
+    lane_ctx=None,
 ):
     """Run `fn` over `jobs` (each returns a list of rows) with job context `ctx`, in worker
     processes if workers > 1, collecting results as they finish. With `checkpoint`, every
@@ -207,7 +208,8 @@ def map_jobs(
     an interrupted run resumes (a running job's null draws are saved too, see `null_rates`);
     a checkpoint written with other parameters is refused. Jobs in `first` are submitted
     before the others (the confirmatory tests, so that an interrupted run has them);
-    rows come back in the order of `jobs`."""
+    rows come back in the order of `jobs`. With `lane_ctx`, a lane in this process takes
+    jobs from the same queue as the workers, with that context (another backend)."""
     done: dict[tuple, list] = {}
     if checkpoint and checkpoint.exists():
         for rec in _read_checked(checkpoint):
@@ -242,6 +244,13 @@ def map_jobs(
                 _write_checked(f, rec)
             partial_path(checkpoint, job).unlink(missing_ok=True)
 
-    for j, rows in parallel.imap(fn, todo, workers, (ctx, checkpoint, meta)):
+    batches = (
+        parallel.imap(fn, todo, workers, (ctx, checkpoint, meta))
+        if lane_ctx is None
+        else parallel.imap_shared(
+            fn, todo, workers, (ctx, checkpoint, meta), (lane_ctx, checkpoint, meta)
+        )
+    )
+    for j, rows in batches:
         record(j, rows)
     return [r for j in jobs for r in done[tuple(j)]]

@@ -378,7 +378,7 @@ Outputs: `results/convergence/v1.executions/be1ac274…/output/`.
 - **Verdict.** A response is specific when its adjusted p is at most α. The verdict lists the specific and not specific responses, with no overall pass.
 - **Reported, not deciding.** The share of shuffles on which a response holds (the v4 floor), the shuffles' 5th, 50th and 95th percentiles, latencies, and recruited and persistent counts.
 
-`flymsg baselines --run` writes every cell, the judgement and a report. With `--backend console`, each graph's battery runs as one batch on the console worker, bit for bit with the CPU (see [runtime](runtime.md)); the manifest records the backend.
+`flymsg baselines --run` writes every cell, the judgement and a report. With `--backend console`, each graph's battery runs as one batch on the console worker, bit for bit with the CPU (see [runtime](runtime.md)). `--backend hybrid` runs the CPU workers and the console together on one queue of graphs. The manifest records the backend.
 
 ## APL and the odor contrast at KC claws (#85)
 

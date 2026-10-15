@@ -153,6 +153,8 @@ def _job(job: tuple) -> list[dict]:
         ):
             row.update(shuffle=shuffle, case=case)
             rows.append(row)
+    if results is not None:
+        results.close()
     return rows
 
 
@@ -164,7 +166,7 @@ def jobs(doc: dict) -> list[tuple]:
     return [("real",), *(("shuffle", s) for s in range(first, first + base["draws"]))]
 
 
-BACKENDS = ("cpu", "console")
+BACKENDS = ("cpu", "console", "hybrid")
 
 
 def run(
@@ -175,19 +177,31 @@ def run(
     backend: str = "cpu",
 ) -> pd.DataFrame:
     """`backend="console"` runs each graph's battery as one batch on the console worker
-    (`flymsg.console`, bit for bit with `sim.run`), one graph at a time."""
+    (`flymsg.console`, bit for bit with `sim.run`), one graph at a time; `"hybrid"` runs
+    `workers` CPU processes and the console together on one queue of graphs."""
     if backend not in BACKENDS:
         raise BaselineError(f"unknown backend {backend!r}")
     doc = assert_matches_code()
     meta = {"version": doc["version"], "sha256": doc["content_sha256"]}
-    rows = draws.map_jobs(
-        _job,
-        jobs(doc),
-        1 if backend == "console" else workers,  # one console, one batch at a time
-        (neurons, edges, doc, backend),
-        checkpoint,
-        meta,
-    )
+    if backend == "hybrid":
+        rows = draws.map_jobs(
+            _job,
+            jobs(doc),
+            workers,
+            (neurons, edges, doc, "cpu"),
+            checkpoint,
+            meta,
+            lane_ctx=(neurons, edges, doc, "console"),
+        )
+    else:
+        rows = draws.map_jobs(
+            _job,
+            jobs(doc),
+            1 if backend == "console" else workers,  # one console, one batch at a time
+            (neurons, edges, doc, backend),
+            checkpoint,
+            meta,
+        )
     return pd.DataFrame(rows)
 
 

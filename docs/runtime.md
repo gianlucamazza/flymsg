@@ -128,7 +128,9 @@ The full MaleCNS default model (165,122 neurons, 24.5 million synapses; looming 
 
 - `flymsg.console` holds the Device Portal client. It turns `sim.run` calls on one network into one batch job: the network is uploaded once, then every run follows.
 - The decoded results are `sim.run`'s, bit for bit.
-- `flymsg baselines --run --backend console` runs each graph's battery that way and records the worker package and shader hash in the manifest, never an address.
+- `flymsg baselines --run --backend console` runs each graph's battery that way. `--backend hybrid` serves one queue of graphs from the CPU workers and the console together (`parallel.imap_shared`), and each side takes its next graph when it is free.
+- The manifest records the worker package and shader hash, never an address.
+- Each batch deletes its network copy and outputs from the console once they are read.
 - `scripts/console_battery.py` checks a whole battery on the console against `sim.run` on the host, run by run.
 
 A GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation beyond this batching. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.

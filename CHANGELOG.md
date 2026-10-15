@@ -133,7 +133,8 @@
   - **Batch format.** Several runs of one network travel as one base fixture and exact per-run patches (`native.export_batch`), so the network is uploaded once.
   - **Worker.** It runs them in order, keeps each run's output and resumes after the last completed one.
   - **Library.** `flymsg.console` turns `sim.run` calls into such a batch on the Series S, and the decoded results are `sim.run`'s, bit for bit.
-  - **Baselines.** `flymsg baselines --backend console` runs each graph's battery that way. `sensitivity.measure` accepts results from any backend.
+  - **Baselines.** `flymsg baselines --backend console` runs each graph's battery that way, and `--backend hybrid` adds the console to the CPU workers on one queue (`parallel.imap_shared`). `sensitivity.measure` accepts results from any backend.
+  - **Export cost.** The network's edge order is computed once per batch.
   - **Memory.** Batches export one run at a time, and outputs are decoded on demand.
 
 - **The 3D viewer on an Xbox.**
