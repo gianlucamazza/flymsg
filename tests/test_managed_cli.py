@@ -206,6 +206,7 @@ def test_sister_writer_policy_is_explicit_and_complete():
         "jump3d",
         "weight-rule",
         "sensitivity",
+        "baselines",
         "convergence",
         "nulls",
         "select-model",

@@ -353,7 +353,7 @@ seed statistics, not spike for spike. `flymsg convergence --run` writes every ce
 judgement and a report.
 
 **Result of version 1 (2026-10-14): converged.** Run from `7c4d34d`, the lock commit, in one
-attempt (5 min, 4 workers). All ten responses converge at 0.1 ms, and at 0.05 ms: holds
+attempt (5 min, 4 workers). All eight responses converge at 0.1 ms, and at 0.05 ms: holds
 verdicts are identical at every timestep (the bitter negative stays silent), and every
 seed-median target rate lies within the finest seed range of the finest median, the giant fiber
 → TTMn response exactly at it (16.7 against 10.0 Hz, range 6.7 Hz). What does not decide moves
@@ -363,6 +363,22 @@ recruited by sugar fall from 439 to 155; the looming and P1 latencies agree with
 the battery's rates and verdicts do not depend on the 0.1 ms step, and first-spike latencies
 and recruitment counts of weak pathways should not be read to better than the step's effect.
 Outputs: `results/convergence/v1.executions/be1ac274…/output/`.
+
+## Simple baselines (SF2, a report, not a score)
+
+`validation/baselines.yaml` v1 (#148) was locked on 2026-10-15, before any battery run on a shuffle. It asks, response by response, whether the battery needs the measured wiring, or only what a degree-preserving shuffle keeps: each neuron's out-weights and the in-degree multiset.
+
+- **Graphs.**
+  - The battery's six cases and eight responses run with the default parameters and seeds 0–4.
+  - They run on the measured connectome and on 199 shuffles, seeds 4000–4198. These are N1's configuration-model permutation of `post`, with seeds disjoint from N1, the null families and song.
+- **Statistic.**
+  - Per response, the statistic is the seed-median rate of the target's best neuron.
+  - It gives an empirical p, with ties counted against the measured wiring. The tail is upper for positive cases and lower for the bitter negative.
+  - Holm corrects over the eight responses at α = 0.05. With 199 draws the smallest p, 0.005, lies below Holm's first threshold of 0.00625.
+- **Verdict.** A response is specific when its adjusted p is at most α. The verdict lists the specific and not specific responses, with no overall pass.
+- **Reported, not deciding.** The share of shuffles on which a response holds (the v4 floor), the shuffles' 5th, 50th and 95th percentiles, latencies, and recruited and persistent counts.
+
+`flymsg baselines --run` writes every cell, the judgement and a report. Not yet run.
 
 ## Findings log
 

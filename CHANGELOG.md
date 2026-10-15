@@ -48,6 +48,16 @@
 
 ### Validation
 
+- **Simple baselines lock** (#148, SF2): `validation/baselines.yaml` v1, `flymsg baselines
+[--run]`.
+  - **Design.** The battery's eight responses run on the measured connectome and on 199
+    degree-preserving shuffles (seeds 4000–4198), seeds 0–4. Per response, an empirical p in
+    the locked tail, Holm-corrected, decides whether the response needs the measured
+    partners.
+  - **Status.** A report, not a score. No run yet.
+  - **Fix.** The timestep convergence entry of 0.8.47 and `docs/validation.md` counted ten
+    battery responses; the battery has eight.
+
 - **Looming → giant fiber timing v2 lock** (#34, G3): `validation/gf_looming.yaml` v2. Version
   1's model fired the giant fiber in every cell, and a model-only probe found it firing at gains
   4 to 32 times lower; v2 makes the two giant fibers passive (threshold out of reach) so their

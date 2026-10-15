@@ -6,6 +6,7 @@ from importlib import metadata
 from pathlib import Path
 
 from flymsg import (
+    baselines,
     behavior,
     benchmarks,
     convergence,
@@ -32,6 +33,7 @@ PROTOCOLS = {
     "behavior": behavior,
     "benchmarks": benchmarks,
     "sensitivity": sensitivity,
+    "baselines": baselines,
     "convergence": convergence,
     "silence-scan": silence_scan,
     "partner-followup": partner_followup,

@@ -181,6 +181,7 @@ the final path. A clean committed worktree is required. See
 | `trace STIM --neurons N…`                                        | record v, g, threshold, spikes and input of chosen neurons; model states, not recordings                                           |
 | `viz-compare A B --labels … --status …`                          | pair two replay exports; refuses mismatched datasets or time bases; no simulation                                                  |
 | `sensitivity [--run]`                                            | the locked w_syn × th_jump grid around the defaults: every cell, spreads, a figure; a report                                       |
+| `baselines [--run]`                                              | the locked battery baselines (SF2): the measured wiring against 199 degree-preserving shuffles, Holm-corrected per response        |
 | `convergence [--run]`                                            | the locked timestep convergence check (SF2): the battery's responses at 0.1, 0.05 and 0.025 ms                                     |
 | `song [--run]`                                                   | the locked pulse/sine benchmark against Pacheco et al. 2021 (#36): model and no-go first, then the data                            |
 | `gf-looming [--run]`                                             | the locked looming → giant fiber timing benchmark against Dombrovski et al. 2025 (#34): model and no-go first, then the data       |

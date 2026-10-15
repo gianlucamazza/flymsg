@@ -128,6 +128,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--checkpoint", type=Path)
     s = sub.add_parser(
+        "baselines",
+        help="print the locked battery baselines (measured wiring against degree-preserving shuffles), or run them with --run (SF2)",
+    )
+    s.add_argument("--run", action="store_true")
+    s.add_argument("--workers", type=int, default=1)
+    s.add_argument("--checkpoint", type=Path)
+    s = sub.add_parser(
         "convergence",
         help="print the locked timestep convergence check, or run it with --run (SF2)",
     )

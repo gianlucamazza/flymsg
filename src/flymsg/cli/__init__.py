@@ -7,6 +7,7 @@ body, sensory); the parser is in `parser`.
 import sys
 
 from flymsg import (
+    baselines,
     behavior,
     benchmarks,
     convergence,
@@ -61,6 +62,7 @@ from flymsg.cli.sensory import (
 )
 from flymsg.cli.simulate import cmd_calibrate, cmd_sim, cmd_trace, cmd_viz, summarize
 from flymsg.cli.validation import (
+    cmd_baselines,
     cmd_benchmarks,
     cmd_convergence,
     cmd_gf_looming,
@@ -113,6 +115,7 @@ COMMANDS = {
     "weight-rule": cmd_weight_rule,
     "trace": cmd_trace,
     "sensitivity": cmd_sensitivity,
+    "baselines": cmd_baselines,
     "convergence": cmd_convergence,
     "song": cmd_song,
     "gf-looming": cmd_gf_looming,
@@ -147,6 +150,7 @@ MALECNS_ONLY = (
     "weight-rule",
     "trace",
     "sensitivity",
+    "baselines",
     "convergence",
     "song",
     "gf-looming",
@@ -181,6 +185,8 @@ def main() -> None:
             return print(table.to_string(index=False) if not table.empty else "no runs")
         if a.cmd == "sensitivity" and not a.run:
             return print(sensitivity.summary())
+        if a.cmd == "baselines" and not a.run:
+            return print(baselines.summary())
         if a.cmd == "convergence" and not a.run:
             return print(convergence.summary())
         if a.cmd == "song" and not a.run:
@@ -243,6 +249,8 @@ def main() -> None:
     except workbench.ConfigError as err:
         sys.exit(f"flymsg: {err}")
     except sensitivity.SensitivityError as err:
+        sys.exit(f"flymsg: {err}")
+    except baselines.BaselineError as err:
         sys.exit(f"flymsg: {err}")
     except convergence.ConvergenceError as err:
         sys.exit(f"flymsg: {err}")

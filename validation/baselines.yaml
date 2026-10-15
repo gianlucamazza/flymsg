@@ -1,0 +1,73 @@
+# Simple baselines for the battery (SF2, issue 148). Version 1, fixed 2026-10-15 before any run.
+# Changing a locked field requires incrementing `version` and updating `content_sha256` and
+# flymsg.baselines.VERSION_HASHES. `flymsg baselines` prints this file; `--run` executes it.
+version: 1
+content_sha256: 2cc8bdaca7028081b2b6ba98552e8c26f6b9ef6cd8dfd1bc79e2e7290ac74611
+yaml_subset: 2
+evidence: none
+evidence_none: "A structural baseline of the model itself: the shuffled connectomes are draws of a configuration model of the measured one, every parameter is the live default of sim.Params, and no biological value is newly sourced."
+
+issue: 148
+claim:
+  kind: baseline_report
+  scored: false
+  reason: "Asks, response by response, whether the battery needs the measured wiring or only what a degree-preserving shuffle keeps (each neuron's out-weights and the in-degree multiset). It does not select a parameter, does not change sim.Params and does not replace criterion v4, N1, the null families or any frozen score."
+
+seen_before_lock: "The battery on the measured connectome at seeds 0-4 (results/sensitivity/v1 at factor 1.0, results/convergence at dt 0.1 ms); N1's one degree-preserving shuffle (seed 0) under criterion v4; the structural null families' one-hop weights (docs/nulls.md, draws 0-19). No battery run on a shuffle with seeds 4000-4198 has been made."
+
+battery:
+  seed0: 0
+  seeds: 5
+  rate_hz: 100.0
+  stim_ms: 300.0
+  duration_ms: 600.0
+
+cases:
+  positive: [looming escape, giant fiber output, P1 courtship drive, pIP10 song pathway, sugar feeding]
+  negative: [bitter feeding]
+
+holds:
+  holds_min_spikes: 3
+  holds_seed_share_num: 2
+  holds_seed_share_den: 3
+
+baseline:
+  family: degree_preserving
+  method: "nulls.shuffle_degree_preserving: N1's permutation of post (configuration model; Maslov & Sneppen 2002, Newman 2003); neurons, signs, stimulus rows and target types unchanged"
+  draws: 199
+  shuffle_seed0: 4000
+  draws_why: "the smallest empirical p is 1/200 = 0.005, below Holm's first threshold for the eight responses at alpha 0.05 (0.05 / 8 = 0.00625), so a response can be called specific after the correction; with 99 draws (p >= 0.01) none could"
+  seeds_why: "disjoint from N1 (seed 0), the null families (draws 0-19) and song (3600-3698)"
+
+statistic:
+  per_response: "the seed-median rate of the target's best neuron during the stimulus (sensitivity.measure, as validate.respond picks it), on the measured connectome and on each shuffle with the same seeds"
+  tail: "upper for positive cases (the measured wiring drives the target more than a shuffle); lower for the negative case (it drives the bitter target less)"
+  p: "(1 + number of shuffles at least as extreme as the measured, ties counted against it) / (1 + draws)"
+  alpha: 0.05
+  correction: "Holm over every response of the battery (positive and negative), fixed before the run"
+
+decides:
+  specific: "a response is specific when its Holm-adjusted p is at most alpha"
+  verdict: "the list of specific and not specific responses; no overall pass or fail"
+  why: "a response the shuffles reproduce as well needs only the out-weights and degree multiset the shuffle keeps, not who connects to whom; one that they do not reproduce depends on the measured partners"
+
+reported:
+  holds_share:
+    decides: false
+    what: "per response, the share of shuffles on which it holds (the v4 floor over seeds), and whether it holds on the measured connectome"
+  null_quantiles:
+    decides: false
+    what: "per response, the 5th, 50th and 95th percentiles of the shuffles' seed-median rates"
+  latency_recruited:
+    decides: false
+    what: "seed-median first spike, recruited and persistent counts, measured and shuffle median"
+
+limits:
+  - "One family: the shuffle keeps each neuron's out-weights and the in-degree multiset, not each neuron's in-degree, cell-type block structure or signs per edge; a response the shuffle reproduces may still depend on what it keeps."
+  - "Default parameters only; the sensitivity grid around them is not repeated on the shuffles."
+  - "Five seeds per graph; the statistic is a seed median, so a response near the v4 floor can move with the seeds as well as with the graph."
+  - "The best neuron of the target type is picked per graph, so a shuffle is credited with whichever neuron of the type responds most."
+  - "The draws are a sample of the configuration model, not its distribution: 199 draws resolve p down to 0.005."
+  - "Responses share stimulus rows and targets across cases, so their p values are not independent; Holm holds under any dependence."
+
+defaults_changed: false
