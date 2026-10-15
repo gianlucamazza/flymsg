@@ -87,7 +87,31 @@ std::vector<uint32_t> bitset(const Runtime &runtime,
           bits[slot * words + out[k] / 32] |= 1u << (out[k] % 32);
   return bits;
 }
+// The first hardware adapter that creates a D3D12 device: the lane's one
+// selection rule, shared with the worker's dashboard.
+bool hardware_device(ComPtr<ID3D12Device> &device,
+                     DXGI_ADAPTER_DESC1 &description) {
+  ComPtr<IDXGIFactory4> factory;
+  check(CreateDXGIFactory1(IID_PPV_ARGS(&factory)), "DXGI factory");
+  ComPtr<IDXGIAdapter1> adapter;
+  for (UINT i = 0; factory->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND;
+       ++i) {
+    check(adapter->GetDesc1(&description), "adapter description");
+    if (!(description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) &&
+        SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0,
+                                    IID_PPV_ARGS(&device))))
+      return true;
+    adapter.Reset();
+  }
+  return false;
+}
 } // namespace
+std::wstring hardware_adapter() {
+  ComPtr<ID3D12Device> device;
+  DXGI_ADAPTER_DESC1 description{};
+  return hardware_device(device, description) ? description.Description
+                                              : std::wstring();
+}
 void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
                  const std::function<bool(uint32_t)> &stop,
                  const std::string &expected_adapter) {
@@ -102,21 +126,10 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   const uint32_t n = runtime.input[2];
   const auto groups = (uint64_t(n) + 63) / 64;
   require(groups <= 65535, "GPU fixture exceeds dispatch limit");
-  ComPtr<IDXGIFactory4> factory;
-  check(CreateDXGIFactory1(IID_PPV_ARGS(&factory)), "DXGI factory");
-  ComPtr<IDXGIAdapter1> adapter;
   ComPtr<ID3D12Device> device;
   DXGI_ADAPTER_DESC1 description{};
-  for (UINT i = 0; factory->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND;
-       ++i) {
-    check(adapter->GetDesc1(&description), "adapter description");
-    if (!(description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) &&
-        SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0,
-                                    IID_PPV_ARGS(&device))))
-      break;
-    adapter.Reset();
-  }
-  require(bool(device), "BLOCKED: hardware D3D12 adapter required");
+  require(hardware_device(device, description),
+          "BLOCKED: hardware D3D12 adapter required");
   if (!expected_adapter.empty())
     require(std::wstring(description.Description) ==
                 std::wstring(expected_adapter.begin(), expected_adapter.end()),
