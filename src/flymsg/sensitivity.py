@@ -85,6 +85,17 @@ def cell_params(factor: float, th_jump: float) -> sim.Params:
     return sim.Params(w_syn=sim.Params.w_syn * factor, th_jump=th_jump)
 
 
+def case_targets(name: str) -> list[str]:
+    """Target types of a battery case, positive or negative."""
+    for case in validate.CASES:
+        if case.name == name:
+            return list(case.targets)
+    for neg, _stim, target, *_ in validate.NEGATIVES:
+        if neg == name:
+            return [target]
+    raise KeyError(f"no battery case {name!r}")
+
+
 def case_inputs(name: str, neurons: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
     """Stimulus rows and target types of a battery case, positive or negative."""
     for case in validate.CASES:

@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from flymsg import (
+    baselines,
     benchmarks,
     compare,
     convergence,
@@ -337,6 +338,42 @@ def cmd_sensitivity(a, neurons, edges):
         },
         {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
         started,
+    )
+    print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_baselines(a, neurons, edges):
+    """Run the locked battery baselines and write every cell and the judgement."""
+    started = datetime.now(UTC)
+    doc = baselines.assert_matches_code()
+    print(baselines.summary(doc))
+    cells = baselines.run(neurons, edges, a.workers, a.checkpoint)
+    out = managed.output(a, Path("runs/baselines") / f"v{doc['version']}")
+    out.mkdir(parents=True, exist_ok=True)
+    cells.to_csv(out / "cells.csv", index=False)
+    judged = baselines.judge(cells, doc)
+    judged.to_csv(out / "judged.csv", index=False)
+    verdict = baselines.verdict(judged)
+    text = "\n".join(
+        [baselines.summary(doc), judged.to_string(index=False), f"verdict: {verdict}"]
+    )
+    (out / "report.txt").write_text(text + "\n")
+    print(text)
+    stamp(
+        out,
+        "baselines --run",
+        a,
+        neurons,
+        edges,
+        {
+            "baselines_version": doc["version"],
+            "baselines_sha256": doc["content_sha256"],
+            "battery": doc["battery"],
+            "baseline": doc["baseline"],
+        },
+        {"seed0": doc["battery"]["seed0"], "seeds": doc["battery"]["seeds"]},
+        started,
+        {"verdict": verdict},
     )
     print(f"report -> {out / 'report.txt'}")
 
