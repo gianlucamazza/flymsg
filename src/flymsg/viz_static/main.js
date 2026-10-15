@@ -64,6 +64,7 @@ import { binAt, rasterRows, selectionExport, selectionRows } from "./raster.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
 import { installXrObserver } from "./xr.js";
+import { BUTTON, motion, padHint, pressedSince, tvMode } from "./gamepad.js";
 
 const SEG = "v1.0/segmentation";
 const MESHES = `${SEG}/multi-res-meshes`;
@@ -90,9 +91,14 @@ const SKEL_ERROR_PX = 0.5;
 
 const query = new URLSearchParams(location.search);
 const coarse = matchMedia(COARSE).matches;
+// a console's browser (or ?tv=1): larger text, the panel closed, controller hints
+const tv = tvMode(location.search, navigator.userAgent);
+if (tv) document.documentElement.classList.add("tv");
 const settings = {
-  detailPx: Number(query.get("detail")) || 256, // refine a fragment when its chunk exceeds this on screen
-  budgetM: Number(query.get("budget")) || 8, // million triangles held on the GPU
+  // a console's browser stops a tab far below a desktop's memory (Edge on a Series S at
+  // the desktop defaults: SBOX_FATAL_MEMORY_EXCEEDED), so the TV layout starts leaner
+  detailPx: Number(query.get("detail")) || (tv ? 512 : 256), // refine a fragment when its chunk exceeds this on screen
+  budgetM: Number(query.get("budget")) || (tv ? 1 : 8), // million triangles held on the GPU
   // ?neuropils=0|1: start with every shell hidden (and not downloaded) or shown; by default
   // shown in anatomy views and hidden in replays, where the silent skeletons already outline
   // the whole CNS and the 11 M translucent shell triangles cost ~40 ms per frame on an Iris Xe
@@ -1424,7 +1430,7 @@ if (query.has("check")) {
   };
 }
 const info = document.getElementById("info");
-info.textContent = hint(coarse);
+info.textContent = tv ? padHint() : hint(coarse);
 let downAt = null;
 renderer.domElement.addEventListener(
   "pointerdown",
@@ -1631,13 +1637,16 @@ rasterCanvas.addEventListener("pointermove", (e) => {
   if (scrubbing) clock.t = rasterTime(e);
 });
 rasterCanvas.addEventListener("pointerup", () => (scrubbing = false));
+// one bin back or forward, paused: the arrow keys, and LB/RB on a controller
+function stepBin(step) {
+  clock.playing = false;
+  const b = binAt(clock.t, A.bin_ms, A.bins) + step;
+  clock.t = Math.max(0, Math.min(A.bins - 1, b)) * A.bin_ms; // the start of that bin
+}
 addEventListener("keydown", (e) => {
   if (!rasterState || e.target.closest?.("input")) return;
   if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-  clock.playing = false;
-  const step = e.key === "ArrowRight" ? 1 : -1;
-  const b = binAt(clock.t, A.bin_ms, A.bins) + step;
-  clock.t = Math.max(0, Math.min(A.bins - 1, b)) * A.bin_ms; // the start of that bin
+  stepBin(e.key === "ArrowRight" ? 1 : -1);
 });
 addEventListener("resize", drawRaster);
 rasterEl.querySelector("button").addEventListener("click", async () => {
@@ -1677,9 +1686,12 @@ applyChrome(
   },
   location.search,
 );
+let guiPanel = null; // the lil-gui panel, which the controller's View button opens and closes
 if (showChrome(location.search)) {
   const gui = new GUI({ title: "flymsg" });
-  if (matchMedia(NARROW).matches) gui.close(); // the open panel would cover the scene
+  guiPanel = gui;
+  // the open panel would cover the scene on a phone, and wants a pointer on a TV
+  if (matchMedia(NARROW).matches || tv) gui.close();
   gui
     .add(view, "colorBy", COLOR_MODES)
     .name("colour by")
@@ -1870,6 +1882,45 @@ camera.position.set(extent * 0.7, extent * 0.25, extent * 0.55); // oblique: bra
 controls.target.set(0, 0, 0);
 controls.update();
 fitClip();
+const home = camera.position.clone(); // the controller's Y returns here
+
+// ---------- game controller ----------
+// Polled each frame (the Gamepad API has no events for axes). The left stick orbits the
+// target, the right stick and triggers zoom, and the buttons act on their press only.
+let padButtons = null;
+const orbit = new THREE.Spherical();
+function steerWithPad(dt) {
+  const pad = [...(navigator.getGamepads?.() ?? [])].find(
+    (p) => p && p.mapping === "standard",
+  );
+  if (!pad) return false;
+  const { now, fresh } = pressedSince(pad, padButtons);
+  padButtons = now;
+  if (fresh.has(BUTTON.A) && replay) clock.playing = !clock.playing;
+  if (fresh.has(BUTTON.LB) && replay) stepBin(-1);
+  if (fresh.has(BUTTON.RB) && replay) stepBin(1);
+  if (fresh.has(BUTTON.X)) clearSelection();
+  if (fresh.has(BUTTON.VIEW) && guiPanel) guiPanel.open(guiPanel._closed);
+  if (fresh.has(BUTTON.Y)) {
+    camera.position.copy(home);
+    controls.target.set(0, 0, 0);
+    camera.lookAt(controls.target);
+    return true;
+  }
+  const m = motion(pad, dt);
+  if (m.theta === 0 && m.phi === 0 && m.zoom === 1) return false;
+  const offset = camera.position.clone().sub(controls.target);
+  orbit.setFromVector3(offset);
+  orbit.theta += m.theta;
+  orbit.phi = Math.min(Math.PI - 1e-3, Math.max(1e-3, orbit.phi + m.phi));
+  orbit.radius = Math.min(
+    controls.maxDistance,
+    Math.max(controls.minDistance, orbit.radius * m.zoom),
+  );
+  camera.position.copy(controls.target).add(offset.setFromSpherical(orbit));
+  camera.lookAt(controls.target);
+  return true;
+}
 
 addEventListener("resize", () => {
   if (renderer.xr.isPresenting) return; // XR runtime owns the stereo framebuffer size
@@ -1932,7 +1983,8 @@ document.addEventListener("visibilitychange", () => {
 renderer.setAnimationLoop(() => {
   const dt = timer.getDelta();
   const inXR = renderer.xr.isPresenting;
-  const moved = inXR ? false : controls.update(); // XR headset owns its camera pose
+  const steered = inXR ? false : steerWithPad(dt);
+  const moved = inXR ? false : controls.update() || steered; // XR headset owns its camera pose
   if (inXR) {
     // head motion moves the camera without OrbitControls events: refine as the view
     // changes, at the selection's own rate

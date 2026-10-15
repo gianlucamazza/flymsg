@@ -473,7 +473,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         metavar=("OUTPUT", "FIXTURE"),
         help="replay a native or console run (output.bin and its fixture.bin); the "
-        "fixture must hold the whole dataset in row order",
+        "fixture must hold the whole dataset in row order, and its input sets the stimulus",
     )
     s.add_argument("--rate", type=float, default=100.0)
     s.add_argument("--duration", type=float, default=600.0, help="ms")
