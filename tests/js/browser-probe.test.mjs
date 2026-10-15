@@ -50,6 +50,7 @@ test("browser diagnostics restore renderer, observer and GL methods on reference
           return old;
         },
         reference: async () => {
+          assert.equal(state.suspended, true);
           throw Error("injected failure");
         },
       }),

@@ -1675,6 +1675,7 @@ const clock = {
 };
 const clockEl = document.getElementById("clock");
 let diagnosticContinuous = false;
+let diagnosticSuspended = false;
 let shownT = null; // replay time whose activity is on the GPU
 function updateActivity(t) {
   activityAt(
@@ -2057,6 +2058,7 @@ if (query.has("check")) {
       return { ...lineSubmission };
     },
     diagnosticState: () => ({
+      suspended: diagnosticSuspended,
       continuous: diagnosticContinuous,
       time: clock.t,
       playing: clock.playing,
@@ -2064,12 +2066,15 @@ if (query.has("check")) {
       residentLines: settings.residentLines,
     }),
     diagnostic({
+      suspended = false,
       continuous = false,
       time = 0,
       playing = false,
       pageCulling = settings.pageCulling,
       residentLines = settings.residentLines,
     } = {}) {
+      if (suspended && renderer.xr.isPresenting)
+        throw new Error("Cannot suspend an immersive session for a diagnostic");
       if (
         !Number.isFinite(time) ||
         time < 0 ||
@@ -2077,6 +2082,7 @@ if (query.has("check")) {
       )
         throw new RangeError("Diagnostic timestamp outside scene");
       const previous = {
+        suspended: diagnosticSuspended,
         continuous: diagnosticContinuous,
         time: clock.t,
         playing: clock.playing,
@@ -2084,6 +2090,8 @@ if (query.has("check")) {
         residentLines: settings.residentLines,
       };
       diagnosticContinuous = continuous;
+      diagnosticSuspended = suspended;
+      xrObserver?.refresh?.();
       clock.playing = playing;
       clock.t = time;
       settings.pageCulling = pageCulling;
@@ -2820,6 +2828,7 @@ document.addEventListener("visibilitychange", () => {
 renderer.setAnimationLoop((timestamp) => {
   const frameStart = performance.now();
   const dt = timer.getDelta();
+  if (diagnosticSuspended) return; // explicit offscreen probes own the renderer until restoration
   const inXR = renderer.xr.isPresenting;
   const steered = inXR ? false : steerWithPad(dt);
   const moved = inXR ? false : controls.update() || steered; // XR headset owns its camera pose
@@ -2909,6 +2918,7 @@ const xrOptions = {
   controls,
   extentUm: extent,
   entryError: () => {
+    if (diagnosticSuspended) return "A rendering diagnostic is in progress.";
     const fidelity = fidelityReport();
     if (pagedScene && pagedScene.report().state !== "ready")
       return `GPU resources are ${pagedScene.report().state}. VR requires completed uploads.`;

@@ -23,7 +23,9 @@ try {
         while(flymsg.paged&&flymsg.paged.state!=='ready'&&performance.now()<until)await new Promise(resolve=>setTimeout(resolve,100));
         if(flymsg.paged&&flymsg.paged.state!=='ready')throw Error('GPU recovery incomplete; no completed artifact')};
       await ready();
-      const options={width:64,height:64,time:20,culling:true,pipeline:flymsg.paged?'paged':'original'};
+      flymsg.camera.updateMatrixWorld(true);
+      const options={width:64,height:64,time:20,culling:true,pipeline:flymsg.paged?'paged':'original',
+        projection:flymsg.camera.projectionMatrix.toArray(),cameraWorld:flymsg.camera.matrixWorld.toArray()};
       const before=await flymsg.reference(options);
       const canvas=flymsg.renderer.domElement,gl=flymsg.renderer.getContext();
       const extension=gl.getExtension('WEBGL_lose_context');

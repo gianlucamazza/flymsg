@@ -77,7 +77,7 @@ try {
   })()`);
   restore = await evaluate("flymsg.diagnosticState()");
   await evaluate(
-    `flymsg.diagnostic(${JSON.stringify({ continuous: true, time: 20, ...(process.env.PAGES === undefined ? {} : { pageCulling: process.env.PAGES === "1" }) })})`,
+    `flymsg.diagnostic(${JSON.stringify({ suspended: false, continuous: true, time: 20, ...(process.env.PAGES === undefined ? {} : { pageCulling: process.env.PAGES === "1" }) })})`,
   );
   await new Promise((r) => setTimeout(r, 3000));
   const sample = await evaluate(`new Promise(resolve=>{

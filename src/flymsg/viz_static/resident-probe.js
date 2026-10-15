@@ -28,7 +28,12 @@ export async function residentLineProbe(
   )
     throw new RangeError("Invalid bounded residency probe configuration");
   const gl = r.getContext(),
-    saved = view.diagnostic({ continuous: false, playing: false, time });
+    saved = view.diagnostic({
+      suspended: true,
+      continuous: false,
+      playing: false,
+      time,
+    });
   const target = r.getRenderTarget(),
     viewport = r.getViewport(new T.Vector4()),
     scissor = r.getScissor(new T.Vector4()),
@@ -73,7 +78,7 @@ export async function residentLineProbe(
       base.position.multiplyScalar(scale);
       base.updateProjectionMatrix();
       base.updateMatrixWorld(true);
-      view.diagnostic({ time, residentLines: true });
+      view.diagnostic({ suspended: true, time, residentLines: true });
       const options = {
         width: size,
         height: size,
@@ -114,7 +119,11 @@ export async function residentLineProbe(
         "compact",
       ].entries()) {
         const startedAt = new Date().toISOString();
-        view.diagnostic({ time, residentLines: mode === "resident" });
+        view.diagnostic({
+          suspended: true,
+          time,
+          residentLines: mode === "resident",
+        });
         gl.bufferData = function (...args) {
           tally(args, false);
           return bufferData.apply(gl, args);

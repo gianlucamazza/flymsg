@@ -15,7 +15,11 @@ export async function browserProbe(
   if (!["direct", "desktop"].includes(pipeline))
     throw new RangeError("Unknown browser pipeline");
   const { renderer: r, THREE: T, world, camera } = view;
-  if (r.xr.isPresenting || view.fidelity().status !== "ready")
+  if (
+    r.xr.isPresenting ||
+    view.fidelity().status !== "ready" ||
+    (view.paged && view.fidelity().gpu_ready !== true)
+  )
     throw Error("Complete non-immersive observer required");
   const gl = r.getContext(),
     ext = gl.getExtension("WEBGL_debug_renderer_info");
@@ -47,6 +51,7 @@ export async function browserProbe(
   )
     throw Error("Composer and renderer dimensions differ");
   const saved = view.diagnostic({
+    suspended: true,
     time: 20,
     playing: false,
     continuous: false,
@@ -166,11 +171,24 @@ export async function browserProbe(
       culling: false,
     });
     if (JSON.stringify(before) !== JSON.stringify(after))
-      throw Error("Source reference changed during trial");
+      throw Error(
+        "Source reference changed during trial: " +
+          JSON.stringify({
+            fields: Object.keys(before).filter(
+              (key) =>
+                JSON.stringify(before[key]) !== JSON.stringify(after[key]),
+            ),
+            camera_before: before.camera_world,
+            camera_after: after.camera_world,
+            projection_before: before.projection,
+            projection_after: after.projection,
+          }),
+      );
     completed = true;
     return {
       schema: "flymsg.browser-probe/v1",
       renderer_pipeline: view.paged ? "immutable-pages" : "original",
+      application_loop_suspended: true,
       capabilities,
       pipeline,
       workload_started_at: workloadStartedAt,
@@ -204,19 +222,23 @@ export async function browserProbe(
     r.setViewport(viewport);
     r.setScissor(scissor);
     r.setScissorTest(scissorTest);
-    view.diagnostic(saved);
-    if (completed) {
-      // Restore actual activity/textures as well as the logical replay clock.
-      await view.reference({
-        width: 32,
-        height: 32,
-        time: saved.time,
-        culling: saved.pageCulling,
-      });
-      if (pipeline === "desktop") {
-        if (view.renderDesktop) view.renderDesktop();
-        else if (!view.paged) view.composer.render();
+    try {
+      if (completed) {
+        view.diagnostic({ ...saved, suspended: true, playing: false });
+        // Restore actual activity/textures as well as the logical replay clock.
+        await view.reference({
+          width: 32,
+          height: 32,
+          time: saved.time,
+          culling: saved.pageCulling,
+        });
+        if (pipeline === "desktop") {
+          if (view.renderDesktop) view.renderDesktop();
+          else if (!view.paged) view.composer.render();
+        }
       }
+    } finally {
+      view.diagnostic(saved);
     }
   }
 }

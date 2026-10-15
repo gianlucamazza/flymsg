@@ -60,10 +60,25 @@ export async function observerPipelineOracle() {
         scene_sha256: original.scene_sha256,
         activity_sha256: original.activity_sha256,
         source_geometry: original.geometry,
+        width: original.width,
+        height: original.height,
+        reference_view: {
+          projection: original.projection,
+          camera_world: original.camera_world,
+          data_world: original.data_world,
+        },
+        candidate_view: {
+          projection: paged.projection,
+          camera_world: paged.camera_world,
+          data_world: paged.data_world,
+        },
+        reference_images: original.images,
+        candidate_images: paged.images,
       });
     }
   let diagnosticRouting = null;
   if (api.fidelity().representation === "skeleton") {
+    const beforeDiagnostics = api.diagnosticState();
     const gpu = serializedGpuProbe(api, { sizes: [64], warmup: 1, repeats: 1 });
     const direct = await browserProbe(api, {
       seconds: 2,
@@ -81,11 +96,17 @@ export async function observerPipelineOracle() {
       )
     )
       throw new Error("Diagnostic measured a different pipeline");
+    if (
+      JSON.stringify(api.diagnosticState()) !==
+      JSON.stringify(beforeDiagnostics)
+    )
+      throw new Error("Diagnostic did not restore application state");
     diagnosticRouting = {
       gpu_variants: gpu.records.length,
       direct_frames: direct.records.length,
       desktop_frames: desktop.records.length,
       renderer_pipeline: "immutable-pages",
+      application_state_restored: true,
       qualification: "software fixture routing only; no performance claim",
     };
   }

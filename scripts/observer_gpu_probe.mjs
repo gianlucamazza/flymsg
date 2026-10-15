@@ -80,7 +80,7 @@ try {
   })()`);
   saved = before.state;
   await evaluate(
-    "flymsg.diagnostic({continuous:false,time:0,pageCulling:false})",
+    "flymsg.diagnostic({suspended:true,continuous:false,time:0,pageCulling:false})",
   );
   // Explicitly prepare original indices/activity even when the runtime suspends rAF.
   const reference = await evaluate(

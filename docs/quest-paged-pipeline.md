@@ -69,6 +69,10 @@ candidate-generated expected arrays.
 
 Direct/compositor probes use `flymsg.renderScene()`/`renderDesktop()` to select
 the same pipeline as the application loop, and record that pipeline explicitly.
+Serialized probes suspend ordinary animation-loop scene/control updates and
+restore the complete diagnostic state on success and failure. This prevents
+OrbitControls roundoff or idle renders from changing a supposedly frozen trial;
+it cannot suspend an immersive session and is never an FPS qualification path.
 The legacy resident-index probe rejects immutable pages instead of accidentally
 timing the hidden reference. Context recovery also waits for the active pipeline.
 

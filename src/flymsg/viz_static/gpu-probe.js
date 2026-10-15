@@ -42,6 +42,14 @@ export function serializedGpuProbe(
     void main(){vColor=vec3(1.0);vOn=1.0;
       gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
   const records = [];
+  const observerState = view.diagnosticState?.();
+  if (observerState)
+    view.diagnostic({
+      ...observerState,
+      suspended: true,
+      playing: false,
+      continuous: false,
+    });
   try {
     renderer.debug.onShaderError = () => {
       throw new Error("Probe shader compilation failed");
@@ -132,6 +140,7 @@ export function serializedGpuProbe(
     return {
       schema: "flymsg.serialized-render-probe/v2",
       renderer_pipeline: view.paged ? "immutable-pages" : "original",
+      application_loop_suspended: !!observerState,
       records,
       warmup,
       repeats,
@@ -152,5 +161,6 @@ export function serializedGpuProbe(
     renderer.setViewport(saved.viewport);
     renderer.setScissor(saved.scissor);
     renderer.setScissorTest(saved.scissorTest);
+    if (observerState) view.diagnostic(observerState);
   }
 }
