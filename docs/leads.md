@@ -136,6 +136,13 @@ Next (locked 2026-10-15 as `validation/gf_looming.yaml` v1, timing only): an M2 
 now be scored without a data request on the stage that ends at the giant fiber: an input shaped as Ache et al. 2019 drives the model's DNp01, judged against the
 deposited r/v series with a held-out set fixed in the lock. The gains stay a scanned envelope, never fitted to the giant fiber, and the input is not a measured LC4 or LPLC2 rate.
 
+Both versions ran uninformative.
+
+- **v1:** the model's giant fiber fired in every cell.
+- **v2:** the giant fibers were passive. Their peaks follow the stimulus, and three of the ten control flies peak at onset, so the flies' interval holds the onset slope.
+
+A timing test of this stage needs a measured LC4 or LPLC2 rate, or recordings whose timing excludes the onset; neither is deposited.
+
 ### Muscle → body actuator (G4)
 
 No source names a MaleCNS/MANC motor neuron or muscle together with a FlyBody actuator, so under
