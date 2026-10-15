@@ -4,6 +4,14 @@
 
 ### Result
 
+- **APL claw contrast v1** (#85): uninformative, the no-go.
+  - **APL intact.** The KCs' mean potential sits below rest for both odors (−0.69 and −0.97
+    mV), with 30–37% of KCs spiking, so the claws have no positive depolarization to contrast.
+  - **APL output removed.** Every KC spikes, and the contrast is clipped to about zero.
+  - **Outside the verdict.** The relations hold in 5/5 seeds. They mean little, because
+    c_on contrasts two potentials below rest
+    (`results/apl-claws/v1.executions/b914035a…/output/`).
+
 - **Series S worker lifecycle** (#40): on a 2,048-neuron synthetic version-1 fixture of
   1,000,000 steps, the worker's lifecycle behaves on the console
   (`docs/evidence/series-s-lifecycle-2026-10-15.json`, `scripts/console_lifecycle.py`):

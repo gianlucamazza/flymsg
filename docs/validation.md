@@ -390,7 +390,18 @@ Outputs: `results/convergence/v1.executions/be1ac274…/output/`.
 - **No-go.** If the median c_pn is not positive, the claw depolarization is not positive for either odor in either arm in any seed, or any seed's contrast is undefined, the run is uninformative.
 - **Verdict.** On the seed medians, _raises_ is `c_off > c_on` and _restores_ is `|c_off − c_pn| < |c_on − c_pn|`. Pass if both hold, partial if only raises does, fail if raises does not. The share of seeds in which each holds, the KC spiking fractions and c_on's sign are reported, not scored.
 
-`flymsg apl-claws --run` writes every cell, the judgement and a report. Not yet run.
+`flymsg apl-claws --run` writes every cell, the judgement and a report.
+
+**Result of version 1 (2026-10-15, run at `fdef643`, seeds 420–424, 20 simulations in 14 min): uninformative, the no-go.**
+
+- **APL intact.** The KCs' mean potential over the odor sits _below_ rest: −0.69 mV for OCT and −0.97 mV for MCH. Meanwhile 30–37% of KCs spike. APL's inhibition outweighs the PN drive for the average KC, so there is no positive claw depolarization to contrast, and the no-go applies.
+- **APL output removed.** Every KC spikes for both odors, and the mean potential is 2.14–2.16 mV, so the threshold and reset clip the claw contrast to about zero (c_off ≈ −0.003). This is the clipping the lock names.
+- **The PNs** carry the measured direction: OCT drives the ALPNs more than MCH (c_pn ≈ +0.04).
+- **Outside the verdict.** The two relations hold in all five seeds: c_off > c_on, and c_off is nearer c_pn than c_on is. They mean little here, because c_on is a contrast of two potentials below rest. OCT holds the average KC less far below rest than MCH does, and that alone makes c_on negative.
+
+So the model's APL inhibits KCs more strongly than claw imaging suggests, and without APL every KC fires. A claw-level test needs a readout that neither averages over hyperpolarized cells nor saturates: a new version.
+
+Outputs: `results/apl-claws/v1.executions/b914035a…/output/`.
 
 ## Findings log
 

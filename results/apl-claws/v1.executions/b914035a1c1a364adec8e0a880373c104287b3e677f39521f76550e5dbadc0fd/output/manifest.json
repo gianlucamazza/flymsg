@@ -1,0 +1,544 @@
+{
+  "command": "apl-claws --run",
+  "config": {
+    "apl_claws_sha256": "4478289480e026c72cca984a892b8874c3016412a668889c75ba3f2ef9b0ec45",
+    "apl_claws_version": 1,
+    "arms": {
+      "off": "every synapse from the two APL neurons removed (TNT blocks APL release onto all its targets, KCs and PN boutons alike)",
+      "on": "the default model"
+    },
+    "protocol": {
+      "apl": "APL",
+      "apl_n": 2,
+      "duration_ms": 1000.0,
+      "kc": "^KC",
+      "odor_ms": 1000.0,
+      "odor_rule": "Prisco et al.'s two odors, as in the KC sparseness locks (DoOR consensus, ropensci/DoOR.data at db323a4)",
+      "odor_source": "door",
+      "odors": [
+        "3-octanol",
+        "4-methylcyclohexanol"
+      ],
+      "pn_class": "ALPN",
+      "rate_at_response_1_hz": 100.0,
+      "rate_from": "the stimulus rate of every flymsg protocol; DoOR responses are normalised, so the rate of a response of 1 is a named compensation",
+      "seeds": [
+        420,
+        421,
+        422,
+        423,
+        424
+      ],
+      "seeds_why": "five seeds disjoint from every other lock (KC sparseness used 50-97)"
+    }
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "attempts": [
+      {
+        "checkpoint": "apl-v1.ckpt",
+        "computed_jobs": [
+          [
+            "on",
+            "3-octanol",
+            420
+          ],
+          [
+            "on",
+            "3-octanol",
+            421
+          ],
+          [
+            "on",
+            "3-octanol",
+            422
+          ],
+          [
+            "on",
+            "3-octanol",
+            423
+          ],
+          [
+            "on",
+            "3-octanol",
+            424
+          ],
+          [
+            "on",
+            "4-methylcyclohexanol",
+            420
+          ],
+          [
+            "on",
+            "4-methylcyclohexanol",
+            421
+          ],
+          [
+            "on",
+            "4-methylcyclohexanol",
+            422
+          ],
+          [
+            "on",
+            "4-methylcyclohexanol",
+            423
+          ],
+          [
+            "on",
+            "4-methylcyclohexanol",
+            424
+          ],
+          [
+            "off",
+            "3-octanol",
+            420
+          ],
+          [
+            "off",
+            "3-octanol",
+            421
+          ],
+          [
+            "off",
+            "3-octanol",
+            422
+          ],
+          [
+            "off",
+            "3-octanol",
+            423
+          ],
+          [
+            "off",
+            "3-octanol",
+            424
+          ],
+          [
+            "off",
+            "4-methylcyclohexanol",
+            420
+          ],
+          [
+            "off",
+            "4-methylcyclohexanol",
+            421
+          ],
+          [
+            "off",
+            "4-methylcyclohexanol",
+            422
+          ],
+          [
+            "off",
+            "4-methylcyclohexanol",
+            423
+          ],
+          [
+            "off",
+            "4-methylcyclohexanol",
+            424
+          ]
+        ],
+        "finished_at": "2026-10-15T13:47:11.181949+00:00",
+        "host": "lenovo",
+        "id": "944353c7a7ec4fc884e480f703486365",
+        "kernel": "7.2.9-arch1-1",
+        "resumed_jobs": [],
+        "started_at": "2026-10-15T13:34:02.271477+00:00",
+        "status": "completed",
+        "system": "Linux"
+      }
+    ],
+    "data_dir": "data",
+    "execution": {
+      "command": "apl-claws",
+      "config": {
+        "dataset": "malecns",
+        "run": true,
+        "workers": 1
+      },
+      "default_electrical_semantics": "flymsg.gap/continuous-clamp-v1",
+      "environment": {
+        "byteorder": "little",
+        "cpu": {
+          "cpu family": "6",
+          "flags": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid movdiri movdir64b fsrm avx512_vp2intersect md_clear ibt flush_l1d arch_capabilities",
+          "microcode": "0xbe",
+          "model": "140",
+          "model name": "11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz",
+          "stepping": "1",
+          "vendor_id": "GenuineIntel"
+        },
+        "machine": "x86_64",
+        "numerical_threads": {
+          "MKL_NUM_THREADS": null,
+          "NUMBA_NUM_THREADS": null,
+          "OMP_NUM_THREADS": null,
+          "OPENBLAS_NUM_THREADS": null
+        },
+        "packages": {
+          "absl-py": "2.5.1",
+          "asttokens": "3.0.2",
+          "contourpy": "1.4.0",
+          "cycler": "0.12.1",
+          "etils": "1.14.0",
+          "executing": "2.3.0",
+          "flygym": "2.1.0",
+          "flymsg": "0.8.47",
+          "fonttools": "4.66.1",
+          "fsspec": "2026.9.0",
+          "glfw": "2.10.2",
+          "imageio": "2.38.1",
+          "imageio-ffmpeg": "0.6.0",
+          "iniconfig": "2.3.0",
+          "ipython": "9.17.1",
+          "ipython_pygments_lexers": "1.1.1",
+          "jaxtyping": "0.3.7",
+          "jedi": "0.20.1",
+          "kiwisolver": "1.5.1",
+          "llvmlite": "0.50.0",
+          "loguru": "0.7.3",
+          "markdown": "3.11",
+          "matplotlib": "3.11.2",
+          "matplotlib-inline": "0.2.2",
+          "mediapy": "1.2.7",
+          "mujoco": "3.9.0",
+          "numba": "0.68.0",
+          "numpy": "2.5.3",
+          "packaging": "26.3",
+          "pandas": "3.0.6",
+          "parso": "0.8.7",
+          "pexpect": "4.9.0",
+          "pillow": "12.3.0",
+          "pluggy": "1.6.0",
+          "prompt_toolkit": "3.0.53",
+          "psutil": "7.2.2",
+          "ptyprocess": "0.7.0",
+          "pure_eval": "0.2.4",
+          "pyarrow": "25.0.1",
+          "pygments": "2.21.0",
+          "pyopengl": "3.1.10",
+          "pyparsing": "3.3.3",
+          "pytest": "9.1.1",
+          "python-dateutil": "2.9.0.post0",
+          "pyyaml": "6.0.3",
+          "rdata": "1.1.0",
+          "ruff": "0.16.10",
+          "scipy": "1.18.1",
+          "six": "1.17.0",
+          "stack-data": "0.6.3",
+          "tabulate": "0.9.0",
+          "traitlets": "5.16.1",
+          "typing_extensions": "4.16.0",
+          "wadler_lindig": "0.1.7",
+          "wcwidth": "0.9.2",
+          "xarray": "2026.9.0",
+          "zipp": "4.1.1"
+        },
+        "python": "3.13.9",
+        "system": "Linux"
+      },
+      "inputs": {
+        "door/door_mappings.csv": {
+          "bytes": 12824,
+          "sha256": "1197c492e769b1b587c907c5b750ffa2507d7e6c9fe9dfcb2ee8603871e00912"
+        },
+        "door/door_response_matrix.csv": {
+          "bytes": 295852,
+          "sha256": "bc2aa5414ff54d3a1399f5fe171e154bcadc754bcf323a3c27711a54f70848e2"
+        },
+        "door/odor.csv": {
+          "bytes": 155880,
+          "sha256": "a31d1841cf90ce23ec149760a5efa38eae02de7820bb2300c3a7dba221745940"
+        },
+        "edges.parquet": {
+          "bytes": 98482393,
+          "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+        },
+        "neurons.parquet": {
+          "bytes": 2375250,
+          "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+        }
+      },
+      "protocol": {
+        "arms": {
+          "off": "every synapse from the two APL neurons removed (TNT blocks APL release onto all its targets, KCs and PN boutons alike)",
+          "on": "the default model"
+        },
+        "claim": {
+          "kind": "relational",
+          "scored": true,
+          "source": "Prisco, Deimel, Yeliseyeva, Fiala, Tavosanis 2021, eLife 10:e74172, doi:10.7554/eLife.74172 (CC BY 4.0), Figure 4B and Figure 4-figure supplement 1, read in full text (PMC8741211)",
+          "what": "Whether the model's APL equalises the two odors at the Kenyon cells' input as Prisco et al. 2021 measured: with APL output intact the OCT/MCH contrast at KC claws is smaller than at PN boutons, and with APL output blocked it rises to the PN boutons' contrast. Directions only; no amplitude is compared."
+        },
+        "content_sha256": "4478289480e026c72cca984a892b8874c3016412a668889c75ba3f2ef9b0ec45",
+        "data_measured": {
+          "apl_off": "APL OFF calyces (APLi > TNT, tubP-GAL80ts, 24-48 h at 31 C): OCT stronger than MCH (n = 10, p = 0.0003); responding microglomeruli slightly more (p = 0.047)",
+          "apl_on": "APL ON calyces (TNT not expressed): average peak among responding microglomeruli, OCT vs MCH not different (n = 10, p = 0.949, two-way ANOVA with Tukey); responding microglomeruli p = 0.995",
+          "contrast": "inter-odour delta (Figure 4-figure supplement 1, n = 10): KC claws APL ON vs APL OFF p = 0.0011; PN boutons vs KC claws APL ON p = 0.0024; PN boutons vs KC claws APL OFF p = 0.9698; PN boutons vs KC claws in the default genotype p = 0.0271 (Brown-Forsythe and Welch ANOVA with multiple comparisons)",
+          "odors": "4-methylcyclohexanol and 3-octanol, 1:100 in mineral oil, 5 s",
+          "sex": "mixed populations of males and females"
+        },
+        "defaults_changed": false,
+        "evidence": [
+          "apl_claw_odor_contrast"
+        ],
+        "issue": 85,
+        "limits": [
+          "Point neurons: the KC's somatic potential stands for a claw's postsynaptic calcium; APL's local inhibition at the claws (Amin et al. 2020) is not compartmentalised.",
+          "Units differ between readouts, so only each readout's own odor contrast enters the relations; GCaMP's nonlinearity is not modelled.",
+          "Prisco et al. average the peak over responding microglomeruli and compare a raw inter-odour delta; the model averages the window potential over every KC and compares a normalised contrast, so silent KCs dilute both odors alike.",
+          "The KC potential is clipped by threshold and reset: a dense population compresses the claw contrast (towards a false fail) and a population held near rest makes it rest on small numbers; the KC spiking fractions are reported beside the verdict to read either case.",
+          "Odor drive is DoOR consensus responses at 100 Hz per unit response, not Prisco et al.'s 1:100 dilutions; 1 s of odor, not 5 s.",
+          "The measured flies are mixed sex; the model is male.",
+          "ALPN stands for NP225 boutons; NP225 labels a subset of uniglomerular PNs.",
+          "TNT blocks APL output for 24-48 h and may change more than release; the model removes the synapses only.",
+          "The data's statistics are across flies (n = 10); the model's across seeds of one connectome."
+        ],
+        "no_go": {
+          "rule": "computed before the verdict: if the seed median of the model's PN contrast c_pn is not positive (OCT does not drive the ALPNs more than MCH), or the claw depolarization is not positive (zero, or KCs held below rest) for either odor in either arm in any seed, or any seed's contrast is undefined (both odors zero), the premise of the measurement is absent and the run is recorded as uninformative",
+          "why": "the measured effect is APL hiding an input contrast that PN boutons carry; without that contrast in the model's PNs there is nothing for APL to hide"
+        },
+        "protocol": {
+          "apl": "APL",
+          "apl_n": 2,
+          "duration_ms": 1000.0,
+          "kc": "^KC",
+          "odor_ms": 1000.0,
+          "odor_rule": "Prisco et al.'s two odors, as in the KC sparseness locks (DoOR consensus, ropensci/DoOR.data at db323a4)",
+          "odor_source": "door",
+          "odors": [
+            "3-octanol",
+            "4-methylcyclohexanol"
+          ],
+          "pn_class": "ALPN",
+          "rate_at_response_1_hz": 100.0,
+          "rate_from": "the stimulus rate of every flymsg protocol; DoOR responses are normalised, so the rate of a response of 1 is a named compensation",
+          "seeds": [
+            420,
+            421,
+            422,
+            423,
+            424
+          ],
+          "seeds_why": "five seeds disjoint from every other lock (KC sparseness used 50-97)"
+        },
+        "readout": {
+          "bouton": "per seed and odor, the spikes of every ALPN during the odor window: NP225 PNs are a subset of uniglomerular ALPNs, and a bouton's synaptic calcium follows the PN's spikes",
+          "claw": "per seed and odor, the mean over every KC of its membrane potential above v_rest averaged over the odor window: the model has no claw compartment, so the KC's point potential stands for its claw response",
+          "contrast": "c = (x_OCT - x_MCH) / (x_OCT + x_MCH) per seed, for claws in each arm (c_on, c_off) and for boutons in arm on (c_pn); unitless, so mV and spike counts compare only through their own odor contrast",
+          "summary": "the median over the five seeds of each contrast; the share of seeds in which each relation holds is reported"
+        },
+        "score": {
+          "relations": {
+            "raises": "c_off > c_on (blocking APL raises the claw contrast; Figure 4B, p = 0.0003 OFF vs 0.949 ON; supplement p = 0.0011)",
+            "restores": "|c_off - c_pn| < |c_on - c_pn| (without APL the claw contrast is nearer the boutons' than with it; supplement p = 0.9698 OFF vs 0.0024 ON)"
+          },
+          "reported": "c_on, c_off and c_pn per seed and their medians; the claw depolarization per odor and arm; the fraction of KCs that spike per odor and arm; c_on's sign (the data show no ON difference, so a negative c_on is reported, not scored)",
+          "verdict": {
+            "fail": "raises does not hold",
+            "partial": "raises holds and restores does not",
+            "pass": "both relations hold on the seed medians",
+            "uninformative": "the no-go"
+          }
+        },
+        "seen_before_lock": "The KC sparseness locks v1-v8 on 3-octanol and 4-methylcyclohexanol (results/kc-sparseness; KC spike counts and responders per arm, never KC membrane potential); version 1 removed APL -> KC (arm C) and KCs went dense. No run of this protocol, no APL-output-removed arm and no KC depolarization readout has been made. The Dryad deposit (doi:10.5061/dryad.bk3j9kdd1, CC0) was listed (file names, sizes, sha-256) and not downloaded; it does not enter the verdict.",
+        "version": 1,
+        "yaml_subset": 2
+      },
+      "schema": "flymsg.execution/v1",
+      "source": {
+        "commit": "fdef6431c59df3b50c79ccc3056b28bc277166c2",
+        "dirty": false
+      }
+    },
+    "execution_sha256": "b914035a1c1a364adec8e0a880373c104287b3e677f39521f76550e5dbadc0fd",
+    "verdict": "uninformative"
+  },
+  "git": {
+    "commit": "fdef6431c59df3b50c79ccc3056b28bc277166c2",
+    "dirty": false
+  },
+  "packages": {
+    "absl-py": "2.5.1",
+    "asttokens": "3.0.2",
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "etils": "1.14.0",
+    "executing": "2.3.0",
+    "flygym": "2.1.0",
+    "flymsg": "0.8.47",
+    "fonttools": "4.66.1",
+    "fsspec": "2026.9.0",
+    "glfw": "2.10.2",
+    "imageio": "2.38.1",
+    "imageio-ffmpeg": "0.6.0",
+    "iniconfig": "2.3.0",
+    "ipython": "9.17.1",
+    "ipython_pygments_lexers": "1.1.1",
+    "jaxtyping": "0.3.7",
+    "jedi": "0.20.1",
+    "kiwisolver": "1.5.1",
+    "llvmlite": "0.50.0",
+    "loguru": "0.7.3",
+    "markdown": "3.11",
+    "matplotlib": "3.11.2",
+    "matplotlib-inline": "0.2.2",
+    "mediapy": "1.2.7",
+    "mujoco": "3.9.0",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pandas": "3.0.6",
+    "parso": "0.8.7",
+    "pexpect": "4.9.0",
+    "pillow": "12.3.0",
+    "pluggy": "1.6.0",
+    "prompt_toolkit": "3.0.53",
+    "psutil": "7.2.2",
+    "ptyprocess": "0.7.0",
+    "pure_eval": "0.2.4",
+    "pyarrow": "25.0.1",
+    "pygments": "2.21.0",
+    "pyopengl": "3.1.10",
+    "pyparsing": "3.3.3",
+    "pytest": "9.1.1",
+    "python-dateutil": "2.9.0.post0",
+    "pyyaml": "6.0.3",
+    "rdata": "1.1.0",
+    "ruff": "0.16.10",
+    "scipy": "1.18.1",
+    "six": "1.17.0",
+    "stack-data": "0.6.3",
+    "tabulate": "0.9.0",
+    "traitlets": "5.16.1",
+    "typing_extensions": "4.16.0",
+    "wadler_lindig": "0.1.7",
+    "wcwidth": "0.9.2",
+    "xarray": "2026.9.0",
+    "zipp": "4.1.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.9-arch1-1-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.9-arch1-1",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "arms": {
+      "off": "every synapse from the two APL neurons removed (TNT blocks APL release onto all its targets, KCs and PN boutons alike)",
+      "on": "the default model"
+    },
+    "claim": {
+      "kind": "relational",
+      "scored": true,
+      "source": "Prisco, Deimel, Yeliseyeva, Fiala, Tavosanis 2021, eLife 10:e74172, doi:10.7554/eLife.74172 (CC BY 4.0), Figure 4B and Figure 4-figure supplement 1, read in full text (PMC8741211)",
+      "what": "Whether the model's APL equalises the two odors at the Kenyon cells' input as Prisco et al. 2021 measured: with APL output intact the OCT/MCH contrast at KC claws is smaller than at PN boutons, and with APL output blocked it rises to the PN boutons' contrast. Directions only; no amplitude is compared."
+    },
+    "content_sha256": "4478289480e026c72cca984a892b8874c3016412a668889c75ba3f2ef9b0ec45",
+    "data_measured": {
+      "apl_off": "APL OFF calyces (APLi > TNT, tubP-GAL80ts, 24-48 h at 31 C): OCT stronger than MCH (n = 10, p = 0.0003); responding microglomeruli slightly more (p = 0.047)",
+      "apl_on": "APL ON calyces (TNT not expressed): average peak among responding microglomeruli, OCT vs MCH not different (n = 10, p = 0.949, two-way ANOVA with Tukey); responding microglomeruli p = 0.995",
+      "contrast": "inter-odour delta (Figure 4-figure supplement 1, n = 10): KC claws APL ON vs APL OFF p = 0.0011; PN boutons vs KC claws APL ON p = 0.0024; PN boutons vs KC claws APL OFF p = 0.9698; PN boutons vs KC claws in the default genotype p = 0.0271 (Brown-Forsythe and Welch ANOVA with multiple comparisons)",
+      "odors": "4-methylcyclohexanol and 3-octanol, 1:100 in mineral oil, 5 s",
+      "sex": "mixed populations of males and females"
+    },
+    "defaults_changed": false,
+    "evidence": [
+      "apl_claw_odor_contrast"
+    ],
+    "issue": 85,
+    "limits": [
+      "Point neurons: the KC's somatic potential stands for a claw's postsynaptic calcium; APL's local inhibition at the claws (Amin et al. 2020) is not compartmentalised.",
+      "Units differ between readouts, so only each readout's own odor contrast enters the relations; GCaMP's nonlinearity is not modelled.",
+      "Prisco et al. average the peak over responding microglomeruli and compare a raw inter-odour delta; the model averages the window potential over every KC and compares a normalised contrast, so silent KCs dilute both odors alike.",
+      "The KC potential is clipped by threshold and reset: a dense population compresses the claw contrast (towards a false fail) and a population held near rest makes it rest on small numbers; the KC spiking fractions are reported beside the verdict to read either case.",
+      "Odor drive is DoOR consensus responses at 100 Hz per unit response, not Prisco et al.'s 1:100 dilutions; 1 s of odor, not 5 s.",
+      "The measured flies are mixed sex; the model is male.",
+      "ALPN stands for NP225 boutons; NP225 labels a subset of uniglomerular PNs.",
+      "TNT blocks APL output for 24-48 h and may change more than release; the model removes the synapses only.",
+      "The data's statistics are across flies (n = 10); the model's across seeds of one connectome."
+    ],
+    "no_go": {
+      "rule": "computed before the verdict: if the seed median of the model's PN contrast c_pn is not positive (OCT does not drive the ALPNs more than MCH), or the claw depolarization is not positive (zero, or KCs held below rest) for either odor in either arm in any seed, or any seed's contrast is undefined (both odors zero), the premise of the measurement is absent and the run is recorded as uninformative",
+      "why": "the measured effect is APL hiding an input contrast that PN boutons carry; without that contrast in the model's PNs there is nothing for APL to hide"
+    },
+    "protocol": {
+      "apl": "APL",
+      "apl_n": 2,
+      "duration_ms": 1000.0,
+      "kc": "^KC",
+      "odor_ms": 1000.0,
+      "odor_rule": "Prisco et al.'s two odors, as in the KC sparseness locks (DoOR consensus, ropensci/DoOR.data at db323a4)",
+      "odor_source": "door",
+      "odors": [
+        "3-octanol",
+        "4-methylcyclohexanol"
+      ],
+      "pn_class": "ALPN",
+      "rate_at_response_1_hz": 100.0,
+      "rate_from": "the stimulus rate of every flymsg protocol; DoOR responses are normalised, so the rate of a response of 1 is a named compensation",
+      "seeds": [
+        420,
+        421,
+        422,
+        423,
+        424
+      ],
+      "seeds_why": "five seeds disjoint from every other lock (KC sparseness used 50-97)"
+    },
+    "readout": {
+      "bouton": "per seed and odor, the spikes of every ALPN during the odor window: NP225 PNs are a subset of uniglomerular ALPNs, and a bouton's synaptic calcium follows the PN's spikes",
+      "claw": "per seed and odor, the mean over every KC of its membrane potential above v_rest averaged over the odor window: the model has no claw compartment, so the KC's point potential stands for its claw response",
+      "contrast": "c = (x_OCT - x_MCH) / (x_OCT + x_MCH) per seed, for claws in each arm (c_on, c_off) and for boutons in arm on (c_pn); unitless, so mV and spike counts compare only through their own odor contrast",
+      "summary": "the median over the five seeds of each contrast; the share of seeds in which each relation holds is reported"
+    },
+    "score": {
+      "relations": {
+        "raises": "c_off > c_on (blocking APL raises the claw contrast; Figure 4B, p = 0.0003 OFF vs 0.949 ON; supplement p = 0.0011)",
+        "restores": "|c_off - c_pn| < |c_on - c_pn| (without APL the claw contrast is nearer the boutons' than with it; supplement p = 0.9698 OFF vs 0.0024 ON)"
+      },
+      "reported": "c_on, c_off and c_pn per seed and their medians; the claw depolarization per odor and arm; the fraction of KCs that spike per odor and arm; c_on's sign (the data show no ON difference, so a negative c_on is reported, not scored)",
+      "verdict": {
+        "fail": "raises does not hold",
+        "partial": "raises holds and restores does not",
+        "pass": "both relations hold on the seed medians",
+        "uninformative": "the no-go"
+      }
+    },
+    "seen_before_lock": "The KC sparseness locks v1-v8 on 3-octanol and 4-methylcyclohexanol (results/kc-sparseness; KC spike counts and responders per arm, never KC membrane potential); version 1 removed APL -> KC (arm C) and KCs went dense. No run of this protocol, no APL-output-removed arm and no KC depolarization readout has been made. The Dryad deposit (doi:10.5061/dryad.bk3j9kdd1, CC0) was listed (file names, sizes, sha-256) and not downloaded; it does not enter the verdict.",
+    "version": 1,
+    "yaml_subset": 2
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "all": [
+      420,
+      421,
+      422,
+      423,
+      424
+    ]
+  },
+  "timestamps": {
+    "finished_at": "2026-10-15T13:47:10.353429+00:00",
+    "started_at": "2026-10-15T13:34:02.244697+00:00"
+  }
+}

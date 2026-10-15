@@ -1305,6 +1305,77 @@
    },
    "source_commit": "21ce9848587bbd05c4eabd9b505e0a9678071dae",
    "verdict": "uninformative: the flies' slope does not separate the circuit from a stimulus-locked peak (onset)"
+  },
+  {
+   "command": "apl-claws --run",
+   "config": {
+    "apl_claws_sha256": "4478289480e026c72cca984a892b8874c3016412a668889c75ba3f2ef9b0ec45",
+    "apl_claws_version": 1,
+    "arms": {
+     "off": "every synapse from the two APL neurons removed (TNT blocks APL release onto all its targets, KCs and PN boutons alike)",
+     "on": "the default model"
+    },
+    "protocol": {
+     "apl": "APL",
+     "apl_n": 2,
+     "duration_ms": 1000.0,
+     "kc": "^KC",
+     "odor_ms": 1000.0,
+     "odor_rule": "Prisco et al.'s two odors, as in the KC sparseness locks (DoOR consensus, ropensci/DoOR.data at db323a4)",
+     "odor_source": "door",
+     "odors": [
+      "3-octanol",
+      "4-methylcyclohexanol"
+     ],
+     "pn_class": "ALPN",
+     "rate_at_response_1_hz": 100.0,
+     "rate_from": "the stimulus rate of every flymsg protocol; DoOR responses are normalised, so the rate of a response of 1 is a named compensation",
+     "seeds": [
+      420,
+      421,
+      422,
+      423,
+      424
+     ],
+     "seeds_why": "five seeds disjoint from every other lock (KC sparseness used 50-97)"
+    }
+   },
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": "b914035a1c1a364adec8e0a880373c104287b3e677f39521f76550e5dbadc0fd",
+   "flymsg": "0.8.47",
+   "inputs_sha256": {
+    "door/door_mappings.csv": "1197c492e769b1b587c907c5b750ffa2507d7e6c9fe9dfcb2ee8603871e00912",
+    "door/door_response_matrix.csv": "bc2aa5414ff54d3a1399f5fe171e154bcadc754bcf323a3c27711a54f70848e2",
+    "door/odor.csv": "a31d1841cf90ce23ec149760a5efa38eae02de7820bb2300c3a7dba221745940",
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/apl_claws.yaml",
+   "lock_sha256": "4478289480e026c72cca984a892b8874c3016412a668889c75ba3f2ef9b0ec45",
+   "lock_version": 1,
+   "other_results": null,
+   "outputs_sha256": {
+    "cells.csv": "8b0613c1a747bc084460e9ce865836f4a35056a643847b5971b26c8f9c09990d",
+    "judged.csv": "ed2d8cf7a22549974b35574a2f8efe8ad3d6fd8d3b7c5b798df233bf7610f5b3",
+    "report.txt": "7054e5a0680c92d08f0382fa17b57b99af5c732992cf40174e9da53b531f6136"
+   },
+   "python": "3.13.9",
+   "result": "results/apl-claws/v1.executions/b914035a1c1a364adec8e0a880373c104287b3e677f39521f76550e5dbadc0fd/output",
+   "seeds": {
+    "all": [
+     420,
+     421,
+     422,
+     423,
+     424
+    ]
+   },
+   "source_commit": "fdef6431c59df3b50c79ccc3056b28bc277166c2",
+   "verdict": "uninformative"
   }
  ],
  "schema": "flymsg.replication_index/v1"
