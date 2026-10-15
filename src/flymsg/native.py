@@ -194,7 +194,9 @@ def export_batch(runtimes: Iterable[CpuRuntime], base: Path, batch: Path) -> lis
     """
     metas, parts, first, cut = [], [], None, 0
     edges = net = None
-    for k, rt in enumerate(runtimes):
+    # no enumerate: it would hold the previous run while the next one is built
+    for rt in runtimes:
+        k = len(metas)
         if net is None:
             edges, net = edge_chunks(rt), rt
         same = all(
@@ -226,7 +228,7 @@ def export_batch(runtimes: Iterable[CpuRuntime], base: Path, batch: Path) -> lis
             np.array([kicks.size], dtype="<u4").tobytes(),
             kicks.tobytes(),
         ]
-        del w, raw, rebuilt
+        del w, raw, rebuilt, kicks
     if first is None:
         raise ValueError("a batch needs at least one run")
     parts.insert(0, np.array([BATCH, 1, len(metas), cut], dtype="<u4").tobytes())

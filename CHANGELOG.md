@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Lighter batch preparation** (#40, #214). A console batch builds its runtimes one at a time and exports each fixture in memory: the whole-connectome battery prepares in 55.6 s instead of 97.6 s, peaking at 2.9 GB instead of 11.3 GB, with byte-identical files.
+- **Lighter batch preparation** (#40, #214). A console batch builds its runtimes one at a time and exports each fixture in memory: the whole-connectome battery prepares in 25.2 s instead of 97.6 s, peaking at 2.6 GB instead of 11.3 GB, with byte-identical files.
 
 - **Worker capabilities and batch timing** (#40, #213). The worker lists the batch outputs it writes and refuses others; the console backend stops a job at once on a worker that does not list the output it asked for. The battery's 164 s now break down by phase: 61 s preparing the batch on the host, 10 s uploading, 70 s of advance, 5 s rebuilding runs on the console, 12 s downloading.
 
