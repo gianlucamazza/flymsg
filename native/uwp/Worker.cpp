@@ -326,7 +326,8 @@ void App::OnLaunched(
 }
 } // namespace winrt::Flymsg::implementation
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
-  init_apartment(apartment_type::single_threaded);
+  // Application::Start initialises the thread itself; an apartment already set
+  // here makes it fail at launch
   Windows::UI::Xaml::Application::Start(
       [](auto &&) { make<winrt::Flymsg::implementation::App>(); });
 }
