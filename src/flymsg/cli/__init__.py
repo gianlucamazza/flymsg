@@ -190,7 +190,8 @@ def main() -> None:
                 return print(
                     f"config ok: {closedloop_experiment.CONFIG_SCHEMA}; synthetic only; {len(paths)} inputs"
                 )
-            return closedloop_experiment.run(cfg, a.config, a.out)
+            closedloop_experiment.run(cfg, a.config, a.out)
+            return
         if a.cmd == "fetch":
             return data.fetch(a.data, a.dataset)
         if a.cmd == "build":

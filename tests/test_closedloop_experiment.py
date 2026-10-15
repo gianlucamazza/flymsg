@@ -51,6 +51,15 @@ def test_check_needs_no_connectome_and_cannot_promote_fixture_to_biology(
     assert not list(tmp_path.glob("*.executions"))
 
 
+def test_cli_success_returns_none_for_console_entry_point(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        cli.data, "load", lambda *a: pytest.fail("fixture loaded connectome")
+    )
+    monkeypatch.setattr(experiment, "run", lambda *a: tmp_path / "output")
+    # Console scripts pass main's return to sys.exit; returning the output Path is failure.
+    assert call(monkeypatch, "closedloop", EXAMPLE, "--out", tmp_path) is None
+
+
 def test_managed_fixture_publishes_all_arms_resumes_and_verifies_cache(
     monkeypatch, tmp_path
 ):
