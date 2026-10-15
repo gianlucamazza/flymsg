@@ -1,13 +1,13 @@
 # Native execution lane
 
-This implements the R1 fixture executor and the initial R2 worker source. It builds on the CPU architecture in [runtime.md](../docs/runtime.md). It is not yet physical-console qualification.
+This implements the R1 fixture executor and the initial R2 worker source. It builds on the CPU architecture in [runtime.md](../docs/runtime.md). Its GPU lane is qualified on a Series S for the version-1 fixtures; lifecycle and throughput are not yet.
 
-| Component               | Current evidence                                                                                   |
-| ----------------------- | -------------------------------------------------------------------------------------------------- |
-| Python fixture exporter | Contract tests; incoming edge order preserves CPU source traversal                                 |
-| C++ CPU executor        | Exact synthetic state/spike parity, chunk/resume and corruption rejection on Linux                 |
-| DX12 host and HLSL      | Windows compile gate; GPU runtime parity requires an actual supported hardware adapter             |
-| UWP worker              | Windows packaging gate; installation, real suspension and throughput on Series S remain unmeasured |
+| Component               | Current evidence                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| Python fixture exporter | Contract tests; incoming edge order preserves CPU source traversal                                   |
+| C++ CPU executor        | Exact synthetic state/spike parity, chunk/resume and corruption rejection on Linux                   |
+| DX12 host and HLSL      | Windows compile gate; bit-for-bit parity on the 12 version-1 fixtures on a Series S GPU (2026-10-15) |
+| UWP worker              | Launches on a Series S in Dev Mode and completes GPU jobs; real suspension and throughput remain     |
 
 ## Build and acceptance
 
@@ -33,7 +33,7 @@ The initial GPU host retains state across batches of up to 64 ticks within one `
 
 ## UWP packaging and console runbook
 
-Run `scripts/build-native-uwp.ps1` from a Windows Visual Studio environment. It produces an **unsigned** x64 package with identity `GianlucaMazza.FlymsgWorker`, separate from the trainer. Use an appropriate development certificate/signing configuration before deploying through Xbox Device Portal. Keep the worker in the foreground. The app has a minimal CoreWindow and file-based status; a dashboard is not implemented.
+Run `scripts/build-native-uwp.ps1` from a Windows Visual Studio environment. It produces an **unsigned** x64 package with identity `GianlucaMazza.FlymsgWorker`, separate from the trainer. Use an appropriate development certificate/signing configuration before deploying through Xbox Device Portal. Keep the worker in the foreground. The app is a minimal XAML application (`app.idl` declares `Flymsg.App`; its `Flymsg.winmd` resolves the manifest's EntryPoint at activation, without which the console refuses to launch the app with 0x80070002) with a one-line window and file-based status; a dashboard is not implemented.
 
 Prepare a GPU qualification job against the exact packaged shader:
 
@@ -43,7 +43,7 @@ uv run python scripts/prepare_native_job.py --out jobs --shader native/uwp/Asset
 
 Copy the generated job directory into the worker's `LocalState/inbox/`. Transfer `fixture.bin` first and `job.json` last. The job ID must equal the directory name. The worker validates fixture/shader hashes and adapter identity, estimates memory against the actual app limit, runs one job at a time and publishes `status.json`, `checkpoint.bin`, `checkpoint.json`, `output.bin` and `result.json`.
 
-Retrieve artifacts and validate `output.bin` against the original Python oracle. Record installed package/source/shader, hardware adapter, memory usage outside the debugger, latency, throughput and outcome. The expected adapter is explicit and must match the actual console; an alternate adapter requires an intentional new job. No physical-console measurement is included in this PR.
+Retrieve artifacts and validate `output.bin` against the original Python oracle. Record installed package/source/shader, hardware adapter, memory usage outside the debugger, latency, throughput and outcome. The expected adapter is explicit and must match the actual console; an alternate adapter requires an intentional new job. `scripts/console_gpu_parity.py` runs the 12 version-1 fixtures as GPU jobs against an installed, running worker and checks each output against the oracle; Device Portal settings come from `XBOX_IP`, `XBOX_USER`, `XBOX_PASS` and optionally `FLYMSG_DEVICE_PIN` (a `--pinnedpubkey` pin that curl checks on every connection), never from files in the repository. The 2026-10-15 run is `docs/evidence/series-s-gpu-parity-2026-10-15.json`.
 
 To cancel, publish `cancel.json` containing `{"schema":"flymsg.worker_cancel/v1","job_id":"<id>"}`. It is checked at completed scientific boundaries. To recover a suspended or interrupted job, publish `resume.json` containing `{"schema":"flymsg.worker_resume/v1","job_id":"<id>"}` and restart/resume the worker. Interrupted jobs wait for explicit recovery. Completed jobs are not rerun. Failed/cancelled jobs are terminal; create a new job ID for a new attempt.
 

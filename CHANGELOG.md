@@ -4,6 +4,13 @@
 
 ### Result
 
+- **Series S GPU parity** (#39, #40): on a Series S in Dev Mode the DX12 lane matches the CPU
+  oracle bit for bit on all 12 version-1 acceptance fixtures (adapter `SraKmd_arden`,
+  `docs/evidence/series-s-gpu-parity-2026-10-15.json`, `scripts/console_gpu_parity.py`). The
+  worker had refused to launch (0x80070002): it is now a minimal XAML application whose
+  declared `Flymsg.App` ships `Flymsg.winmd`. Version-2 fixtures on the GPU, the console
+  lifecycle, memory and throughput remain.
+
 - **T4/T5 v4** (#140): robust neither. The dark anchor settles, and a 16-fold lamina → medulla
   gain at an LMC rate of 200 Hz brings the graded medulla to about ±10 mV, the order of the
   measured swings, but where T4 fires in thousands it lacks the preferred polarity and

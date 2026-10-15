@@ -1,6 +1,8 @@
-// Minimal CoreApplication worker; no rendering clock participates in
-// simulation.
+// Minimal XAML-hosted worker; no rendering clock participates in simulation. The
+// application class only activates the window and starts the job loop.
 #include "../dx12.h"
+#include "App.h"
+#include "App.g.cpp"
 #include <atomic>
 #include <bcrypt.h>
 #include <chrono>
@@ -23,7 +25,6 @@ using namespace Windows::ApplicationModel;
 using namespace Windows::ApplicationModel::Core;
 using namespace Windows::Data::Json;
 using namespace Windows::Storage;
-using namespace Windows::UI::Core;
 namespace fs = std::filesystem;
 namespace {
 std::string sha256(const fs::path &path) {
@@ -82,30 +83,16 @@ void write_json(const fs::path &path, const JsonObject &doc) {
 std::string field(const JsonObject &doc, const wchar_t *name) {
   return to_string(doc.GetNamedString(name));
 }
-struct App : implements<App, IFrameworkViewSource, IFrameworkView> {
-  CoreWindow window{nullptr};
-  std::atomic<bool> shutdown{false}, suspended{false};
-  std::thread worker;
+struct Worker {
+  std::atomic<bool> shutdown{false}, suspended{false}, started{false};
   std::mutex mutex;
   SuspendingDeferral deferral{nullptr};
   fs::path root;
-  IFrameworkView CreateView() { return *this; }
-  void Initialize(CoreApplicationView const &view) {
-    view.Activated([this](auto const &, auto const &) { window.Activate(); });
-    CoreApplication::Suspending(
-        [this](auto const &, SuspendingEventArgs const &args) {
-          std::lock_guard guard(mutex);
-          deferral = args.SuspendingOperation().GetDeferral();
-          suspended = true;
-        });
-    CoreApplication::Resuming(
-        [this](auto const &, auto const &) { suspended = false; });
+  void suspend(SuspendingEventArgs const &args) {
+    std::lock_guard guard(mutex);
+    deferral = args.SuspendingOperation().GetDeferral();
+    suspended = true;
   }
-  void SetWindow(CoreWindow const &value) {
-    window = value;
-    window.Closed([this](auto const &, auto const &) { shutdown = true; });
-  }
-  void Load(hstring const &) {}
   void finish_deferral() {
     std::lock_guard guard(mutex);
     if (deferral) {
@@ -113,23 +100,17 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView> {
       deferral = nullptr;
     }
   }
-  void Run() {
+  void start() {
+    if (started.exchange(true))
+      return;
     root = fs::path(ApplicationData::Current().LocalFolder().Path().c_str());
     fs::create_directories(root / L"inbox");
-    worker = std::thread([this] {
+    // detached: the process ends with the app; a suspension stops at a boundary
+    std::thread([this] {
       init_apartment(apartment_type::multi_threaded);
       loop();
       uninit_apartment();
-    });
-    while (!shutdown)
-      window.Dispatcher().ProcessEvents(
-          CoreProcessEventsOption::ProcessOneAndAllPending);
-  }
-  void Uninitialize() {
-    shutdown = true;
-    if (worker.joinable())
-      worker.join();
-    finish_deferral();
+    }).detach();
   }
   void status(const fs::path &folder, const std::string &id,
               const std::string &phase, uint32_t step,
@@ -320,8 +301,33 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView> {
     finish_deferral();
   }
 };
+Worker &worker() {
+  static Worker instance;
+  return instance;
+}
 } // namespace
+namespace winrt::Flymsg::implementation {
+App::App() {
+  Suspending([](auto const &, SuspendingEventArgs const &args) {
+    worker().suspend(args);
+  });
+  Resuming([](auto const &, auto const &) { worker().suspended = false; });
+}
+void App::OnLaunched(
+    Windows::ApplicationModel::Activation::LaunchActivatedEventArgs const &) {
+  auto window = Windows::UI::Xaml::Window::Current();
+  if (!window.Content()) {
+    Windows::UI::Xaml::Controls::TextBlock text;
+    text.Text(L"FlyMSG neural worker: jobs in LocalState\\inbox");
+    window.Content(text);
+    worker().start();
+  }
+  window.Activate();
+}
+} // namespace winrt::Flymsg::implementation
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
-  init_apartment(apartment_type::single_threaded);
-  CoreApplication::Run(make<App>());
+  // Application::Start initialises the thread itself; an apartment already set
+  // here makes it fail at launch
+  Windows::UI::Xaml::Application::Start(
+      [](auto &&) { make<winrt::Flymsg::implementation::App>(); });
 }
