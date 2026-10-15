@@ -16,6 +16,7 @@ import subprocess
 import tempfile
 import time
 import uuid
+from collections.abc import Iterable
 from pathlib import Path
 
 import numpy as np
@@ -176,7 +177,7 @@ class Device:
 
 def run_batch(
     device: Device,
-    runtimes: list[CpuRuntime],
+    runtimes: Iterable[CpuRuntime],
     out: Path,
     *,
     dataset: str,
@@ -203,8 +204,17 @@ def run_batch(
         now = time.perf_counter()
         host[name], clock = now - clock, now
 
-    metas = native.export_batch(runtimes, base, batch)
-    lap("export_s")
+    tick_us = []
+
+    def each():  # the runtimes may be built one at a time, as the export asks
+        for rt in runtimes:
+            tick_us.append(rt.tick_us)
+            yield rt
+            del rt  # not held while the next one is built
+
+    metas = native.export_batch(each(), base, batch)
+    runs = len(metas)
+    lap("export_s")  # with building the runtimes when they come from a generator
     job = {
         "schema": "flymsg.neural_job/v1",
         "job_id": job_id,
@@ -213,7 +223,7 @@ def run_batch(
         "fixture_sha256": hashlib.sha256(base.read_bytes()).hexdigest(),
         "batch": {
             "sha256": hashlib.sha256(batch.read_bytes()).hexdigest(),
-            "runs": len(runtimes),
+            "runs": runs,
             # "counts": sparse counts and first spikes per run instead of whole states
             "output": output,
         },
@@ -221,7 +231,7 @@ def run_batch(
         "expected_adapter": device.adapter,
         "dataset": dataset,
         "seed": seed,
-        "neural_tick_us": runtimes[0].tick_us,
+        "neural_tick_us": tick_us[0],
         "fixture": metas[0],
         "scope": scope,
     }
@@ -246,7 +256,7 @@ def run_batch(
             if status.get("job_id") == job_id and output not in status.get(
                 "batch_outputs", ["state"]
             ):
-                remote += [f"output_{k}.bin" for k in range(len(runtimes))]
+                remote += [f"output_{k}.bin" for k in range(runs)]
                 if status.get("state") not in STOPPED:
                     cancel = folder / "cancel.json"
                     cancel.write_text(
@@ -274,7 +284,7 @@ def run_batch(
             )
         lap("console_s")
         p.get(device.package, rel, "result.json", folder / "result.json")
-        for k in range(len(runtimes)):
+        for k in range(runs):
             name = f"{'counts' if output == 'counts' else 'output'}_{k}.bin"
             out_path, fixture = folder / name, folder / f"fixture_{k}.bin"
             remote.append(name)
@@ -333,18 +343,17 @@ def sim_runs(
     """`sim.run(W, stim, rate_hz, duration_ms, stim_ms, p, seed)` for each spec
     `(stim, rate_hz, duration_ms, stim_ms, seed)`, as one batch on the console. The runs
     must share a horizon; the results are `sim.run`'s, bit for bit."""
-    start = time.perf_counter()
-    runtimes = [sim_runtime(W, *spec[:4], p, spec[4]) for spec in specs]
-    runtimes_s = time.perf_counter() - start
-    # a sim.Result needs only the counts and first spikes: the sparse output, a few
+    # each runtime copies the network: built one at a time as the export takes them,
+    # so memory holds the first and the current one, not the whole battery's. A
+    # sim.Result needs only the counts and first spikes: the sparse output, a few
     # kilobytes per run instead of the whole state (tens of megabytes)
+    runtimes = (sim_runtime(W, *spec[:4], p, spec[4]) for spec in specs)
     outputs, fixtures, result = run_batch(
         device, runtimes, out, dataset=dataset, seed=seed, scope=scope, output="counts"
     )
     stim_ms = [
         (spec[2] if spec[3] is None else int(spec[3] / p.dt) * p.dt) for spec in specs
     ]
-    result["host"] = {"runtimes_s": runtimes_s, **result["host"]}
     return as_results(outputs, fixtures, p.dt, stim_ms), result
 
 

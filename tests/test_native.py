@@ -260,6 +260,11 @@ def _acceptance():
 def _battery_runs():
     """Runs of one network as a battery makes them: different stimulus sets, seeds and
     input lengths, the same horizon."""
+    return list(_battery_runtimes())
+
+
+def _battery_runtimes():
+    """`_battery_runs`, built one at a time."""
     from flymsg import sim
 
     rng = np.random.default_rng(5)
@@ -267,22 +272,18 @@ def _battery_runs():
     W.data = rng.integers(-20, 80, W.data.size).astype(np.float32)
     W = W.astype(np.float32)
     p = sim.Params()
-    runs = []
     for k, (stim, stim_steps) in enumerate(
         [([0, 1, 2], 300), ([5], 300), ([7, 9], 120), ([0, 1, 2], 300)]
     ):
-        runs.append(
-            CpuRuntime(
-                W,
-                np.array(stim),
-                steps=400,
-                kicks=sim.poisson_kicks(30 + k, 300.0, p.dt, stim_steps, len(stim)),
-                p=p,
-                per_bin=100,
-                trace=np.arange(4),
-            )
+        yield CpuRuntime(
+            W,
+            np.array(stim),
+            steps=400,
+            kicks=sim.poisson_kicks(30 + k, 300.0, p.dt, stim_steps, len(stim)),
+            p=p,
+            per_bin=100,
+            trace=np.arange(4),
         )
-    return runs
 
 
 def test_a_batch_rebuilds_every_run_word_for_word(tmp_path):
@@ -302,6 +303,43 @@ def test_a_batch_rebuilds_every_run_word_for_word(tmp_path):
     assert (tmp_path / "batch.bin").stat().st_size < 4 * (
         tmp_path / "base.bin"
     ).stat().st_size
+
+
+def test_a_batch_from_a_generator_is_the_batch_from_a_list(tmp_path):
+    """Runs built one at a time, as the export asks, give the same bytes."""
+    from flymsg import native
+
+    listed, lazy = tmp_path / "listed", tmp_path / "lazy"
+    listed.mkdir(), lazy.mkdir()
+    native.export_batch(_battery_runs(), listed / "base.bin", listed / "batch.bin")
+    native.export_batch(iter(_battery_runs()), lazy / "base.bin", lazy / "batch.bin")
+    for name in ("base.bin", "batch.bin"):
+        assert (listed / name).read_bytes() == (lazy / name).read_bytes()
+    with pytest.raises(ValueError, match="at least one run"):
+        native.export_batch(iter([]), lazy / "base.bin", lazy / "batch.bin")
+
+
+def test_a_lazy_batch_holds_the_first_run_and_the_current_one():
+    """While a run is built, only the base's runtime is alive besides it: a whole
+    network copy each, so a battery's preparation does not grow with its runs."""
+    import gc
+    import weakref
+
+    from flymsg import native
+
+    alive = weakref.WeakSet()
+    seen = []
+
+    def lazy():
+        for rt in _battery_runtimes():
+            gc.collect()
+            seen.append(len(alive))
+            alive.add(rt)
+            yield rt
+            del rt
+
+    native.export_batch(lazy(), Path("/dev/null"), Path("/dev/null"))
+    assert seen == [0, 1, 1, 1]
 
 
 def test_the_native_executor_runs_a_batch_bit_for_bit(native_exe, tmp_path):
@@ -533,7 +571,6 @@ def test_console_batches_need_a_worker_that_lists_their_output(
         expected = sim.run(W, *specs[0][:4], p, specs[0][4])
         assert np.array_equal(results[0].counts, expected.counts)
         assert set(result["host"]) == {
-            "runtimes_s",
             "export_s",
             "upload_s",
             "console_s",

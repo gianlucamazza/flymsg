@@ -1,0 +1,22 @@
+{
+  "schema": "flymsg.batch_prep/v1",
+  "date": "2026-10-16",
+  "script": "export_batch over console.sim_runtime for the baselines battery (6 cases x 5 seeds, 600 ms, whole MaleCNS connectome)",
+  "network": {
+    "neurons": 165122,
+    "synapses": 24539704
+  },
+  "before": {
+    "code": "ab38c57",
+    "runtimes": "a list, all held",
+    "wall_s": 97.55,
+    "peak_rss_mb": 11349
+  },
+  "after": {
+    "runtimes": "a generator; held: the base's runtime and the one being built",
+    "wall_s": 25.15,
+    "peak_rss_mb": 2601
+  },
+  "identical_output": true,
+  "note": "before and after on one host, minutes apart (load average 1.3-3.8); base and batch files byte identical (sha256). A first version that still held the previous run through enumerate took 55.6 s at 2.9 GB. The remaining time is per run: the runtime's network copy and identity hash, and the full fixture the export checks word for word"
+}
