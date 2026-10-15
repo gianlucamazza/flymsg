@@ -222,3 +222,14 @@ plateau, thermal behaviour, context recovery and repeated XR enter/exit.
 A mode that cannot preserve selected content within its resource and refresh
 budgets must remain unsupported. Do not use a fast empty/partial scene, mixed
 fallback, software GPU, hidden page or missing counters as qualification proof.
+
+### Browser and upload follow-up
+
+The [2026-10-16 diagnosis](quest-rendering-diagnosis.md#browser-follow-up-2026-10-16)
+adds exact-bin raster invalidation and native GPU/CPU/upload evidence. The UI
+optimization preserves all compared pixels without another bitmap cache.
+Cold offscreen reference initialization uploads about 204 MB; the dense direct
+loop remains about 50 ms and the existing desktop composer about 137 ms in the
+serialized diagnostic. Bounded initial/cache GPU scheduling and immersive
+qualification remain open. See the linked report for source identities, raw
+samples, native counter limits and the failed detailed-stage capture attempt.
