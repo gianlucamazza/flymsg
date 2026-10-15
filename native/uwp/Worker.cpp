@@ -91,6 +91,22 @@ void write_json(const fs::path &path, const JsonObject &doc) {
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
   }
 }
+// Device Portal uploads are not atomic: a control file may be seen empty or
+// partial. One that does not parse yet and was written in the last 10 s is
+// still arriving and is read on a later pass; older, it is malformed.
+bool arriving(const fs::path &path) {
+  try {
+    read_json(path);
+    return false;
+  } catch (...) {
+    try {
+      return fs::file_time_type::clock::now() - fs::last_write_time(path) <
+             std::chrono::seconds(10);
+    } catch (...) {
+      return true;
+    }
+  }
+}
 std::string field(const JsonObject &doc, const wchar_t *name) {
   return to_string(doc.GetNamedString(name));
 }
@@ -144,7 +160,8 @@ struct Worker {
     write_json(folder / L"status.json", doc);
   }
   bool cancelled(const fs::path &folder, const std::string &id) {
-    if (!fs::exists(folder / L"cancel.json"))
+    if (!fs::exists(folder / L"cancel.json") ||
+        arriving(folder / L"cancel.json"))
       return false;
     auto doc = read_json(folder / L"cancel.json");
     return field(doc, L"schema") == "flymsg.worker_cancel/v1" &&
@@ -262,7 +279,10 @@ struct Worker {
         if (!entry.is_directory())
           continue;
         const auto folder = entry.path();
-        if (!fs::exists(folder / L"job.json"))
+        if (!fs::exists(folder / L"job.json") ||
+            arriving(folder / L"job.json") ||
+            (fs::exists(folder / L"resume.json") &&
+             arriving(folder / L"resume.json")))
           continue;
         try {
           if (fs::exists(folder / L"status.json")) {

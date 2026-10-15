@@ -6,13 +6,13 @@ job to the installed worker:
 - throughput: run to completion; host-side steps per second from the worker's status
   updates (one every 64 steps), output checked bit for bit against the CPU oracle;
 - cancel: a `flymsg.worker_cancel/v1` while running must end in `cancelled` before the end;
-- recovery: the app is stopped while the job runs and started again; the job must wait in
-  `awaiting_recovery`, and after a `flymsg.worker_resume/v1` complete with the oracle's
-  output.
+- stop and resume: the app is stopped through Device Portal while the job runs and started
+  again; the job must be parked, `suspended` with a checkpoint when the platform suspended
+  the app before ending it, `awaiting_recovery` when it ended without one, and after a
+  `flymsg.worker_resume/v1` complete with the oracle's output.
 
-Suspension through the platform's lifecycle manager is not driven here: Device Portal has no
-call that suspends a running app. Settings as `console_gpu_parity.py` (environment only); the
-report holds no address or credential. Exits nonzero unless all three behave.
+Settings as `console_gpu_parity.py` (environment only); the report holds no address or
+credential. Exits nonzero unless all three behave.
 
 Usage: uv run python scripts/console_lifecycle.py --package PFN --aumid AUMID \
     --shader lif.cso --out DIR
@@ -183,18 +183,19 @@ def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
     app_call(portal, "DELETE", package, aumid)
     time.sleep(5)
     app_call(portal, "POST", package, aumid)
-    waiting, _ = job.wait({"awaiting_recovery"} | done, timeout_s=120)
+    waiting, _ = job.wait({"suspended", "awaiting_recovery"} | done, timeout_s=120)
     job.control("resume.json", "flymsg.worker_resume/v1")
     final, _ = job.wait(done)
     recovery = {
         "seen_running": first.get("state") == "running",
-        "after_restart": waiting.get("state"),
+        "parked_as": waiting.get("state"),
+        "parked_at_step": waiting.get("step"),
         "state": final.get("state"),
         "parity": final.get("state") == "completed" and job.parity(),
     }
     recovery["ok"] = (
         recovery["seen_running"]
-        and recovery["after_restart"] == "awaiting_recovery"
+        and recovery["parked_as"] in ("suspended", "awaiting_recovery")
         and recovery["parity"]
     )
 
@@ -206,9 +207,8 @@ def run(package: str, aumid: str, shader: Path, out: Path) -> dict:
         "fixture": {"neurons": N, "steps": STEPS, "seed": SEED, "synthetic": True},
         "throughput": throughput,
         "cancel": cancel,
-        "recovery": recovery,
+        "stop_and_resume": recovery,
         "passed": bool(throughput["parity"] and cancel["ok"] and recovery["ok"]),
-        "not_driven": "platform suspension (no Device Portal call suspends a running app)",
         "scope": "one synthetic version-1 fixture; not full-connectome throughput or "
         "biological validation",
     }
@@ -228,5 +228,6 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=Path, required=True)
     a = parser.parse_args()
     r = run(a.package, a.aumid, a.shader, a.out)
-    print(json.dumps({k: r[k] for k in ("throughput", "cancel", "recovery", "passed")}))
+    keys = ("throughput", "cancel", "stop_and_resume", "passed")
+    print(json.dumps({k: r[k] for k in keys}))
     sys.exit(0 if r["passed"] else 1)
