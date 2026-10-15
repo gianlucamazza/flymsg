@@ -65,6 +65,12 @@ import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
 import { installXrObserver } from "./xr.js";
 import { XrMetrics } from "./xr-metrics.js";
+import {
+  base64,
+  capturePasses,
+  geometryInventory,
+  sha256,
+} from "./render-reference.js";
 
 const SEG = "v1.0/segmentation";
 const MESHES = `${SEG}/multi-res-meshes`;
@@ -1425,6 +1431,125 @@ if (query.has("check")) {
     pickTarget,
     pickMeshMaterial,
     meshMaterial,
+    async reference({ width = 512, height = 512, time = 0 } = {}) {
+      if (renderer.xr.isPresenting || document.hidden)
+        throw new Error("Reference requires a visible non-immersive page");
+      if (
+        manifestQueue.size +
+        fragmentQueue.size +
+        skeletonQueue.size +
+        roiQueue.size
+      )
+        throw new Error("Reference requires completed geometry loading");
+      if (
+        !Number.isFinite(time) ||
+        time < 0 ||
+        (replay && time >= A.bins * A.bin_ms)
+      )
+        throw new RangeError("Reference replay timestamp outside scene");
+      const saved = { playing: clock.playing, t: clock.t };
+      const objects = [];
+      world.updateMatrixWorld(true);
+      world.traverse((o) => {
+        if (o.geometry && o.visible) objects.push(o);
+      });
+      const materials = objects.map((o) => [o, o.material]);
+      const depthFragment = `#include <packing>
+        void main() { gl_FragColor = packDepthToRGBA(gl_FragCoord.z); }`;
+      const depthMesh = pickMeshMaterial.clone();
+      const depthLine = pickLineMaterial.clone();
+      depthMesh.fragmentShader = depthLine.fragmentShader = depthFragment;
+      const c = camera.clone();
+      c.aspect = width / height;
+      c.clearViewOffset();
+      c.updateProjectionMatrix();
+      c.updateMatrixWorld(true);
+      try {
+        clock.playing = false;
+        clock.t = time;
+        if (replay) updateActivity(time);
+        applySkeletonVisibility();
+        flushInstanceTextures();
+        const geometry = geometryInventory(objects);
+        const replace = (mesh, line) => () => {
+          const context = objects.filter(
+            (o) => o !== batched && o !== skeletons,
+          );
+          context.forEach((o) => {
+            o.visible = false;
+          });
+          batched.material = mesh;
+          skeletons.material = line;
+          const background = world.background;
+          world.background = null;
+          renderer.setClearColor(0, 0);
+          return () => {
+            materials.forEach(([o, material]) => {
+              o.material = material;
+            });
+            context.forEach((o) => {
+              o.visible = true;
+            });
+            world.background = background;
+          };
+        };
+        const buffers = capturePasses(
+          THREE,
+          renderer,
+          world,
+          c,
+          {
+            colour: () => () => {},
+            neuron_id: replace(pickMeshMaterial, pickLineMaterial),
+            packed_depth: replace(depthMesh, depthLine),
+          },
+          width,
+          height,
+        );
+        const activityCopy = activity.slice();
+        return {
+          schema: "flymsg.render-reference/v1",
+          width,
+          height,
+          time_ms: time,
+          pixel_format:
+            "RGBA8 bottom-left origin; depth = three.js packDepthToRGBA",
+          colour_pipeline: "direct scene render; no desktop compositor",
+          depth_policy:
+            "opaque geometry depth; ID/depth exclude contextual shells and somata",
+          projection: c.projectionMatrix.toArray(),
+          camera_world: c.matrixWorld.toArray(),
+          data_world: data.matrixWorld.toArray(),
+          settings: { ...settings },
+          scene_sha256: await sha256(
+            new TextEncoder().encode(JSON.stringify(meta)),
+          ),
+          activity_sha256: await sha256(activityCopy),
+          geometry: await geometry,
+          neurons: neurons.filter(isShown).map((n) => ({
+            bodyId: n.bodyId,
+            k: n.k,
+            surfaces: [...n.shown.keys()],
+            skeleton_level: n.skelLod?.level ?? null,
+          })),
+          images: Object.fromEntries(
+            await Promise.all(
+              Object.entries(buffers).map(async ([key, bytes]) => [
+                key,
+                { sha256: await sha256(bytes), base64: base64(bytes) },
+              ]),
+            ),
+          ),
+        };
+      } finally {
+        clock.playing = saved.playing;
+        clock.t = saved.t;
+        if (replay) updateActivity(saved.t);
+        depthMesh.dispose();
+        depthLine.dispose();
+        invalidate();
+      }
+    },
     get batched() {
       return batched;
     },

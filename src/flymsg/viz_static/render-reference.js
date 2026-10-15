@@ -1,0 +1,119 @@
+// Opt-in diagnostic captures. No simulation state or renderer is created here.
+export async function sha256(array) {
+  const bytes = new Uint8Array(
+    array.buffer,
+    array.byteOffset,
+    array.byteLength,
+  );
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (b) =>
+    b.toString(16).padStart(2, "0"),
+  ).join("");
+}
+
+export function base64(bytes) {
+  let text = "";
+  for (let i = 0; i < bytes.length; i += 8192)
+    text += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(text);
+}
+
+/** Hash before the asynchronous digest, so later buffer updates cannot alter the reference. */
+export async function geometryInventory(objects) {
+  const rows = [];
+  for (const o of objects) {
+    if (!o.geometry) continue;
+    const g = o.geometry;
+    const attrs = Object.fromEntries(
+      Object.entries(g.attributes).map(([k, a]) => [
+        k,
+        {
+          type: a.array.constructor.name,
+          itemSize: a.itemSize,
+          bytes: a.array.slice(),
+        },
+      ]),
+    );
+    const index = g.index?.array.slice();
+    rows.push({
+      name: o.name,
+      type: o.type,
+      matrix: o.matrixWorld.toArray(),
+      visible: o.visible,
+      range: { ...g.drawRange },
+      attrs,
+      index,
+    });
+  }
+  for (const row of rows) {
+    for (const a of Object.values(row.attrs)) {
+      a.sha256 = await sha256(a.bytes);
+      a.byteLength = a.bytes.byteLength;
+      delete a.bytes;
+    }
+    row.index = row.index
+      ? { sha256: await sha256(row.index), byteLength: row.index.byteLength }
+      : null;
+  }
+  return rows;
+}
+
+/** Raw RGBA8, bottom-left origin. Caller freezes replay and supplies colour/id/depth passes. */
+export function capturePasses(
+  THREE,
+  renderer,
+  world,
+  camera,
+  passes,
+  width,
+  height,
+) {
+  if (renderer.xr.isPresenting)
+    throw new Error(
+      "Capture explicit eye cameras outside an active XR session",
+    );
+  if (![width, height].every((v) => Number.isInteger(v) && v > 0 && v <= 4096))
+    throw new RangeError("Reference dimensions must be integers in 1..4096");
+  const target = new THREE.WebGLRenderTarget(width, height, {
+    depthBuffer: true,
+  });
+  const saved = {
+    target: renderer.getRenderTarget(),
+    clear: renderer.getClearColor(new THREE.Color()),
+    alpha: renderer.getClearAlpha(),
+    viewport: renderer.getViewport(new THREE.Vector4()),
+    scissor: renderer.getScissor(new THREE.Vector4()),
+    scissorTest: renderer.getScissorTest(),
+    background: world.background,
+    override: world.overrideMaterial,
+  };
+  const out = {};
+  try {
+    for (const [name, install] of Object.entries(passes)) {
+      let restore;
+      try {
+        restore = install();
+        renderer.setRenderTarget(target);
+        renderer.setViewport(0, 0, width, height);
+        renderer.setScissorTest(false);
+        renderer.clear();
+        renderer.render(world, camera);
+        const pixels = new Uint8Array(4 * width * height);
+        renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+        out[name] = pixels;
+      } finally {
+        restore?.();
+      }
+    }
+  } finally {
+    world.background = saved.background;
+    world.overrideMaterial = saved.override;
+    renderer.setRenderTarget(saved.target);
+    renderer.setViewport(saved.viewport);
+    renderer.setScissor(saved.scissor);
+    renderer.setScissorTest(saved.scissorTest);
+    renderer.setClearColor(saved.clear, saved.alpha);
+    target.dispose();
+  }
+  return out;
+}
