@@ -148,7 +148,7 @@ criteria are in the [VEE qualification runbook](vee-qualification.md). An availa
 is not a passed hardware trial.
 
 The first Quest 2 default-scene trial (2026-10-15) failed the timing gate; the
-[raw diagnostic](evidence/quest2-first-diagnostic-2026-10-15.json) is retained. No Quest 2
+[raw diagnostic](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-first-diagnostic-2026-10-15.json) is retained. No Quest 2
 configuration is qualified yet. Desktop frame measurements now distinguish continuous
 rendering from on-demand idle redraws explicitly: slow active frames are retained even
 without a GPU timer, while idle redraws display `idle` instead of a stale frame rate.

@@ -113,23 +113,23 @@ completed trial. No report means no hardware verdict.
 
 ## Gate ledger
 
-| Gate | Implemented or observed                                                                        | Remaining exit condition                                                                                                             |
-| ---- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| G0   | First task, component inventory, source and no-go rules documented                             | Eligible independent looming behavioral dataset and qualified interfaces; do not infer absence of data from absence in this checkout |
-| G1   | B6 v2 pose/frame/time contracts; #178 closed                                                   | No new implementation required                                                                                                       |
-| G2   | Geometric projection and explicit error domain; independent Sobol solid-angle ray oracle added | Measured micro-CT → body registration and camera comparison; #179 remains open                                                       |
-| G3   | LC4/LPLC2 circuit-only controls; GF timing v1/v2 uninformative; T4/T5 v4 neither               | Measured optical → neural transfer and independent physiological qualification                                                       |
-| G4   | FlyGym adapter and TTM-only experiment, with named compensations                               | Supported muscle → actuator mapping; velocity-first jump protocol and qualified actuation                                            |
-| G5   | Synthetic pose-dependent loop, all arms, exact replay, interruption/resume and CLI             | Biological loop refuses until registration, transducer, motor map and body are measured                                              |
-| G6   | Existing locked song benchmark #36; an independent run is already active                       | Complete that run under its lock; looming behavior requires its own eligible dataset/lock                                            |
-| G7   | Source-bound outputs, cold-clone procedure and fixture performance instrumentation             | Record actual reproduction and Quest hardware evidence; fixture speed does not establish whole-CNS real time                         |
+| Gate | Implemented or observed                                                                      | Remaining exit condition                                                                                                             |
+| ---- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| G0   | First task, component inventory, source and no-go rules documented                           | Eligible independent looming behavioral dataset and qualified interfaces; do not infer absence of data from absence in this checkout |
+| G1   | B6 v2 pose/frame/time contracts; #178 closed                                                 | No new implementation required                                                                                                       |
+| G2   | Geometric projection, independent Sobol ray oracle and six rendered FlyGym camera cases pass | Measured micro-CT → body registration; #179 remains open                                                                             |
+| G3   | LC4/LPLC2 circuit-only controls; GF timing v1/v2 uninformative; T4/T5 v4 neither             | Measured optical → neural transfer and independent physiological qualification                                                       |
+| G4   | FlyGym adapter and TTM-only experiment, with named compensations                             | Supported muscle → actuator mapping; velocity-first jump protocol and qualified actuation                                            |
+| G5   | Synthetic pose-dependent loop, all arms, exact replay, interruption/resume and CLI           | Biological loop refuses until registration, transducer, motor map and body are measured                                              |
+| G6   | Existing locked song benchmark #36; an independent run is already active                     | Complete that run under its lock; looming behavior requires its own eligible dataset/lock                                            |
+| G7   | Source-bound outputs, cold-clone procedure and fixture performance instrumentation           | Record actual reproduction and Quest hardware evidence; fixture speed does not establish whole-CNS real time                         |
 
 G2's geometric implementation is not its complete qualification. This distinction also
 applies to G5's tested synthetic integration versus biological readiness.
 
-The [cold-clone record](evidence/vee-synthetic-2026-10-15.json) verifies that all five
+The [cold-clone record](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/vee-synthetic-2026-10-15.json) verifies that all five
 scientific traces are byte-identical across the original run and a fresh clone at source
-`1223551`; timing differs as expected. The [first Quest 2 diagnostic](evidence/quest2-first-diagnostic-2026-10-15.json)
+`1223551`; timing differs as expected. The [first Quest 2 diagnostic](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-first-diagnostic-2026-10-15.json)
 records a **failure** of the default looming view: median active stereo interval 118 ms,
 p95 239 ms, p99 297 ms, with approximately 13 million triangles per stereo frame. It is an
 early failure diagnostic, not the full two-minute qualification matrix. The collector
