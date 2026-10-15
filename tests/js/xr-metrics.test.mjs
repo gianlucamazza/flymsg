@@ -58,3 +58,15 @@ test("hidden segments are explicit and refresh changes invalidate a single-budge
   m.start(session(), 0);
   assert.equal(m.report().frames, 0);
 });
+
+test("initial runtime refresh selection before the first frame is a known budget", () => {
+  const m = new XrMetrics({}, () => {});
+  const s = session();
+  m.start(s, 0);
+  s.frameRate = 90;
+  s.dispatchEvent(new Event("frameratechange"));
+  m.frame(0, 1, []);
+  m.frame(1000 / 90, 1, []);
+  assert.equal(m.report().timing.refresh_hz, 90);
+  assert.equal(m.report().timing.verdict, "pass");
+});

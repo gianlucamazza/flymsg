@@ -71,8 +71,11 @@ export class XrMetrics {
     session.addEventListener("frameratechange", () => {
       if (this.active !== current) return;
       this.event(`refresh:${session.frameRate}`);
-      // Mixed refresh budgets cannot receive a passing verdict.
-      current.refresh_hz = null;
+      // The runtime may choose its initial rate just after sessionstart, before the
+      // first frame. Only a change during measured frames mixes timing budgets.
+      if (current.frames === 0 || current.refresh_hz === session.frameRate)
+        current.refresh_hz = session.frameRate;
+      else current.refresh_hz = null;
     });
     session.addEventListener(
       "end",

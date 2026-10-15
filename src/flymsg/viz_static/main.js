@@ -1933,7 +1933,12 @@ const xrMetrics = new XrMetrics(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(record),
-      }).catch((error) => console.warn("XR evidence delivery failed", error));
+      })
+        .then((response) => {
+          if (!response.ok)
+            throw new Error(`collector HTTP ${response.status}`);
+        })
+        .catch((error) => console.warn("XR evidence delivery failed", error));
   },
 );
 if (query.get("xr") === "1") {
