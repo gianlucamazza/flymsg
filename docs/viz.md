@@ -143,6 +143,10 @@ background tab does not advance the replay. These are layout and input checks in
 
 ## Optional WebXR observation (experimental)
 
+Quest 2 development setup, the session-wide measurement collector and the qualification
+criteria are in the [VEE qualification runbook](vee-qualification.md). An available headset
+is not a passed hardware trial.
+
 `?xr=1` adds an Enter VR button when the browser reports `immersive-vr` support, for example
 `live/looming/?xr=1&paused`; without the flag nothing changes, and with `?chrome=0` the button
 is not built. No session is requested on load: the reader starts and ends it, and a browser

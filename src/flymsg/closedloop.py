@@ -25,6 +25,7 @@ import json
 import math
 import os
 import re
+import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
@@ -355,6 +356,7 @@ def run(
     replay: Record | None = None,
     checkpoint_dir: Path | None = None,
     checkpoint_every_us: int | None = None,
+    tick_wall_s: list[float] | None = None,
 ) -> Record:
     """One arm of a closed loop in the ADR order.
 
@@ -375,6 +377,10 @@ def run(
     `restore(path)`. The identity binds the run's arguments, not the callables or
     `compiled`: those must be the same and `transducer` and `decoder` stateless, which only
     the caller can ensure.
+
+    Optional `tick_wall_s` collects wall seconds for newly computed body ticks, including
+    checkpoint work at their control boundaries. It does not enter the record, identity,
+    RNG, numerical inputs or checkpoint. An already completed arm appends no samples.
     """
     require(evidence, mode)
     provenance.validate()
@@ -448,12 +454,14 @@ def run(
         rng.bit_generator.state = rng_state
     delivered = 0
     commands: tuple[Command, ...] = ()
+    tick_start = time.perf_counter()
     for step in steps:
         t = step.time_us
         k = t // clock.body_us
         if t < begin:
             continue
         if step.phase == "command":
+            tick_start = time.perf_counter()
             if (
                 checkpoint_dir is not None
                 and t > begin
@@ -480,6 +488,8 @@ def run(
             )
             delivered = eligible
         elif step.phase == "sample":
+            if t % clock.control_us:
+                tick_start = time.perf_counter()
             if last.time_us != t:
                 raise ContractError("the last stepped state is not at this tick")
             if arm in ("intact", "silenced"):
@@ -539,6 +549,8 @@ def run(
                 )
             )
             last = state
+            if tick_wall_s is not None:
+                tick_wall_s.append(time.perf_counter() - tick_start)
     record = Record(
         provenance,
         clock,

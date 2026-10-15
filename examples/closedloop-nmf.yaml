@@ -1,0 +1,13 @@
+# Engineering fixture only; no measured eye registration, retina or motor mapping.
+schema: flymsg.closedloop-experiment/v1
+fixture: nmf-optics-chain/v1
+mode: synthetic
+seed: 11
+duration_us: 20000
+clock:
+  neural_us: 100
+  body_us: 100
+  control_us: 1000
+  latency_us: 0
+arms: [intact, disconnected, shuffled, replay, silenced]
+checkpoint_every_us: 5000

@@ -64,6 +64,7 @@ import { binAt, rasterRows, selectionExport, selectionRows } from "./raster.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
 import { installXrObserver } from "./xr.js";
+import { XrMetrics } from "./xr-metrics.js";
 
 const SEG = "v1.0/segmentation";
 const MESHES = `${SEG}/multi-res-meshes`;
@@ -1062,13 +1063,19 @@ controls.addEventListener("change", () => {
 });
 
 function eyeView() {
-  const eye = data.worldToLocal(camera.position.clone()).toArray();
-  // in XR the canvas keeps its desktop CSS size; the drawing buffer is one eye's pixels
-  const heightPx = renderer.xr.isPresenting
-    ? renderer.getSize(new THREE.Vector2()).y
-    : renderer.domElement.clientHeight;
-  const pxPerUnit =
-    heightPx / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+  const xrCamera = renderer.xr.isPresenting ? renderer.xr.getCamera() : null;
+  const eye = data
+    .worldToLocal((xrCamera ?? camera).getWorldPosition(new THREE.Vector3()))
+    .toArray();
+  // XR owns the framebuffer: use actual per-eye viewports and projection, never desktop CSS.
+  const pxPerUnit = xrCamera?.cameras.length
+    ? Math.max(
+        ...xrCamera.cameras.map(
+          (c) => (c.viewport.w * c.projectionMatrix.elements[5]) / 2,
+        ),
+      )
+    : renderer.domElement.clientHeight /
+      (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
   return { eye, pxPerUnit };
 }
 
@@ -1913,12 +1920,40 @@ if (query.has("bench")) {
 // Mobile browsers drop the WebGL context under memory pressure or in a background tab.
 // preventDefault asks for it back; three.js re-uploads every resource on restore.
 const lostEl = document.getElementById("lost");
+const xrMetrics = new XrMetrics(
+  {
+    url: location.href,
+    user_agent: navigator.userAgent,
+    scene_schema: meta.schema,
+  },
+  (record) => {
+    console.log(`XR_BENCH ${JSON.stringify(record)}`);
+    if (query.get("xrcollect") === "1")
+      fetch("/__xr_evidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record),
+      }).catch((error) => console.warn("XR evidence delivery failed", error));
+  },
+);
+if (query.get("xr") === "1") {
+  // Read-only snapshot for the hardware collector; no control over scientific state.
+  window.flymsgXrReport = () => xrMetrics.report();
+  renderer.xr.addEventListener("sessionstart", () => {
+    perf.resetContext();
+    xrMetrics.start(renderer.xr.getSession());
+  });
+  window.addEventListener("pagehide", () => xrMetrics.finish("pagehide"));
+}
 renderer.domElement.addEventListener("webglcontextlost", (e) => {
   e.preventDefault();
   lostEl.hidden = false;
+  xrMetrics.event("webglcontextlost");
 });
 renderer.domElement.addEventListener("webglcontextrestored", () => {
   lostEl.hidden = true;
+  xrMetrics.event("webglcontextrestored");
+  perf.resetContext();
   selectionDirty = true;
   invalidate();
 });
@@ -1929,7 +1964,8 @@ const timer = new THREE.Clock();
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) timer.getDelta();
 });
-renderer.setAnimationLoop(() => {
+renderer.setAnimationLoop((timestamp) => {
+  const frameStart = performance.now();
   const dt = timer.getDelta();
   const inXR = renderer.xr.isPresenting;
   const moved = inXR ? false : controls.update(); // XR headset owns its camera pose
@@ -1952,16 +1988,29 @@ renderer.setAnimationLoop(() => {
   }
   if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
   flushInstanceTextures();
+  perf.begin();
   if (inXR) {
     // Three.js supplies the two eye cameras; never run desktop postprocessing
     // against the XR framebuffer. One existing animation loop owns both modes.
     renderer.render(world, camera);
   } else {
     fitClip();
-    perf.begin();
     composer.render();
-    perf.end();
   }
+  const measured = perf.end();
+  if (inXR)
+    xrMetrics.frame(
+      timestamp,
+      performance.now() - frameStart,
+      measured.gpu_ms,
+      {
+        geometries: renderer.info.memory.geometries,
+        textures: renderer.info.memory.textures,
+        programs: renderer.info.programs?.length ?? null,
+        triangles: renderer.info.render.triangles,
+        draws: renderer.info.render.calls,
+      },
+    );
   sceneDirty = false;
   lastRender = now;
 });

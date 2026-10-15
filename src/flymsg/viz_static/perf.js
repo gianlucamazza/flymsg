@@ -53,7 +53,8 @@ export class Perf {
     };
     push(this.cpu, now - this.cpuStart);
     // only consecutive frames count: renders on demand leave long idle gaps
-    if (this.last !== null && now - this.last < 100) push(this.intervals, now - this.last);
+    if (this.last !== null && now - this.last < 100)
+      push(this.intervals, now - this.last);
     this.last = now;
     const r = this.renderer.info.render;
     this.frame = { calls: r.calls, triangles: r.triangles, lines: r.lines };
@@ -62,20 +63,41 @@ export class Perf {
       this.pending.push(this.query);
       this.query = null;
     }
-    this.poll(push);
+    const gpu = this.poll(push);
+    return { cpu_ms: now - this.cpuStart, gpu_ms: gpu };
   }
 
   poll(push) {
+    const samples = [];
     const gl = this.gl;
     const disjoint = this.timer && gl.getParameter(this.timer.GPU_DISJOINT_EXT);
     while (this.pending.length) {
       const q = this.pending[0];
       if (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) break;
       const ns = gl.getQueryParameter(q, gl.QUERY_RESULT);
-      if (!disjoint) push(this.gpu, ns / 1e6);
+      if (!disjoint) {
+        push(this.gpu, ns / 1e6);
+        samples.push(ns / 1e6);
+      }
       gl.deleteQuery(q);
       this.pending.shift();
     }
+    return samples;
+  }
+
+  resetContext() {
+    // Queries from a lost context are invalid; never recycle their numbers as GPU time.
+    if (!this.gl.isContextLost()) {
+      for (const q of this.pending) this.gl.deleteQuery(q);
+    }
+    this.query = null;
+    this.pending = [];
+    this.last = null;
+    this.cpu = [];
+    this.gpu = [];
+    this.intervals = [];
+    this.gl = this.renderer.getContext();
+    this.timer = this.gl.getExtension("EXT_disjoint_timer_query_webgl2");
   }
 
   /** Recent GPU frame time (ms), or null when the timer extension is missing. */

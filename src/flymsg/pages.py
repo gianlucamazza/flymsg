@@ -68,6 +68,7 @@ PAGES = (
     ("dimorphism", "docs/dimorphism.md", "Dimorphism"),
     ("related", "docs/related.md", "Related"),
     ("viz", "docs/viz.md", "3D view"),
+    ("vee-qualification", "docs/vee-qualification.md", "VEE qualification"),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("approximations", "docs/approximations.md", "Approximations"),
     ("leads", "docs/leads.md", "Leads"),

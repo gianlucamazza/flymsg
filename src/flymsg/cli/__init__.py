@@ -175,6 +175,22 @@ def main() -> None:
         p.error("--progress needs --checkpoint FILE")
 
     try:
+        if a.cmd == "closedloop":
+            from flymsg import closedloop_experiment
+
+            if a.dataset != "malecns":
+                p.error(
+                    "closedloop is a synthetic fixture; --dataset fafb does not apply"
+                )
+            cfg = closedloop_experiment.load(a.config)
+            paths = closedloop_experiment.inputs(a.config)
+            if any(not path.is_file() for path in paths.values()):
+                raise ValueError("missing closedloop/FlyGym input asset")
+            if a.check:
+                return print(
+                    f"config ok: {closedloop_experiment.CONFIG_SCHEMA}; synthetic only; {len(paths)} inputs"
+                )
+            return closedloop_experiment.run(cfg, a.config, a.out)
         if a.cmd == "fetch":
             return data.fetch(a.data, a.dataset)
         if a.cmd == "build":

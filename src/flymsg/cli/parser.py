@@ -27,6 +27,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser(
+        "closedloop", help="run the explicitly synthetic 3D NeuroMechFly/optics fixture"
+    )
+    s.add_argument("config", type=Path)
+    s.add_argument(
+        "--check",
+        action="store_true",
+        help="validate config and dependencies without resetting a body",
+    )
+    s.add_argument("--out", type=Path, default=Path("runs/closedloop"))
+    s = sub.add_parser(
         "behavior",
         help="print the frozen one-bit looming-jump protocol, or run it with --run",
     )
