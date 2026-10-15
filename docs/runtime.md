@@ -124,6 +124,13 @@ The full MaleCNS default model (165,122 neurons, 24.5 million synapses; looming 
   - With that, the 20,000-step run is bit for bit at about 2,320 steps/s, and the 12 fixtures, cancel, suspension and resume pass again.
   - Exactness costs about a quarter of the throughput.
 
-A GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
+**The console as a backend.**
+
+- `flymsg.console` holds the Device Portal client. It turns `sim.run` calls on one network into one batch job: the network is uploaded once, then every run follows.
+- The decoded results are `sim.run`'s, bit for bit.
+- `flymsg baselines --run --backend console` runs each graph's battery that way and records the worker package and shader hash in the manifest, never an address.
+- `scripts/console_battery.py` checks a whole battery on the console against `sim.run` on the host, run by run.
+
+A GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation beyond this batching. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
 
 Run `uv run pytest tests/test_runtime.py tests/test_core.py tests/test_embodiment.py`. Existing CI also checks all synthetic regressions, documentation links, formatting and browser modules.

@@ -18,11 +18,31 @@ class NativeCapabilityError(ValueError):
     """A numerical mode has no qualified native implementation."""
 
 
-def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
+def edge_chunks(runtime: CpuRuntime) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Incoming edges as the fixture stores them: row pointers, sources (stable by
+    source, then original CSC position) and weights. The costly part of an export on a
+    whole connectome; a batch computes it once for its network."""
+    n = runtime._n
+    sources = np.repeat(np.arange(n), np.diff(runtime._indptr))
+    order = np.argsort(runtime._indices, kind="stable")
+    counts = np.bincount(runtime._indices, minlength=n)
+    return (
+        np.r_[0, np.cumsum(counts)].astype("<u4"),
+        sources[order].astype("<u4"),
+        runtime._data[order].astype("<f4"),
+    )
+
+
+def export_fixture(
+    runtime: CpuRuntime,
+    path: Path,
+    edges: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
+) -> dict:
     """Export a fresh initialized CPU runtime; scientific authority stays Python.
 
     This qualification format is intentionally separate from the run manifest.
     Kicks are converted to double counts, matching the kernel's kick arithmetic.
+    `edges` is `edge_chunks(runtime)` when the caller already has it.
     """
     if runtime.step != 0:
         raise ValueError("native fixtures require fresh state")
@@ -74,12 +94,10 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
         cursor += len(raw) // 4
 
     # Incoming edges, stable by source then original CSC edge position.
-    sources = np.repeat(np.arange(n), np.diff(runtime._indptr))
-    order = np.argsort(runtime._indices, kind="stable")
-    counts = np.bincount(runtime._indices, minlength=n)
-    add(16, np.r_[0, np.cumsum(counts)])
-    add(17, sources[order])
-    add(18, runtime._data[order], "<f4")
+    ptr, sources, weights = edge_chunks(runtime) if edges is None else edges
+    add(16, ptr)
+    add(17, sources)
+    add(18, weights, "<f4")
     add(19, runtime._is_stim)
     add(20, runtime._silent)
     add(21, runtime._jump, "<f4")
@@ -133,7 +151,7 @@ def export_fixture(runtime: CpuRuntime, path: Path) -> dict:
         # graded release ring, release of this step, voltage sums (f64), gap buffer, steps
         # left of each coupled neuron's spike term
         state_cursor += d * ng + ng + 2 * bins * ng + nc + nc
-    header[34:37] = [cursor, state_cursor, len(order)]
+    header[34:37] = [cursor, state_cursor, len(sources)]
     if (cursor + state_cursor) * 4 > MAX_BYTES:
         raise ValueError("fixture exceeds native qualification memory cap")
     path = Path(path)
@@ -166,8 +184,14 @@ def export_batch(runtimes: list[CpuRuntime], base: Path, batch: Path) -> list[di
         raise ValueError("a batch needs at least one run")
     scratch = Path(batch).with_name(Path(batch).name + ".run")
     metas, parts, first, cut = [], [], None, 0
+    edges, net = edge_chunks(runtimes[0]), runtimes[0]
     for k, rt in enumerate(runtimes):
-        metas.append(export_fixture(rt, scratch))
+        same = all(
+            np.array_equal(getattr(rt, a), getattr(net, a))
+            for a in ("_indptr", "_indices", "_data")
+        )
+        # the edges are the network's: computed once, reused while it is the same
+        metas.append(export_fixture(rt, scratch, edges if same else None))
         w = np.frombuffer(scratch.read_bytes(), dtype="<u4")
         if first is None:
             if int(w[1]) != 1:

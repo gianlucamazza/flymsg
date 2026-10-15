@@ -129,6 +129,13 @@
 
 ### Engineering
 
+- **Batch jobs and the console as a backend** (#40).
+  - **Batch format.** Several runs of one network travel as one base fixture and exact per-run patches (`native.export_batch`), so the network is uploaded once.
+  - **Worker.** It runs them in order, keeps each run's output and resumes after the last completed one.
+  - **Library.** `flymsg.console` turns `sim.run` calls into such a batch on the Series S, and the decoded results are `sim.run`'s, bit for bit.
+  - **Baselines.** `flymsg baselines --backend console` runs each graph's battery that way. `sensitivity.measure` accepts results from any backend.
+  - **Memory.** Batches export one run at a time, and outputs are decoded on demand.
+
 - **The 3D viewer on an Xbox.**
   - **TV layout.** It is on by default in a console's browser, or with `?tv=1`: larger text in the title-safe area, the panel closed, and controller hints.
   - **Controller.** A game controller drives the view (`gamepad.js`, standard mapping): the sticks and triggers rotate and zoom, A plays or pauses, LB and RB step a bin, Y resets the view, X clears the selection, and View opens or closes the panel.
