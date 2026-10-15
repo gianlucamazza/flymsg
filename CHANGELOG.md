@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.48 — 2026-10-16
 
 ### Result
 
