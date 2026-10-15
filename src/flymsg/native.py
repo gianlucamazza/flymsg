@@ -1,6 +1,7 @@
 """Versioned, bounded fixtures for the native ordered LIF executor."""
 
 import struct
+from collections.abc import Iterable
 from pathlib import Path
 
 import numpy as np
@@ -40,6 +41,17 @@ def export_fixture(
     edges: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
 ) -> dict:
     """Export a fresh initialized CPU runtime; scientific authority stays Python.
+    See `fixture_bytes`."""
+    raw, meta = fixture_bytes(runtime, edges)
+    Path(path).write_bytes(raw)
+    return meta
+
+
+def fixture_bytes(
+    runtime: CpuRuntime,
+    edges: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
+) -> tuple[bytes, dict]:
+    """A fresh initialized CPU runtime's fixture, in memory, and its description.
 
     This qualification format is intentionally separate from the run manifest.
     Kicks are converted to double counts, matching the kernel's kick arithmetic.
@@ -155,9 +167,7 @@ def export_fixture(
     header[34:37] = [cursor, state_cursor, len(sources)]
     if (cursor + state_cursor) * 4 > MAX_BYTES:
         raise ValueError("fixture exceeds native qualification memory cap")
-    path = Path(path)
-    path.write_bytes(header.tobytes() + b"".join(chunks))
-    return {
+    return header.tobytes() + b"".join(chunks), {
         "schema": f"flymsg.native_fixture/v{2 if extended else 1}",
         "input_bytes": cursor * 4,
         "state_bytes": state_cursor * 4,
@@ -169,7 +179,7 @@ def export_fixture(
 BATCH = 0x314E4246  # FBN1: several runs of one network
 
 
-def export_batch(runtimes: list[CpuRuntime], base: Path, batch: Path) -> list[dict]:
+def export_batch(runtimes: Iterable[CpuRuntime], base: Path, batch: Path) -> list[dict]:
     """Export runs that share one network (the same W, parameters, horizon and
     recording) as one base fixture and a batch of exact patches, so a worker uploads the
     network once.
@@ -179,28 +189,27 @@ def export_batch(runtimes: list[CpuRuntime], base: Path, batch: Path) -> list[di
     differ from the base (stimulated rows, their threshold jumps and columns, the
     stimulus count and the input size) and then the run's own kicks. The patch rebuilds
     that run's fixture word for word, which is checked here before anything is written.
-    Runs are exported one at a time, so memory holds the base and one run, not all.
+    Runs are exported one at a time, so memory holds the base and one run, not all;
+    `runtimes` may be a generator that builds each run when it is asked for.
     """
-    if not runtimes:
-        raise ValueError("a batch needs at least one run")
-    scratch = Path(batch).with_name(Path(batch).name + ".run")
     metas, parts, first, cut = [], [], None, 0
-    edges, net = edge_chunks(runtimes[0]), runtimes[0]
+    edges = net = None
     for k, rt in enumerate(runtimes):
+        if net is None:
+            edges, net = edge_chunks(rt), rt
         same = all(
             np.array_equal(getattr(rt, a), getattr(net, a))
             for a in ("_indptr", "_indices", "_data")
         )
         # the edges are the network's: computed once, reused while it is the same
-        metas.append(export_fixture(rt, scratch, edges if same else None))
-        w = np.frombuffer(scratch.read_bytes(), dtype="<u4")
+        raw, meta = fixture_bytes(rt, edges if same else None)
+        metas.append(meta)
+        del rt
+        w = np.frombuffer(raw, dtype="<u4")
         if first is None:
             if int(w[1]) != 1:
                 raise NativeCapabilityError("batches cover version-1 fixtures only")
             first, cut = w.copy(), int(w[24])  # the kicks start at `cut`
-            parts.append(
-                np.array([BATCH, 1, len(runtimes), cut], dtype="<u4").tobytes()
-            )
         if int(w[1]) != 1 or int(w[24]) != cut:
             raise ValueError(f"run {k} does not share the base's network layout")
         changed = np.flatnonzero(w[:cut] != first[:cut]).astype("<u4")
@@ -217,8 +226,10 @@ def export_batch(runtimes: list[CpuRuntime], base: Path, batch: Path) -> list[di
             np.array([kicks.size], dtype="<u4").tobytes(),
             kicks.tobytes(),
         ]
-        del w, rebuilt
-    scratch.unlink()
+        del w, raw, rebuilt
+    if first is None:
+        raise ValueError("a batch needs at least one run")
+    parts.insert(0, np.array([BATCH, 1, len(metas), cut], dtype="<u4").tobytes())
     if sum(len(x) for x in parts) > MAX_BYTES:
         raise ValueError("batch exceeds the native memory cap")
     Path(base).write_bytes(first.tobytes())

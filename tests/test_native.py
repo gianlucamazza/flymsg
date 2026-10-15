@@ -304,6 +304,20 @@ def test_a_batch_rebuilds_every_run_word_for_word(tmp_path):
     ).stat().st_size
 
 
+def test_a_batch_from_a_generator_is_the_batch_from_a_list(tmp_path):
+    """Runs built one at a time, as the export asks, give the same bytes."""
+    from flymsg import native
+
+    listed, lazy = tmp_path / "listed", tmp_path / "lazy"
+    listed.mkdir(), lazy.mkdir()
+    native.export_batch(_battery_runs(), listed / "base.bin", listed / "batch.bin")
+    native.export_batch(iter(_battery_runs()), lazy / "base.bin", lazy / "batch.bin")
+    for name in ("base.bin", "batch.bin"):
+        assert (listed / name).read_bytes() == (lazy / name).read_bytes()
+    with pytest.raises(ValueError, match="at least one run"):
+        native.export_batch(iter([]), lazy / "base.bin", lazy / "batch.bin")
+
+
 def test_the_native_executor_runs_a_batch_bit_for_bit(native_exe, tmp_path):
     from flymsg import native
 
@@ -533,7 +547,6 @@ def test_console_batches_need_a_worker_that_lists_their_output(
         expected = sim.run(W, *specs[0][:4], p, specs[0][4])
         assert np.array_equal(results[0].counts, expected.counts)
         assert set(result["host"]) == {
-            "runtimes_s",
             "export_s",
             "upload_s",
             "console_s",
