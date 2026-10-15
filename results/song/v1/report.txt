@@ -1,0 +1,5 @@
+song v1 (issue #36): JO-A/JO-B/JO-D, pulse 16/20 ms vs sine, rates [50.0, 100.0, 200.0] Hz, seeds 360-364, 99 degree-preserving shuffles; held-out against Pacheco et al. 2021
+JO A/B ratios (Yamakoshi): {'pulse': 3.004312843600748, 'sine': 1.6982522828643822}
+no_go: 14 of 32 neuropils resolved (0.44, need 0.5); 7 pulse-preferring, 7 sine-preferring
+ratios: {'pulse': 3.004312843600748, 'sine': 1.6982522828643822}
+verdict: uninformative: no-go

@@ -45,11 +45,14 @@ DIRS = (
     "convergence/v1.executions/be1ac2741e08d8f0432fd49fed5ebd74fab5062d79cb280a39637f49ae31997c/output",
     "gf_looming/v1",
     "gf_looming/v2",
+    "song/v1",
     "apl-claws/v1.executions/b914035a1c1a364adec8e0a880373c104287b3e677f39521f76550e5dbadc0fd/output",
 )
 # A guard: results/ holds tables, not raw activity. 250 kB since t4t5 v3, whose per-type
-# medulla table over 25 configurations brings its required artifacts to 202 kB.
-MAX_BYTES = 250_000
+# medulla table over 25 configurations brings its required artifacts to 202 kB; 450 kB since
+# song v1, whose per-cell table (1,045 cells: conditions, rates, seeds, 99 shuffles, the
+# evidence for its no-go) brings its artifacts to 421 kB.
+MAX_BYTES = 450_000
 
 
 def clean_manifest(doc: dict) -> dict:
