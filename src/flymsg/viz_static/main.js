@@ -66,6 +66,7 @@ import { Perf } from "./perf.js";
 import { installXrObserver } from "./xr.js";
 import { XrMetrics } from "./xr-metrics.js";
 import { visibleLinePages, writeVisibleEdges } from "./geometry-pages.js";
+import { RasterPainter } from "./raster-painter.js";
 import { ResidentLineIndex } from "./resident-lines.js";
 import { localEyePlanes, sameEyePlanes } from "./page-views.js";
 import { selectFidelity } from "./fidelity.js";
@@ -1626,7 +1627,8 @@ function updateActivity(t) {
   for (const n of neurons)
     for (const f of n.shown.values()) inst[f.iid] = activity[n.k];
   instanceTexturesDirty = true;
-  clockEl.textContent = `t = ${t.toFixed(0)} ms · stimulus ${t < A.stim_ms ? "on" : "off"}`;
+  const label = `t = ${t.toFixed(0)} ms · stimulus ${t < A.stim_ms ? "on" : "off"}`;
+  if (clockEl.textContent !== label) clockEl.textContent = label;
   shownT = t;
   drawRaster();
   invalidate();
@@ -1744,6 +1746,7 @@ if (query.has("check")) {
     meshMaterial,
     fidelity: fidelityReport,
     resources: resourceReport,
+    raster: () => rasterPainter.report(),
     scheduleLines: (eyes) => {
       applySkeletonVisibility(eyes);
       return { ...lineSubmission };
@@ -2023,15 +2026,21 @@ panel.querySelector("button").addEventListener("click", clearSelection);
 // ---------- raster: the selection's spikes per bin, in step with the replay ----------
 const rasterEl = document.getElementById("raster");
 const rasterCanvas = rasterEl.querySelector("canvas");
-const RASTER_LABEL_PX = 120,
-  RASTER_ROW_PX = 9,
-  RASTER_AXIS_PX = 18;
+const RASTER_LABEL_PX = 120;
+const rasterPainter = new RasterPainter(rasterCanvas);
 let rasterState = null;
 function showRaster(k, entry) {
   if (!replay) return;
   const { rows, hidden } = selectionRows(k, entry);
   rasterState = {
-    rows: rasterRows(spikes, { n: N, bins: A.bins }, rows),
+    rows: rasterRows(spikes, { n: N, bins: A.bins }, rows).map((row) => ({
+      ...row,
+      label: (neurons[row.k].instance || neurons[row.k].type).slice(0, 18),
+      colour: FOCUS_COLORS[view.focus?.get(row.k) ?? "context"],
+    })),
+    bins: A.bins,
+    binMs: A.bin_ms,
+    stimMs: A.stim_ms,
     hidden,
   };
   rasterEl.querySelector("header span").textContent =
@@ -2046,6 +2055,7 @@ function showRaster(k, entry) {
 }
 function hideRaster() {
   rasterState = null;
+  rasterPainter.clear();
   rasterEl.hidden = true;
 }
 const rasterSpanMs = () => A.bins * A.bin_ms;
@@ -2056,65 +2066,11 @@ function rasterX(ms, width) {
 }
 function drawRaster() {
   if (!rasterState) return;
-  const { rows } = rasterState;
-  const width = Math.min(560, innerWidth - 48);
-  const height = rows.length * RASTER_ROW_PX + RASTER_AXIS_PX;
-  const ratio = devicePixelRatio || 1;
-  rasterCanvas.width = width * ratio;
-  rasterCanvas.height = height * ratio;
-  rasterCanvas.style.width = `${width}px`;
-  rasterCanvas.style.height = `${height}px`;
-  const ctx = rasterCanvas.getContext("2d");
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  ctx.clearRect(0, 0, width, height);
-  const plotH = rows.length * RASTER_ROW_PX;
-  ctx.fillStyle = "rgba(76, 201, 240, 0.12)"; // stimulus window
-  ctx.fillRect(
-    rasterX(0, width),
-    0,
-    rasterX(A.stim_ms, width) - rasterX(0, width),
-    plotH,
-  );
-  ctx.font = "10px system-ui, sans-serif";
-  ctx.textBaseline = "middle";
-  const cellW = Math.max(1, rasterX(A.bin_ms, width) - rasterX(0, width) - 0.5);
-  rows.forEach(({ k, counts, total }, i) => {
-    const y = i * RASTER_ROW_PX;
-    const n = neurons[k];
-    const colour = FOCUS_COLORS[view.focus?.get(k) ?? "context"];
-    ctx.fillStyle = colour;
-    ctx.fillText((n.instance || n.type).slice(0, 18), 2, y + RASTER_ROW_PX / 2);
-    if (!total) {
-      ctx.fillStyle = "#7b8494";
-      ctx.fillText(
-        "no spikes in this replay",
-        RASTER_LABEL_PX,
-        y + RASTER_ROW_PX / 2,
-      );
-      return;
-    }
-    for (let b = 0; b < counts.length; b++) {
-      if (!counts[b]) continue;
-      ctx.globalAlpha = Math.min(1, 0.35 + counts[b] / 3);
-      ctx.fillStyle = colour;
-      ctx.fillRect(
-        rasterX(b * A.bin_ms, width),
-        y + 1,
-        cellW,
-        RASTER_ROW_PX - 2,
-      );
-    }
-    ctx.globalAlpha = 1;
+  rasterPainter.draw(rasterState, {
+    width: Math.min(560, innerWidth - 48),
+    ratio: devicePixelRatio || 1,
+    time: clock.t,
   });
-  // axis every 100 ms
-  ctx.fillStyle = "#7b8494";
-  ctx.textBaseline = "top";
-  for (let ms = 0; ms <= rasterSpanMs(); ms += 100)
-    ctx.fillText(`${ms}`, rasterX(ms, width) - 6, plotH + 4);
-  // cursor on the bin the glow is showing
-  const b = binAt(clock.t, A.bin_ms, A.bins);
-  ctx.strokeStyle = "#ffffff";
-  ctx.strokeRect(rasterX(b * A.bin_ms, width), 0, cellW, plotH);
 }
 function rasterTime(e) {
   const r = rasterCanvas.getBoundingClientRect();
@@ -2149,6 +2105,10 @@ addEventListener("keydown", (e) => {
   stepBin(e.key === "ArrowRight" ? 1 : -1);
 });
 addEventListener("resize", drawRaster);
+rasterCanvas.addEventListener("contextrestored", () => {
+  rasterPainter.clear();
+  drawRaster();
+});
 rasterEl.querySelector("button").addEventListener("click", async () => {
   const manifest = await fetch("manifest.json")
     .then((r) => (r.ok ? r.json() : null))

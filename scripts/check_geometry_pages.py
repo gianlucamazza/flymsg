@@ -21,7 +21,18 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
-        if self.path == "/__oracle.html":
+        if self.path == "/__raster.html":
+            body = b"""<!doctype html><title>Raster pixel oracle</title>
+<script type="module">
+import {rasterOracle} from "/raster-oracle.js";
+window.oracle=rasterOracle({timingSamples:0});
+</script>"""
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        elif self.path == "/__oracle.html":
             body = b"""<!doctype html><title>Geometry page raster oracle</title>
 <script type="module">
 import * as THREE from "/vendor/three/build/three.module.min.js";
@@ -43,6 +54,7 @@ window.oracle=geometryPageOracle(THREE);
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--oracle", choices=("geometry", "raster"), default="geometry")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
     source = manifest.git_info()
@@ -54,6 +66,14 @@ def main():
         "render-reference.js",
         "vendor/three/build/three.module.min.js",
     )
+    if args.oracle == "raster":
+        files = (
+            "raster.js",
+            "raster-painter.js",
+            "raster-reference.js",
+            "raster-oracle.js",
+        )
+    page = "__raster.html" if args.oracle == "raster" else "__oracle.html"
     hashes = {
         name: hashlib.sha256((viz.STATIC / name).read_bytes()).hexdigest()
         for name in files
@@ -68,13 +88,18 @@ def main():
                 [
                     "node",
                     str(ROOT / "scripts/shoot.mjs"),
-                    f"http://localhost:{server.server_port}/__oracle.html",
+                    f"http://localhost:{server.server_port}/{page}",
                     str(args.out / "browser.png"),
                     "3",
                     "400",
                     "300",
                 ],
-                env={**os.environ, "GL": "swiftshader", "EVAL": "window.oracle"},
+                env={
+                    **os.environ,
+                    "GL": "swiftshader",
+                    "EVAL": "window.oracle",
+                    "EVAL_TIMEOUT_MS": "60000",
+                },
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,

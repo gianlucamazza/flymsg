@@ -18,6 +18,13 @@ if (!url || !out) {
   console.error("usage: shoot.mjs <url> <out.png> [wait s] [width] [height]");
   process.exit(2);
 }
+const evaluateTimeout = Number(process.env.EVAL_TIMEOUT_MS ?? 10000);
+if (
+  !Number.isInteger(evaluateTimeout) ||
+  evaluateTimeout < 1000 ||
+  evaluateTimeout > 90000
+)
+  throw new Error("EVAL_TIMEOUT_MS must be 1000..90000");
 let port;
 const profile = mkdtempSync(join(tmpdir(), "shoot-"));
 const GL_FLAGS = {
@@ -135,10 +142,13 @@ try {
   const send = (method, params = {}) =>
     new Promise((resolve, reject) => {
       const request = ++id;
-      const timeout = setTimeout(() => {
-        pending.delete(request);
-        reject(new Error(`CDP timeout: ${method}`));
-      }, 10000);
+      const timeout = setTimeout(
+        () => {
+          pending.delete(request);
+          reject(new Error(`CDP timeout: ${method}`));
+        },
+        method === "Runtime.evaluate" ? evaluateTimeout : 10000,
+      );
       pending.set(request, (message) => {
         clearTimeout(timeout);
         if (message.error)

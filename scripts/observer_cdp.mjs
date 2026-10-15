@@ -17,11 +17,19 @@ export async function localObserver(endpoint, targetId) {
   });
   let id = 0;
   const pending = new Map();
+  const listeners = new Map();
   ws.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
     pending.get(message.id)?.(message);
+    for (const listener of listeners.get(message.method) ?? [])
+      listener(message.params);
   });
-  const evaluate = (expression) =>
+  ws.addEventListener("close", () => {
+    for (const callback of pending.values())
+      callback({ error: { message: "Diagnostic connection closed" } });
+    pending.clear();
+  });
+  const command = (method, params = {}) =>
     new Promise((resolve, reject) => {
       const request = ++id,
         timer = setTimeout(() => {
@@ -33,15 +41,56 @@ export async function localObserver(endpoint, targetId) {
         pending.delete(request);
         if (message.error || message.result?.exceptionDetails)
           reject(Error(JSON.stringify(message)));
-        else resolve(message.result.result.value);
+        else resolve(message.result);
       });
-      ws.send(
-        JSON.stringify({
-          id: request,
-          method: "Runtime.evaluate",
-          params: { expression, awaitPromise: true, returnByValue: true },
-        }),
-      );
+      try {
+        ws.send(
+          JSON.stringify({
+            id: request,
+            method,
+            params,
+          }),
+        );
+      } catch (error) {
+        clearTimeout(timer);
+        pending.delete(request);
+        reject(error);
+      }
     });
-  return { url: target.url, evaluate, close: () => ws.close() };
+  const evaluate = async (expression) =>
+    (
+      await command("Runtime.evaluate", {
+        expression,
+        awaitPromise: true,
+        returnByValue: true,
+      })
+    ).result.value;
+  const loadedSources = async (names) => {
+    const scripts = new Map();
+    const listener = (params) => scripts.set(params.url, params.scriptId);
+    listeners.set("Debugger.scriptParsed", new Set([listener]));
+    try {
+      await command("Debugger.enable");
+      const result = {};
+      for (const name of names) {
+        const url = new URL(name, target.url).href,
+          scriptId = scripts.get(url);
+        if (!scriptId) throw Error(`Loaded module unavailable: ${name}`);
+        result[name] = (
+          await command("Debugger.getScriptSource", { scriptId })
+        ).scriptSource;
+      }
+      return result;
+    } finally {
+      listeners.delete("Debugger.scriptParsed");
+      await command("Debugger.disable");
+    }
+  };
+  return {
+    url: target.url,
+    command,
+    evaluate,
+    loadedSources,
+    close: () => ws.close(),
+  };
 }
