@@ -14,17 +14,17 @@
     "seeds": 5
   },
   "console": {
-    "advance_ms": 69888.86587199998,
+    "advance_ms": 69649.046843,
     "advance_steps": 180000,
-    "wall_s": 330.2972937200102
+    "wall_s": 242.6660485669854
   },
-  "date": "2026-10-15",
+  "date": "2026-10-16",
   "host_load_average": [
-    3.20458984375,
-    4.892578125,
-    7.8486328125
+    2.32373046875,
+    3.8447265625,
+    8.25439453125
   ],
-  "host_sim_run_s": 62.07357031304855,
+  "host_sim_run_s": 46.13563742302358,
   "mismatched_runs": [],
   "network": {
     "neurons": 165122,
@@ -39,8 +39,12 @@
   "worker_package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
   "worker_shader_sha256": "d6a0977507dd905fe0895948441be9bab9033e1c393735aad0095622fd606809",
   "package_lineage": {
-    "ci_run": 38801390655,
-    "ci_note": "native-runtime workflow on PR #208"
+    "ci_run": 38808934632,
+    "ci_note": "native-runtime workflow on PR #208, after its review"
   },
-  "note": "the console runs each run in about 2.3 s of advance; the batch took 330 s end to end because every run returns its whole state (about 45 MB); the host ran the same 30 runs with sim.run in 62 s on one core while idle of other simulations"
+  "note": "the console advances the 30 runs in about 70 s (2.3 s per run); end to end 243 s, mostly downloading each run whole state (about 45 MB); one host core ran the same 30 sim.run calls in 46 s with no other simulation running",
+  "first_run": {
+    "wall_s": 330.3,
+    "note": "before the review fixes (each run wrote a full local fixture copy)"
+  }
 }
