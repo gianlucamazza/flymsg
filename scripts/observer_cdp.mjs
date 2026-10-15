@@ -3,7 +3,11 @@ export async function localObserver(endpoint, targetId) {
   if (!["localhost", "127.0.0.1"].includes(new URL(endpoint).hostname))
     throw Error("Local CDP endpoint required");
   const target = (
-    await (await fetch(new URL("/json/list", endpoint))).json()
+    await (
+      await fetch(new URL("/json/list", endpoint), {
+        signal: AbortSignal.timeout(10000),
+      })
+    ).json()
   ).find((t) => t.id === targetId);
   if (
     !target?.url.startsWith("http://localhost:") ||
@@ -31,6 +35,10 @@ export async function localObserver(endpoint, targetId) {
   });
   const command = (method, params = {}) =>
     new Promise((resolve, reject) => {
+      if (ws.readyState !== 1) {
+        reject(Error("Diagnostic connection closed"));
+        return;
+      }
       const request = ++id,
         timer = setTimeout(() => {
           pending.delete(request);

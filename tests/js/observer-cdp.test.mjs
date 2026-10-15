@@ -18,6 +18,7 @@ test("diagnostics restrict the target and read loaded sources, disabling debugge
   class Socket extends EventTarget {
     constructor() {
       super();
+      this.readyState = 1;
       queueMicrotask(() => this.dispatchEvent(new Event("open")));
     }
     send(text) {
@@ -47,6 +48,7 @@ test("diagnostics restrict the target and read loaded sources, disabling debugge
       });
     }
     close() {
+      this.readyState = 3;
       this.dispatchEvent(new Event("close"));
     }
   }
@@ -74,4 +76,8 @@ test("diagnostics restrict the target and read loaded sources, disabling debugge
   } finally {
     browser.close();
   }
+  await assert.rejects(
+    browser.command("Profiler.disable"),
+    /connection closed/,
+  );
 });
