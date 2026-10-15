@@ -7,8 +7,9 @@ first, job last), waits for each, fetches `output.bin` and checks it bit for bit
 oracle. The worker must already be installed and running.
 
 Device Portal settings come from the environment only: `XBOX_IP`, `XBOX_USER`, `XBOX_PASS`
-and, to pin the device's TLS certificate, `FLYMSG_DEVICE_PIN` (its SHA-256; without it the
-certificate is not checked). The report holds no address or credential.
+and, to pin the device's self-signed TLS key, `FLYMSG_DEVICE_PIN` (curl's `--pinnedpubkey`
+form, `sha256//<base64>`, checked by curl on every connection; without it the key is not
+checked). The report holds no address or credential. Exits nonzero unless every case passes.
 
 Usage: uv run python scripts/console_gpu_parity.py --package PFN --shader lif.cso --out DIR
 """
@@ -19,7 +20,6 @@ import argparse
 import hashlib
 import json
 import os
-import ssl
 import subprocess
 import sys
 import tempfile
@@ -48,12 +48,7 @@ class Portal:
         self.auth = f"{os.environ['XBOX_USER']}:{os.environ['XBOX_PASS']}"
         fd, self.jar = tempfile.mkstemp(prefix="wdp")
         os.close(fd)
-        pin = os.environ.get("FLYMSG_DEVICE_PIN")
-        if pin:
-            cert = ssl.get_server_certificate((os.environ["XBOX_IP"], 11443))
-            der = ssl.PEM_cert_to_DER_cert(cert)
-            if hashlib.sha256(der).hexdigest() != pin.lower():
-                raise SystemExit("device certificate does not match FLYMSG_DEVICE_PIN")
+        self.pin = os.environ.get("FLYMSG_DEVICE_PIN")
         self.curl("GET", "/", out=os.devnull)
         token = [
             line.split("\t")[6]
@@ -64,6 +59,8 @@ class Portal:
 
     def curl(self, method, path, out=None, upload=None) -> str:
         cmd = ["curl", "-sS", "-k", "--fail", "-m", "120", "-u", self.auth]
+        if self.pin:  # -k skips the CA chain only; curl still enforces the pinned key
+            cmd += ["--pinnedpubkey", self.pin]
         cmd += ["-b", self.jar, "-c", self.jar, "-X", method]
         if method != "GET":
             cmd += ["-H", f"X-CSRF-Token:{getattr(self, 'token', '')}"]
@@ -102,7 +99,7 @@ class Portal:
         self.curl(
             "POST",
             f"/api/filesystem/apps/file?knownfolderid=LocalAppData"
-            f"&packagefullname={package}&path={path}",
+            f"&packagefullname={package}&path={path}&extract=false",
             upload=str(local),
         )
 
@@ -235,3 +232,4 @@ if __name__ == "__main__":
     a = parser.parse_args()
     r = run(a.package, a.shader, a.out)
     print(f"passed {r['passed']} of {len(r['cases'])}")
+    sys.exit(0 if r["passed"] == len(r["cases"]) == 12 else 1)
