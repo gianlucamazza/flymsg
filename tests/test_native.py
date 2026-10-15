@@ -446,8 +446,9 @@ class FakeWorker:
     """A Device Portal over a local folder, with the native CPU executor as the worker:
     job.json runs the batch, and status.json lists the outputs `outputs` names."""
 
-    def __init__(self, root, exe, outputs):
-        self.root, self.exe, self.outputs, self.uploads = root, exe, outputs, []
+    def __init__(self, root, exe, outputs, finish=True):
+        self.root, self.exe, self.outputs, self.finish = root, exe, outputs, finish
+        self.uploads = []
 
     def mkdir(self, package, rel):
         (self.root / rel.replace("\\", "/")).mkdir(parents=True, exist_ok=True)
@@ -462,7 +463,7 @@ class FakeWorker:
         status = {"job_id": job["job_id"], "state": "running"}
         if self.outputs is not None:
             status["batch_outputs"] = self.outputs
-        if self.outputs is not None:
+        if self.finish:
             for k in range(job["batch"]["runs"]):
                 subprocess.run(
                     [
@@ -500,7 +501,8 @@ def test_console_batches_need_a_worker_that_lists_their_output(
 ):
     """sim_runs on a worker listing "counts" gives sim.run's results and the host's
     timing; on an older worker, which lists no outputs, it cancels at the first
-    report instead of running the whole batch."""
+    report instead of running the whole batch, and says why even when that worker
+    finished before the first report."""
     from flymsg import console, sim
 
     monkeypatch.setattr(console.time, "sleep", lambda s: None)
@@ -511,9 +513,9 @@ def test_console_batches_need_a_worker_that_lists_their_output(
     specs = [(np.array([0, 2]), 300.0, 60.0, 30.0, 3)]
     shader = tmp_path / "lif.cso"
     shader.write_bytes(b"shader")
-    for outputs in (["state", "counts"], None):
-        root = tmp_path / str(outputs is None)
-        worker = FakeWorker(root, native_exe, outputs)
+    for outputs, finish in ((["state", "counts"], True), (None, False), (None, True)):
+        root = tmp_path / f"{outputs is None}{finish}"
+        worker = FakeWorker(root, native_exe, outputs, finish)
         device = console.Device(package="pkg", shader=shader, portal=worker)
         out = root / "local"
         if outputs is None:
@@ -521,7 +523,9 @@ def test_console_batches_need_a_worker_that_lists_their_output(
                 console.sim_runs(
                     device, W, specs, p, out, dataset="d", seed=0, scope="t"
                 )
-            assert worker.uploads[-1] == "cancel.json"
+            # a running job is cancelled; a finished one leaves no output behind
+            assert (worker.uploads[-1] == "cancel.json") != finish
+            assert not list(root.rglob("output_*.bin"))
             continue
         results, result = console.sim_runs(
             device, W, specs, p, out, dataset="d", seed=0, scope="t"

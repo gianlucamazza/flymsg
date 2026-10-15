@@ -198,10 +198,10 @@ def run_batch(
     clock = time.perf_counter()
     host = {}  # where the batch's wall time goes on the host's side, in seconds
 
-    def lap(name):
+    def lap(name):  # export_s, upload_s (with hashing), console_s, download_s
         nonlocal clock
-        host[name] = time.perf_counter() - clock
-        clock = time.perf_counter()
+        now = time.perf_counter()
+        host[name], clock = now - clock, now
 
     metas = native.export_batch(runtimes, base, batch)
     lap("export_s")
@@ -241,18 +241,24 @@ def run_batch(
             time.sleep(2)
             status = device.status(rel, folder / "status.json")
             # a worker that does not list the output would run the whole batch
-            # and write another file: stop it at its first report
-            if (
-                status.get("job_id") == job_id
-                and output not in status.get("batch_outputs", ["state"])
-                and status.get("state") not in STOPPED
+            # and write another file: stop it at its first report, and delete
+            # what it may have written
+            if status.get("job_id") == job_id and output not in status.get(
+                "batch_outputs", ["state"]
             ):
-                cancel = folder / "cancel.json"
-                cancel.write_text(
-                    json.dumps({"schema": "flymsg.worker_cancel/v1", "job_id": job_id})
-                    + "\n"
-                )
-                p.put(device.package, rel, cancel)
+                remote += [f"output_{k}.bin" for k in range(len(runtimes))]
+                if status.get("state") not in STOPPED:
+                    cancel = folder / "cancel.json"
+                    cancel.write_text(
+                        json.dumps(
+                            {"schema": "flymsg.worker_cancel/v1", "job_id": job_id}
+                        )
+                        + "\n"
+                    )
+                    try:
+                        p.put(device.package, rel, cancel)
+                    except RuntimeError:
+                        pass  # the job runs on; the error below still says why
                 raise RuntimeError(
                     f"console batch {job_id}: the worker does not write "
                     f"{output!r} outputs; install a newer worker"

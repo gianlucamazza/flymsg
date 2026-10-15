@@ -84,8 +84,8 @@ def run(out: Path, seeds: int) -> dict:
             "wall_s": console_s,
             "advance_ms": result["advance_ms"],
             "advance_steps": result["advance_steps"],
-            # the rest of wall_s: the worker's own time outside the advance, and
-            # the host's (runtimes, export, upload, waiting, download)
+            # where wall_s goes: the host's phases (console_s, the wait for the
+            # worker, holds its advance, prepare and write times)
             "prepare_ms": result.get("prepare_ms"),
             "write_ms": result.get("write_ms"),
             "host_s": result["host"],
