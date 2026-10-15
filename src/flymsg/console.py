@@ -183,9 +183,14 @@ def run_batch(
     seed: int,
     scope: str,
     timeout_s: float = 7200.0,
+    output: str = "state",
 ) -> tuple[list[Path], list[Path], dict]:
     """Run fresh runtimes of one network on the console: each run's output file, the
-    fixture it decodes against (`native.read_output`), and the job's result."""
+    fixture it decodes against, and the job's result. `output` is "state" (the whole
+    state, `native.read_output`) or "counts" (counts and first spikes,
+    `native.read_counts`)."""
+    if output not in ("state", "counts"):
+        raise ValueError(f"unknown batch output {output!r}")
     job_id = str(uuid.uuid4())
     folder = out / job_id
     folder.mkdir(parents=True)
@@ -200,6 +205,8 @@ def run_batch(
         "batch": {
             "sha256": hashlib.sha256(batch.read_bytes()).hexdigest(),
             "runs": len(runtimes),
+            # "counts": sparse counts and first spikes per run instead of whole states
+            "output": output,
         },
         "shader_sha256": device.shader_sha,
         "expected_adapter": device.adapter,
@@ -234,14 +241,15 @@ def run_batch(
             )
         p.get(device.package, rel, "result.json", folder / "result.json")
         for k in range(len(runtimes)):
-            output, fixture = folder / f"output_{k}.bin", folder / f"fixture_{k}.bin"
-            remote.append(f"output_{k}.bin")
-            p.get(device.package, rel, f"output_{k}.bin", output)
+            name = f"{'counts' if output == 'counts' else 'output'}_{k}.bin"
+            out_path, fixture = folder / name, folder / f"fixture_{k}.bin"
+            remote.append(name)
+            p.get(device.package, rel, name, out_path)
             # a version-1 output decodes against its fixture's header alone
             fixture.write_bytes(
                 native.batch_fixture(base, batch, k)[: native.HEADER_WORDS].tobytes()
             )
-            outputs.append(output)
+            outputs.append(out_path)
             fixtures.append(fixture)
         return outputs, fixtures, json.loads((folder / "result.json").read_text())
     except BaseException:
@@ -290,8 +298,10 @@ def sim_runs(
     `(stim, rate_hz, duration_ms, stim_ms, seed)`, as one batch on the console. The runs
     must share a horizon; the results are `sim.run`'s, bit for bit."""
     runtimes = [sim_runtime(W, *spec[:4], p, spec[4]) for spec in specs]
+    # a sim.Result needs only the counts and first spikes: the sparse output, a few
+    # kilobytes per run instead of the whole state (tens of megabytes)
     outputs, fixtures, result = run_batch(
-        device, runtimes, out, dataset=dataset, seed=seed, scope=scope
+        device, runtimes, out, dataset=dataset, seed=seed, scope=scope, output="counts"
     )
     stim_ms = [
         (spec[2] if spec[3] is None else int(spec[3] / p.dt) * p.dt) for spec in specs
@@ -324,7 +334,12 @@ class Results:
     def __getitem__(self, k):
         if isinstance(k, slice):
             return [self[i] for i in range(*k.indices(len(self)))]
-        out = native.read_output(self.outputs[k], self.fixtures[k])
+        path = self.outputs[k]
+        out = (
+            native.read_counts(path, self.fixtures[k])
+            if path.name.startswith("counts_")
+            else native.read_output(path, self.fixtures[k])
+        )
         return native.as_result(out, self.fixtures[k], self.dt, self.stim_ms[k])
 
 

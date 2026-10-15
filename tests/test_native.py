@@ -348,9 +348,10 @@ def test_console_results_read_native_batch_outputs_as_sim_run(native_exe, tmp_pa
     runtimes = [console.sim_runtime(W, np.array(s[0]), *s[1:4], p, s[4]) for s in specs]
     base, batch = tmp_path / "base.bin", tmp_path / "batch.bin"
     native.export_batch(runtimes, base, batch)
-    outputs, fixtures = [], []
+    outputs, counts, fixtures = [], [], []
     for k in range(len(specs)):
         out, fixture = tmp_path / f"output_{k}.bin", tmp_path / f"fixture_{k}.bin"
+        sparse_out = tmp_path / f"counts_{k}.bin"
         subprocess.run(
             [
                 str(native_exe),
@@ -362,17 +363,80 @@ def test_console_results_read_native_batch_outputs_as_sim_run(native_exe, tmp_pa
                 str(k),
                 "--output",
                 str(out),
+                "--counts",
+                str(sparse_out),
             ],
             check=True,
             capture_output=True,
         )
         fixture.write_bytes(native.batch_fixture(base, batch, k).tobytes())
         outputs.append(out)
+        counts.append(sparse_out)
         fixtures.append(fixture)
-    results = console.as_results(outputs, fixtures, p.dt, [30.0, 60.0])
-    assert len(results) == 2 and len(results[0:2]) == 2
-    for s, r in zip(specs, results[:], strict=True):
-        expected = sim.run(W, np.array(s[0]), s[1], s[2], s[3], p, s[4])
-        assert np.array_equal(r.counts, expected.counts)
-        assert np.array_equal(r.first_spike_ms, expected.first_spike_ms, equal_nan=True)
-        assert r.bin_ms == expected.bin_ms and r.stim_ms == expected.stim_ms
+    for files in (outputs, counts):
+        results = console.as_results(files, fixtures, p.dt, [30.0, 60.0])
+        assert len(results) == 2 and len(results[0:2]) == 2
+        for s, r in zip(specs, results[:], strict=True):
+            expected = sim.run(W, np.array(s[0]), s[1], s[2], s[3], p, s[4])
+            assert np.array_equal(r.counts, expected.counts)
+            assert np.array_equal(
+                r.first_spike_ms, expected.first_spike_ms, equal_nan=True
+            )
+            assert r.bin_ms == expected.bin_ms and r.stim_ms == expected.stim_ms
+    # a sparse output read against another run's horizon, or corrupted, is refused
+    with pytest.raises(ValueError):
+        native.read_counts(counts[0], base_with_steps(fixtures[0], tmp_path))
+    words = np.frombuffer(counts[0].read_bytes(), dtype="<u4").copy()
+    words[5] = 0xFFFFFFFF  # first nonzero count's index, out of range
+    bad = tmp_path / "bad.bin"
+    bad.write_bytes(words.tobytes())
+    with pytest.raises(ValueError):
+        native.read_counts(bad, fixtures[0])
+
+
+def base_with_steps(fixture, tmp_path):
+    """The fixture's header with twice its steps."""
+    h = np.frombuffer(fixture.read_bytes(), dtype="<u4").copy()
+    h[3] *= 2
+    path = tmp_path / "longer.bin"
+    path.write_bytes(h.tobytes())
+    return path
+
+
+def test_sparse_counts_decode_as_the_full_output(native_exe, tmp_path):
+    from flymsg import native
+
+    native.export_batch(_battery_runs(), tmp_path / "base.bin", tmp_path / "batch.bin")
+    for k in range(4):
+        out, counts = tmp_path / f"out{k}.bin", tmp_path / f"counts_{k}.bin"
+        subprocess.run(
+            [
+                str(native_exe),
+                "--fixture",
+                str(tmp_path / "base.bin"),
+                "--batch",
+                str(tmp_path / "batch.bin"),
+                "--run",
+                str(k),
+                "--output",
+                str(out),
+                "--counts",
+                str(counts),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        fixture = tmp_path / f"fixture{k}.bin"
+        fixture.write_bytes(
+            native.batch_fixture(
+                tmp_path / "base.bin", tmp_path / "batch.bin", k
+            ).tobytes()
+        )
+        full, sparse = (
+            native.read_output(out, fixture),
+            native.read_counts(counts, fixture),
+        )
+        assert sparse["step"] == full["step"]
+        assert np.array_equal(sparse["counts"], full["counts"])
+        assert np.array_equal(sparse["first"], full["first"])
+        assert counts.stat().st_size < out.stat().st_size

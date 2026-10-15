@@ -481,8 +481,16 @@ struct Worker {
         }
         return;
       }
-      const auto output = folder / (L"output_" + name + L".bin");
-      runtime.snapshot(output);
+      // "output": "counts" asks for the sparse readout (Runtime::counts), the
+      // default is the whole state
+      const bool sparse =
+          spec.HasKey(L"output") && field(spec, L"output") == "counts";
+      const auto output =
+          folder / ((sparse ? L"counts_" : L"output_") + name + L".bin");
+      if (sparse)
+        runtime.counts(output);
+      else
+        runtime.snapshot(output);
       JsonObject result;
       result.Insert(L"output_sha256",
                     JsonValue::CreateStringValue(to_hstring(sha256(output))));
