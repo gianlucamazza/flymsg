@@ -1,0 +1,19 @@
+gf_looming v1 (issue #34): LC4 ~ dtheta/dt, LPLC2 ~ theta, 15 gain cells, r/v [10.0, 20.0, 40.0, 80.0] ms, seeds 340-344; timing of DNp01 against Dombrovski et al. 2025
+  g4    g2  responds  graded  scored     alpha   delta_ms  theta_thr_deg  increasing  near_end_share  edge_peaks
+ 0.0  50.0      True   False   False  9.884791  -5.884783      11.553407        True            0.00           0
+ 0.0 100.0      True   False   False  7.593096 -38.010870      15.005192        True            0.00           0
+ 0.0 200.0      True   False   False 10.353183  23.967391      11.034016        True            0.00           0
+ 2.0   0.0      True   False   False  5.181444 -52.297826      21.847151        True            0.00           0
+ 2.0  50.0      True   False   False  8.499052 -26.000000      13.421156        True            0.05           0
+ 2.0 100.0      True   False   False  9.028791 -23.134783      12.640275        True            0.00           0
+ 2.0 200.0      True   False   False  9.049965 -10.728261      12.610940        True            0.00           0
+ 5.0   0.0      True   False   False  7.644357 -22.076087      14.905706        True            0.00           0
+ 5.0  50.0      True   False   False  8.577531  -8.419565      13.299467        True            0.00           0
+ 5.0 100.0      True   False   False  9.495748  -2.173913      12.023354        True            0.00           0
+ 5.0 200.0      True   False   False 10.500835  11.754348      10.879804        True            0.00           0
+10.0   0.0      True   False   False  7.441052 -13.900000      15.308195        True            0.00           0
+10.0  50.0      True   False   False 10.082226  33.856522      11.328648        True            0.05           0
+10.0 100.0      True   False   False  9.680748  12.276087      11.795222        True            0.00           0
+10.0 200.0      True   False   False  9.643270  12.295652      11.840738        True            0.00           0
+no_go: 0 of 15 cells scored (responding and graded); 15 respond, 0 stay graded
+verdict: uninformative: no-go

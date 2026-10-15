@@ -1062,6 +1062,83 @@
    },
    "source_commit": "7c4d34d382018931e92021d41377aecd53557c73",
    "verdict": "converged"
+  },
+  {
+   "command": "gf-looming --run",
+   "config": {
+    "drive": {
+     "cap_rule": "every rate is capped at 1000 / sim.Params.t_ref Hz, and kicks pass a dead time of one refractory period (song.dead_time), since stimulated neurons are never refractory in the kernel: the delivered rate is at most lambda / (1 + lambda * t_ref)",
+     "forms_why": "Ache et al. 2019 (abstract): the giant fiber follows 'a linear function of angular velocity (provided by LC4) and a Gaussian function of angular size (provided by LPLC2)'; the Gaussian's parameters were not read from the paper, so size enters linearly; neither is a measured LC4 or LPLC2 spike rate",
+     "g2_hz_per_rad": [
+      0.0,
+      50.0,
+      100.0,
+      200.0
+     ],
+     "g4_hz_per_rad_s": [
+      0.0,
+      2.0,
+      5.0,
+      10.0
+     ],
+     "grid_why": "engineered envelope: LC4 and LPLC2 spike rates to looming are not measured (docs/leads.md, G3). At r/v 10 ms dtheta/dt reaches about 55 rad/s at 63 degrees, so g4 spans no input to the cap; theta reaches 1.1 rad, so g2 spans no input to about 220 Hz. The cell with both gains 0 has no input and is left out: 15 cells.",
+     "kicks": "per neuron and neural step, Poisson counts at the rate of that step, then the dead time; one kick is about 48 mV. LPLC2's drive steps from 0 to g2 * 0.17 rad at onset, as the disc appears at 10 degrees",
+     "lc4_neurons": 126,
+     "lc4_rate": "g4 * dtheta/dt, dtheta/dt in rad/s",
+     "lc4_type": "LC4",
+     "lplc2_neurons": 185,
+     "lplc2_rate": "g2 * theta, theta in rad",
+     "lplc2_type": "LPLC2",
+     "sides": "both",
+     "sides_why": "the recorded side and the disc's azimuth in the 2025 runs are not stated"
+    },
+    "gf_looming_sha256": "c868e4ec8a84cc375492f4a26b3e3f7a47ced35966d4ad575a328a285c65f0c4",
+    "gf_looming_version": 1,
+    "model": {
+     "fit": "per cell, y = collision time - peak time per seed and r/v; the median over seeds per r/v; ordinary least squares y = alpha * rv - delta over the four r/v",
+     "graded": "a cell stays graded when neither giant fiber fires in the window in any seed and r/v; the recordings are subthreshold, so only responding and graded cells are scored, and the others are reported",
+     "near_end_ms": 20.0,
+     "near_end_why": "a peak within 20 ms after the expansion stops follows the stimulus; the share of such peaks is reported per cell and per fly",
+     "post_ms": 150.0,
+     "post_why": "the window ends 150 ms after the expansion stops (Dombrovski et al. 2025 score 150 ms after onset in their Fig. 1); a later peak is no longer driven by expansion",
+     "pre_ms": 200.0,
+     "reach": 0.95,
+     "reach_why": "a noisy plateau makes the time of the maximum itself arbitrary; the first time at 95% of it is defined the same way in model and data",
+     "readout": "the membrane potential of DNp01(GF)_R and DNp01(GF)_L at every neural step (CpuRuntime.read), a sample standing at the end of its step, filtered as the data (data_rule.filter, the same frame in ms, since the distortion it gives an asymmetric peak grows with r/v and would otherwise bias alpha; the run lasts one frame past the window so the filter's edge stays outside it); per giant fiber the baseline is the mean over pre_ms and the peak time the first sample in the window (after onset to the end of the expansion plus post_ms) at reach of its window maximum above baseline; the run's peak time is the mean of the two",
+     "responding": "a cell responds when, in every seed and r/v, both giant fibers rise by at least sim.Params.w_syn (one synapse's jump at rest): a bar for a defined peak, not for strength",
+     "seed0": 340,
+     "seeds": 5,
+     "timing": "a kick at a step reaches the potential at the next; with the sample at the end of its step this is a constant 0.1 to 0.2 ms, which enters delta only"
+    }
+   },
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": null,
+   "flymsg": "0.8.47",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": null,
+   "lock_sha256": "c868e4ec8a84cc375492f4a26b3e3f7a47ced35966d4ad575a328a285c65f0c4",
+   "lock_version": 1,
+   "other_results": null,
+   "outputs_sha256": {
+    "model.csv": "265915aea55e05ed943a4472718337710d7ecfd5d91c3454d152eb371f34aeb5",
+    "report.txt": "7935ef3b5e0226ea7488c3c2900b87b162e7ccc4d86fe838d9e0bab3bcd2da3a",
+    "runs.csv": "c8d815259474e7ef7a823c617ae723d154646a45e3c239f3ea9a1f69e39cadd7"
+   },
+   "python": "3.13.9",
+   "result": "results/gf_looming/v1",
+   "seeds": {
+    "seed0": 340,
+    "seeds": 5
+   },
+   "source_commit": "0579ad8ddc5fd602234f7edb64fd22696c837ef6",
+   "verdict": "uninformative: no-go"
   }
  ],
  "schema": "flymsg.replication_index/v1"

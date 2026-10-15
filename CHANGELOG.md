@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Result
+
+- **Looming → giant fiber timing v1** (#34, G3): uninformative, the no-go. In all 15 gain cells
+  and 300 runs the model's giant fiber fires, so no cell stays graded like the recordings and
+  none is scored; the recordings were not opened. One disc through LC4 or LPLC2 at the lowest
+  gains fires it, early in the expansion (`results/gf_looming/v1`).
+
 ### Validation
 
 - **Pulse vs sine song lock** (#36, first held-out benchmark of M4): `validation/song.yaml` v1,
