@@ -344,9 +344,9 @@ def sim_runs(
     `(stim, rate_hz, duration_ms, stim_ms, seed)`, as one batch on the console. The runs
     must share a horizon; the results are `sim.run`'s, bit for bit."""
     # each runtime copies the network: built one at a time as the export takes them,
-    # so memory holds the first and the current one, not the whole battery's. A sim.Result needs only the counts
-    # and first spikes: the sparse output, a few kilobytes per run instead of the
-    # whole state (tens of megabytes)
+    # so memory holds the first and the current one, not the whole battery's. A
+    # sim.Result needs only the counts and first spikes: the sparse output, a few
+    # kilobytes per run instead of the whole state (tens of megabytes)
     runtimes = (sim_runtime(W, *spec[:4], p, spec[4]) for spec in specs)
     outputs, fixtures, result = run_batch(
         device, runtimes, out, dataset=dataset, seed=seed, scope=scope, output="counts"
