@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Worker capabilities and batch timing** (#40, #213). The worker lists the batch outputs it writes and refuses others; the console backend stops a job at once on a worker that does not list the output it asked for. The battery's 164 s now break down by phase: 61 s preparing the batch on the host, 10 s uploading, 70 s of advance, 5 s rebuilding runs on the console, 12 s downloading.
+
 - **Sparse counts from the console** (#40, #211). A batch can ask each run for only its nonzero counts and first spikes (`FMS1`, `native.read_counts`), and the console backend does. The whole-connectome battery matched in all 30 runs and took 180 s end to end instead of 243 s; the advance is 69 s, and one host core ran the same battery in 29 s that day (46–62 s on 2026-10-15).
 
 ## 0.8.48 — 2026-10-16

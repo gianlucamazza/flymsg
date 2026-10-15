@@ -440,3 +440,102 @@ def test_sparse_counts_decode_as_the_full_output(native_exe, tmp_path):
         assert np.array_equal(sparse["counts"], full["counts"])
         assert np.array_equal(sparse["first"], full["first"])
         assert counts.stat().st_size < out.stat().st_size
+
+
+class FakeWorker:
+    """A Device Portal over a local folder, with the native CPU executor as the worker:
+    job.json runs the batch, and status.json lists the outputs `outputs` names."""
+
+    def __init__(self, root, exe, outputs, finish=True):
+        self.root, self.exe, self.outputs, self.finish = root, exe, outputs, finish
+        self.uploads = []
+
+    def mkdir(self, package, rel):
+        (self.root / rel.replace("\\", "/")).mkdir(parents=True, exist_ok=True)
+
+    def put(self, package, rel, local):
+        folder = self.root / rel.replace("\\", "/")
+        shutil.copy(local, folder / local.name)
+        self.uploads.append(local.name)
+        if local.name != "job.json":
+            return
+        job = json.loads(local.read_text())
+        status = {"job_id": job["job_id"], "state": "running"}
+        if self.outputs is not None:
+            status["batch_outputs"] = self.outputs
+        if self.finish:
+            for k in range(job["batch"]["runs"]):
+                subprocess.run(
+                    [
+                        str(self.exe),
+                        "--fixture",
+                        str(folder / "fixture.bin"),
+                        "--batch",
+                        str(folder / "batch.bin"),
+                        "--run",
+                        str(k),
+                        "--output",
+                        str(folder / f"output_{k}.bin"),
+                        "--counts",
+                        str(folder / f"counts_{k}.bin"),
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+            status["state"] = "completed"
+            (folder / "result.json").write_text(json.dumps({"advance_ms": 1.0}))
+        (folder / "status.json").write_text(json.dumps(status))
+
+    def get(self, package, rel, name, local):
+        source = self.root / rel.replace("\\", "/") / name
+        if not source.exists():
+            raise RuntimeError(f"GET {name} failed")
+        shutil.copy(source, local)
+
+    def delete(self, package, rel, name):
+        (self.root / rel.replace("\\", "/") / name).unlink(missing_ok=True)
+
+
+def test_console_batches_need_a_worker_that_lists_their_output(
+    native_exe, tmp_path, monkeypatch
+):
+    """sim_runs on a worker listing "counts" gives sim.run's results and the host's
+    timing; on an older worker, which lists no outputs, it cancels at the first
+    report instead of running the whole batch, and says why even when that worker
+    finished before the first report."""
+    from flymsg import console, sim
+
+    monkeypatch.setattr(console.time, "sleep", lambda s: None)
+    rng = np.random.default_rng(4)
+    W = sparse.random(60, 60, density=0.15, random_state=rng, format="csc")
+    W.data = rng.integers(-20, 80, W.data.size).astype(np.float32)
+    W, p = W.astype(np.float32), sim.Params()
+    specs = [(np.array([0, 2]), 300.0, 60.0, 30.0, 3)]
+    shader = tmp_path / "lif.cso"
+    shader.write_bytes(b"shader")
+    for outputs, finish in ((["state", "counts"], True), (None, False), (None, True)):
+        root = tmp_path / f"{outputs is None}{finish}"
+        worker = FakeWorker(root, native_exe, outputs, finish)
+        device = console.Device(package="pkg", shader=shader, portal=worker)
+        out = root / "local"
+        if outputs is None:
+            with pytest.raises(RuntimeError, match="newer worker"):
+                console.sim_runs(
+                    device, W, specs, p, out, dataset="d", seed=0, scope="t"
+                )
+            # a running job is cancelled; a finished one leaves no output behind
+            assert (worker.uploads[-1] == "cancel.json") != finish
+            assert not list(root.rglob("output_*.bin"))
+            continue
+        results, result = console.sim_runs(
+            device, W, specs, p, out, dataset="d", seed=0, scope="t"
+        )
+        expected = sim.run(W, *specs[0][:4], p, specs[0][4])
+        assert np.array_equal(results[0].counts, expected.counts)
+        assert set(result["host"]) == {
+            "runtimes_s",
+            "export_s",
+            "upload_s",
+            "console_s",
+            "download_s",
+        }
