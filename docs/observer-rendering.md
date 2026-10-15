@@ -67,6 +67,18 @@ refuses incomplete strict anatomy, hidden pages and active immersive sessions.
 It restores replay/material/render-target state and writes completion metadata
 last. These offscreen captures do not establish XR stereo timing.
 
+For a fixed-time desktop trial on that same fully loaded page:
+
+```bash
+PAGES=0 node scripts/observer_trial.mjs http://127.0.0.1:40623 TARGET_ID runs/trial/reference 15
+PAGES=1 node scripts/observer_trial.mjs http://127.0.0.1:40623 TARGET_ID runs/trial/candidate 15
+```
+
+The collector restores observer state, records all intervals, visibility changes,
+source hashes, geometry submission and resource totals. Repeat in interleaved
+order; these are diagnostics, not immersive qualification. Hidden trials remain
+ineligible and partial content cannot pass the full-anatomy gate.
+
 Device sampling is read-only and explicitly selects the headset:
 
 ```bash

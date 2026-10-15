@@ -1600,17 +1600,37 @@ if (query.has("check")) {
     meshMaterial,
     fidelity: fidelityReport,
     resources: resourceReport,
-    diagnostic({ continuous = false, time = 0 } = {}) {
+    diagnosticState: () => ({
+      continuous: diagnosticContinuous,
+      time: clock.t,
+      playing: clock.playing,
+      pageCulling: settings.pageCulling,
+    }),
+    diagnostic({
+      continuous = false,
+      time = 0,
+      playing = false,
+      pageCulling = settings.pageCulling,
+    } = {}) {
       if (
         !Number.isFinite(time) ||
         time < 0 ||
         (replay && time >= A.bins * A.bin_ms)
       )
         throw new RangeError("Diagnostic timestamp outside scene");
+      const previous = {
+        continuous: diagnosticContinuous,
+        time: clock.t,
+        playing: clock.playing,
+        pageCulling: settings.pageCulling,
+      };
       diagnosticContinuous = continuous;
-      clock.playing = false;
+      clock.playing = playing;
       clock.t = time;
+      settings.pageCulling = pageCulling;
+      skeletonsDirty = true;
       invalidate();
+      return previous;
     },
     async reference({
       width = 512,
