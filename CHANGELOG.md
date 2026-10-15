@@ -123,6 +123,12 @@
 
 ### Engineering
 
+- **The 3D viewer on an Xbox.**
+  - **TV layout.** It is on by default in a console's browser, or with `?tv=1`: larger text in the title-safe area, the panel closed, and controller hints.
+  - **Controller.** A game controller drives the view (`gamepad.js`, standard mapping): the sticks and triggers rotate and zoom, A plays or pauses, LB and RB step a bin, Y resets the view, X clears the selection, and View opens or closes the panel.
+  - **From the worker.** The console worker opens the viewer with Y, or when the host uploads `open_viewer.json`, at the address in `LocalState/viewer.json`.
+  - **Native replays.** `flymsg viz --native` now takes the stimulus from the fixture's own input.
+
 - **Viewer replays native and console runs**: `flymsg viz --native OUTPUT FIXTURE` turns a
   native `output.bin` into the viewer's replay (`native.as_result`, `native.stimulated`), so a
   run computed on the Series S can be watched in the browser.

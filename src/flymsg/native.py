@@ -155,6 +155,16 @@ def stimulated(fixture: Path) -> np.ndarray:
     return np.flatnonzero(cols >= 0)
 
 
+def input_ms(fixture: Path, dt_ms: float) -> float:
+    """How long the fixture's input lasts: up to its last step with a kick."""
+    words = np.frombuffer(Path(fixture).read_bytes(), dtype="<u4")
+    steps, stim = int(words[3]), int(words[7])
+    at = int(words[24])
+    kicks = words[at : at + 2 * steps * stim].view("<f8").reshape(steps, stim)
+    driven = np.flatnonzero(kicks.any(axis=1))
+    return (int(driven[-1]) + 1) * dt_ms if driven.size else 0.0
+
+
 def as_result(
     out: dict, fixture: Path, dt_ms: float, stim_ms: float | None = None
 ) -> sim.Result:

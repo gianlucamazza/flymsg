@@ -518,6 +518,31 @@ std::wstring duration(double seconds) {
     out << s << L" s";
   return out.str();
 }
+// The 3D viewer is the project's web page in the console's browser. Its address
+// is configuration, not code: LocalState/viewer.json, written by the host,
+// {"schema": "flymsg.worker_viewer/v1", "url": "http://..."}. Y opens it, and
+// so does an uploaded LocalState/open_viewer.json (consumed), for a host-driven
+// session.
+std::optional<std::wstring> viewer_url() noexcept {
+  try {
+    const auto doc = try_read(worker().root / L"viewer.json");
+    if (!doc || field(*doc, L"schema") != "flymsg.worker_viewer/v1")
+      return std::nullopt;
+    const std::wstring url(doc->GetNamedString(L"url"));
+    if (url.rfind(L"http://", 0) != 0 && url.rfind(L"https://", 0) != 0)
+      return std::nullopt;
+    return url;
+  } catch (...) {
+    return std::nullopt;
+  }
+}
+void open_viewer() noexcept {
+  try {
+    if (const auto url = viewer_url())
+      Windows::System::Launcher::LaunchUriAsync(Windows::Foundation::Uri(*url));
+  } catch (...) {
+  }
+}
 // The dashboard: built once, refreshed four times a second from a telemetry
 // copy on the UI thread. It reads; only the gamepad's B writes, and only the
 // cancel file a host could upload.
@@ -618,17 +643,33 @@ xaml::UIElement dashboard() {
   place(hint, 2, 0, 2);
 
   auto shown = std::make_shared<uint64_t>(0);
-  // B arrives as a key event, so a short press is never missed between ticks
+  // buttons arrive as key events, so a short press is never missed
   Windows::UI::Core::CoreWindow::GetForCurrentThread().KeyDown(
       [](auto &&, Windows::UI::Core::KeyEventArgs const &args) {
-        if (args.VirtualKey() == Windows::System::VirtualKey::GamepadB) {
+        using Windows::System::VirtualKey;
+        if (args.VirtualKey() == VirtualKey::GamepadB) {
           worker().request_cancel();
+          args.Handled(true);
+        } else if (args.VirtualKey() == VirtualKey::GamepadY) {
+          open_viewer();
           args.Handled(true);
         }
       });
   xaml::DispatcherTimer timer;
   timer.Interval(std::chrono::milliseconds(250));
   timer.Tick([=](auto &&, auto &&) {
+    try { // a host's request to open the viewer, consumed once
+      const auto request = worker().root / L"open_viewer.json";
+      if (fs::exists(request)) {
+        fs::remove(request);
+        open_viewer();
+      }
+    } catch (...) {
+    }
+    hint.Text(viewer_url()
+                  ? L"Gamepad   B  cancel the running job      Y  open "
+                    L"the 3D viewer"
+                  : L"Gamepad   B  cancel the running job");
     const auto t = worker().snapshot();
     const bool idle = t.job.empty();
     state.Text(idle ? L"Idle" : wide(t.state));

@@ -309,7 +309,9 @@ def cmd_viz(a, neurons, edges):
         decoded = native.read_output(output, fixture)
         if decoded["v"].size != len(neurons):
             sys.exit("flymsg: the fixture does not hold this dataset's neurons")
-        result = native.as_result(decoded, fixture, sim.Params().dt, a.stim_ms)
+        # the stimulus is the fixture's own input, not --stim-ms
+        dt = sim.Params().dt
+        result = native.as_result(decoded, fixture, dt, native.input_ms(fixture, dt))
         idx = viz.select_from_result(result, stim, a.min_rate)
         fired = result.rate(0, result.stim_ms)[idx] > a.min_rate
         groups = np.where(

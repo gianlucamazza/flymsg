@@ -234,6 +234,8 @@ def test_a_native_run_replays_as_a_simulation_result(tmp_path):
     fixture = tmp_path / "fixture.bin"
     native.export_fixture(oracle, fixture)
     assert native.stimulated(fixture).tolist() == [0]
+    assert native.input_ms(fixture, p.dt) <= 60.0  # kicks for 600 steps of 0.1 ms
+    assert native.input_ms(fixture, p.dt) > 50.0
     oracle.advance_to(600)
     snap = oracle.snapshot()
     result = native.as_result(snap, fixture, p.dt, stim_ms=30.0)
