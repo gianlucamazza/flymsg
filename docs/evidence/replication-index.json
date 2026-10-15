@@ -710,6 +710,92 @@
    "verdict": "robust: neither"
   },
   {
+   "command": "t4t5 --run",
+   "config": {
+    "acceptance_deg": 8.23,
+    "envelope": {
+     "gain_rule": "lamina_medulla_gain multiplies every synapse from L1-L3 onto the five graded medulla types; 1 is the model's weight (for Mi1 on top of its timing scale, so the gain stays a multiple of the Params steady gain), 16 brings version 3's largest evoked swing (1.4 mV) to the order of the measured 12-28 mV; scanned, not chosen",
+     "grid": "every lamina_medulla_gain x lmc_rate_hz x medulla_rate_hz at photoreceptor_response_mv 52.5 and lmc_hyperpolarisation_mv 32.5: 12 configurations",
+     "lamina_medulla_gain": [
+      1.0,
+      4.0,
+      16.0
+     ],
+     "lmc_hyperpolarisation_mv": [
+      20.0,
+      32.5,
+      45.0
+     ],
+     "lmc_rate_hz": [
+      50.0,
+      200.0
+     ],
+     "medulla_rate_hz": [
+      50.0,
+      200.0
+     ],
+     "photoreceptor_response_mv": [
+      40.0,
+      52.5,
+      65.0
+     ],
+     "ranges_from": "photoreceptor and LMC ranges as version 2 (their midpoints; version 2's verdict did not depend on them); medulla voltages measured (medulla_mv); lmc_rate_hz and medulla_rate_hz have no measurement and span four doublings around the 100 Hz input rate of every flymsg protocol; version 4 keeps two of them, one below and one above 100 Hz"
+    },
+    "medulla_files_sha256": {
+     "C3": "b9118e32cfb0d22acd4da41aee6931923ea33e4dda258df2abd26fd252e21be6",
+     "Mi1": "351e9e791a30d1c5bac329165934fbc05dbcfbb038b4b6e940e2531de1d61cce",
+     "Mi4": "9309bb6deadcb8bf5c9a52267ef6564c314a04212af81c129b0754cf4de1f791",
+     "Mi9": "3d5909c9b6c42776ff5e56d7219eacd002758a24b3cf5b7cecf30a07b8bf5c83",
+     "Tm3": "07797ccd2ce72d3ea89c9ca01ba641c7c92d3d6dd198d6324596f2cf16b0fb82"
+    },
+    "speed_deg_s": 30.0,
+    "t4t5_sha256": "dc65228c3fdbc6c37e245235c329bbbf314121e09a0e2a3a372f82ae599ceabc",
+    "t4t5_version": 4
+   },
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": "7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d",
+   "flymsg": "0.8.46",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "eyemap/20240701.RData": "8408447f8c5798fbc6d751de79ef4983d08c342a500c9a55b2a3b4b38d92deec",
+    "eyemap/eyemap.RData": "c3f63c69afdc3f381cdafabb1d376b8e25ec5a71bce67550ae42fcdd79cf618e",
+    "groschner2022/fig3_C3.npy": "b9118e32cfb0d22acd4da41aee6931923ea33e4dda258df2abd26fd252e21be6",
+    "groschner2022/fig3_Mi1.npy": "351e9e791a30d1c5bac329165934fbc05dbcfbb038b4b6e940e2531de1d61cce",
+    "groschner2022/fig3_Mi4.npy": "9309bb6deadcb8bf5c9a52267ef6564c314a04212af81c129b0754cf4de1f791",
+    "groschner2022/fig3_Mi9.npy": "3d5909c9b6c42776ff5e56d7219eacd002758a24b3cf5b7cecf30a07b8bf5c83",
+    "groschner2022/fig3_Tm3.npy": "07797ccd2ce72d3ea89c9ca01ba641c7c92d3d6dd198d6324596f2cf16b0fb82",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c",
+    "raw/annotations": "2177e246113e4cfbf1e7772ec37c6da1955ff22e8063d0b1f833101f99a9a3b2"
+   },
+   "lock": "validation/t4t5.yaml",
+   "lock_sha256": "dc65228c3fdbc6c37e245235c329bbbf314121e09a0e2a3a372f82ae599ceabc",
+   "lock_version": 4,
+   "other_results": null,
+   "outputs_sha256": {
+    "configurations.csv": "1f057063cbb2a59023546f56df9384d91fee7ddba2489c931b1e0e8896de55d6",
+    "lmc.csv": "4abf22e588a60cdb8128bb88fee1dbc3bf69b89cc90b24eb13b6b5e5090feede",
+    "medulla.csv": "7e0c9197eab99176cb39d6d6f14df2f82a37075118232a4b95265703aa627da4",
+    "metrics.csv": "2e0ee151eb3cb9dcf13b1576ecbe36e31c2d75b0643eefb5d237619f14338c7a",
+    "pathway.csv": "109ec7a4103c6fcc2a2148fd3e4a422a451c2c2c1973ae2314de4a901f40079b",
+    "report.txt": "c911bb4b00c116daddda58c70a79170401989b228163ecf3c757d5953be2efa2",
+    "spikes.csv": "b13d9b3e5c4f4ac5cc65047efb61384f0154955a350036f8af4e8e5af6cb946f",
+    "t5.csv": "5816533cb00f335454677dedb5316f91520275efba97c7d8aab0e0d08ba0a2de"
+   },
+   "python": "3.13.9",
+   "result": "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output",
+   "seeds": {
+    "all": [
+     98
+    ]
+   },
+   "source_commit": "111e3c500a2aaae8b15cd76d2f64042c8586604a",
+   "verdict": "robust: neither"
+  },
+  {
    "command": "weight-rule --run",
    "config": {
     "weight_rule_sha256": "87a33e5fbc589f4445386618275c46bf88c18d7f97d46e1b02e82ff4535ef79d",

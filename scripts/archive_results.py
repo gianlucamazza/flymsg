@@ -34,6 +34,7 @@ DIRS = (
     "t4t5/v1",
     "t4t5/v2",
     "t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output",
+    "t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output",
     "weight-rule/v1.executions/beb2fccf6b8094ee842de39deba87da17448ac37fab0626e1fa15db517762f4f/output",
     "jump3d/v1",
     "partner-followup/v1",
