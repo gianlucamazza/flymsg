@@ -753,11 +753,10 @@ function checkWinding(n) {
   console.log(`WINDING ${JSON.stringify(windingChecks.at(-1))}`);
 }
 
-// ---------- skeletons: coarsest LOD, and the placeholder while meshes load ----------
-// All skeletons share one vertex buffer and one LineSegments. The index lists, for every neuron
-// whose skeleton is on, the segments of its current level, so hidden skeletons cost nothing and
-// everything draws in one call (on an Iris Xe, 2,662 separate draws took 46 ms per frame and
-// the same lines in one draw 27 ms).
+// ---------- original skeletons; LOD/fallback only in the mixed diagnostic ----------
+// One vertex arena and LineSegments object. The compact reference draws once;
+// resident page scheduling uses at most eight public geometry groups, preserving
+// original order. Hidden neurons remain hard barriers between eligible ranges.
 const texH = Math.max(1, Math.ceil(N / TEX_W));
 const neuronTex = () => {
   const t = new THREE.DataTexture(
@@ -985,46 +984,28 @@ function applySkeletonVisibility(eyes = null) {
     }
     const rebuilt = residentLines.sync(neurons, pool.index);
     if (rebuilt) residentIndexValid = true;
-    const native =
-      THREE.FLYMSG_LINE_RANGES === 1 &&
-      renderer.extensions.has("WEBGL_multi_draw");
-    const plan = residentLines.plan(eyes, skeletonOn, visibleLinePages, native);
+    const plan = residentLines.plan(eyes, skeletonOn, visibleLinePages);
     if (!plan.fallback) {
       const upload = rebuilt || !residentIndexValid;
       if (!residentIndexValid) residentLines.writeIndex(pool.index);
       residentIndexValid = true;
-      skeletons.isMultiDrawLineSegments = !!plan.native;
-      if (plan.native) {
-        skeletons.lineStarts = residentLines.drawStarts;
-        skeletons.lineCounts = residentLines.drawCounts;
-        skeletons.lineDrawCount = plan.rangeCount;
-      }
       if (upload) {
         const index = skelGeometry.getIndex();
         index.clearUpdateRanges();
         index.addUpdateRange(0, residentLines.count);
         index.needsUpdate = true;
       }
-      if (
-        upload ||
-        plan.changed ||
-        lineSubmission.mode !== "resident" ||
-        lineSubmission.backend !== (plan.native ? "multi-draw" : "groups")
-      ) {
+      if (upload || plan.changed || lineSubmission.mode !== "resident") {
         skelGeometry.clearGroups();
-        if (plan.native) {
-          if (plan.rangeCount) skelGeometry.addGroup(0, residentLines.count, 0);
-        } else
-          for (const r of plan.ranges)
-            skelGeometry.addGroup(r.start, r.count, 0);
+        for (const r of plan.ranges) skelGeometry.addGroup(r.start, r.count, 0);
         skelGeometry.setDrawRange(0, residentLines.count);
         invalidate();
       }
       lineSubmission = {
         mode: "resident",
-        backend: plan.native ? "multi-draw" : "groups",
-        draws: plan.native ? Number(plan.rangeCount > 0) : plan.ranges.length,
-        ranges: plan.native ? plan.rangeCount : plan.ranges.length,
+        backend: "groups",
+        draws: plan.ranges.length,
+        ranges: plan.ranges.length,
         visible_indices: plan.visibleIndices,
         submitted_indices: plan.submittedIndices,
         bridged_indices: plan.submittedIndices - plan.visibleIndices,
@@ -1038,7 +1019,6 @@ function applySkeletonVisibility(eyes = null) {
   // Restoring the original resident layout requires a single upload.
   let changed = residentIndexValid || lineSubmission.mode === "resident",
     total = 0;
-  skeletons.isMultiDrawLineSegments = false;
   residentIndexValid = false;
   for (const n of neurons) {
     const st = n.skelLod && skeletonOn(n) ? n.skelLod.level : -1;

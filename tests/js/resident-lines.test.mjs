@@ -128,29 +128,3 @@ test("reused visibility masks clear stale bits instead of retaining old pages", 
   assert(mask.every((x) => x === 0));
   assert.throws(() => visibleLinePages(pages, null, new Uint8Array(1)), /size/);
 });
-
-test("native ranges retain exactly eligible source edges, byte offsets and hidden ownership", () => {
-  const ns = [neuron(0), neuron(1), neuron(2)], p = new ResidentLineIndex();
-  p.sync(ns);
-  const masks = new Map(ns.map(n => [n.skelLod.pages[0],
-    Uint8Array.from({length: 12}, (_, i) => +(i % 2 === 0))]));
-  const result = p.plan(null, n => n.k !== 1, maskVisibility(masks), true);
-  assert.equal(result.native, true);
-  assert.equal(result.submittedIndices, result.visibleIndices);
-  const actual = [];
-  for (let i = 0; i < result.rangeCount; i++) {
-    assert.equal(p.drawStarts[i] % 8, 0);
-    const start = p.drawStarts[i] / 4;
-    actual.push(...p.index.subarray(start, start + p.drawCounts[i]));
-  }
-  const expected = ns.filter(n => n.k !== 1).flatMap(n =>
-    [...n.skelLod.levels[0]].filter((_, i) => masks.get(n.skelLod.pages[0])[Math.floor(i/2)])
-      .map(v => v + n.skelBase));
-  assert.deepEqual(actual, expected);
-  assert.equal(p.plan(null, n => n.k !== 1, maskVisibility(masks), true).changed, false);
-  p.maxRanges = 1;
-  assert.equal(p.plan(null, () => true, maskVisibility(masks), true).fallback, "resident range capacity");
-  const oldArena = p.index;
-  p.releaseArena();
-  assert(!p.arrays().includes(oldArena));
-});

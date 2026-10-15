@@ -10,9 +10,6 @@ export class ResidentLineIndex {
     this.index = new Uint32Array(0);
     this.count = 0;
     this.starts = this.ends = this.blocks = new Uint32Array(0);
-    this.drawStarts = this.drawCounts = new Int32Array(0);
-    this.drawCount = 0;
-    this.maxRanges = 16384;
     this.builds = 0;
     this.ranges = [];
   }
@@ -59,9 +56,6 @@ export class ResidentLineIndex {
     this.starts = new Uint32Array(runs);
     this.ends = new Uint32Array(runs);
     this.blocks = new Uint32Array(runs);
-    this.drawStarts = new Int32Array(runs);
-    this.drawCounts = new Int32Array(runs);
-    this.drawCount = 0;
     this.builds++;
     return true;
   }
@@ -79,7 +73,7 @@ export class ResidentLineIndex {
     this.index = new Uint32Array(0); // the viewer owns arena replacement/disposal
   }
 
-  plan(eyes, wanted, visibility, exact = false) {
+  plan(eyes, wanted, visibility) {
     let count = 0,
       block = 0,
       visibleIndices = 0;
@@ -115,34 +109,6 @@ export class ResidentLineIndex {
           end = start + 2 * runs[i + 2];
         append(start, end);
       }
-    }
-    if (exact) {
-      if (count > this.maxRanges)
-        return {
-          fallback: "resident range capacity",
-          ranges: [],
-          visibleIndices,
-        };
-      let changed = count !== this.drawCount;
-      for (let i = 0; i < count; i++) {
-        const bytes = 4 * this.starts[i],
-          length = this.ends[i] - this.starts[i];
-        if (bytes > 2147483647)
-          throw new RangeError("Line offset exceeds GLsizei");
-        changed ||=
-          this.drawStarts[i] !== bytes || this.drawCounts[i] !== length;
-        this.drawStarts[i] = bytes;
-        this.drawCounts[i] = length;
-      }
-      this.drawCount = count;
-      return {
-        native: true,
-        rangeCount: count,
-        changed,
-        visibleIndices,
-        submittedIndices: visibleIndices,
-        fallback: null,
-      };
     }
     let mandatory = count ? 1 : 0;
     for (let i = 1; i < count; i++)
@@ -198,8 +164,6 @@ export class ResidentLineIndex {
       this.starts,
       this.ends,
       this.blocks,
-      this.drawStarts,
-      this.drawCounts,
       ...this.entries.map((e) => e.visible),
     ];
   }
