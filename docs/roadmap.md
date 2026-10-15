@@ -1,6 +1,6 @@
 # Roadmap: what the model covers, and what waits on outside evidence
 
-Status on 2026-10-14. This page is the index. Each verdict is recorded on the linked page,
+Status on 2026-10-15. This page is the index. Each verdict is recorded on the linked page,
 and the table adds none. What remains open needs a measurement from an animal, a published
 map, hardware, or a lock that is written and not yet run.
 
@@ -177,7 +177,7 @@ about the fly.
 
 ## Completion plan
 
-Status on 2026-10-14 (after v0.8.47). flymsg is complete when a model prediction passes an
+Status on 2026-10-15 (after v0.8.47). flymsg is complete when a model prediction passes an
 independent held-out benchmark (M4, [#36](https://github.com/gianlucamazza/flymsg/issues/36));
 everything else serves that. An open problem closes with a measurement, a lock and a run,
 never with a chosen value, so the order follows the evidence that exists. The
