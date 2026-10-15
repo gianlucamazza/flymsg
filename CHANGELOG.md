@@ -54,8 +54,8 @@
     sparseness locks' DoOR odors, seeds 420–424. Per seed, the OCT/MCH contrast of the KCs'
     mean depolarization in each arm against the ALPNs' spike contrast in arm on; scored on the
     seed medians: pass if blocking APL raises the claw contrast and brings it nearer the
-    boutons', partial if it only raises it, uninformative if the PNs carry no positive
-    contrast.
+    boutons', partial if it only raises it, fail if it does not raise it, uninformative if
+    the PNs carry no positive contrast.
   - **Status.** Scored, locked before any run. No run yet.
 
 - **Simple baselines lock** (#148, SF2): `validation/baselines.yaml` v1, `flymsg baselines

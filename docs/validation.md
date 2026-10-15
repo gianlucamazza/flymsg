@@ -387,8 +387,8 @@ Outputs: `results/convergence/v1.executions/be1ac274…/output/`.
 - **Arms.** `on` is the default model; `off` removes every synapse from the two APL neurons, onto KCs and PN boutons alike, as TNT blocks APL release.
 - **Drive.** The KC sparseness locks' DoOR odors at 100 Hz per unit response for 1 s, seeds 420–424.
 - **Readouts.** Per seed and odor, the KCs' mean potential above rest over the odor window stands for the claws (point neurons have no claw compartment), and the ALPNs' spikes for the boutons. Each readout enters only through its own contrast c = (x_OCT − x_MCH)/(x_OCT + x_MCH): c_on and c_off for the claws, c_pn for the boutons in arm on.
-- **No-go.** If c_pn is not positive, or the claw depolarization is zero for either odor in either arm, the run is uninformative.
-- **Verdict.** On the seed medians, _raises_ is c*off > c_on and \_restores* is |c_off − c_pn| < |c_on − c_pn|. Pass if both hold, partial if only raises does, fail if raises does not. The share of seeds in which each holds, the KC spiking fractions and c_on's sign are reported, not scored.
+- **No-go.** If the median c_pn is not positive, the claw depolarization is not positive for either odor in either arm in any seed, or any seed's contrast is undefined, the run is uninformative.
+- **Verdict.** On the seed medians, _raises_ is `c_off > c_on` and _restores_ is `|c_off − c_pn| < |c_on − c_pn|`. Pass if both hold, partial if only raises does, fail if raises does not. The share of seeds in which each holds, the KC spiking fractions and c_on's sign are reported, not scored.
 
 `flymsg apl-claws --run` writes every cell, the judgement and a report. Not yet run.
 

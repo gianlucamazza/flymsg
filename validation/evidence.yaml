@@ -404,6 +404,7 @@ records:
       claws_on_vs_off_delta_p: 0.0011
       boutons_vs_claws_on_delta_p: 0.0024
       boutons_vs_claws_off_delta_p: 0.9698
+      boutons_vs_claws_default_delta_p: 0.0271
       n_flies: 10
     unit: "p values (two-way ANOVA with Tukey; Brown-Forsythe and Welch ANOVA), flies"
     status: measured

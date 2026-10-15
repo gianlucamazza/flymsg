@@ -2,7 +2,7 @@
 # any run. Changing a locked field requires incrementing `version` and updating `content_sha256`
 # and flymsg.apl_claws.VERSION_HASHES. `flymsg apl-claws` prints this file; `--run` executes it.
 version: 1
-content_sha256: 3160817193dc193a6a61de1c633f10410496f66fae6fa9bbaf3c5cc6baae519b
+content_sha256: 4478289480e026c72cca984a892b8874c3016412a668889c75ba3f2ef9b0ec45
 yaml_subset: 2
 evidence: [apl_claw_odor_contrast]
 
@@ -18,7 +18,7 @@ seen_before_lock: "The KC sparseness locks v1-v8 on 3-octanol and 4-methylcycloh
 data_measured:
   apl_on: "APL ON calyces (TNT not expressed): average peak among responding microglomeruli, OCT vs MCH not different (n = 10, p = 0.949, two-way ANOVA with Tukey); responding microglomeruli p = 0.995"
   apl_off: "APL OFF calyces (APLi > TNT, tubP-GAL80ts, 24-48 h at 31 C): OCT stronger than MCH (n = 10, p = 0.0003); responding microglomeruli slightly more (p = 0.047)"
-  contrast: "inter-odour delta (Figure 4-figure supplement 1, n = 10): KC claws APL ON vs APL OFF p = 0.0011; PN boutons vs KC claws APL ON p = 0.0024; PN boutons vs KC claws APL OFF p = 0.9698 (Brown-Forsythe and Welch ANOVA with multiple comparisons)"
+  contrast: "inter-odour delta (Figure 4-figure supplement 1, n = 10): KC claws APL ON vs APL OFF p = 0.0011; PN boutons vs KC claws APL ON p = 0.0024; PN boutons vs KC claws APL OFF p = 0.9698; PN boutons vs KC claws in the default genotype p = 0.0271 (Brown-Forsythe and Welch ANOVA with multiple comparisons)"
   odors: "4-methylcyclohexanol and 3-octanol, 1:100 in mineral oil, 5 s"
   sex: "mixed populations of males and females"
 
@@ -48,7 +48,7 @@ readout:
   summary: "the median over the five seeds of each contrast; the share of seeds in which each relation holds is reported"
 
 no_go:
-  rule: "computed before the verdict: if the seed median of the model's PN contrast c_pn is not positive (OCT does not drive the ALPNs more than MCH), or the claw depolarization is not positive (zero, or KCs held below rest) for either odor in either arm in any seed, the premise of the measurement is absent and the run is recorded as uninformative"
+  rule: "computed before the verdict: if the seed median of the model's PN contrast c_pn is not positive (OCT does not drive the ALPNs more than MCH), or the claw depolarization is not positive (zero, or KCs held below rest) for either odor in either arm in any seed, or any seed's contrast is undefined (both odors zero), the premise of the measurement is absent and the run is recorded as uninformative"
   why: "the measured effect is APL hiding an input contrast that PN boutons carry; without that contrast in the model's PNs there is nothing for APL to hide"
 
 score:
@@ -65,6 +65,8 @@ score:
 limits:
   - "Point neurons: the KC's somatic potential stands for a claw's postsynaptic calcium; APL's local inhibition at the claws (Amin et al. 2020) is not compartmentalised."
   - "Units differ between readouts, so only each readout's own odor contrast enters the relations; GCaMP's nonlinearity is not modelled."
+  - "Prisco et al. average the peak over responding microglomeruli and compare a raw inter-odour delta; the model averages the window potential over every KC and compares a normalised contrast, so silent KCs dilute both odors alike."
+  - "The KC potential is clipped by threshold and reset: a dense population compresses the claw contrast (towards a false fail) and a population held near rest makes it rest on small numbers; the KC spiking fractions are reported beside the verdict to read either case."
   - "Odor drive is DoOR consensus responses at 100 Hz per unit response, not Prisco et al.'s 1:100 dilutions; 1 s of odor, not 5 s."
   - "The measured flies are mixed sex; the model is male."
   - "ALPN stands for NP225 boutons; NP225 labels a subset of uniglomerular PNs."

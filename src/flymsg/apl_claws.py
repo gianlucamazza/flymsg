@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "apl_claws.yaml"
 
 VERSION_HASHES = {
-    1: "3160817193dc193a6a61de1c633f10410496f66fae6fa9bbaf3c5cc6baae519b",
+    1: "4478289480e026c72cca984a892b8874c3016412a668889c75ba3f2ef9b0ec45",
 }
 ARMS = ["on", "off"]
 # protocol fields that must be the KC sparseness lock's
@@ -233,11 +233,15 @@ def judge(cells: pd.DataFrame, doc: dict) -> pd.DataFrame:
 def no_go(judged: pd.DataFrame) -> bool:
     """The premise is absent: the PN contrast on the seed medians is not positive, or the
     claw depolarization is not positive for either odor in either arm (in any seed): a
-    contrast of potentials at or below rest has no meaning."""
+    contrast of potentials at or below rest has no meaning; or any seed's contrast is
+    undefined, so the medians would rest on fewer seeds than the lock's."""
     seeds = judged[judged["seed"] != "median"]
     med = judged[judged["seed"] == "median"].iloc[0]
     claws = seeds[[c for c in judged.columns if c.startswith("claw_")]]
-    return bool(not med["c_pn"] > 0 or (claws <= 0).any().any())
+    contrasts = seeds[["c_on", "c_off", "c_pn"]]
+    return bool(
+        not med["c_pn"] > 0 or (claws <= 0).any().any() or contrasts.isna().any().any()
+    )
 
 
 def verdict(judged: pd.DataFrame) -> str:
