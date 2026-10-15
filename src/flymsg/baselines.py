@@ -108,7 +108,7 @@ def _job(job: tuple) -> list[dict]:
     c = doc["cases"]
     cases = [*c["positive"], *c["negative"]]
     seeds = range(b["seed0"], b["seed0"] + b["seeds"])
-    computed = {}
+    computed, results = {}, None
     if backend == "console":
         # every case and seed of this graph as one batch: the network goes up once
         specs = [
