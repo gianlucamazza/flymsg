@@ -1,0 +1,9 @@
+// The worker's application class. Declaring it makes MIDL emit Flymsg.winmd, which the
+// manifest's EntryPoint="Flymsg.App" needs at activation: without it the console refuses to
+// launch the app (0x80070002), as xllama and the FloppyLM trainer found before.
+namespace Flymsg {
+  [default_interface]
+  runtimeclass App : Windows.UI.Xaml.Application {
+    App();
+  }
+}

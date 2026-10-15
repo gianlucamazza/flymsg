@@ -33,7 +33,7 @@ The initial GPU host retains state across batches of up to 64 ticks within one `
 
 ## UWP packaging and console runbook
 
-Run `scripts/build-native-uwp.ps1` from a Windows Visual Studio environment. It produces an **unsigned** x64 package with identity `GianlucaMazza.FlymsgWorker`, separate from the trainer. Use an appropriate development certificate/signing configuration before deploying through Xbox Device Portal. Keep the worker in the foreground. The app has a minimal CoreWindow and file-based status; a dashboard is not implemented.
+Run `scripts/build-native-uwp.ps1` from a Windows Visual Studio environment. It produces an **unsigned** x64 package with identity `GianlucaMazza.FlymsgWorker`, separate from the trainer. Use an appropriate development certificate/signing configuration before deploying through Xbox Device Portal. Keep the worker in the foreground. The app is a minimal XAML application (`app.idl` declares `Flymsg.App`; its `Flymsg.winmd` resolves the manifest's EntryPoint at activation, without which the console refuses to launch the app with 0x80070002) with a one-line window and file-based status; a dashboard is not implemented.
 
 Prepare a GPU qualification job against the exact packaged shader:
 
