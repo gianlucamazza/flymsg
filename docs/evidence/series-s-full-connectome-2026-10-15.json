@@ -58,6 +58,65 @@
       853.4062341657686
     ]
   },
+  "long_run": {
+    "fixture": {
+      "bytes": 209080724,
+      "dataset": "MaleCNS v1.0, default model",
+      "neurons": 165122,
+      "state_bytes": 147949312,
+      "steps": 20000,
+      "stimulus": "looming escape at 100 Hz, seed 500",
+      "synapses": 24539704
+    },
+    "float32_through_double": {
+      "gpu_parity_v1_fixtures": "12 of 12",
+      "lifecycle": {
+        "cancel": true,
+        "fixture": {
+          "inputs": 2,
+          "neurons": 2048,
+          "seed": 40,
+          "steps": 1000000,
+          "synthetic": true
+        },
+        "parity": true,
+        "steps_per_s": 51261.99092188617,
+        "stop_and_resume": true
+      },
+      "method": "every float32 +, - and x on state computed in double and rounded once to float32 (correct since 53 >= 2*24+2), subnormals read and written as bits; 600,000 random operations including subnormals matched numpy float32 bit for bit offline",
+      "package_lineage": {
+        "ci_note": "native-runtime workflow on PR #203",
+        "ci_run": 38782988212,
+        "signed_msix_sha256": "0f9f8e033847dfb0d9529b9363c3fa85db0e3c62a42a74f976c4b1b13ee093a3",
+        "signing": "repacked and signed with the development certificate (CN=uwp-crossbuild-dev); the unpacked payloads of the unsigned and signed packages are identical",
+        "unsigned_msix_sha256": "6a3405b80259b0226236a001d87683dbfa44a2b16c4339c2f529253da8bf5edd",
+        "worker_source_commit": "eed799854dd237d8cf0f81aaaf36b748300de571"
+      },
+      "parity": true,
+      "shader_sha256": "d6a0977507dd905fe0895948441be9bab9033e1c393735aad0095622fd606809",
+      "steps_per_s": 2323.2961817735927
+    },
+    "flush_to_zero_found": {
+      "difference": "g only, in 4,329 neurons whose conductance had decayed into the float32 subnormal range (about 3.5e-44 on the CPU oracle, 0 on the GPU); v, thresholds, refractory deadlines, counts, first spikes and the ring identical",
+      "note": "the same divergence remained with the shader built as cs_6_2 -denorm preserve: the console flushes float32 subnormals regardless",
+      "package_lineage": {
+        "ci_note": "native-runtime workflow on PR #203",
+        "ci_run": 38780389226,
+        "signed_msix_sha256": "98f9becb37e6afb3a54b662576b33e08a34cf075861ccb2f6a6968aff501eb0f",
+        "signing": "repacked and signed with the development certificate (CN=uwp-crossbuild-dev); the unpacked payloads of the unsigned and signed packages are identical",
+        "unsigned_msix_sha256": "860d78a09d1b221270137261c00134308da244e988082e4cd4452460a62df676",
+        "worker_source_commit": "c51fd50c1939bc50c423a53c2e4ff74c06639286"
+      },
+      "parity": false,
+      "steps_per_s": 3117.838908135645
+    },
+    "host_load_average": [
+      10.6318359375,
+      12.1484375,
+      13.84130859375
+    ],
+    "host_python_steps_per_s": 512.4177897260347
+  },
   "platform": "Xbox Series S, Dev Mode",
   "pull_delivery": {
     "app_memory_bytes": 248537088,

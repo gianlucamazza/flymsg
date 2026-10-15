@@ -4,6 +4,12 @@
 
 ### Result
 
+- **Exact float32 on the console GPU, and a dashboard** (#40, #203).
+  - **The divergence.** A 20,000-step full-connectome run differed from the CPU oracle in `g` alone, in 4,329 subnormal conductances that the console flushed to zero, even with `-denorm preserve`.
+  - **The fix.** The shader now does every float32 operation on state through double and rounds once, which is correct since 53 ≥ 2·24 + 2. It handles subnormals as bits. 600,000 random operations, subnormals included, match numpy float32 bit for bit offline.
+  - **Qualification.** The run is bit for bit at about 2,320 steps/s, and parity, cancel, suspension and resume pass.
+  - **The dashboard.** The worker shows a TV dashboard: job state, progress, steps per second, ETA, memory, recent jobs, and the last job's spikes per bin. The gamepad's B cancels through the cancel file.
+
 - **Full connectome on the Series S** (#40, #202): the MaleCNS default model (165,122 neurons,
   24.5 million synapses) runs on the console bit for bit with the CPU oracle
   (`docs/evidence/series-s-full-connectome-2026-10-15.json`, `scripts/console_bench.py`).
