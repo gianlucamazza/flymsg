@@ -48,6 +48,16 @@
 
 ### Validation
 
+- **APL claw contrast lock** (#85): `validation/apl_claws.yaml` v1, `flymsg apl-claws [--run]`,
+  evidence record `apl_claw_odor_contrast`.
+  - **Design.** Arms `on` (default) and `off` (every APL synapse removed), driven by the KC
+    sparseness locks' DoOR odors, seeds 420–424. Per seed, the OCT/MCH contrast of the KCs'
+    mean depolarization in each arm against the ALPNs' spike contrast in arm on; scored on the
+    seed medians: pass if blocking APL raises the claw contrast and brings it nearer the
+    boutons', partial if it only raises it, fail if it does not raise it, uninformative if
+    the PNs carry no positive contrast.
+  - **Status.** Scored, locked before any run. No run yet.
+
 - **Simple baselines lock** (#148, SF2): `validation/baselines.yaml` v1, `flymsg baselines
 [--run]`.
   - **Design.** The battery's eight responses run on the measured connectome and on 199

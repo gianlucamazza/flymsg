@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from flymsg import (
+    apl_claws,
     baselines,
     benchmarks,
     compare,
@@ -505,5 +506,46 @@ def cmd_gf_looming(a, neurons, edges):
         {"seed0": m["seed0"], "seeds": m["seeds"]},
         started,
         {"verdict": result["verdict"]},
+    )
+    print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_apl_claws(a, neurons, edges):
+    """Run the locked APL claw contrast benchmark and write every cell and the judgement."""
+    started = datetime.now(UTC)
+    doc = apl_claws.assert_matches_code()
+    print(apl_claws.summary(doc))
+    cells = apl_claws.run(neurons, edges, a.data, a.workers, a.checkpoint)
+    out = managed.output(a, Path("runs/apl_claws") / f"v{doc['version']}")
+    out.mkdir(parents=True, exist_ok=True)
+    cells.to_csv(out / "cells.csv", index=False)
+    judged = apl_claws.judge(cells, doc)
+    judged.to_csv(out / "judged.csv", index=False)
+    verdict = apl_claws.verdict(judged)
+    text = "\n".join(
+        [
+            apl_claws.summary(doc),
+            judged.to_string(index=False),
+            apl_claws.describe(judged),
+            f"verdict: {verdict}",
+        ]
+    )
+    (out / "report.txt").write_text(text + "\n")
+    print(text)
+    stamp(
+        out,
+        "apl-claws --run",
+        a,
+        neurons,
+        edges,
+        {
+            "apl_claws_version": doc["version"],
+            "apl_claws_sha256": doc["content_sha256"],
+            "protocol": doc["protocol"],
+            "arms": doc["arms"],
+        },
+        {"all": list(doc["protocol"]["seeds"])},
+        started,
+        {"verdict": verdict},
     )
     print(f"report -> {out / 'report.txt'}")

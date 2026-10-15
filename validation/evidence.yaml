@@ -395,3 +395,36 @@ records:
       code: "flymsg.gf_looming.expansion"
       inputs_sha256: "none: transcribed from the published methods (doi and locator); no file archived"
     used_by: [validation/gf_looming.yaml]
+
+  - id: apl_claw_odor_contrast
+    quantity: "direction of the OCT/MCH contrast at Kenyon cell claws with APL output intact and blocked, against PN boutons"
+    value:
+      on_oct_vs_mch_p: 0.949
+      off_oct_vs_mch_p: 0.0003
+      claws_on_vs_off_delta_p: 0.0011
+      boutons_vs_claws_on_delta_p: 0.0024
+      boutons_vs_claws_off_delta_p: 0.9698
+      boutons_vs_claws_default_delta_p: 0.0271
+      n_flies: 10
+    unit: "p values (two-way ANOVA with Tukey; Brown-Forsythe and Welch ANOVA), flies"
+    status: measured
+    method: "two-photon imaging of MB247-homer::GCaMP3 at calyx microglomeruli (claws) in APLi > TNT, tubP-GAL80ts flies (24-48 h at 31 C; APL OFF) and in calyces without TNT expression (APL ON); NP225 > Syp-GCaMP3 at PN boutons; 4-methylcyclohexanol and 3-octanol 1:100, 5 s"
+    uncertainty: "only directions and p values are used; amplitudes are in the deposited spreadsheets, not transcribed"
+    source:
+      citation: "Prisco, Deimel, Yeliseyeva, Fiala, Tavosanis 2021, eLife 10:e74172 (PMC8741211)"
+      doi: "10.7554/eLife.74172"
+      license: "CC BY 4.0 (article); data Dryad doi:10.5061/dryad.bk3j9kdd1, CC0"
+      locator: "Results (APL silencing), Figure 4B and 4D, Figure 4-figure supplement 1"
+    organism:
+      species: "Drosophila melanogaster"
+      sex: "mixed (males and females)"
+      stage: "adult, 1-7 days"
+    cell:
+      type: "Kenyon cell claws (microglomeruli), PN boutons (NP225), APL"
+      maps_to: "^KC, ALPN and APL in MaleCNS v1.0"
+      mapping_uncertainty: "claws are KC dendritic compartments, the model's KCs are points; NP225 is a subset of uniglomerular PNs"
+    transfer_limits: "relational only: each readout's own odor contrast, never amplitudes across readouts"
+    transformation:
+      code: "flymsg.apl_claws decides on the directions"
+      inputs_sha256: "none: transcribed from the published text (doi and locator); no file archived"
+    used_by: [validation/apl_claws.yaml]

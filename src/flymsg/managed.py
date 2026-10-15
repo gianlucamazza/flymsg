@@ -6,6 +6,7 @@ from importlib import metadata
 from pathlib import Path
 
 from flymsg import (
+    apl_claws,
     baselines,
     behavior,
     benchmarks,
@@ -34,6 +35,7 @@ PROTOCOLS = {
     "benchmarks": benchmarks,
     "sensitivity": sensitivity,
     "baselines": baselines,
+    "apl-claws": apl_claws,
     "convergence": convergence,
     "silence-scan": silence_scan,
     "partner-followup": partner_followup,
@@ -83,7 +85,10 @@ def prepare(a):
                 for name in ("neurons.parquet", "edges.parquet")
             }
         )
-    if a.cmd == "kc-sparseness" and doc["protocol"].get("odor_source") == "door":
+    if (
+        a.cmd in {"kc-sparseness", "apl-claws"}
+        and doc["protocol"].get("odor_source") == "door"
+    ):
         odors.fetch(a.data)
         paths.update(
             {f"door/{name}": odors.raw_dir(a.data) / name for name in odors.DOOR_FILES}

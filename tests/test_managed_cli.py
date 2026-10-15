@@ -207,6 +207,7 @@ def test_sister_writer_policy_is_explicit_and_complete():
         "weight-rule",
         "sensitivity",
         "baselines",
+        "apl-claws",
         "convergence",
         "nulls",
         "select-model",
