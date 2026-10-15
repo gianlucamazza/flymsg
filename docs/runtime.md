@@ -120,6 +120,9 @@ The full MaleCNS default model (165,122 neurons, 24.5 million synapses; looming 
 - **Event-driven delivery** (#202) runs at about 1,630 steps/s. Inputs are copied once to a default heap. A spiking neuron sets the bit of each outgoing synapse, and a target sums its set bits in ascending order, the pull loop's float sequence, so the result is unchanged.
 - **The host's Python oracle** ran at 850–1,130 steps/s, measured while the host was busy.
 - **The 2,048-neuron lifecycle fixture** rises from about 44,000 to about 70,000 steps/s.
+- **Longer runs and subnormals.** A 20,000-step run then differed in `g` alone, in 4,329 neurons whose conductance had decayed into the float32 subnormal range: the console flushes those to zero, even with a shader built `-denorm preserve`. The shader now computes every float32 operation on state in double and rounds once to float32, which gives the correctly rounded float32 result, and it reads and writes subnormals as bits.
+  - With that, the 20,000-step run is bit for bit at about 2,320 steps/s, and the 12 fixtures, cancel, suspension and resume pass again.
+  - Exactness costs about a quarter of the throughput.
 
 A GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
 

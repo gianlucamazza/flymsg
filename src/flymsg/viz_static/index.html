@@ -48,6 +48,13 @@
       #hud .muted {
         color: var(--muted);
       }
+      /* a TV seen from the sofa: larger text, inside the title-safe area */
+      html.tv #hud {
+        font-size: 20px;
+        max-width: min(720px, calc(100vw - 10vw));
+        left: 5vw;
+        bottom: 5vh;
+      }
       #legend span {
         display: inline-block;
         margin-right: 10px;

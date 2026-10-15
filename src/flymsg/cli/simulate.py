@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 import numpy as np
 import pandas as pd
 
-from flymsg import data, graph, sim, t4t5, tracing, validate, viz
+from flymsg import data, graph, native, sim, t4t5, tracing, validate, viz
 from flymsg.cli.common import stamp
 
 
@@ -303,6 +303,20 @@ def cmd_viz(a, neurons, edges):
         groups = ["path"] * idx.size
     elif a.eye:
         idx, groups, result, graded, eye = eye_replay(a, neurons, edges)
+    elif a.native:
+        output, fixture = a.native
+        stim = native.stimulated(fixture)
+        decoded = native.read_output(output, fixture)
+        if decoded["v"].size != len(neurons):
+            sys.exit("flymsg: the fixture does not hold this dataset's neurons")
+        # the stimulus is the fixture's own input, not --stim-ms
+        dt = sim.Params().dt
+        result = native.as_result(decoded, fixture, dt, native.input_ms(fixture, dt))
+        idx = viz.select_from_result(result, stim, a.min_rate)
+        fired = result.rate(0, result.stim_ms)[idx] > a.min_rate
+        groups = np.where(
+            np.isin(idx, stim), "stimulus", np.where(fired, "response", "kept")
+        ).tolist()
     else:
         stim = np.unique(np.concatenate([data.resolve(neurons, q) for q in a.sim]))
         W = sim.network(neurons, edges, sim.Params())
@@ -346,6 +360,11 @@ def cmd_viz(a, neurons, edges):
             "silence": list(a.silence or []),
             "keep": list(a.keep or []),
             **({"eye": eye} if eye is not None else {}),
+            **(
+                {"native": [str(x) for x in a.native]}
+                if getattr(a, "native", None)
+                else {}
+            ),
         },
         {"seed": eye["seed"] if eye is not None else a.seed},
         started,

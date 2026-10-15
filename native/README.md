@@ -42,7 +42,11 @@ A new call currently rebuilds and uploads the device state. Persistent device ow
 
 ## UWP packaging and console runbook
 
-Run `scripts/build-native-uwp.ps1` from a Windows Visual Studio environment. It produces an **unsigned** x64 package with identity `GianlucaMazza.FlymsgWorker`, separate from the trainer. Use an appropriate development certificate/signing configuration before deploying through Xbox Device Portal. Keep the worker in the foreground. The app is a minimal XAML application (`app.idl` declares `Flymsg.App`; its `Flymsg.winmd` resolves the manifest's EntryPoint at activation, without which the console refuses to launch the app with 0x80070002) with a one-line window and file-based status; a dashboard is not implemented.
+Run `scripts/build-native-uwp.ps1` from a Windows Visual Studio environment. It produces an **unsigned** x64 package with identity `GianlucaMazza.FlymsgWorker`, separate from the trainer. Use an appropriate development certificate/signing configuration before deploying through Xbox Device Portal. Keep the worker in the foreground. The app is a minimal XAML application (`app.idl` declares `Flymsg.App`; its `Flymsg.winmd` resolves the manifest's EntryPoint at activation, without which the console refuses to launch the app with 0x80070002) with file-based status and a dashboard for the TV.
+
+- **What it shows:** the build commit and GPU adapter; the current job's state, progress, steps per second, ETA and app memory; the last error; the jobs since the app started (kept in memory, so a restart clears them); and the last completed job's spikes per count bin with its most active rows.
+- **How it reads.** The job thread publishes a telemetry copy under a lock, and a UI timer reads it four times a second, so the dashboard never touches a job's state.
+- **Controls.** The gamepad's B cancels the running job by writing the same `flymsg.worker_cancel/v1` file a host would upload. Y opens the 3D viewer in the system browser, at the address in `LocalState/viewer.json` (`flymsg.worker_viewer/v1`), and an uploaded `LocalState/open_viewer.json` does the same from the host. Edge on an Xbox has no WebGL, so there the page loads but draws no scene (see [viz.md](../docs/viz.md)). The app asks for no pointer, so the console shows no mouse-mode cursor.
 
 Prepare a GPU qualification job against the exact packaged shader:
 

@@ -4,6 +4,12 @@
 
 ### Result
 
+- **Exact float32 on the console GPU, and a dashboard** (#40, #203).
+  - **The divergence.** A 20,000-step full-connectome run differed from the CPU oracle in `g` alone, in 4,329 subnormal conductances that the console flushed to zero, even with `-denorm preserve`.
+  - **The fix.** The shader now does every float32 operation on state through double and rounds once, which is correct since 53 ≥ 2·24 + 2. It handles subnormals as bits. 600,000 random operations, subnormals included, match numpy float32 bit for bit offline.
+  - **Qualification.** The run is bit for bit at about 2,320 steps/s, and parity, cancel, suspension and resume pass.
+  - **The dashboard.** The worker shows a TV dashboard: job state, progress, steps per second, ETA, memory, recent jobs, and the last job's spikes per bin. The gamepad's B cancels through the cancel file.
+
 - **Full connectome on the Series S** (#40, #202): the MaleCNS default model (165,122 neurons,
   24.5 million synapses) runs on the console bit for bit with the CPU oracle
   (`docs/evidence/series-s-full-connectome-2026-10-15.json`, `scripts/console_bench.py`).
@@ -116,6 +122,17 @@
     except what an agent had opened during the search (recorded). No run.
 
 ### Engineering
+
+- **The 3D viewer on an Xbox.**
+  - **TV layout.** It is on by default in a console's browser, or with `?tv=1`: larger text in the title-safe area, the panel closed, and controller hints.
+  - **Controller.** A game controller drives the view (`gamepad.js`, standard mapping): the sticks and triggers rotate and zoom, A plays or pauses, LB and RB step a bin, Y resets the view, X clears the selection, and View opens or closes the panel.
+  - **From the worker.** The worker opens the viewer with Y, or when the host uploads `open_viewer.json`, at the address in `LocalState/viewer.json`.
+  - **Not on a Series S.** Edge there has no WebGL, so the page loads but draws nothing. The TV layout also starts leaner (1 M triangles), because the console's tab was stopped for memory at the desktop defaults.
+  - **Native replays.** `flymsg viz --native` now takes the stimulus from the fixture's own input.
+
+- **Viewer replays native and console runs**: `flymsg viz --native OUTPUT FIXTURE` turns a
+  native `output.bin` into the viewer's replay (`native.as_result`, `native.stimulated`), so a
+  run computed on the Series S can be watched in the browser.
 
 - **B6 v2 pose contract** (G1, #178): `flymsg.pose` (`flymsg.embodiment/v2`) types world,
   body, eye and eye-map frames in SI units with (w, x, y, z) quaternions, a body state with

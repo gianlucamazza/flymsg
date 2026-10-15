@@ -130,6 +130,53 @@ animal, not the stimulus. [Right against left](https://gianlucamazza.github.io/f
 compares the two one-eyed arms; [both eyes](https://gianlucamazza.github.io/flymsg/live/looming-bilateral/)
 is a single scene. Exploratory replays, not scored runs.
 
+## Replaying a native or console run
+
+`flymsg viz --native OUTPUT FIXTURE` replays a run of the native executor or of the console worker: the `output.bin` a job returns and the `fixture.bin` it ran.
+
+- **What it reads.** `native.as_result` turns the decoded spike counts per bin and first spikes into a `sim.Result`, and `native.stimulated` reads the fixture's stimulated rows.
+- **What it shows.** The usual selection follows: the stimulated neurons, then those firing above `--min-rate` while the fixture's input lasts (up to its last step with a kick).
+- **Fixture.** It must hold the whole dataset in row order, as `scripts/console_bench.py` exports it.
+
+A 2,000-step full-connectome console run exports 856 neurons above 5 Hz.
+
+## On an Xbox or a TV
+
+With `?tv=1`, or in a browser whose user agent names an Xbox, the page starts in a TV layout:
+
+- larger text in the title-safe area;
+- the panel closed;
+- controller hints;
+- a leaner start: 1 M triangles at 512 px detail, instead of 8 M at 256 px.
+
+`?tv=0` turns it off, and `?budget=` and `?detail=` still override the defaults. A game controller with the standard mapping drives the view (`gamepad.js`):
+
+| Control                 | Action                   |
+| ----------------------- | ------------------------ |
+| Left stick              | Rotate around the target |
+| Right stick or triggers | Zoom                     |
+| A                       | Play or pause the replay |
+| LB / RB                 | Step one bin back or on  |
+| Y                       | Reset the view           |
+| X                       | Clear the selection      |
+| View                    | Open or close the panel  |
+
+X clears rather than B, because Edge keeps B for going back a page.
+
+**On an Xbox console, the 3D view does not run in the browser.** Checked on a Series S on 2026-10-15:
+
+- **No WebGL.** Edge offers neither WebGL 1 nor WebGL 2, and the viewer needs WebGL 2.
+- **Memory.** At the desktop defaults, the tab was stopped with `SBOX_FATAL_MEMORY_EXCEEDED`.
+- **User agent.** It does not name the Xbox, so give the console `?tv=1`.
+
+The page loads, but no scene is drawn. On the console, a run is watched on the worker's dashboard or replayed in a desktop browser.
+
+The worker can open the viewer itself. That matters where its browser has WebGL, which today means the worker's desktop build.
+
+- **The address.** It is configuration, not code: the host writes `LocalState/viewer.json` (`{"schema": "flymsg.worker_viewer/v1", "url": "http://..."}`).
+- **Opening it.** The controller's Y on the worker's dashboard opens it in the browser. So does an uploaded `LocalState/open_viewer.json`, which the worker consumes.
+- **Serving.** A run exported with `flymsg viz --native` can be served from the host on the local network for this.
+
 ## Phones and tablets
 
 On a screen up to 600 px wide the control panel starts closed and the performance readout
