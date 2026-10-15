@@ -84,6 +84,11 @@ def run(out: Path, seeds: int) -> dict:
             "wall_s": console_s,
             "advance_ms": result["advance_ms"],
             "advance_steps": result["advance_steps"],
+            # the rest of wall_s: the worker's own time outside the advance, and
+            # the host's (runtimes, export, upload, waiting, download)
+            "prepare_ms": result.get("prepare_ms"),
+            "write_ms": result.get("write_ms"),
+            "host_s": result["host"],
         },
         "host_sim_run_s": host_s,
         "host_load_average": list(os.getloadavg()),

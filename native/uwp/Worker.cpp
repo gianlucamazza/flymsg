@@ -224,6 +224,12 @@ struct Worker {
     doc.Insert(L"error", JsonValue::CreateStringValue(to_hstring(error)));
     doc.Insert(L"source_commit",
                JsonValue::CreateStringValue(to_hstring(FLYMSG_COMMIT)));
+    // the batch outputs this worker writes: a host asking for one it does not
+    // list is talking to an older worker and stops the job
+    JsonArray outputs;
+    outputs.Append(JsonValue::CreateStringValue(L"state"));
+    outputs.Append(JsonValue::CreateStringValue(L"counts"));
+    doc.Insert(L"batch_outputs", outputs);
     doc.Insert(L"app_memory_bytes",
                JsonValue::CreateNumberValue(
                    double(Windows::System::MemoryManager::AppMemoryUsage())));
@@ -424,19 +430,27 @@ struct Worker {
     const uint32_t runs = flymsg::batch_runs(batch);
     flymsg::require(runs == uint32_t(spec.GetNamedNumber(L"runs")),
                     "batch run count mismatch");
+    // "counts" asks for the sparse readout (Runtime::counts), "state" or no key
+    // for the whole state
+    const auto kind =
+        spec.HasKey(L"output") ? field(spec, L"output") : std::string("state");
+    flymsg::require(kind == "state" || kind == "counts",
+                    "unknown batch output");
+    const bool sparse = kind == "counts";
     const uint64_t steps = base[3];
     {
       std::lock_guard guard(telemetry_mutex);
       telemetry.total = uint32_t(std::min<uint64_t>(steps * runs, UINT32_MAX));
     }
     auto reported = std::chrono::steady_clock::now() - std::chrono::seconds(1);
-    double advance_ms = 0;
+    double advance_ms = 0, prepare_ms = 0, write_ms = 0;
     uint64_t advanced = 0;
     std::optional<flymsg::Runtime> last;
     for (uint32_t k = 0; k < runs; ++k) {
       const auto name = std::to_wstring(k);
       if (fs::exists(folder / (L"result_" + name + L".json")))
         continue; // done before an interruption
+      const auto prepared = std::chrono::steady_clock::now();
       flymsg::Runtime runtime(flymsg::batch_fixture(base, batch, k));
       flymsg::require(runtime.input[3] == steps, "batch runs differ in length");
       const auto estimated = (base.size() + batch.size()) * 4ull +
@@ -481,10 +495,7 @@ struct Worker {
         }
         return;
       }
-      // "output": "counts" asks for the sparse readout (Runtime::counts), the
-      // default is the whole state
-      const bool sparse =
-          spec.HasKey(L"output") && field(spec, L"output") == "counts";
+      const auto written = std::chrono::steady_clock::now();
       const auto output =
           folder / ((sparse ? L"counts_" : L"output_") + name + L".bin");
       if (sparse)
@@ -494,9 +505,20 @@ struct Worker {
       JsonObject result;
       result.Insert(L"output_sha256",
                     JsonValue::CreateStringValue(to_hstring(sha256(output))));
+      result.Insert(L"output", JsonValue::CreateStringValue(to_hstring(kind)));
       result.Insert(L"advance_ms", JsonValue::CreateNumberValue(ms));
       result.Insert(L"advance_steps",
                     JsonValue::CreateNumberValue(double(steps)));
+      // the run's time outside the advance: rebuilding its fixture and
+      // runtime, then writing and hashing its output
+      const std::chrono::duration<double, std::milli>
+          prepare = began - prepared,
+          write = std::chrono::steady_clock::now() - written;
+      result.Insert(L"prepare_ms",
+                    JsonValue::CreateNumberValue(prepare.count()));
+      result.Insert(L"write_ms", JsonValue::CreateNumberValue(write.count()));
+      prepare_ms += prepare.count();
+      write_ms += write.count();
       write_json(folder / (L"result_" + name + L".json"), result);
       advance_ms += ms;
       advanced += steps;
@@ -515,6 +537,9 @@ struct Worker {
     result.Insert(L"advance_ms", JsonValue::CreateNumberValue(advance_ms));
     result.Insert(L"advance_steps",
                   JsonValue::CreateNumberValue(double(advanced)));
+    result.Insert(L"prepare_ms", JsonValue::CreateNumberValue(prepare_ms));
+    result.Insert(L"write_ms", JsonValue::CreateNumberValue(write_ms));
+    result.Insert(L"output", JsonValue::CreateStringValue(to_hstring(kind)));
     write_json(folder / L"result.json", result);
     status(folder, id, "completed",
            uint32_t(std::min<uint64_t>(steps * runs, UINT32_MAX)));

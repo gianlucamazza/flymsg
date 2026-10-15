@@ -195,7 +195,16 @@ def run_batch(
     folder = out / job_id
     folder.mkdir(parents=True)
     base, batch = folder / "fixture.bin", folder / "batch.bin"
+    clock = time.perf_counter()
+    host = {}  # where the batch's wall time goes on the host's side, in seconds
+
+    def lap(name):
+        nonlocal clock
+        host[name] = time.perf_counter() - clock
+        clock = time.perf_counter()
+
     metas = native.export_batch(runtimes, base, batch)
+    lap("export_s")
     job = {
         "schema": "flymsg.neural_job/v1",
         "job_id": job_id,
@@ -226,10 +235,28 @@ def run_batch(
         p.put(device.package, rel, base)
         p.put(device.package, rel, batch)
         p.put(device.package, rel, folder / "job.json")  # last: the worker starts on it
+        lap("upload_s")
         start, status = time.time(), {}
         while time.time() - start < timeout_s:
             time.sleep(2)
             status = device.status(rel, folder / "status.json")
+            # a worker that does not list the output would run the whole batch
+            # and write another file: stop it at its first report
+            if (
+                status.get("job_id") == job_id
+                and output not in status.get("batch_outputs", ["state"])
+                and status.get("state") not in STOPPED
+            ):
+                cancel = folder / "cancel.json"
+                cancel.write_text(
+                    json.dumps({"schema": "flymsg.worker_cancel/v1", "job_id": job_id})
+                    + "\n"
+                )
+                p.put(device.package, rel, cancel)
+                raise RuntimeError(
+                    f"console batch {job_id}: the worker does not write "
+                    f"{output!r} outputs; install a newer worker"
+                )
             # a parked job (suspended, awaiting_recovery) waits for a resume.json this
             # backend never writes: stop instead of waiting out the timeout
             if status.get("state") in STOPPED:
@@ -239,6 +266,7 @@ def run_batch(
                 f"console batch {job_id}: {status.get('state', 'timeout')} "
                 f"{status.get('error', '')}".strip()
             )
+        lap("console_s")
         p.get(device.package, rel, "result.json", folder / "result.json")
         for k in range(len(runtimes)):
             name = f"{'counts' if output == 'counts' else 'output'}_{k}.bin"
@@ -251,7 +279,9 @@ def run_batch(
             )
             outputs.append(out_path)
             fixtures.append(fixture)
-        return outputs, fixtures, json.loads((folder / "result.json").read_text())
+        lap("download_s")
+        result = json.loads((folder / "result.json").read_text())
+        return outputs, fixtures, {**result, "host": host}
     except BaseException:
         for path in [*outputs, *fixtures]:
             path.unlink(missing_ok=True)
@@ -297,7 +327,9 @@ def sim_runs(
     """`sim.run(W, stim, rate_hz, duration_ms, stim_ms, p, seed)` for each spec
     `(stim, rate_hz, duration_ms, stim_ms, seed)`, as one batch on the console. The runs
     must share a horizon; the results are `sim.run`'s, bit for bit."""
+    start = time.perf_counter()
     runtimes = [sim_runtime(W, *spec[:4], p, spec[4]) for spec in specs]
+    runtimes_s = time.perf_counter() - start
     # a sim.Result needs only the counts and first spikes: the sparse output, a few
     # kilobytes per run instead of the whole state (tens of megabytes)
     outputs, fixtures, result = run_batch(
@@ -306,6 +338,7 @@ def sim_runs(
     stim_ms = [
         (spec[2] if spec[3] is None else int(spec[3] / p.dt) * p.dt) for spec in specs
     ]
+    result["host"] = {"runtimes_s": runtimes_s, **result["host"]}
     return as_results(outputs, fixtures, p.dt, stim_ms), result
 
 
