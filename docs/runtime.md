@@ -1,6 +1,6 @@
 # ADR: scientific semantics and replaceable execution backends
 
-Status: accepted by the user, 2026-10-14. CPU foundation (R0) and a native CPU fixture executor (R1, CPU) implemented; the HLSL shader, DX12 host and UWP worker build in CI; on a Series S the worker runs and the DX12 lane matches the CPU oracle bit for bit on the 12 version-1 fixtures (2026-10-15); version-2 fixtures on the GPU and the console lifecycle, memory and throughput remain ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40)). Related: architecture #30, workbench #27, embodiment #31 and sensory feedback #34.
+Status: accepted by the user, 2026-10-14. CPU foundation (R0) and a native CPU fixture executor (R1, CPU) implemented; the HLSL shader, DX12 host and UWP worker build in CI; on a Series S the worker runs and the DX12 lane matches the CPU oracle bit for bit on the 12 version-1 fixtures (2026-10-15); the worker's cancel, stop-to-suspension with checkpoint and resume pass on the console with bit-for-bit output, at about 44,000 steps/s on a 2,048-neuron synthetic fixture; version-2 fixtures on the GPU and full-connectome throughput remain ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40)). Related: architecture #30, workbench #27, embodiment #31 and sensory feedback #34.
 
 ## Context
 
@@ -108,6 +108,12 @@ The incremental CPU API makes causality, state inspection and pause/resume testa
 | R3   | Sparse propagation optimization     | Separate backend version; declared precision/threshold gates and density-scaled benchmarks                      |
 | R4   | Full neuromechanical worker         | Whole-system checkpoint, validated timing, open/closed-loop controls and mapping gate                           |
 
-R0 is implemented here. Native implementation is tracked in [#39](https://github.com/gianlucamazza/flymsg/issues/39), and physical-console qualification in [#40](https://github.com/gianlucamazza/flymsg/issues/40). R1's CPU fixture executor exists, and on 2026-10-15 the DX12 lane matched the CPU oracle bit for bit on all 12 version-1 fixtures on a Series S GPU (adapter `SraKmd_arden`; `scripts/console_gpu_parity.py`, evidence `docs/evidence/series-s-gpu-parity-2026-10-15.json`); version-2 fixtures (graded, coupled) stay refused by the DX12 lane. R2 has its worker launching and completing GPU jobs on the console; suspension, cancellation, recovery, memory limits and throughput remain to measure. R3–R4 need implementation. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
+R0 is implemented here. Native implementation is tracked in [#39](https://github.com/gianlucamazza/flymsg/issues/39), and physical-console qualification in [#40](https://github.com/gianlucamazza/flymsg/issues/40). R1's CPU fixture executor exists, and on 2026-10-15 the DX12 lane matched the CPU oracle bit for bit on all 12 version-1 fixtures on a Series S GPU (adapter `SraKmd_arden`; `scripts/console_gpu_parity.py`, evidence `docs/evidence/series-s-gpu-parity-2026-10-15.json`); version-2 fixtures (graded, coupled) stay refused by the DX12 lane. R2 has its worker launching and completing GPU jobs on the console. On a 2,048-neuron synthetic version-1 fixture of 100,000 steps (`scripts/console_lifecycle.py`, evidence `docs/evidence/series-s-lifecycle-2026-10-15.json`):
+
+- the advance runs at about 44,000 steps/s, timed by the worker, at about 62 MB of app memory against a 5 GiB limit;
+- a cancel ends the job in `cancelled`;
+- a Device Portal stop suspends the app with a checkpoint, and after a restart and a resume the job completes bit for bit with the CPU oracle.
+
+Full-connectome throughput, a GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
 
 Run `uv run pytest tests/test_runtime.py tests/test_core.py tests/test_embodiment.py`. Existing CI also checks all synthetic regressions, documentation links, formatting and browser modules.

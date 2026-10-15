@@ -170,3 +170,25 @@ def test_the_console_parity_script_builds_the_twelve_version_one_fixtures(tmp_pa
         export_fixture(oracle, fixture)
         header = np.frombuffer(fixture.read_bytes(), dtype="<u4")
         assert int(header[1]) == 1  # the DX12 lane runs version-1 fixtures only
+
+
+def test_the_console_lifecycle_fixture_is_version_one_and_long(tmp_path):
+    import importlib.util
+    import sys
+
+    scripts = Path(__file__).resolve().parents[1] / "scripts"
+    sys.path.insert(0, str(scripts))  # the script imports its siblings
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "console_lifecycle", scripts / "console_lifecycle.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.remove(str(scripts))
+    oracle = module.oracle()
+    fixture = tmp_path / "lifecycle.bin"
+    meta = export_fixture(oracle, fixture)
+    header = np.frombuffer(fixture.read_bytes()[:64], dtype="<u4")
+    assert int(header[1]) == 1  # the DX12 lane runs version-1 fixtures only
+    assert meta["steps"] == module.STEPS > 64 * 100  # many GPU batches to stop between

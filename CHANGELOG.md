@@ -4,6 +4,21 @@
 
 ### Result
 
+- **Series S worker lifecycle** (#40): on a 2,048-neuron synthetic version-1 fixture of
+  100,000 steps, the worker's lifecycle behaves on the console
+  (`docs/evidence/series-s-lifecycle-2026-10-15.json`, `scripts/console_lifecycle.py`):
+  - it advances about 44,000 steps/s, timed by the worker, at about 62 MB of app memory;
+  - a cancel ends the job in `cancelled`;
+  - a Device Portal stop suspends the app with a checkpoint, and after a restart and a resume
+    the job completes bit for bit with the CPU oracle.
+
+  Two worker races were found and fixed on the way:
+  - a Device Portal read of `status.json` made the atomic status replacement fail, so the
+    worker now retries for up to a second and writes progress at most four times a second;
+  - a control file still uploading was parsed empty, so it is now read on a later pass.
+
+  `result.json` now records the advance's wall time and steps.
+
 - **Series S GPU parity** (#39, #40): on a Series S in Dev Mode the DX12 lane matches the CPU
   oracle bit for bit on all 12 version-1 acceptance fixtures (adapter `SraKmd_arden`,
   `docs/evidence/series-s-gpu-parity-2026-10-15.json`, `scripts/console_gpu_parity.py`). The

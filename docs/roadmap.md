@@ -132,11 +132,11 @@ three stay off unless a lock names them.
 
 ## Blocked on hardware
 
-| Issue                                                            | Blocked by                                                                  | Ready                                                                                       |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Version-2 fixtures (graded, coupled) on the GPU: the DX12 lane refuses them | Series S GPU parity, 12 of 12 version-1 fixtures bit for bit (2026-10-15)                   |
-| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | Suspension, cancellation, recovery, memory and throughput on the console    | The worker launches on a Series S in Dev Mode and completes GPU jobs                        |
-| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss         | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md)) |
+| Issue                                                            | Blocked by                                                                  | Ready                                                                                                   |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Version-2 fixtures (graded, coupled) on the GPU: the DX12 lane refuses them | Series S GPU parity, 12 of 12 version-1 fixtures bit for bit (2026-10-15)                               |
+| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | Full-connectome throughput, GPU fault and hard termination on the console   | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; 44k steps/s at 2,048 neurons |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss         | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))             |
 
 ## What an animal test could check
 
@@ -217,7 +217,7 @@ components; the [body-wiring ADR](adr-body-wiring.md) is accepted, and a biologi
 loop refuses until G3 and G4 are measured.
 
 **4. Hardware.** A Series S in Dev Mode is now available: GPU parity of the version-1 fixtures holds on it
-(#39), and the worker's lifecycle and throughput are next (#40). A headset for the WebXR
+(#39), and the worker's cancel, suspension with checkpoint and resume pass on it (#40); full-connectome throughput is next. A headset for the WebXR
 observer (#177); until then the native executor refuses whatever is not qualified, and the
 observer stays experimental.
 
