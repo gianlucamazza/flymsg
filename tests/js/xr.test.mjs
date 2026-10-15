@@ -174,8 +174,9 @@ test("incomplete anatomy cannot enter VR, but admission is checked again on retr
   await observer.button.click();
   assert.deepEqual(f.requestCalls, []);
   assert.equal(observer.status.textContent, error);
-  assert.equal(observer.button.disabled, false);
+  assert.equal(observer.button.disabled, true);
   error = null;
+  observer.refresh();
   await observer.button.click();
   assert.deepEqual(f.requestCalls, ["immersive-vr"]);
   error = "unavailable";

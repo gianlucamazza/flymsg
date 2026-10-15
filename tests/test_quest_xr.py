@@ -35,6 +35,27 @@ def test_collector_refuses_foreign_device_before_mutations(monkeypatch, tmp_path
     assert not (tmp_path / "out").exists()
 
 
+def test_paged_mixed_representation_is_rejected_before_contacting_device(monkeypatch):
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "quest_xr.py",
+            "--serial",
+            "explicit",
+            "--uploads",
+            "--representation",
+            "mixed",
+        ],
+    )
+    monkeypatch.setattr(
+        quest,
+        "adb",
+        lambda *_args: pytest.fail("Invalid configuration contacted a device"),
+    )
+    with pytest.raises(SystemExit):
+        quest.main()
+
+
 def test_collector_retains_real_json_and_rejects_foreign_origin(tmp_path):
     evidence = tmp_path / "sessions.jsonl"
     handler = partial(quest.EvidenceHandler, directory=str(tmp_path), evidence=evidence)

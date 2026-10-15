@@ -85,6 +85,13 @@ export async function installXrObserver({
 
   let original = null;
   let presenting = false;
+  let requesting = false;
+  const refresh = () => {
+    if (requesting || presenting) return;
+    const error = entryError();
+    button.disabled = !!error;
+    status.textContent = error ?? "Immersive observation available";
+  };
   const enter = () => {
     if (presenting) return;
     presenting = true;
@@ -131,6 +138,7 @@ export async function installXrObserver({
     button.textContent = "Enter VR";
     status.textContent = "Immersive observation available";
     onTransition();
+    refresh();
   };
   renderer.xr.addEventListener("sessionstart", enter);
   renderer.xr.addEventListener("sessionend", exit);
@@ -139,6 +147,7 @@ export async function installXrObserver({
 
   button.addEventListener("click", async () => {
     if (button.disabled) return;
+    requesting = true;
     button.disabled = true;
     try {
       const current = renderer.xr.getSession();
@@ -164,8 +173,12 @@ export async function installXrObserver({
       status.textContent =
         "VR session failed; the desktop viewer is unchanged.";
     } finally {
+      requesting = false;
       button.disabled = false;
+      // Keep session errors visible; admission status is refreshed by the owner
+      // when anatomy or GPU resources make progress.
     }
   });
-  return { available: true, button, status };
+  refresh();
+  return { available: true, button, status, refresh };
 }

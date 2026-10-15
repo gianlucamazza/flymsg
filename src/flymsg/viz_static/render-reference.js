@@ -67,6 +67,7 @@ export function capturePasses(
   passes,
   width,
   height,
+  render = () => renderer.render(world, camera),
 ) {
   if (renderer.xr.isPresenting)
     throw new Error(
@@ -101,7 +102,7 @@ export function capturePasses(
         renderer.setViewport(0, 0, width, height);
         renderer.setScissorTest(false);
         renderer.clear();
-        renderer.render(world, camera);
+        render(name);
         const pixels = new Uint8Array(4 * width * height);
         renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
         out[name] = pixels;

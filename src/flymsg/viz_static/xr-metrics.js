@@ -60,6 +60,8 @@ export class XrMetrics {
         session.visibilityState === "visible",
       last_emit_ms: now,
       resource_samples: [],
+      content_checks: 0,
+      incomplete_content_frames: 0,
     };
     const current = this.active;
     session.addEventListener("visibilitychange", () => {
@@ -92,9 +94,14 @@ export class XrMetrics {
     this.active.events.push({ kind, elapsed_ms: now - this.active.started_ms });
   }
 
-  frame(timestamp, cpuMs, gpuMs, resources = null) {
+  frame(timestamp, cpuMs, gpuMs, resources = null, fidelity = null) {
     const a = this.active;
     if (!a || !a.visible) return;
+    if (fidelity) {
+      if (typeof fidelity.gpu_ready === "boolean") a.content_checks++;
+      if (fidelity.status !== "ready" || fidelity.gpu_ready === false)
+        a.incomplete_content_frames++;
+    }
     if (a.last !== null && timestamp > a.last)
       a.intervals.push(timestamp - a.last);
     a.last = timestamp;
@@ -126,6 +133,15 @@ export class XrMetrics {
       gpu_ms: a.gpu.length ? quantiles(a.gpu) : null,
       events: [...a.events],
       resources: [...a.resource_samples],
+      content: {
+        checked_frames: a.content_checks,
+        incomplete_frames: a.incomplete_content_frames,
+        verdict: a.incomplete_content_frames
+          ? "fail"
+          : a.content_checks === a.frames && a.frames
+            ? "pass"
+            : "indeterminate",
+      },
       // Raw intervals allow independent scoring; every long frame is retained.
       raw_intervals_ms: [...a.intervals],
       status: "running",

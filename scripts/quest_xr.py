@@ -96,8 +96,16 @@ def main():
         action="store_true",
         help="expose local read-only/observer diagnostic hooks",
     )
+    p.add_argument(
+        "--uploads",
+        action="store_true",
+        help="enable candidate immutable GPU pages and bounded uploads",
+    )
+    p.add_argument("--gpu-page-mib", type=int, choices=(4, 16, 64), default=4)
     p.add_argument("--out", type=Path)
     a = p.parse_args()
+    if a.uploads and a.representation == "mixed":
+        p.error("paged uploads require explicit original surfaces or skeletons")
     if a.seconds <= 0 or not 1024 <= a.port <= 65535:
         p.error("seconds must be positive and port between 1024 and 65535")
     model = adb(a.serial, "shell", "getprop", "ro.product.model")
@@ -121,6 +129,8 @@ def main():
             "representation": a.representation,
             "page_culling": a.pages,
             "check": a.check,
+            "paged_uploads": a.uploads,
+            "gpu_page_mib": a.gpu_page_mib,
         },
         "adb_server_port": os.environ.get("ANDROID_ADB_SERVER_PORT", "5037"),
         "qualification": "not-scored",
@@ -165,6 +175,7 @@ def main():
                 url = (
                     f"http://localhost:{a.port}/live/{a.scene}/?xr=1&xrcollect=1&paused"
                     f"&representation={a.representation}&pages={int(a.pages)}&adaptive=0"
+                    f"&uploads={int(a.uploads)}&gpuPageMiB={a.gpu_page_mib}"
                     + ("&check" if a.check else "")
                 )
                 adb(

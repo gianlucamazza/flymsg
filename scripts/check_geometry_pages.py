@@ -10,6 +10,7 @@ import json
 import os
 import subprocess
 import threading
+from urllib.parse import urlsplit
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -20,8 +21,49 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class Handler(SimpleHTTPRequestHandler):
+    fixture = None
+
     def do_GET(self):
-        if self.path == "/__raster.html":
+        path = urlsplit(self.path).path
+        if self.fixture and path in ("/scene.json", "/activity.bin"):
+            body = self.fixture[path]
+            self.send_response(200)
+            self.send_header(
+                "Content-Type",
+                "application/json"
+                if path.endswith("json")
+                else "application/octet-stream",
+            )
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        elif path == "/__viewer.html":
+            body = (
+                (viz.STATIC / "index.html").read_bytes()
+                + b"""
+<script type="module">
+import {observerPipelineOracle} from "/observer-pipeline-oracle.js";
+window.oracle=observerPipelineOracle().catch(error=>({status:'fail',error:String(error),stack:error.stack}));
+</script>"""
+            )
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        elif self.path == "/__paged.html":
+            body = b"""<!doctype html><title>GPU page oracle</title>
+<script type="module">
+import * as THREE from "/vendor/three/build/three.module.min.js";
+import {pagedSceneOracle} from "/paged-scene-oracle.js";
+window.oracle=pagedSceneOracle(THREE);
+</script>"""
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        elif self.path == "/__raster.html":
             body = b"""<!doctype html><title>Raster pixel oracle</title>
 <script type="module">
 import {rasterOracle} from "/raster-oracle.js";
@@ -54,7 +96,11 @@ window.oracle=geometryPageOracle(THREE);
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True, type=Path)
-    parser.add_argument("--oracle", choices=("geometry", "raster"), default="geometry")
+    parser.add_argument(
+        "--oracle",
+        choices=("geometry", "raster", "paged", "viewer-surface", "viewer-skeleton"),
+        default="geometry",
+    )
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
     source = manifest.git_info()
@@ -73,7 +119,37 @@ def main():
             "raster-reference.js",
             "raster-oracle.js",
         )
-    page = "__raster.html" if args.oracle == "raster" else "__oracle.html"
+    if args.oracle == "paged":
+        files = (
+            "primitive-pages.js",
+            "page-worker.js",
+            "gpu-upload.js",
+            "paged-scene.js",
+            "paged-scene-oracle.js",
+            "render-reference.js",
+            "vendor/three/build/three.module.min.js",
+        )
+    if args.oracle.startswith("viewer-"):
+        files = tuple(p.name for p in viz.STATIC.glob("*.js")) + (
+            "vendor/three/build/three.module.min.js",
+        )
+        scene = json.loads((ROOT / "docs/live/looming/scene.json").read_text())
+        count = len(scene["neurons"])
+        activity = (ROOT / "docs/live/looming/activity.bin").read_bytes()
+        scene["neurons"] = scene["neurons"][:2]
+        Handler.fixture = {
+            "/scene.json": json.dumps(scene).encode(),
+            "/activity.bin": b"".join(
+                activity[i : i + 2] for i in range(0, len(activity), count)
+            ),
+        }
+    page = {
+        "raster": "__raster.html",
+        "geometry": "__oracle.html",
+        "paged": "__paged.html",
+        "viewer-surface": "__viewer.html?check&paused&representation=surface&uploads=1&neuropils=0&somata=0",
+        "viewer-skeleton": "__viewer.html?check&paused&representation=skeleton&uploads=1&neuropils=0&somata=0",
+    }[args.oracle]
     hashes = {
         name: hashlib.sha256((viz.STATIC / name).read_bytes()).hexdigest()
         for name in files
@@ -98,12 +174,12 @@ def main():
                     **os.environ,
                     "GL": "swiftshader",
                     "EVAL": "window.oracle",
-                    "EVAL_TIMEOUT_MS": "60000",
+                    "EVAL_TIMEOUT_MS": "90000",
                 },
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                timeout=90,
+                timeout=120,
                 check=False,
             )
             (args.out / "browser.log").write_text(result.stdout)

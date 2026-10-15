@@ -121,7 +121,8 @@ try {
       camera_unchanged: cameraUnchanged,
       full_anatomy:
         sample.fidelity.status === "ready" &&
-        before.fidelity.status === "ready",
+        before.fidelity.status === "ready" &&
+        sample.fidelity.gpu_ready !== false && before.fidelity.gpu_ready !== false,
     },
     qualification: "not-scored; desktop diagnostic, not immersive XR",
   };

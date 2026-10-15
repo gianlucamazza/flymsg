@@ -71,6 +71,8 @@ import { ResidentLineIndex } from "./resident-lines.js";
 import { localEyePlanes, sameEyePlanes } from "./page-views.js";
 import { selectFidelity } from "./fidelity.js";
 import { bufferBytes, geometryArrays } from "./resource-bytes.js";
+import { PagedScene } from "./paged-scene.js";
+import { SourceSlots } from "./source-slots.js";
 import {
   base64,
   capturePasses,
@@ -112,6 +114,13 @@ const coarse = matchMedia(COARSE).matches;
 const representation = query.get("representation") ?? "surface";
 if (!["surface", "skeleton", "mixed"].includes(representation))
   throw new Error("Unknown anatomical representation");
+const pagedEnabled = query.get("uploads") === "1";
+let pagedInputsDirty = true;
+if (pagedEnabled && representation === "mixed")
+  throw new Error("Paged uploads require an explicit original representation");
+const gpuPageMiB = Number(query.get("gpuPageMiB") ?? 4);
+if (![4, 16, 64].includes(gpuPageMiB))
+  throw new Error("GPU page size must be 4, 16 or 64 MiB");
 // a console's browser (or ?tv=1): larger text, the panel closed, controller hints
 const tv = tvMode(location.search, navigator.userAgent);
 if (tv) document.documentElement.classList.add("tv");
@@ -520,6 +529,8 @@ meshMaterial.onBeforeCompile = (shader) => {
 };
 
 let batched = null;
+const sourceSlots = new SourceSlots(MAX_INSTANCES);
+let referenceSurfacesDirty = true;
 const capacity = { vertices: 0, indices: 0 }; // of the BatchedMesh buffers (allocated lazily by three)
 function flushInstanceTextures() {
   if (!instanceTexturesDirty) return;
@@ -529,6 +540,8 @@ function flushInstanceTextures() {
 let instanceTexturesDirty = false;
 
 function makeBatched() {
+  sourceSlots.reset();
+  referenceSurfacesDirty = true;
   if (batched) {
     data.remove(batched);
     batched.dispose();
@@ -589,6 +602,20 @@ function recall(key) {
 const stats = { bytes: 0, tris: 0, verts: 0, capacityHits: 0 };
 
 function addFragment(n, key, geometry) {
+  if (pagedEnabled) {
+    const iid = sourceSlots.allocate();
+    n.shown.set(key, {
+      gid: null,
+      iid,
+      geometry,
+      tris: geometry.index.count / 3,
+    });
+    instanceNeuron.image.data[iid] = n.k + 1;
+    instanceActivity.image.data[iid] = activity[n.k];
+    instanceTexturesDirty = referenceSurfacesDirty = pagedInputsDirty = true;
+    invalidate();
+    return true;
+  }
   let gid;
   try {
     gid = batched.addGeometry(geometry);
@@ -609,16 +636,21 @@ function addFragment(n, key, geometry) {
   instanceActivity.image.data[iid] = activity[n.k];
   instanceTexturesDirty = true;
   n.shown.set(key, { gid, iid, geometry, tris: geometry.index.count / 3 });
+  pagedInputsDirty = true;
   invalidate();
   return true;
 }
 
 function removeFragment(n, key) {
   const f = n.shown.get(key);
-  batched.deleteGeometry(f.gid);
+  if (pagedEnabled) {
+    sourceSlots.release(f.iid);
+    referenceSurfacesDirty = true;
+  } else batched.deleteGeometry(f.gid);
   instanceNeuron.image.data[f.iid] = 0;
   instanceTexturesDirty = true;
   n.shown.delete(key);
+  pagedInputsDirty = true;
   remember(`${key}@${n.k}`, f.geometry);
   invalidate();
 }
@@ -809,10 +841,10 @@ const skelMaterial = new THREE.ShaderMaterial({
     }`,
 });
 const pool = {
-  positions: new Float32Array(3 << 20),
-  neuron: new Float32Array(1 << 20), // aNeuron: neuron index per vertex
+  positions: new Float32Array(pagedEnabled ? 0 : 3 << 20),
+  neuron: new Float32Array(pagedEnabled ? 0 : 1 << 20), // aNeuron: neuron index per vertex
   used: 0, // vertices
-  index: new Uint32Array(1 << 22),
+  index: new Uint32Array(pagedEnabled ? 0 : 1 << 22),
   state: new Int8Array(N).fill(-1), // level drawn per neuron, -1 = off
 };
 const skelGeometry = new THREE.BufferGeometry();
@@ -903,8 +935,9 @@ async function loadSkeleton(n) {
       return { s, lod };
     },
   );
-  appendVertices(n, s.vertices);
+  if (!pagedEnabled) appendVertices(n, s.vertices);
   n.skelLod = {
+    vertices: pagedEnabled ? s.vertices : null, // immutable worker source; never transfer the reference
     eps: lod.eps,
     levels: [s.edges, ...lod.coarser],
     bounds: lod.bounds,
@@ -913,6 +946,7 @@ async function loadSkeleton(n) {
   };
   setSkeletonLevel(n, eyeView());
   n.skeletonState = "ready";
+  pagedInputsDirty = true;
   skeletonsDirty = true;
 }
 
@@ -1157,20 +1191,30 @@ function ensureNeuropil(name) {
   const s = shells[name];
   if (!s.visible || s.state !== "idle") return;
   s.state = "loading";
-  roiQueue.push(-1, () => loadNeuropil(s.dir, s.id, name)).catch(console.error); // after neurons
+  roiQueue
+    .push(-1, () => loadNeuropil(s.dir, s.id, name))
+    .catch((error) => {
+      s.state = "error";
+      s.error = String(error);
+      pagedInputsDirty = true;
+      invalidate();
+      console.error(error);
+    }); // after neurons
 }
 async function loadNeuropil(dir, id, name) {
   const manifest = await fetchJson(`${dir}/mesh/${id}:0`);
-  if (!manifest) return;
+  if (!manifest)
+    throw new Error(`Neuropil ${name}: source manifest unavailable`);
   const parts = [];
   for (const frag of manifest.fragments) {
     const buf = await fetchBytes(`${dir}/mesh/${frag}`);
+    if (!buf) throw new Error(`Neuropil ${name}: source fragment unavailable`);
     if (buf) {
       parts.push(parseLegacyMesh(buf));
       perf.count("neuropils", buf.byteLength);
     }
   }
-  if (!parts.length) return;
+  if (!parts.length) throw new Error(`Neuropil ${name}: empty source mesh`);
   const nv = parts.reduce((s, p) => s + p.vertices.length / 3, 0);
   const pos = new Float32Array(3 * nv);
   const idx = new Uint32Array(parts.reduce((s, p) => s + p.indices.length, 0));
@@ -1189,7 +1233,9 @@ async function loadNeuropil(dir, id, name) {
   mesh.renderOrder = 1;
   mesh.visible = shells[name].visible;
   shells[name].mesh = mesh;
+  shells[name].state = "ready";
   data.add(mesh);
+  pagedInputsDirty = true;
   invalidate();
 }
 const neuropilsListed = (async () => {
@@ -1264,6 +1310,7 @@ const somataLoaded = (async () => {
   somata.count = n;
   perf.count("somata", buf.byteLength);
   data.add(somata.points);
+  pagedInputsDirty = true;
   renderLegend();
   invalidate();
 })();
@@ -1302,6 +1349,7 @@ function updateSelection() {
   if (!selectionDirty || (now - lastMove < 120 && now - lastSelection < 250))
     return;
   selectionDirty = false;
+  pagedInputsDirty = true;
   lastSelection = now;
   const v = eyeView();
   const candidates = neurons.filter(isShown);
@@ -1399,7 +1447,8 @@ function refreshColours() {
   const d = skelColour.image.data;
   for (const n of neurons) {
     c.set(colourOf(n));
-    for (const f of n.shown.values()) batched.setColorAt(f.iid, c);
+    if (!pagedEnabled || !referenceSurfacesDirty)
+      for (const f of n.shown.values()) batched.setColorAt(f.iid, c);
     d.set([c.r, c.g, c.b, 1], 4 * n.k);
   }
   skelColour.needsUpdate = true;
@@ -1490,8 +1539,12 @@ function fidelityReport() {
     represented,
     unavailable,
     capacity_hits: stats.capacityHits,
+    reasons: fidelityState.reasons,
     page_culling: settings.pageCulling,
     renderer_qualified: false,
+    gpu_ready: pagedScene
+      ? pagedScene.state === "ready" && pagedScene.complete
+      : null,
   };
 }
 function resourceReport() {
@@ -1503,6 +1556,7 @@ function resourceReport() {
     for (const f of n.shown.values())
       arrays.push(...geometryArrays(f.geometry));
     if (n.skelLod) {
+      arrays.push(n.skelLod.vertices);
       arrays.push(...n.skelLod.levels);
       for (const p of n.skelLod.pages)
         arrays.push(p.edgePage, p.bounds, p.sizes, p.runs);
@@ -1517,11 +1571,26 @@ function resourceReport() {
     decoded_cache_bytes: lruBytes,
     decoded_cache_limit_bytes: DECODED_CACHE_BYTES,
     gpu_total_bytes: null,
-    line_submission: { ...lineSubmission },
+    gpu_resources: pagedScene?.report() ?? {
+      state: "untracked",
+      complete: false,
+    },
+    line_submission: pagedScene
+      ? {
+          mode: "immutable-pages",
+          draws: pagedScene.pages.filter(
+            (p) => p.layer === skeletonLayer && p.object.visible,
+          ).length,
+          submitted_indices: pagedScene.pages
+            .filter((p) => p.layer === skeletonLayer && p.object.visible)
+            .reduce((sum, p) => sum + p.object.geometry.index.count, 0),
+        }
+      : { ...lineSubmission },
     browser_heap_bytes: performance.memory?.usedJSHeapSize ?? null,
   };
 }
 function updateStats() {
+  xrObserver?.refresh?.();
   let surfaces = 0,
     tris = 0;
   for (const n of neurons) {
@@ -1535,10 +1604,12 @@ function updateStats() {
   if (fidelityReport().status === "ready") {
     perf.mark("all_represented");
   }
+  if (pagedScene?.state === "ready") perf.mark("gpu_resources_ready");
   statsEl.textContent =
     `${surfaces} surfaces · ${lines} skeletons · ${(tris / 1e6).toFixed(1)} / ${settings.budgetM} M triangles` +
     ` · ${loading} loading · neuropils ${rois.filter((s) => s.mesh).length}/${rois.length}` +
     ` · ${settings.representation}: ${fidelityReport().status}` +
+    (pagedScene ? ` · GPU: ${pagedScene.state}` : "") +
     (stats.capacityHits
       ? " · capacity exhausted; incomplete representation"
       : "") +
@@ -1676,6 +1747,224 @@ const pickLineMaterial = new THREE.ShaderMaterial({
     void main() { gl_FragColor = vec4(vId, 1.0); }`,
 });
 
+// The page layout removes per-fragment matrix/indirection fetches (all source
+// fragment transforms are identity after worker finishing). It reads exactly
+// the same neuron colour/activity values; images are qualified independently.
+const pagedMeshMaterial = meshMaterial.clone();
+pagedMeshMaterial.onBeforeCompile = (shader) => {
+  Object.assign(shader.uniforms, shared, {
+    uNeuronColor: { value: skelColour },
+    uNeuronAct: { value: skelActivity },
+  });
+  shader.vertexShader = shader.vertexShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+    attribute float aNeuron;
+    uniform sampler2D uNeuronColor, uNeuronAct;
+    varying float vActivity;
+    varying vec3 vNeuronColor;`,
+    )
+    .replace(
+      "#include <begin_vertex>",
+      `#include <begin_vertex>
+    ivec2 neuronPixel = ${neuronIndexGlsl};
+    vActivity = texelFetch(uNeuronAct, neuronPixel, 0).r;
+    vNeuronColor = texelFetch(uNeuronColor, neuronPixel, 0).rgb;`,
+    );
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+    uniform float uGain, uInactiveAlpha;
+    varying float vActivity;
+    varying vec3 vNeuronColor;
+    ${BAYER4}`,
+    )
+    .replace(
+      "#include <color_fragment>",
+      `#include <color_fragment>
+    diffuseColor.rgb *= vNeuronColor;`,
+    )
+    .replace(
+      "#include <clipping_planes_fragment>",
+      `#include <clipping_planes_fragment>
+    if (bayer4(gl_FragCoord.xy) >= mix(uInactiveAlpha, 1.0, clamp(4.0 * abs(vActivity), 0.0, 1.0))) discard;`,
+    )
+    .replace(
+      "#include <emissivemap_fragment>",
+      `#include <emissivemap_fragment>
+    totalEmissiveRadiance += (vActivity >= 0.0 ? diffuseColor.rgb : ${HYPER_GLSL}) * abs(vActivity) * uGain;`,
+    );
+};
+const pagedMeshId = pickLineMaterial.clone();
+pagedMeshId.side = THREE.FrontSide;
+const pageDepth = (material) => {
+  const depth = material.clone();
+  depth.fragmentShader = `#include <packing>
+    void main() { gl_FragColor = packDepthToRGBA(gl_FragCoord.z); }`;
+  return depth;
+};
+const surfaceLayer = {
+  primitiveSize: 3,
+  material: pagedMeshMaterial,
+  neuron_id: pagedMeshId,
+  packed_depth: pageDepth(pagedMeshId),
+};
+const skeletonLayer = {
+  primitiveSize: 2,
+  material: skelMaterial,
+  neuron_id: pickLineMaterial,
+  packed_depth: pageDepth(pickLineMaterial),
+};
+const contextLayers = new WeakMap();
+const pagedScene = pagedEnabled
+  ? new PagedScene(THREE, renderer, data, {
+      maxPageBytes: gpuPageMiB * 1024 * 1024,
+    })
+  : null;
+function originalObjects() {
+  return data.children.filter((o) => o.geometry);
+}
+function prepareOriginalOracle() {
+  if (!pagedEnabled) return;
+  // Only an explicit diagnostic allocates the legacy global arenas. Production
+  // page preparation must not pay their unbounded CPU allocation/copy cost.
+  for (const n of neurons)
+    if (n.skelLod && !n.referenceSkeletonReady) {
+      appendVertices(n, n.skelLod.vertices);
+      n.referenceSkeletonReady = true;
+    }
+  if (!referenceSurfacesDirty) return;
+  const entries = neurons
+    .flatMap((n) => [...n.shown.values()].map((f) => ({ n, f })))
+    .sort((a, b) => a.f.iid - b.f.iid);
+  if (!entries.length) {
+    referenceSurfacesDirty = false;
+    return;
+  }
+  const next = new THREE.BatchedMesh(
+    MAX_INSTANCES,
+    capacity.vertices,
+    capacity.indices,
+    meshMaterial,
+  );
+  next.sortObjects = false;
+  next.frustumCulled = false;
+  const assigned = [],
+    last = entries.at(-1).f.iid;
+  let at = 0,
+    firstGid = null,
+    reservedFirstGid = null;
+  try {
+    for (let id = 0; id <= last; id++) {
+      const entry = entries[at];
+      if (entry?.f.iid === id) {
+        const gid = reservedFirstGid ?? next.addGeometry(entry.f.geometry);
+        reservedFirstGid = null;
+        firstGid ??= gid;
+        if (next.addInstance(gid) !== id)
+          throw new Error("Reference instance order differs from source");
+        next.setColorAt(id, new THREE.Color(colourOf(entry.n)));
+        assigned.push([entry.f, gid]);
+        at++;
+      } else {
+        // Reserve holes so texture IDs and original tie ownership stay exact.
+        // If the first live slot is nonzero its geometry supplies hidden slots.
+        if (firstGid === null) {
+          firstGid = next.addGeometry(entries[0].f.geometry);
+          reservedFirstGid = firstGid;
+        }
+        next.addInstance(firstGid);
+        next.setVisibleAt(id, false);
+      }
+    }
+  } catch (error) {
+    next.dispose();
+    throw error;
+  }
+  data.remove(batched);
+  batched.dispose();
+  batched = next;
+  data.add(batched);
+  for (const [fragment, gid] of assigned) fragment.gid = gid;
+  referenceSurfacesDirty = false;
+}
+function syncPagedScene() {
+  if (!pagedScene || !pagedInputsDirty) return;
+  pagedInputsDirty = false;
+  const sources = [];
+  if (settings.representation === "skeleton") {
+    for (const n of neurons)
+      if (isShown(n) && n.skelLod)
+        sources.push({
+          key: `skeleton:${n.k}`,
+          layer: skeletonLayer,
+          attributes: {
+            position: { array: n.skelLod.vertices, itemSize: 3 },
+            aNeuron: { constant: n.k, itemSize: 1 },
+          },
+          index: n.skelLod.levels[0],
+        });
+  } else {
+    const fragments = neurons
+      .filter(isShown)
+      .flatMap((n) => [...n.shown.entries()].map(([key, f]) => ({ n, key, f })))
+      .sort((a, b) => a.f.iid - b.f.iid);
+    for (const { n, key, f } of fragments)
+      sources.push({
+        key: `surface:${n.k}:${key}`,
+        layer: surfaceLayer,
+        attributes: {
+          position: {
+            array: f.geometry.attributes.position.array,
+            itemSize: 3,
+          },
+          normal: { array: f.geometry.attributes.normal.array, itemSize: 3 },
+          aNeuron: { constant: n.k, itemSize: 1 },
+        },
+        index: f.geometry.index.array,
+      });
+  }
+  for (const o of originalObjects()) {
+    if (o === batched || o === skeletons || !o.visible) continue;
+    let layer = contextLayers.get(o);
+    if (!layer) {
+      layer = {
+        primitiveSize: o.isPoints ? 1 : 3,
+        material: o.material,
+        renderOrder: o.renderOrder,
+        context: true,
+      };
+      contextLayers.set(o, layer);
+    }
+    sources.push({
+      key: `context:${o.id}`,
+      layer,
+      attributes: Object.fromEntries(
+        Object.entries(o.geometry.attributes).map(([name, a]) => [
+          name,
+          { array: a.array, itemSize: a.itemSize },
+        ]),
+      ),
+      index: o.geometry.index?.array ?? null,
+    });
+  }
+  const fidelity = fidelityReport();
+  const anatomyReady = fidelity.status === "ready";
+  const contexts = Object.values(shells).filter((s) => s.visible);
+  const contextsReady = contexts.every((s) => s.state === "ready");
+  const contextError = contexts.find((s) => s.state === "error")?.error;
+  pagedScene.sync(
+    sources,
+    anatomyReady && contextsReady,
+    contextError ??
+      (fidelity.status === "unsupported"
+        ? "Selected source anatomy exceeds admission capacity or is unavailable"
+        : null),
+  );
+}
+
 function pickAt(x, y) {
   if (renderer.xr.isPresenting) return null; // the stereo cameras own the view in XR
   const w = renderer.domElement.clientWidth,
@@ -1704,7 +1993,11 @@ function pickAt(x, y) {
   renderer.setRenderTarget(pickTarget);
   renderer.setClearColor(0x000000, 0);
   renderer.clear();
-  renderer.render(world, camera);
+  if (pagedScene)
+    pagedScene.render(originalObjects(), () => renderer.render(world, camera), {
+      pass: "neuron_id",
+    });
+  else renderer.render(world, camera);
   const px = new Uint8Array(4 * PICK * PICK);
   renderer.readRenderTargetPixels(pickTarget, 0, 0, PICK, PICK, px);
   renderer.setRenderTarget(null);
@@ -1746,8 +2039,11 @@ if (query.has("check")) {
     meshMaterial,
     fidelity: fidelityReport,
     resources: resourceReport,
+    paged: pagedScene,
+    gpuInventory: () => pagedScene?.inventory(sha256) ?? null,
     raster: () => rasterPainter.report(),
     scheduleLines: (eyes) => {
+      prepareOriginalOracle();
       applySkeletonVisibility(eyes);
       return { ...lineSubmission };
     },
@@ -1794,9 +2090,14 @@ if (query.has("check")) {
       culling = false,
       projection = null,
       cameraWorld = null,
+      pipeline = "original",
     } = {}) {
       if (renderer.xr.isPresenting || document.hidden)
         throw new Error("Reference requires a visible non-immersive page");
+      if (!["original", "paged"].includes(pipeline))
+        throw new Error("Unknown capture pipeline");
+      if (pipeline === "paged" && pagedScene?.report().state !== "ready")
+        throw new Error("Paged GPU resources are not ready");
       if (
         manifestQueue.size +
         fragmentQueue.size +
@@ -1816,10 +2117,12 @@ if (query.has("check")) {
       )
         throw new RangeError("Reference replay timestamp outside scene");
       const saved = { playing: clock.playing, t: clock.t };
+      prepareOriginalOracle();
       const objects = [];
       world.updateMatrixWorld(true);
       world.traverse((o) => {
-        if (o.geometry && o.visible) objects.push(o);
+        if (o.geometry && o.visible && !pagedScene?.group.children.includes(o))
+          objects.push(o);
       });
       const materials = objects.map((o) => [o, o.material]);
       const depthFragment = `#include <packing>
@@ -1880,10 +2183,22 @@ if (query.has("check")) {
           },
           width,
           height,
+          pipeline === "paged"
+            ? (pass) =>
+                pagedScene.render(
+                  originalObjects(),
+                  () => renderer.render(world, c),
+                  {
+                    pass,
+                    eyes: culling ? skeletonEyes(c, width, height) : null,
+                  },
+                )
+            : undefined,
         );
         const activityCopy = activity.slice();
         return {
           schema: "flymsg.render-reference/v1",
+          pipeline,
           page_culling: culling,
           width,
           height,
@@ -2218,6 +2533,7 @@ if (showChrome(location.search)) {
     f.add(somata.points, "visible")
       .name("show")
       .onChange(() => {
+        pagedInputsDirty = true;
         renderLegend();
         invalidate();
       });
@@ -2240,6 +2556,7 @@ if (showChrome(location.search)) {
       );
       const boxes = {};
       const set = (name, v) => {
+        pagedInputsDirty = true;
         shells[name].visible = v;
         if (shells[name].mesh) shells[name].mesh.visible = v;
         ensureNeuropil(name);
@@ -2470,10 +2787,13 @@ if (query.get("xr") === "1") {
 renderer.domElement.addEventListener("webglcontextlost", (e) => {
   e.preventDefault();
   lostEl.hidden = false;
+  pagedScene?.contextLost();
   xrMetrics.event("webglcontextlost");
 });
 renderer.domElement.addEventListener("webglcontextrestored", () => {
   lostEl.hidden = true;
+  pagedScene?.contextRestored();
+  pagedInputsDirty = true;
   xrMetrics.event("webglcontextrestored");
   perf.resetContext();
   selectionDirty = true;
@@ -2510,8 +2830,9 @@ renderer.setAnimationLoop((timestamp) => {
   if (!inXR) fitClip();
   if (settings.pageCulling && inXR) renderer.xr.updateCamera(camera);
   if (
-    settings.pageCulling ||
-    (skeletonsDirty && now - lastSkeletonBuild >= IDLE_REDRAW_MS)
+    !pagedScene &&
+    (settings.pageCulling ||
+      (skeletonsDirty && now - lastSkeletonBuild >= IDLE_REDRAW_MS))
   ) {
     applySkeletonVisibility(
       settings.pageCulling
@@ -2520,16 +2841,32 @@ renderer.setAnimationLoop((timestamp) => {
     );
     lastSkeletonBuild = now;
   }
+  if (pagedScene) {
+    const wasReady = pagedScene.state === "ready";
+    syncPagedScene();
+    pagedScene.tick();
+    if (!wasReady || pagedScene.state !== "ready") invalidate();
+    xrObserver?.refresh?.();
+  }
   if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
   flushInstanceTextures();
   perf.begin(frameStart); // include activity, visibility, index preparation and uploads
-  if (inXR) {
-    // Three.js supplies the two eye cameras; never run desktop postprocessing
-    // against the XR framebuffer. One existing animation loop owns both modes.
-    renderer.render(world, camera);
-  } else {
-    composer.render();
-  }
+  const draw = () => {
+    if (inXR) {
+      // Three.js supplies the two eye cameras; never run desktop postprocessing
+      // against the XR framebuffer. One existing animation loop owns both modes.
+      renderer.render(world, camera);
+    } else {
+      composer.render();
+    }
+  };
+  if (pagedScene)
+    pagedScene.render(originalObjects(), draw, {
+      eyes: settings.pageCulling
+        ? skeletonEyes(inXR ? renderer.xr.getCamera() : camera)
+        : null,
+    });
+  else draw();
   const measured = perf.end({ continuous: live });
   if (inXR)
     xrMetrics.frame(
@@ -2546,6 +2883,7 @@ renderer.setAnimationLoop((timestamp) => {
         fidelity: fidelityReport(),
         ...resourceReport(),
       }),
+      fidelityReport(),
     );
   sceneDirty = false;
   lastRender = now;
@@ -2563,6 +2901,8 @@ const xrOptions = {
   extentUm: extent,
   entryError: () => {
     const fidelity = fidelityReport();
+    if (pagedScene && pagedScene.report().state !== "ready")
+      return `GPU resources are ${pagedScene.report().state}. VR requires completed uploads.`;
     return fidelity.status === "ready" ||
       (settings.representation === "mixed" && query.has("check"))
       ? null
@@ -2582,7 +2922,10 @@ const xrOptions = {
     }
   },
 };
+let xrObserver = null;
 if (showChrome(location.search))
-  installXrObserver(xrOptions).catch((error) =>
-    console.warn("XR observer not installed:", error),
-  );
+  installXrObserver(xrOptions)
+    .then((observer) => {
+      xrObserver = observer;
+    })
+    .catch((error) => console.warn("XR observer not installed:", error));

@@ -69,6 +69,21 @@ test("hidden segments are explicit and refresh changes invalidate a single-budge
   assert.equal(m.report().frames, 0);
 });
 
+test("fast timing cannot hide incomplete GPU resources between inventory samples", () => {
+  const metrics = new XrMetrics({}, () => {});
+  metrics.start(session(), 0);
+  const ready = { status: "ready", gpu_ready: true };
+  metrics.frame(0, 1, [], null, ready);
+  metrics.frame(1000 / 72, 1, [], null, { status: "ready", gpu_ready: false });
+  metrics.frame(2000 / 72, 1, [], null, ready);
+  assert.equal(metrics.report().timing.verdict, "pass");
+  assert.equal(metrics.report().content.verdict, "fail");
+  assert.equal(metrics.report().content.incomplete_frames, 1);
+  metrics.start(session(), 0);
+  metrics.frame(0, 1, [], null, { status: "ready", gpu_ready: null });
+  assert.equal(metrics.report().content.verdict, "indeterminate");
+});
+
 test("initial runtime refresh selection before the first frame is a known budget", () => {
   const m = new XrMetrics({}, () => {});
   const s = session();
