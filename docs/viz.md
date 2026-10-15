@@ -130,6 +130,16 @@ animal, not the stimulus. [Right against left](https://gianlucamazza.github.io/f
 compares the two one-eyed arms; [both eyes](https://gianlucamazza.github.io/flymsg/live/looming-bilateral/)
 is a single scene. Exploratory replays, not scored runs.
 
+## Replaying a native or console run
+
+`flymsg viz --native OUTPUT FIXTURE` replays a run of the native executor or of the console worker: the `output.bin` a job returns and the `fixture.bin` it ran.
+
+- **What it reads.** `native.as_result` turns the decoded spike counts per bin and first spikes into a `sim.Result`, and `native.stimulated` reads the fixture's stimulated rows.
+- **What it shows.** The usual selection follows: the stimulated neurons, then those firing above `--min-rate` during `--stim-ms` (the whole run by default, capped at its length).
+- **Fixture.** It must hold the whole dataset in row order, as `scripts/console_bench.py` exports it.
+
+A 2,000-step full-connectome console run exports 856 neurons above 5 Hz.
+
 ## Phones and tablets
 
 On a screen up to 600 px wide the control panel starts closed and the performance readout
