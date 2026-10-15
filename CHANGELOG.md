@@ -117,6 +117,10 @@
 
 ### Engineering
 
+- **Viewer replays native and console runs**: `flymsg viz --native OUTPUT FIXTURE` turns a
+  native `output.bin` into the viewer's replay (`native.as_result`, `native.stimulated`), so a
+  run computed on the Series S can be watched in the browser.
+
 - **B6 v2 pose contract** (G1, #178): `flymsg.pose` (`flymsg.embodiment/v2`) types world,
   body, eye and eye-map frames in SI units with (w, x, y, z) quaternions, a body state with
   velocities, eye mounts read from FlyGym 2.1.0, a no-future-pose clock lookup, actuators by
