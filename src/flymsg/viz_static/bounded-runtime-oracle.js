@@ -50,7 +50,14 @@ export function auditSelection(
       return {
         x: ((p.x / p.w) * eye.width) / 2,
         y: ((p.y / p.w) * eye.height) / 2,
-        valid: p.w > 0 && p.z > -p.w && p.z < p.w,
+        valid:
+          p.w > 0 &&
+          p.z > -p.w &&
+          p.z < p.w &&
+          p.x > -p.w &&
+          p.x < p.w &&
+          p.y > -p.w &&
+          p.y < p.w,
       };
     });
   });

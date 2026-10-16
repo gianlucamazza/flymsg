@@ -181,3 +181,22 @@ test("off-axis stereo and source-unit cancellation bound independently rounded f
     }
   }
 });
+
+test("all six clip-plane intersections conservatively retain full source", () => {
+  const camera = new T.PerspectiveCamera(90, 1, 0.1, 100),
+    eye = {
+      modelView: new T.Matrix4().toArray(),
+      projection: camera.projectionMatrix.toArray(),
+      width: 1000,
+      height: 1000,
+    };
+  for (const box of [
+    { min: [-4, 0, -3], max: [0, 1, -2] },
+    { min: [0, 0, -3], max: [4, 1, -2] },
+    { min: [0, -4, -3], max: [1, 0, -2] },
+    { min: [0, 0, -3], max: [1, 4, -2] },
+    { min: [0, 0, -1], max: [0.1, 0.1, -0.01] },
+    { min: [0, 0, -101], max: [0.1, 0.1, -99] },
+  ])
+    assert(!Number.isFinite(projectionErrorBound(box, eye).scale));
+});

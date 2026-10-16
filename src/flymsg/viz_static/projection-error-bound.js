@@ -66,8 +66,7 @@ export function projectionErrorBound(
   );
   const minimum = [Infinity, Infinity, Infinity, Infinity],
     maximum = [-Infinity, -Infinity, -Infinity, -Infinity];
-  let near = Infinity,
-    far = Infinity;
+  const clipMargins = Array.from({ length: 3 }, () => [Infinity, Infinity]);
   for (let mask = 0; mask < 8; mask++) {
     const x = [...box.min.map((v, i) => ((mask >> i) & 1 ? box.max[i] : v)), 1];
     const q = composite.map((a) => dot(a, x));
@@ -75,8 +74,10 @@ export function projectionErrorBound(
       minimum[i] = Math.min(minimum[i], q[i]);
       maximum[i] = Math.max(maximum[i], q[i]);
     }
-    near = Math.min(near, q[2] + q[3]);
-    far = Math.min(far, q[3] - q[2]);
+    for (let axis = 0; axis < 3; axis++) {
+      clipMargins[axis][0] = Math.min(clipMargins[axis][0], q[3] + q[axis]);
+      clipMargins[axis][1] = Math.min(clipMargins[axis][1], q[3] - q[axis]);
+    }
   }
   const doubleGuard =
     128 *
@@ -86,8 +87,11 @@ export function projectionErrorBound(
   if (
     !(
       w > clipError[3] + doubleGuard &&
-      near > clipError[2] + clipError[3] + doubleGuard &&
-      far > clipError[2] + clipError[3] + doubleGuard
+      clipMargins.every((margins, axis) =>
+        margins.every(
+          (margin) => margin > clipError[axis] + clipError[3] + doubleGuard,
+        ),
+      )
     )
   )
     return { scale: Infinity, rounding: Infinity };
