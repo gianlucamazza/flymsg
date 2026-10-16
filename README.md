@@ -111,34 +111,35 @@ The index lives on the [roadmap](docs/roadmap.md#results). Each row is a verdict
 recorded on the linked page. Negative results stay in the
 [findings log](docs/validation.md#findings-log).
 
-| Result                                     | Verdict                                                      | Record                                                                                                 |
-| ------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| Validation battery, criterion v4           | 29/29 at `w_syn` 0.192, replicated                           | [validation](docs/validation.md)                                                                       |
-| N1, one degree-preserving shuffle          | 5/29, all of them `stability`                                | [related](docs/related.md#n1-specific-checks-need-the-measured-partners)                               |
-| Four null families, 20 draws               | the one-hop headline sits above every draw                   | [nulls](docs/nulls.md)                                                                                 |
-| Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                              | [comparison](docs/comparison.md#engine-check)                                                          |
-| Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not    | [dimorphism](docs/dimorphism.md)                                                                       |
-| Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                 | [benchmarks](docs/benchmarks.md)                                                                       |
-| Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
-| Kenyon cell sparseness v7                  | within only with the variant eLN set (lLN2T+lLN1_bc)         | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
-| Kenyon cell sparseness v8                  | v7 replicates under the exact continuous clamp               | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
-| KC → MBON11 depression v1                  | inconsistent: both odors go silent                           | [model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
-| Synapse weight rule v1                     | undecided: density and count rank Liu et al.'s uEPSPs alike  | [model](docs/model.md#synapse-weight-scaled-for-synapse-density)                                       |
-| Timestep convergence v1 (SF2)              | converged at 0.1 ms                                          | [validation](docs/validation.md#timestep-convergence-sf2-a-check-not-a-score)                          |
-| Simple baselines v1 (SF2)                  | all 7 positive responses specific vs 199 shuffles (Holm)     | [validation](docs/validation.md#simple-baselines-sf2-a-report-not-a-score)                             |
-| Pulse vs sine song v1 (#36, held out)      | uninformative: the no-go (model signs not resolved)          | [benchmarks](docs/benchmarks.md#pulse-vs-sine-song-across-neuropils-lock-2026-10-14-36)                |
-| Looming → giant fiber timing v1 (#34)      | uninformative: the model's giant fiber fires in every cell   | [benchmarks](docs/benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                      |
-| Looming → giant fiber timing v2 (#34)      | locked, not run: passive giant fibers                        | [benchmarks](docs/benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                      |
-| One-bit looming jump                       | silence fails                                                | [behavior](docs/behavior.md#result-2026-10-11)                                                         |
-| Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                              | [behavior](docs/behavior.md#residual-partner-scan)                                                     |
-| Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit | [behavior](docs/behavior.md#residual-partner-follow-up)                                                |
-| T4/T5 through the eye v1                   | neither                                                      | [eye](docs/eye.md)                                                                                     |
-| T4/T5 v2, v3 and v4                        | robust: neither                                              | [eye](docs/eye.md)                                                                                     |
-| NeuroMechFly jump v1                       | short                                                        | [embodiment](docs/embodiment.md)                                                                       |
-| Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference | [comparison](docs/comparison.md)                                                                       |
-| Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                        | [comparison](docs/comparison.md)                                                                       |
-| Motor map                                  | every row `unmapped`                                         | `validation/motor_map.yaml`                                                                            |
-| Held-out behavior milestone                | no eligible case left in the frozen partition                | [validation](docs/validation.md)                                                                       |
+| Result                                     | Verdict                                                        | Record                                                                                                 |
+| ------------------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Validation battery, criterion v4           | 29/29 at `w_syn` 0.192, replicated                             | [validation](docs/validation.md)                                                                       |
+| N1, one degree-preserving shuffle          | 5/29, all of them `stability`                                  | [related](docs/related.md#n1-specific-checks-need-the-measured-partners)                               |
+| Four null families, 20 draws               | the one-hop headline sits above every draw                     | [nulls](docs/nulls.md)                                                                                 |
+| Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                                | [comparison](docs/comparison.md#engine-check)                                                          |
+| Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not      | [dimorphism](docs/dimorphism.md)                                                                       |
+| Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                   | [benchmarks](docs/benchmarks.md)                                                                       |
+| Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                  | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| Kenyon cell sparseness v7                  | within only with the variant eLN set (lLN2T+lLN1_bc)           | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| Kenyon cell sparseness v8                  | v7 replicates under the exact continuous clamp                 | [model](docs/model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| KC → MBON11 depression v1                  | inconsistent: both odors go silent                             | [model](docs/model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
+| Synapse weight rule v1                     | undecided: density and count rank Liu et al.'s uEPSPs alike    | [model](docs/model.md#synapse-weight-scaled-for-synapse-density)                                       |
+| Timestep convergence v1 (SF2)              | converged at 0.1 ms                                            | [validation](docs/validation.md#timestep-convergence-sf2-a-check-not-a-score)                          |
+| Simple baselines v1 (SF2)                  | all 7 positive responses specific vs 199 shuffles (Holm)       | [validation](docs/validation.md#simple-baselines-sf2-a-report-not-a-score)                             |
+| Pulse vs sine song v1 (#36, held out)      | uninformative: the no-go (model signs not resolved)            | [benchmarks](docs/benchmarks.md#pulse-vs-sine-song-across-neuropils-lock-2026-10-14-36)                |
+| Looming → giant fiber timing v1 (#34)      | uninformative: the model's giant fiber fires in every cell     | [benchmarks](docs/benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                      |
+| Looming → giant fiber timing v2 (#34)      | uninformative: peaks follow the stimulus                       | [benchmarks](docs/benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                      |
+| APL claw contrast v1 (#85)                 | uninformative, the no-go: with APL the mean KC sits below rest | [validation](docs/validation.md#apl-and-the-odor-contrast-at-kc-claws-85)                              |
+| One-bit looming jump                       | silence fails                                                  | [behavior](docs/behavior.md#result-2026-10-11)                                                         |
+| Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                                | [behavior](docs/behavior.md#residual-partner-scan)                                                     |
+| Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit   | [behavior](docs/behavior.md#residual-partner-follow-up)                                                |
+| T4/T5 through the eye v1                   | neither                                                        | [eye](docs/eye.md)                                                                                     |
+| T4/T5 v2, v3 and v4                        | robust: neither                                                | [eye](docs/eye.md)                                                                                     |
+| NeuroMechFly jump v1                       | short                                                          | [embodiment](docs/embodiment.md)                                                                       |
+| Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference   | [comparison](docs/comparison.md)                                                                       |
+| Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                          | [comparison](docs/comparison.md)                                                                       |
+| Motor map                                  | every row `unmapped`                                           | `validation/motor_map.yaml`                                                                            |
+| Held-out behavior milestone                | no eligible case left in the frozen partition                  | [validation](docs/validation.md)                                                                       |
 
 ## Quick start
 

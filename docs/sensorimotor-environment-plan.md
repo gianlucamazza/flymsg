@@ -44,7 +44,7 @@ walking and real-time whole-CNS execution are out of scope.
   and `MotorCommand` are scalar, point-mass contracts, not 6-DoF ones.
 - **Vision:** `flymsg.eye` (`columns`, `photoreceptors`, `angular_distance_deg`,
   `disk_coverage`) over the measured column directions; `eye.photoreceptor_kicks` takes an
-  unmeasured gain. T4/T5 status is on [eye](eye.md): v1–v3 neither, v4 locked. No vision path
+  unmeasured gain. T4/T5 status is on [eye](eye.md): v1 neither, v2–v4 robust neither. No vision path
   from the body pose exists yet ([embodiment](embodiment.md)).
 - **Stimuli:** `flymsg.sensory` and `sensory_runtime` are exploratory Poisson drive, kept as a
   named circuit-only baseline, never as a retina.

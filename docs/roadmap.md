@@ -1,6 +1,6 @@
 # Roadmap: what the model covers, and what waits on outside evidence
 
-Status on 2026-10-15. This page is the index. Each verdict is recorded on the linked page,
+Status on 2026-10-16. This page is the index. Each verdict is recorded on the linked page,
 and the table adds none. What remains open needs a measurement from an animal, a published
 map, hardware, or a lock that is written and not yet run.
 
@@ -12,33 +12,37 @@ and what would remove it.
 
 ## Results
 
-| Result                                     | Verdict                                                                  | Record                                                                                            |
-| ------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
-| Validation battery, criterion v4           | 29/29 at `w_syn` 0.192, replicated                                       | [validation](validation.md)                                                                       |
-| N1, one degree-preserving shuffle          | 5/29, all of them `stability`                                            | [related](related.md#n1-specific-checks-need-the-measured-partners)                               |
-| Four null families, 20 draws               | the one-hop headline sits above every draw                               | [nulls](nulls.md)                                                                                 |
-| Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                                          | [comparison](comparison.md#engine-check)                                                          |
-| Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not                | [dimorphism](dimorphism.md)                                                                       |
-| Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                             | [benchmarks](benchmarks.md)                                                                       |
-| Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                            | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
-| Kenyon cell sparseness v7                  | within only with the variant eLN set; coupling changes nothing           | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
-| Kenyon cell sparseness v8                  | v7 replicates under the exact continuous clamp (8 of 10 variant arms)    | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
-| KC → MBON11 depression v1                  | inconsistent: both odors go silent                                       | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
-| One-bit looming jump                       | silence fails                                                            | [behavior](behavior.md#result-2026-10-11)                                                         |
-| Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                                          | [behavior](behavior.md#residual-partner-scan)                                                     |
-| Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit             | [behavior](behavior.md#residual-partner-follow-up)                                                |
-| T4/T5 through the eye v1                   | neither                                                                  | [eye](eye.md#t4t5-direction-selectivity-through-the-eye-lock-2026-10-13)                          |
-| Synapse weight rule v1                     | undecided: density and count rank Liu et al.'s uEPSPs alike (Δρ +0.015)  | [model](model.md#synapse-weight-scaled-for-synapse-density)                                       |
-| T4/T5 v2                                   | robust: neither; contrast crosses the lamina, stops in the medulla       | [eye](eye.md#t4t5-version-2-graded-photoreceptors-and-lamina-lock-2026-10-13-84-97)               |
-| T4/T5 v3                                   | robust: neither; the edge reaches the graded medulla at ≤1.4 mV          | [eye](eye.md#t4t5-version-3-graded-medulla-inputs-lock-2026-10-13-140)                            |
-| T4/T5 v4                                   | robust: neither; medulla ±10 mV at gain 16, LMC 200 Hz; T4 unselective   | [eye](eye.md#t4t5-version-4-dark-anchor-lamina-gain-and-measured-delays-lock-2026-10-14-140)      |
-| Timestep convergence v1 (SF2)              | converged at 0.1 ms; weak-pathway latencies move with the step           | [validation](validation.md#timestep-convergence-sf2-a-check-not-a-score)                          |
-| Simple baselines v1 (SF2)                  | all 7 positive responses specific against 199 degree-preserving shuffles | [validation](validation.md#simple-baselines-sf2-a-report-not-a-score)                             |
-| NeuroMechFly jump v1                       | short                                                                    | [embodiment](embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)               |
-| Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference             | [comparison](comparison.md)                                                                       |
-| Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                                    | [comparison](comparison.md)                                                                       |
-| Motor map                                  | every row `unmapped`                                                     | [`validation/motor_map.yaml`](../validation/motor_map.yaml)                                       |
-| Held-out behavior milestone                | no eligible case left in the frozen partition                            | [validation](validation.md)                                                                       |
+| Result                                     | Verdict                                                                             | Record                                                                                            |
+| ------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Validation battery, criterion v4           | 29/29 at `w_syn` 0.192, replicated                                                  | [validation](validation.md)                                                                       |
+| N1, one degree-preserving shuffle          | 5/29, all of them `stability`                                                       | [related](related.md#n1-specific-checks-need-the-measured-partners)                               |
+| Four null families, 20 draws               | the one-hop headline sits above every draw                                          | [nulls](nulls.md)                                                                                 |
+| Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                                                     | [comparison](comparison.md#engine-check)                                                          |
+| Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not                           | [dimorphism](dimorphism.md)                                                                       |
+| Held-out ORN_DM1 → DM1_lPN                 | fails specific and stability                                                        | [benchmarks](benchmarks.md)                                                                       |
+| Kenyon cell sparseness v1–v5               | dense or silent, never sparse                                                       | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| Kenyon cell sparseness v7                  | within only with the variant eLN set; coupling changes nothing                      | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| Kenyon cell sparseness v8                  | v7 replicates under the exact continuous clamp (8 of 10 variant arms)               | [model](model.md#kenyon-cell-sparseness-diagnostic-2026-10-13)                                    |
+| KC → MBON11 depression v1                  | inconsistent: both odors go silent                                                  | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13) |
+| One-bit looming jump                       | silence fails                                                                       | [behavior](behavior.md#result-2026-10-11)                                                         |
+| Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                                                     | [behavior](behavior.md#residual-partner-scan)                                                     |
+| Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit                        | [behavior](behavior.md#residual-partner-follow-up)                                                |
+| T4/T5 through the eye v1                   | neither                                                                             | [eye](eye.md#t4t5-direction-selectivity-through-the-eye-lock-2026-10-13)                          |
+| Synapse weight rule v1                     | undecided: density and count rank Liu et al.'s uEPSPs alike (Δρ +0.015)             | [model](model.md#synapse-weight-scaled-for-synapse-density)                                       |
+| T4/T5 v2                                   | robust: neither; contrast crosses the lamina, stops in the medulla                  | [eye](eye.md#t4t5-version-2-graded-photoreceptors-and-lamina-lock-2026-10-13-84-97)               |
+| T4/T5 v3                                   | robust: neither; the edge reaches the graded medulla at ≤1.4 mV                     | [eye](eye.md#t4t5-version-3-graded-medulla-inputs-lock-2026-10-13-140)                            |
+| T4/T5 v4                                   | robust: neither; medulla ±10 mV at gain 16, LMC 200 Hz; T4 unselective              | [eye](eye.md#t4t5-version-4-dark-anchor-lamina-gain-and-measured-delays-lock-2026-10-14-140)      |
+| Timestep convergence v1 (SF2)              | converged at 0.1 ms; weak-pathway latencies move with the step                      | [validation](validation.md#timestep-convergence-sf2-a-check-not-a-score)                          |
+| Simple baselines v1 (SF2)                  | all 7 positive responses specific against 199 degree-preserving shuffles            | [validation](validation.md#simple-baselines-sf2-a-report-not-a-score)                             |
+| Pulse vs sine song v1 (#36)                | uninformative, the no-go: 14 of 32 neuropils resolve a sign                         | [benchmarks](benchmarks.md#pulse-vs-sine-song-across-neuropils-lock-2026-10-14-36)                |
+| Looming → giant fiber timing v1 (#34)      | uninformative, the no-go: the giant fiber fires in every cell                       | [benchmarks](benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                      |
+| Looming → giant fiber timing v2 (#34)      | uninformative: peaks follow the stimulus; the flies' interval holds the onset slope | [benchmarks](benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                      |
+| APL claw contrast v1 (#85)                 | uninformative, the no-go: with APL the mean KC sits below rest                      | [validation](validation.md#apl-and-the-odor-contrast-at-kc-claws-85)                              |
+| NeuroMechFly jump v1                       | short                                                                               | [embodiment](embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)               |
+| Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference                        | [comparison](comparison.md)                                                                       |
+| Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                                               | [comparison](comparison.md)                                                                       |
+| Motor map                                  | every row `unmapped`                                                                | [`validation/motor_map.yaml`](../validation/motor_map.yaml)                                       |
+| Held-out behavior milestone                | no eligible case left in the frozen partition                                       | [validation](validation.md)                                                                       |
 
 ## Scientific fidelity programme (2026-10-13; SF1 done 2026-10-14)
 
@@ -133,11 +137,11 @@ three stay off unless a lock names them.
 
 ## Blocked on hardware
 
-| Issue                                                            | Blocked by                                                                  | Ready                                                                                                                         |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Version-2 fixtures (graded, coupled) on the GPU: the DX12 lane refuses them | Series S GPU parity, 12 of 12 version-1 fixtures bit for bit (2026-10-15)                                                     |
-| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | GPU fault and hard termination on the console                               | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; full connectome bit for bit at about 1,630 steps/s |
-| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss         | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))                                   |
+| Issue                                                            | Blocked by                                                                                            | Ready                                                                                                                         |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Version-2 fixtures (graded, coupled) on the GPU: implemented (#215), no Series S measurement archived | Series S GPU parity, 12 of 12 version-1 fixtures bit for bit (2026-10-15)                                                     |
+| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | GPU fault and hard termination on the console                                                         | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; full connectome bit for bit at about 2,320 steps/s |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss                                   | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))                                   |
 
 ## What an animal test could check
 
@@ -180,7 +184,7 @@ about the fly.
 
 ## Completion plan
 
-Status on 2026-10-15 (after v0.8.47). flymsg is complete when a model prediction passes an
+Status on 2026-10-16. flymsg is complete when a model prediction passes an
 independent held-out benchmark (M4, [#36](https://github.com/gianlucamazza/flymsg/issues/36));
 everything else serves that. An open problem closes with a measurement, a lock and a run,
 never with a chosen value, so the order follows the evidence that exists. The
@@ -190,19 +194,19 @@ it is a plan, not a result.
 
 **1. Now: nothing outside is needed.**
 
-| Issue                                                      | Work                                                                                                                                                       | Exit                                                                           |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Done: baseline of the live scenes (#153); `scripts/bench_check.py` compares a new run                                                                      | Baseline committed; regression thresholds from it; a physical phone stays open |
-| [#139](https://github.com/gianlucamazza/flymsg/issues/139) | Done: v1 undecided (Δρ +0.015, interval −0.011 to +0.054); count stays                                                                                     | More power needs measured pairs across more LHN types                          |
-| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Done (#142): the muscle is the type's; neuron-level matches recorded (140 of 623 disagree)                                                                 | Muscle → body actuator (#19, #35) stays blocked on evidence                    |
-| [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Locked (`song.yaml` v1): Pacheco et al. 2021 pulse/sine sign per neuropil with a temporal-only JO input ("JO-A ≈ pulse" is not supported); run in progress | Run after T4/T5 v4: model and no-go first, then the data                       |
+| Issue                                                      | Work                                                                                                                                               | Exit                                                                                            |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| [#24](https://github.com/gianlucamazza/flymsg/issues/24)   | Done: baseline of the live scenes (#153); `scripts/bench_check.py` compares a new run                                                              | Baseline committed; regression thresholds from it; a physical phone stays open                  |
+| [#139](https://github.com/gianlucamazza/flymsg/issues/139) | Done: v1 undecided (Δρ +0.015, interval −0.011 to +0.054); count stays                                                                             | More power needs measured pairs across more LHN types                                           |
+| [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Done (#142): the muscle is the type's; neuron-level matches recorded (140 of 623 disagree)                                                         | Muscle → body actuator (#19, #35) stays blocked on evidence                                     |
+| [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Done: `song.yaml` v1 uninformative, the no-go (14 of 32 neuropils resolve a sign; median \|index\| about 0.05). The Pacheco data were never opened | A version 2 needs a measured JO band-pass or carrier-tuned input; #36 stays blocked on evidence |
 
 **2. Next: the evidence exists and must be read and fixed in a lock.**
 
 | Issue                                                      | Work                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [#140](https://github.com/gianlucamazza/flymsg/issues/140) | T4/T5 v4 run: robust neither; the medulla reaches measured swings at gain 16 with LMC 200 Hz and T4 stays unselective                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc, replicated by v8 under the exact clamp; relational APL tests still open                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| [#85](https://github.com/gianlucamazza/flymsg/issues/85)   | KC v7 within only with lLN2T+lLN1_bc, replicated by v8 under the exact clamp; APL claw contrast v1 uninformative, the no-go (the mean KC sits below rest)                                                                                                                                                                                                                                                                                                                                                                                        |
 | [#34](https://github.com/gianlucamazza/flymsg/issues/34)   | `gf_looming.yaml` v1: the model's DNp01 peak time before collision against Dombrovski et al. 2025's deposited giant-fiber recordings at r/v 10–80 ms, timing only, engineered LC4/LPLC2 forms with scanned gains ([benchmarks](benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)); run: uninformative, the model's giant fiber fires in every cell, so no cell stays graded like the recordings. v2 (passive giant fibers) run: uninformative, the flies' interval holds the onset slope and the model's peaks follow the stimulus |
 | Jump                                                       | jump3d v2 judged on take-off velocity (0.48 m/s, Card & Dickinson 2008) before distance                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
@@ -217,10 +221,14 @@ registration has a source. G5 (#180) has its schedule, evidence gate and record 
 components; the [body-wiring ADR](adr-body-wiring.md) is accepted, and a biological closed
 loop refuses until G3 and G4 are measured.
 
-**4. Hardware.** A Series S in Dev Mode is now available: GPU parity of the version-1 fixtures holds on it
-(#39), and the worker's cancel, suspension with checkpoint and resume pass on it (#40); full-connectome throughput is next. A headset for the WebXR
-observer (#177); until then the native executor refuses whatever is not qualified, and the
-observer stays experimental.
+**4. Hardware.** On a Series S in Dev Mode the version-1 lane is qualified (#39, #40): 12 of 12
+fixtures bit for bit, cancel, suspension with checkpoint and resume, and the default full
+connectome bit for bit at about 2,320 steps/s once float32 arithmetic is exact (event-driven
+delivery alone was about 1,630). Version-2 fixtures (graded, coupled) are implemented on the
+DX12 lane (#215); a Series S measurement of them is not archived. A GPU fault with hard
+termination is unmeasured. A headset for the WebXR
+observer (#177) is unmeasured; until then the observer stays experimental, and the native
+executor refuses a fixture group it has not qualified.
 
 A Quest 2 is available and USB debugging is verified (2026-10-15); #177 stays open until
 its hardware matrix passes. The [qualification runbook](vee-qualification.md) provides the
