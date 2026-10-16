@@ -119,3 +119,36 @@ test("original source extraction excludes arena padding and checks endpoint owne
     /bounds/,
   );
 });
+
+test("deterministic branching and disconnected graphs preserve independent topology and bounds", () => {
+  let seed = 7;
+  const random = () => {
+    seed = (1664525 * seed + 1013904223) >>> 0;
+    return seed / 2 ** 32;
+  };
+  const camera = new T.PerspectiveCamera(50, 1.6, 0.1, 100);
+  const eyes = [-0.04, 0.04].map((x) => {
+    const c = camera.clone();
+    c.position.x = x;
+    c.updateMatrixWorld(true);
+    return {
+      matrix: c.projectionMatrix
+        .clone()
+        .multiply(c.matrixWorldInverse)
+        .toArray(),
+      width: 1280,
+      height: 800,
+    };
+  });
+  for (let trial = 0; trial < 20; trial++) {
+    const vertices = [],
+      edges = [];
+    for (let v = 0; v < 80; v++) {
+      vertices.push(random() - 0.5, random() - 0.5, -2 - random());
+      if (v && v % 17) edges.push(v, Math.floor(random() * v));
+    }
+    const f = run(vertices, edges, eyes);
+    assert.equal(f.report.original_edges, edges.length / 2);
+    assert(f.report.maximum_error_px <= 0.5);
+  }
+});
