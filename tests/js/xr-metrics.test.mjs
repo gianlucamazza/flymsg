@@ -158,6 +158,7 @@ test("ready content cannot conceal an anatomical selection change during XR", ()
     status: "ready",
     gpu_ready: true,
     representation: "skeleton",
+    source_geometry: true,
     selected: 1128,
     represented: 1128,
   });
@@ -165,8 +166,28 @@ test("ready content cannot conceal an anatomical selection change during XR", ()
     status: "ready",
     gpu_ready: true,
     representation: "skeleton",
+    source_geometry: true,
     selected: 2,
     represented: 2,
   });
   assert.equal(m.report().content.verdict, "fail");
+});
+
+test("exact XR content refuses missing or transiently false source geometry", () => {
+  for (const source_geometry of [false, undefined]) {
+    const m = new XrMetrics({}, () => {});
+    m.start(session(), 0);
+    const ready = {
+      status: "ready",
+      gpu_ready: true,
+      representation: "surface",
+      source_geometry: true,
+      selected: 1128,
+      represented: 1128,
+    };
+    m.frame(0, 1, [], null, ready);
+    m.frame(14, 1, [], null, { ...ready, source_geometry });
+    m.frame(28, 1, [], null, ready);
+    assert.equal(m.report().content.verdict, "fail");
+  }
 });

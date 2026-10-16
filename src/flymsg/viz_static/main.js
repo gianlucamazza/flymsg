@@ -2144,6 +2144,7 @@ function observerIdentity() {
   return {
     url: location.href,
     representation: f.representation,
+    source_geometry: f.source_geometry,
     selected: f.selected,
     represented: f.represented,
     status: f.status,

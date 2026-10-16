@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Exact observer qualification.** Original skeleton/surface preflights and raw ABBA scoring reject missing source-geometry evidence or a changed representation. Desktop and XR frame identities retain source fidelity; transient changes invalidate the observation. Approximate experiments remain diagnostic. No performance gain or headset qualification is claimed.
+
 - **Checkpoint publish.** A native checkpoint whose temporary file does not grow is recorded as `failed` and is not replaced. A temporary file that grows is replaced and recorded as `completed`. A status that stays `checkpointing` still times out with its last state. The interrupted million-step trial on worker `90249e45` was not rerun. No lock, seed, or model default changed.
 
 - **Milestone baseline.** `docs/milestones.md` records `main` at `f5e3709`. Merged #227 and #230 keep the bounded skeleton renderer diagnostic. The 16 MiB motion campaign is a veto and does not meet the exit of #177 or #24. The unit check still does not meet the #148 exit. Docs only.

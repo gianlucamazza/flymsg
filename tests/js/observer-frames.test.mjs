@@ -107,3 +107,14 @@ test("every bounded submitted frame requires a finite certified error and counts
   assert(report.eligible);
   assert.equal(report.bounded_frames.length, 101);
 });
+
+test("a transient loss of original geometry invalidates the whole exact arm", () => {
+  const f = new ObserverFrames("exact"),
+    identity = { representation: "skeleton", source_geometry: true };
+  f.start(5, identity, 0);
+  for (let i = 0; i <= 100; i++)
+    f.frame(i * 50, { ...identity, source_geometry: i !== 50 });
+  const result = f.finish(5001);
+  assert.equal(result.eligible, false);
+  assert(result.reasons.includes("render-identity-changed"));
+});

@@ -70,6 +70,16 @@ def block_summary(records, *, candidate_representation=None):
                     raise ValueError("uncertified bounded frame")
     elif candidate_representation is not None:
         raise ValueError("unknown candidate representation")
+    else:
+        for row in records:
+            content = row.get("identity", {})
+            if (
+                content.get("representation") not in ("skeleton", "surface")
+                or content.get("source_geometry") is not True
+            ):
+                raise ValueError(
+                    "exact comparison fidelity mismatch: original source geometry required"
+                )
     # Page identity changes per arm; image quality, selected content and frozen camera must not.
     first = records[0]
 

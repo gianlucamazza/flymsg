@@ -105,6 +105,7 @@ export class XrMetrics {
       if (typeof fidelity.gpu_ready === "boolean") a.content_checks++;
       const identity = JSON.stringify({
         representation: fidelity.representation,
+        source_geometry: fidelity.source_geometry,
         selected: fidelity.selected,
         represented: fidelity.represented,
       });
@@ -112,6 +113,8 @@ export class XrMetrics {
       incomplete =
         fidelity.status !== "ready" ||
         fidelity.gpu_ready === false ||
+        (["skeleton", "surface"].includes(fidelity.representation) &&
+          fidelity.source_geometry !== true) ||
         identity !== a.content_identity;
     }
     const bounded =
