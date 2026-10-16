@@ -77,3 +77,16 @@ admit one. Positive admission still requires every repeat of every view. The
 first 4 MiB campaign used this amendment after its three dense blocks completed;
 its interruption and independent veto record remain alongside all raw samples.
 Subsequent configurations record the option in their protocol before collection.
+
+## Unattended diagnostic amendment (2026-10-16)
+
+The operator requested collection without wearing the headset. `quest_compare.py
+--unattended` uses the temporary virtual proximity interface documented by Meta:
+https://developers.meta.com/vr/documentation/unity/meta-xr-operator/quest/
+It refuses existing proximity overrides or wake leases, registers restoration
+before mutation, and verifies return to physical sensor control during cleanup.
+All transport remains explicit Wi-Fi. XR query parameters are omitted and XR
+receipts are ineligible. These campaigns are desktop diagnostics only; do not
+combine their measurements with physical-presence campaigns or claim normal XR,
+comfort, head-motion, or stereo qualification. Rendering quality stays unchanged.
+The initial device roundtrip held Awake for 25 seconds and verified restoration.

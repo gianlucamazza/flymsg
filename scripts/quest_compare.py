@@ -394,6 +394,9 @@ def run(
                 )
                 break
     decision = admission(results, page_sizes)
+    if getattr(session, "unattended", False):
+        decision["normal_xr_qualification"] = False
+        decision["measurement_profile"] = "unattended-desktop-diagnostic"
     session.record("comparison.json", {"results": results, **decision})
     return decision
 
@@ -413,6 +416,11 @@ def main():
     parser.add_argument("--startup-timeout", type=int, default=600)
     parser.add_argument("--keep-awake", action="store_true")
     parser.add_argument(
+        "--unattended",
+        action="store_true",
+        help="Temporary virtual proximity; desktop diagnostics only, no normal XR qualification",
+    )
+    parser.add_argument(
         "--stop-on-regression",
         action="store_true",
         help="Stop a candidate after three valid repeats establish a mandatory regression veto; never admit early",
@@ -429,6 +437,7 @@ def main():
             port=args.port,
             keep_awake=args.keep_awake,
             wifi_only=True,
+            unattended=args.unattended,
         )
         with session:
             decision = run(

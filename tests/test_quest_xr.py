@@ -233,3 +233,27 @@ def test_cleanup_recovers_a_created_target_after_foreground_handshake_failed(
     session.close_page()
     assert calls == [("observer_open.mjs", session.endpoint, session.url, "owned")]
     assert session.target is None
+
+
+def test_proximity_restore_checks_identity_and_readback(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        quest, "identity", lambda serial, expected: calls.append((serial, expected))
+    )
+    monkeypatch.setattr(quest, "adb", lambda *args: calls.append(args) or "")
+    monkeypatch.setattr(
+        quest,
+        "proximity_state",
+        lambda serial: {"state": "DISABLED", "locks": [0, 0, 0]},
+    )
+    assert (
+        quest.restore_proximity("192.168.1.146:5555", "hardware")["state"] == "DISABLED"
+    )
+    assert calls[0] == ("192.168.1.146:5555", "hardware")
+    assert calls[1][-1] == "com.oculus.vrpowermanager.automation_disable"
+
+
+def test_unknown_proximity_format_is_rejected(monkeypatch):
+    monkeypatch.setattr(quest, "adb", lambda *args: "unknown firmware")
+    with pytest.raises(RuntimeError, match="unrecognized"):
+        quest.proximity_state("192.168.1.146:5555")

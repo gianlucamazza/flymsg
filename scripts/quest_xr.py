@@ -11,6 +11,7 @@ import argparse
 import ipaddress
 import json
 import os
+import re
 import subprocess
 import tempfile
 import threading
@@ -200,7 +201,8 @@ class EvidenceHandler(SimpleHTTPRequestHandler):
                 "eligible_document": bool(
                     getattr(self.server, "ready_document_id", None)
                 )
-                and doc.get("observer_document_id") == self.server.ready_document_id,
+                and doc.get("observer_document_id") == self.server.ready_document_id
+                and not getattr(self.server, "unattended", False),
             }
             with self.server.evidence_lock, self.evidence.open("ab") as stream:
                 stream.write(runstore.canonical(entry) + b"\n")
@@ -215,14 +217,53 @@ class EvidenceHandler(SimpleHTTPRequestHandler):
         pass
 
 
+def proximity_state(serial):
+    raw = adb(serial, "shell", "dumpsys", "vrpowermanager")
+    state = re.search(r"Virtual proximity state: (\w+)", raw)
+    locks = re.findall(
+        r"^(?:Mount|Unmounted|ForceUnmounted)WakeLock count: (\d+)$", raw, re.M
+    )
+    if state is None or len(locks) != 3:
+        raise RuntimeError("unrecognized Quest proximity state")
+    return {"state": state[1], "locks": list(map(int, locks)), "raw": raw}
+
+
+def restore_proximity(serial, hardware):
+    identity(serial, hardware)
+    adb(
+        serial,
+        "shell",
+        "am",
+        "broadcast",
+        "-a",
+        "com.oculus.vrpowermanager.automation_disable",
+    )
+    for _ in range(20):
+        result = proximity_state(serial)
+        if result["state"] == "DISABLED" and result["locks"] == [0, 0, 0]:
+            return result
+        time.sleep(0.25)
+    raise RuntimeError("physical proximity restoration readback mismatch")
+
+
 class QuestSite:
     """One clean frozen site and its owned Wi-Fi resources; no shared ADB restart."""
 
-    def __init__(self, serial, out, *, port=8892, keep_awake=False, wifi_only=False):
+    def __init__(
+        self,
+        serial,
+        out,
+        *,
+        port=8892,
+        keep_awake=False,
+        wifi_only=False,
+        unattended=False,
+    ):
         if wifi_only:
             wifi_serial(serial)
         self.serial, self.out, self.port = serial, Path(out), port
         self.keep_awake = keep_awake
+        self.unattended = unattended
         self.operations = []
         self.target = None
         self.endpoint = None
@@ -274,6 +315,49 @@ class QuestSite:
                 ),
             )
             self.record("device.json", self.device)
+            self.device["measurement_profile"] = (
+                "unattended-desktop-diagnostic"
+                if self.unattended
+                else "physical-presence"
+            )
+            self.device["normal_xr_qualification"] = not self.unattended
+            if self.unattended:
+                wifi_serial(self.serial)
+                original_proximity = proximity_state(self.serial)
+                self.record("proximity-before.json", original_proximity)
+                if original_proximity["state"] != "DISABLED" or original_proximity[
+                    "locks"
+                ] != [0, 0, 0]:
+                    raise RuntimeError(
+                        "existing proximity override or wake lease; refusing to replace it"
+                    )
+
+                def restore():
+                    self.record(
+                        "proximity-restored.json",
+                        restore_proximity(self.serial, self.device["hardware_serial"]),
+                    )
+
+                self.operations.append(("restore-proximity", restore))
+                adb(
+                    self.serial,
+                    "shell",
+                    "am",
+                    "broadcast",
+                    "-a",
+                    "com.oculus.vrpowermanager.prox_close",
+                )
+                for _ in range(20):
+                    active = proximity_state(self.serial)
+                    if active["state"] == "CLOSE" and "mWakefulness=Awake" in adb(
+                        self.serial, "shell", "dumpsys", "power"
+                    ):
+                        break
+                    time.sleep(0.25)
+                else:
+                    raise RuntimeError("virtual proximity did not wake headset")
+                self.record("proximity-active.json", active)
+            self.record("device.json", self.device)
             if self.keep_awake:
                 if original != "null" and not original.isdigit():
                     raise ValueError("invalid original keep-awake setting")
@@ -294,6 +378,7 @@ class QuestSite:
             self.server = ThreadingHTTPServer(("127.0.0.1", self.port), handler)
             self.server.evidence_lock = threading.Lock()
             self.server.ready_document_id = None
+            self.server.unattended = self.unattended
             threading.Thread(target=self.server.serve_forever, daemon=True).start()
             self.operations.append(("http-server", self.stop_server))
             adb(self.serial, "reverse", reverse, reverse)
@@ -361,12 +446,13 @@ class QuestSite:
             raise ValueError("invalid observer configuration")
         if uploads and representation == "mixed":
             raise ValueError("paged mixed representation is unavailable")
+        if self.unattended and proximity_state(self.serial)["state"] != "CLOSE":
+            raise RuntimeError("unattended proximity lease lost")
         self.close_page()
         self.server.ready_document_id = None
         self.url = f"http://localhost:{self.port}/live/{scene}/?" + urlencode(
             {
-                "xr": 1,
-                "xrcollect": 1,
+                **({} if self.unattended else {"xr": 1, "xrcollect": 1}),
                 "paused": "",
                 "representation": representation,
                 "pages": int(culling),
@@ -512,6 +598,7 @@ class QuestSite:
             "close-owned-tab": 0,
             "remove-owned-forward": 1,
             "restore-keep-awake": 2,
+            "restore-proximity": 2,
             "remove-owned-reverse": 3,
             "final-device-snapshot": 4,
             "http-server": 5,
