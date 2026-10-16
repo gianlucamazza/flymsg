@@ -26,7 +26,7 @@ export async function observerOracle(browser, out) {
   mkdirSync(out, { recursive: false });
   const write = (n, x) =>
     writeFileSync(join(out, n), JSON.stringify(x, null, 2) + "\n", {
-      flag: "wx",
+      flag: n === "progress.json" ? "w" : "wx",
     });
   let saved;
   const report = {
