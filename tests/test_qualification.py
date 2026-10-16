@@ -520,7 +520,9 @@ def test_sustained_windows_use_running_steps_only(monkeypatch):
     assert module.summary([]) == {}
 
 
-@pytest.mark.parametrize("damage", ["none", "other_output", "failed", "oracle"])
+@pytest.mark.parametrize(
+    "damage", ["none", "other_output", "failed", "oracle", "upload", "cleanup"]
+)
 def test_sustained_case_fails_closed(monkeypatch, tmp_path, damage):
     module = load("console_sustained", monkeypatch)
     case = {
@@ -533,14 +535,17 @@ def test_sustained_case_fails_closed(monkeypatch, tmp_path, damage):
     }
 
     class FirstJob:
-        def parity(self):
-            return damage != "oracle"
+        pass
 
     def one_job(portal, args, sha, out, rt, case, index):
-        failed = damage == "failed" and index == 1
+        failed = damage in ("failed", "upload") and index == 1
         record = {
             "index": index,
-            "final_state": "failed" if failed else "completed",
+            "final_state": (
+                {"failed": "failed", "upload": "upload_failed"}[damage]
+                if failed
+                else "completed"
+            ),
             "reported_sha_matches": True,
             "output_sha256": "b" if damage == "other_output" and index == 2 else "a",
             "upload_s": 1.0,
@@ -550,6 +555,8 @@ def test_sustained_case_fails_closed(monkeypatch, tmp_path, damage):
         }
         if not failed:
             record["advance_steps_per_s"] = 2000.0
+        if damage == "cleanup" and index == 2:
+            record["cleanup_errors"] = ["DELETE failed"]
         return record, FirstJob()
 
     class Model:
@@ -557,8 +564,9 @@ def test_sustained_case_fails_closed(monkeypatch, tmp_path, damage):
             return None
 
     monkeypatch.setattr(module, "one_job", one_job)
+    monkeypatch.setattr(module, "parity", lambda job: damage != "oracle")
     args = type("A", (), {"out": tmp_path})()
     result = module.run_case(None, args, "sha", Model(), case)
     assert result["verdict"] == ("pass" if damage == "none" else "fail")
-    if damage == "failed":
+    if damage in ("failed", "upload"):
         assert len(result["jobs"]) == 2

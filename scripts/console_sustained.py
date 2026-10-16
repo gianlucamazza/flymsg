@@ -35,13 +35,19 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from console_gpu_parity import ADAPTER, Portal
 from console_lifecycle import Job
+from native_acceptance import check
 
 from flymsg import data, sensitivity, sim, validate
+from flymsg.console import PortalError
+from flymsg.native import read_output
 from flymsg.runtime import CpuRuntime
 
 PROTOCOL = {
     "schema": "flymsg.console_sustained_protocol/v1",
     "declared": "2026-10-16, before any sustained measurement",
+    "revision": 2,
+    "revision_reason": "attempt 1 (1d1fde5) kept each job's fixture, checkpoint and output on the console; the third 500k-step upload got HTTP 500 and the script stopped without a record. Revision 2 deletes a job's large files from the console once its output is downloaded and hashed, and records a Device Portal error as the job's final state",
+    "console_cleanup": ["fixture.bin", "checkpoint.bin", "output.bin"],
     "model": "MaleCNS v1.0 default model, version-1 fixture (no graded or coupled neurons)",
     "rate_hz": validate.RATE_HZ,
     "cases": [
@@ -147,15 +153,38 @@ def one_job(portal, args, sha, out, rt, case, index) -> dict:
         scope="sustained workload qualification, not biological validation",
     )
     t0 = time.time()
-    job.submit()
+    try:
+        job.submit()
+    except PortalError as exc:
+        return {
+            "index": index,
+            "job_id": job.id,
+            "fixture_bytes": job.fixture.stat().st_size,
+            "upload_s": time.time() - t0,
+            "first_running_s": None,
+            "final_state": "upload_failed",
+            "error": str(exc),
+            "samples": [],
+            "perf": [],
+            "window_steps_per_s": [],
+        }, job
     upload_s = time.time() - t0
     timeout = (
         case["steps"] / EXPECTED_STEPS_PER_S * PROTOCOL["job_timeout_factor"] + 600
     )
     samples, perfs, last_perf, final = [], [], 0.0, {}
+    portal_errors = []
     while time.time() - t0 < timeout:
-        s = job.status()
         now = time.time()
+        try:
+            s = job.status()
+            if now - last_perf >= PROTOCOL["perf_period_s"]:
+                perfs.append({"t": now - t0} | perf(portal))
+                last_perf = now
+        except PortalError as exc:
+            portal_errors.append({"t": now - t0, "error": str(exc)})
+            time.sleep(PROTOCOL["status_period_s"])
+            continue
         if s:
             samples.append(
                 {
@@ -168,9 +197,6 @@ def one_job(portal, args, sha, out, rt, case, index) -> dict:
             if s.get("state") in {"completed", "failed", "cancelled"}:
                 final = s
                 break
-        if now - last_perf >= PROTOCOL["perf_period_s"]:
-            perfs.append({"t": now - t0} | perf(portal))
-            last_perf = now
         time.sleep(PROTOCOL["status_period_s"])
     record = {
         "index": index,
@@ -185,6 +211,7 @@ def one_job(portal, args, sha, out, rt, case, index) -> dict:
         "source_commit": final.get("source_commit"),
         "samples": samples,
         "perf": perfs,
+        "portal_errors": portal_errors,
         "window_steps_per_s": windows(samples, PROTOCOL["window_s"]),
     }
     if record["final_state"] == "completed":
@@ -202,7 +229,23 @@ def one_job(portal, args, sha, out, rt, case, index) -> dict:
         record["reported_sha_matches"] = (
             record["output_sha256"] == result["output_sha256"]
         )
+        # the output is local and hashed: free the console's storage for the next job
+        for name in PROTOCOL["console_cleanup"]:
+            try:
+                portal.delete(args.package, job.rel, name)
+            except PortalError as exc:
+                record.setdefault("cleanup_errors", []).append(str(exc))
     return record, job
+
+
+def parity(job: Job) -> bool:
+    """The downloaded output against the CPU oracle, without fetching it again."""
+    job.rt.advance_to(job.steps)
+    try:
+        check(job.rt, read_output(job.folder / "output.bin", job.fixture))
+        return True
+    except AssertionError:
+        return False
 
 
 def summary(values: list[float]) -> dict:
@@ -230,13 +273,16 @@ def run_case(portal, args, sha, model: Model, case) -> dict:
     # the oracle runs after the series, so the console's jobs follow each other
     if jobs[0]["final_state"] == "completed":
         t0 = time.time()
-        jobs[0]["oracle_parity"] = first_job.parity()
+        jobs[0]["oracle_parity"] = parity(first_job)
         jobs[0]["oracle_s"] = time.time() - t0
     first = jobs[0].get("output_sha256")
     passed = (
         len(jobs) == case["jobs"]
         and all(
-            j["final_state"] == "completed" and j["reported_sha_matches"] for j in jobs
+            j["final_state"] == "completed"
+            and j["reported_sha_matches"]
+            and not j.get("cleanup_errors")
+            for j in jobs
         )
         and jobs[0].get("oracle_parity") is True
         and all(j["output_sha256"] == first for j in jobs)
