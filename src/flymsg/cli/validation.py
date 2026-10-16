@@ -15,6 +15,7 @@ from flymsg import (
     gf_looming,
     managed,
     nulls,
+    path_metrics,
     prereg,
     sensitivity,
     sim,
@@ -411,6 +412,45 @@ def cmd_convergence(a, neurons, edges):
         {
             "convergence_version": doc["version"],
             "convergence_sha256": doc["content_sha256"],
+            "grid": doc["grid"],
+        },
+        {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
+        started,
+        {"verdict": verdict},
+    )
+    print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_path_metrics(a, neurons, edges):
+    """Run the locked weak-pathway timestep metrics and write every cell and the judgement."""
+    started = datetime.now(UTC)
+    doc = path_metrics.assert_matches_code()
+    print(path_metrics.summary(doc))
+    cells = path_metrics.run(neurons, edges, a.workers, a.checkpoint)
+    out = managed.output(a, Path("runs/path-metrics") / f"v{doc['version']}")
+    out.mkdir(parents=True, exist_ok=True)
+    cells.to_csv(out / "cells.csv", index=False)
+    judged = path_metrics.judge(cells, doc)
+    judged.to_csv(out / "judged.csv", index=False)
+    verdict = path_metrics.verdict(judged, doc)
+    text = "\n".join(
+        [
+            path_metrics.summary(doc),
+            judged.to_string(index=False),
+            f"verdict: {verdict}",
+        ]
+    )
+    (out / "report.txt").write_text(text + "\n")
+    print(text)
+    stamp(
+        out,
+        "path-metrics --run",
+        a,
+        neurons,
+        edges,
+        {
+            "path_metrics_version": doc["version"],
+            "path_metrics_sha256": doc["content_sha256"],
             "grid": doc["grid"],
         },
         {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
