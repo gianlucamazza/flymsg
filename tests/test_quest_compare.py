@@ -25,6 +25,8 @@ def arm(value):
             "represented": 1128,
             "width": 100,
             "height": 100,
+            "pixel_ratio": 1,
+            "samples": 4,
         },
         "raw_intervals_ms": [value] * 100,
         "intervals_ms": {"p95": value},
@@ -116,3 +118,10 @@ def test_partial_matrix_can_prove_a_veto_but_never_admit():
     assert compare.admission(rows, (4,))["winner_mib"] is None
     rows[0]["summary"]["ratio"] = 1.5
     assert not compare.admission(rows[:1], (4,))["candidates"][0]["regression_views"]
+
+
+def test_actual_msaa_mismatch_is_rejected_even_when_composer_targets_match():
+    records = [arm(value) for value in (100, 80, 80, 100)]
+    records[1]["identity"]["samples"] = 0
+    with pytest.raises(ValueError, match="quality mismatch"):
+        compare.block_summary(records)

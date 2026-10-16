@@ -52,6 +52,8 @@ def block_summary(records):
                     "represented",
                     "width",
                     "height",
+                    "pixel_ratio",
+                    "samples",
                 )
             },
         }

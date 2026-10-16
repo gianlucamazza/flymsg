@@ -51,7 +51,8 @@ export async function observerTrial(
       throw Error(`Warmup excluded: ${warm.reasons.join(", ")}`);
     const settings =
       await browser.evaluate(`({pixel_ratio:flymsg.renderer.getPixelRatio(),
-      samples:flymsg.composer.renderTarget1.samples,bloom:flymsg.bloom.enabled})`);
+      samples:flymsg.observerStatus().identity.samples,
+      composer_target_samples:flymsg.composer.renderTarget1.samples,bloom:flymsg.bloom.enabled})`);
     const sample = await browser.evaluate(`(async()=>{
       flymsg.observerCapture(${JSON.stringify(seconds)});
       let watchdog;
