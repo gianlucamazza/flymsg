@@ -4,7 +4,8 @@
 
 - **Evidence-gated planning (docs only).** Added `docs/milestones.md` with
   S0–S4 scientific and H1/H2 engineering gates, issue ownership, dependencies,
-  entry/exit and blocked/no-go semantics; indexed from the roadmap and README.
+  entry/exit and blocked/no-go semantics; indexed from the roadmap, the README
+  and the Pages nav.
   After #221 merged and #40 closed, remaining Series S adversarial hardware
   acceptance is separately tracked by #224. No model, lock, result or issue
   outcome changed by the documentation PR.
