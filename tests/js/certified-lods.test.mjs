@@ -9,6 +9,7 @@ import {
 } from "../../src/flymsg/viz_static/certified-lods.js";
 import {
   projectionErrorBound,
+  projectionErrorProjector,
   certifiedPixelError,
 } from "../../src/flymsg/viz_static/projection-error-bound.js";
 function pages(vertices, index, maxBytes = 4096) {
@@ -259,4 +260,53 @@ test("unproved projection bounds stay infinite even for a zero spatial error", (
     { scale: 1, rounding: -1 },
   ])
     assert.equal(certifiedPixelError(0, bounds), Infinity);
+});
+
+test("prepared certificates snapshot matrices, viewport and precision together", () => {
+  const camera = new T.PerspectiveCamera(55, 1.5, 0.1, 100);
+  const eye = {
+    modelView: new T.Matrix4().toArray(),
+    projection: camera.projectionMatrix.toArray(),
+    width: 1200,
+    height: 800,
+  };
+  const precision = { float: 23, subpixel: 4 },
+    box = { min: [-0.1, -0.1, -3], max: [0.1, 0.1, -2] };
+  const expected = projectionErrorBound(box, eye, precision),
+    prepared = projectionErrorProjector(eye, precision);
+  assert(Number.isFinite(expected.scale));
+  eye.modelView[12] = 1000;
+  eye.projection[0] = NaN;
+  eye.width = 1;
+  precision.subpixel = 3;
+  assert.deepEqual(prepared(box), expected);
+  assert.equal(projectionErrorBound(box, eye, precision).scale, Infinity);
+});
+test("an invalid box or other eye cannot poison a prepared eye certificate", () => {
+  const camera = new T.PerspectiveCamera(55, 1.5, 0.1, 100);
+  const eye = {
+    modelView: new T.Matrix4().toArray(),
+    projection: camera.projectionMatrix.toArray(),
+    width: 1200,
+    height: 800,
+  };
+  const box = { min: [-0.1, -0.1, -3], max: [0.1, 0.1, -2] },
+    prepared = projectionErrorProjector(eye);
+  const expected = prepared(box);
+  for (const bad of [
+    null,
+    { min: [NaN, 0, -3], max: [1, 1, -2] },
+    { min: [2, 0, -3], max: [1, 1, -2] },
+  ])
+    assert.equal(prepared(bad).scale, Infinity);
+  const other = projectionErrorProjector({
+    ...eye,
+    modelView: new T.Matrix4().makeTranslation(0, 0, 4).toArray(),
+  });
+  assert.equal(other(box).scale, Infinity);
+  assert.equal(
+    projectionErrorProjector(eye, { float: 16, subpixel: 4 })(box).scale,
+    Infinity,
+  );
+  assert.deepEqual(prepared(box), expected);
 });

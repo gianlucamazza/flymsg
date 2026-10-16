@@ -1,5 +1,5 @@
 import {
-  projectionErrorBound,
+  projectionErrorProjector,
   certifiedPixelError,
 } from "./projection-error-bound.js";
 
@@ -19,6 +19,7 @@ export class BoundedSelections {
     this.coarseFrames = 0;
     this.discarded = 0;
     this.composedPages = this.reusedPages = this.installedSelections = 0;
+    this.projectionViews = this.projectionBoxes = 0;
   }
   add(page, metadata) {
     if (metadata.encoding !== "anchored-path-u32/v1")
@@ -32,12 +33,15 @@ export class BoundedSelections {
     this.cachedEyeKey = null;
   }
   bounds(eyes) {
+    const projectors = eyes?.length
+      ? eyes.map((eye) => projectionErrorProjector(eye, this.precision))
+      : [];
+    this.projectionViews += projectors.length;
     return this.pages.map((page) =>
       Object.fromEntries(
         Object.entries(page.bounded.boxes).map(([owner, box]) => {
-          const values = eyes?.length
-            ? eyes.map((eye) => projectionErrorBound(box, eye, this.precision))
-            : [];
+          this.projectionBoxes += projectors.length;
+          const values = projectors.map((project) => project(box));
           return [owner, values];
         }),
       ),
@@ -334,6 +338,8 @@ export class BoundedSelections {
       composed_pages: this.composedPages,
       reused_pages: this.reusedPages,
       installed_selections: this.installedSelections,
+      projection_views: this.projectionViews,
+      projection_boxes: this.projectionBoxes,
       source_provenance_cpu_bytes: this.pages.reduce(
         (n, p) =>
           n +

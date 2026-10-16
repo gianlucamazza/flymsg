@@ -69,3 +69,26 @@ operator exclusions remain exclusions, never invented vetoes or improvements.
 Compare discard, reuse, fallback and upload counters as diagnostics only; they
 cannot substitute for cadence, error bounds, source coverage or physical XR.
 Keep normal bounded-mode release gated by the accepted ADR and #177.
+
+## Shared eye preparation
+
+The first old candidate motion arms cost 74.25–76.60 ms median measured CPU
+per frame, compared with 1.40–1.50 ms for originals. A host-only decomposition
+using captured 4/16 MiB metadata attributed about 14–15 ms per pass to projection
+certification and 3–5 ms to level selection. These host times do not qualify
+hardware cadence or isolate all device costs.
+
+Prepare Float32 eye matrices, absolute rows, composite rows, norms, viewport and
+subpixel precision once per actual eye, then certify each box with the same
+arithmetic and guards. Preparations snapshot all eye inputs and remain local to
+the existing actual-pose cache. Invalid boxes cannot modify another certificate.
+Resource counters `projection_views` and `projection_boxes` expose the ratio of
+eye preparations to certified boxes. No geometric bound or clip policy changes.
+
+An independent frozen b4427da implementation and the shared preparation produced
+bit-identical scale/rounding for 188,240 certificates across all captured 4/16 MiB
+boxes, 40 translated poses and two offsets: 182,212 finite and 6,028 unproved.
+A host exploratory rerun reduced median certification from 14–15 to 10–11 ms;
+its level selection timing varied. Treat this as CPU diagnosis, not device speed
+or admission. Repeat the software viewer/context oracle and clean-commit device
+protocol before qualifying the complete corrected runtime.
