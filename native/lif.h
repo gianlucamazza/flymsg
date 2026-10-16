@@ -41,16 +41,33 @@ inline std::vector<uint32_t> read_words(const std::filesystem::path &path) {
   require(bool(file), "native read failed");
   return words;
 }
-inline void write_words(const std::filesystem::path &path,
-                        const std::vector<uint32_t> &words) {
+// Observed sizes only. A temporary file that does not grow is not a checkpoint.
+inline std::string publish_growth(uint64_t before, uint64_t after) {
+  return after > before ? "completed" : "failed";
+}
+// Truncate path.tmp, write nbytes from that empty start, and replace path only
+// when the temporary file grew. A write that stays empty is left in place.
+inline std::string publish_bytes(const std::filesystem::path &path,
+                                 const void *data, uint64_t nbytes) {
   auto temporary = path;
   temporary += ".tmp";
+  uint64_t before = 0;
   {
     std::ofstream file(temporary, std::ios::binary | std::ios::trunc);
-    file.write(reinterpret_cast<const char *>(words.data()),
-               std::streamsize(words.size() * 4));
     require(bool(file), "native write failed");
+    file.flush();
+    require(bool(file), "native write failed");
+    before = uint64_t(std::filesystem::file_size(temporary));
+    if (nbytes != 0) {
+      require(data != nullptr, "native write failed");
+      file.write(static_cast<const char *>(data), std::streamsize(nbytes));
+      file.flush();
+      require(bool(file), "native write failed");
+    }
   }
+  const auto after = uint64_t(std::filesystem::file_size(temporary));
+  if (publish_growth(before, after) != "completed")
+    return "failed";
 #ifdef _WIN32
   require(MoveFileExW(temporary.c_str(), path.c_str(),
                       MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0,
@@ -58,6 +75,13 @@ inline void write_words(const std::filesystem::path &path,
 #else
   std::filesystem::rename(temporary, path);
 #endif
+  return "completed";
+}
+inline void write_words(const std::filesystem::path &path,
+                        const std::vector<uint32_t> &words) {
+  require(publish_bytes(path, words.data(), words.size() * sizeof(uint32_t)) ==
+              "completed",
+          "native write failed");
 }
 inline double word_double(const std::vector<uint32_t> &words, uint64_t at) {
   return std::bit_cast<double>(uint64_t(words[at]) | uint64_t(words[at + 1])
@@ -447,7 +471,7 @@ public:
       }
     write_words(path, words);
   }
-  void checkpoint(const std::filesystem::path &path) const {
+  std::string checkpoint(const std::filesystem::path &path) const {
     const auto identity = digest(input), checksum = digest(state);
     std::vector<uint32_t> words{0x31434d46,
                                 1,
@@ -460,7 +484,7 @@ public:
     // Bind cursor in the checksum too.
     words[6] ^= step;
     words.insert(words.end(), state.begin(), state.end());
-    write_words(path, words);
+    return publish_bytes(path, words.data(), words.size() * sizeof(uint32_t));
   }
   void restore(const std::filesystem::path &path) {
     auto words = read_words(path);

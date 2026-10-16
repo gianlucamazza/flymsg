@@ -369,7 +369,16 @@ struct Worker {
                                   std::chrono::steady_clock::now() - began)
                                   .count();
     status(folder, id, "checkpointing", runtime.step);
-    runtime.checkpoint(folder / L"checkpoint.bin");
+    const auto published = runtime.checkpoint(folder / L"checkpoint.bin");
+    if (published != "completed") {
+      status(folder, id, "failed", runtime.step,
+             "checkpoint temporary did not grow");
+      try {
+        finished(id, "failed", advance_ms, runtime.step - first_step);
+      } catch (...) {
+      }
+      return;
+    }
     JsonObject saved;
     saved.Insert(L"fixture_sha256",
                  JsonValue::CreateStringValue(to_hstring(hash)));
