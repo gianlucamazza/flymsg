@@ -68,7 +68,7 @@ import { visibleLinePages, writeVisibleEdges } from "./geometry-pages.js";
 import { RasterPainter } from "./raster-painter.js";
 import { ResidentLineIndex } from "./resident-lines.js";
 import { localEyePlanes, sameEyePlanes } from "./page-views.js";
-import { selectFidelity } from "./fidelity.js";
+import { selectFidelity, isSkeletonRepresentation } from "./fidelity.js";
 import { bufferBytes, geometryArrays } from "./resource-bytes.js";
 import { PagedScene } from "./paged-scene.js";
 import { SourceSlots } from "./source-slots.js";
@@ -113,9 +113,18 @@ const SKEL_ERROR_PX = 0.5;
 const query = new URLSearchParams(location.search);
 const coarse = matchMedia(COARSE).matches;
 const representation = query.get("representation") ?? "surface";
-if (!["surface", "skeleton", "mixed"].includes(representation))
+if (
+  !["surface", "skeleton", "skeleton-bounded", "mixed"].includes(representation)
+)
   throw new Error("Unknown anatomical representation");
-const pagedEnabled = query.get("uploads") === "1";
+const boundedEnabled = representation === "skeleton-bounded";
+if (boundedEnabled && !query.has("check"))
+  throw new Error(
+    "Bounded skeletons require explicit diagnostic mode until qualification",
+  );
+if (boundedEnabled && query.get("uploads") === "0")
+  throw new Error("Bounded skeletons require the paged runtime");
+const pagedEnabled = boundedEnabled || query.get("uploads") === "1";
 let pagedInputsDirty = true;
 if (pagedEnabled && representation === "mixed")
   throw new Error("Paged uploads require an explicit original representation");
@@ -574,8 +583,9 @@ function makeBatched() {
       n.shownSig = n.loadingSig = "";
     }
   }
-  const tris =
-    settings.representation === "skeleton" ? 0 : settings.budgetM * 1e6;
+  const tris = isSkeletonRepresentation(settings.representation)
+    ? 0
+    : settings.budgetM * 1e6;
   capacity.vertices = Math.ceil(tris * 0.65); // measured 0.54 vertices per triangle, see vertsPerTri
   capacity.indices = Math.ceil(tris * 3);
   batched = new THREE.BatchedMesh(
@@ -1013,7 +1023,7 @@ let skeletonsDirty = true,
 let lastSkeletonEyes, lastSkeletonRepresentation, lastResidentEnabled;
 const skeletonOn = (n) =>
   isShown(n) &&
-  (settings.representation === "skeleton" ||
+  (isSkeletonRepresentation(settings.representation) ||
     (settings.representation === "mixed" &&
       (skeletonWanted.has(n.k) || n.shown.size === 0)));
 function skeletonEyes(
@@ -1081,7 +1091,7 @@ function applySkeletonVisibility(eyes = null) {
   if (
     eyes !== null &&
     settings.residentLines &&
-    settings.representation === "skeleton" &&
+    isSkeletonRepresentation(settings.representation) &&
     neurons.every((n) => !isShown(n) || n.skeletonState === "ready")
   ) {
     const rebuilt = residentLines.sync(neurons);
@@ -1405,7 +1415,10 @@ function updateSelection() {
   const v = eyeView();
   const candidates = neurons.filter(isShown);
   for (const n of candidates) {
-    if (settings.representation !== "skeleton" && n.manifestState === "idle") {
+    if (
+      !isSkeletonRepresentation(settings.representation) &&
+      n.manifestState === "idle"
+    ) {
       n.manifestState = "queued"; // mark now, or every pass would queue it again
       manifestQueue
         .push(priorityOf(n, v), () => loadManifest(n))
@@ -1573,7 +1586,7 @@ function contextStatus() {
 function fidelityReport() {
   const selected = neurons.filter(isShown);
   const represented = selected.filter((n) =>
-    settings.representation === "skeleton"
+    isSkeletonRepresentation(settings.representation)
       ? n.skeletonState === "ready"
       : settings.representation === "surface"
         ? n.shown.size > 0 &&
@@ -1581,13 +1594,14 @@ function fidelityReport() {
         : n.shown.size > 0 || n.skeletonState === "ready",
   ).length;
   const unavailable = selected.filter((n) =>
-    settings.representation === "skeleton"
+    isSkeletonRepresentation(settings.representation)
       ? n.skeletonState === "missing"
       : n.manifestState === "missing" || !!n.surfaceError,
   ).length;
   return {
     representation: settings.representation,
-    source_geometry: settings.representation !== "mixed",
+    source_geometry: settings.representation !== "mixed" && !boundedEnabled,
+    bounded: pagedScene?.bounded?.report() ?? null,
     status:
       settings.representation === "mixed"
         ? "unqualified"
@@ -1642,17 +1656,19 @@ function resourceReport() {
       state: "untracked",
       complete: false,
     },
-    line_submission: pagedScene
-      ? {
-          mode: "immutable-pages",
-          draws: pagedScene.pages.filter(
-            (p) => p.layer === skeletonLayer && p.object.visible,
-          ).length,
-          submitted_indices: pagedScene.pages
-            .filter((p) => p.layer === skeletonLayer && p.object.visible)
-            .reduce((sum, p) => sum + p.object.geometry.index.count, 0),
-        }
-      : { ...lineSubmission },
+    line_submission: boundedEnabled
+      ? { mode: "bounded-pages", ...pagedScene.bounded.report() }
+      : pagedScene
+        ? {
+            mode: "immutable-pages",
+            draws: pagedScene.pages.filter(
+              (p) => p.layer === skeletonLayer && p.object.visible,
+            ).length,
+            submitted_indices: pagedScene.pages
+              .filter((p) => p.layer === skeletonLayer && p.object.visible)
+              .reduce((sum, p) => sum + p.object.geometry.index.count, 0),
+          }
+        : { ...lineSubmission },
     browser_heap_bytes: performance.memory?.usedJSHeapSize ?? null,
   };
 }
@@ -1889,6 +1905,7 @@ const contextLayers = new WeakMap();
 const pagedScene = pagedEnabled
   ? new PagedScene(THREE, renderer, data, {
       maxPageBytes: gpuPageMiB * 1024 * 1024,
+      bounded: boundedEnabled,
     })
   : null;
 function originalObjects() {
@@ -1896,14 +1913,35 @@ function originalObjects() {
 }
 function gpuResourcesReady() {
   return pagedScene
-    ? !pagedInputsDirty && pagedScene.state === "ready" && pagedScene.complete
+    ? !pagedInputsDirty &&
+        pagedScene.state === "ready" &&
+        pagedScene.complete &&
+        (!boundedEnabled || pagedScene.bounded.initialized)
     : null;
 }
-function diagnosticRender(draw) {
+function boundedEyeDescriptors(
+  c = camera,
+  width = renderer.domElement.width,
+  height = renderer.domElement.height,
+) {
+  world.updateMatrixWorld(true);
+  c.updateMatrixWorld(true);
+  return (c.isArrayCamera ? c.cameras : [c]).map((eye) => ({
+    modelView: new THREE.Matrix4()
+      .multiplyMatrices(eye.matrixWorldInverse, data.matrixWorld)
+      .toArray(),
+    projection: eye.projectionMatrix.toArray(),
+    width: eye.viewport?.z ?? width,
+    height: eye.viewport?.w ?? height,
+  }));
+}
+function diagnosticRender(draw, c = camera) {
   if (!pagedScene) return draw();
   if (!gpuResourcesReady())
     throw new Error("Diagnostic requires ready GPU resources");
-  return pagedScene.render(originalObjects(), draw);
+  return pagedScene.render(originalObjects(), draw, {
+    boundedEyes: boundedEyeDescriptors(c),
+  });
 }
 function prepareOriginalOracle() {
   if (!pagedEnabled) return;
@@ -1973,7 +2011,7 @@ function syncPagedScene() {
   if (!pagedScene || !pagedInputsDirty) return;
   pagedInputsDirty = false;
   const sources = [];
-  if (settings.representation === "skeleton") {
+  if (isSkeletonRepresentation(settings.representation)) {
     for (const n of neurons)
       if (isShown(n) && n.skelLod)
         sources.push({
@@ -2103,13 +2141,24 @@ const observerFrames = query.has("check") ? new ObserverFrames() : null;
 let observerView = null;
 function observerIdentity() {
   const f = fidelityReport();
-  return {url:location.href,representation: f.representation, selected: f.selected,
-    represented: f.represented, status: f.status, gpu_ready: f.gpu_ready,
+  return {
+    url: location.href,
+    representation: f.representation,
+    selected: f.selected,
+    represented: f.represented,
+    status: f.status,
+    gpu_ready: f.gpu_ready,
     gpu_generation: pagedScene?.generation ?? null,
-    context_ready:contextStatus().ready, width:renderer.domElement.width,
-    height:renderer.domElement.height, page_culling:settings.pageCulling,
-    pixel_ratio:renderer.getPixelRatio(),samples:msaaTarget.samples,
-    replay_time:clock.t,playing:clock.playing,immersive:renderer.xr.isPresenting};
+    context_ready: contextStatus().ready,
+    width: renderer.domElement.width,
+    height: renderer.domElement.height,
+    page_culling: settings.pageCulling,
+    pixel_ratio: renderer.getPixelRatio(),
+    samples: msaaTarget.samples,
+    replay_time: clock.t,
+    playing: clock.playing,
+    immersive: renderer.xr.isPresenting,
+  };
 }
 if (query.has("check")) {
   window.flymsg = {
@@ -2130,8 +2179,27 @@ if (query.has("check")) {
     resources: resourceReport,
     paged: pagedScene,
     gpuInventory: () => pagedScene?.inventory(sha256) ?? null,
+    async prepareBounded({
+      projection = null,
+      cameraWorld = null,
+      width = renderer.domElement.width,
+      height = renderer.domElement.height,
+    } = {}) {
+      if (!diagnosticSuspended || renderer.xr.isPresenting)
+        throw Error("Idle desktop diagnostic required");
+      const c = camera.clone();
+      if (projection) c.projectionMatrix.fromArray(projection);
+      if (cameraWorld)
+        c.matrix
+          .fromArray(cameraWorld)
+          .decompose(c.position, c.quaternion, c.scale);
+      c.updateMatrixWorld(true);
+      return pagedScene?.prepareBounded(
+        boundedEyeDescriptors(c, width, height),
+      );
+    },
     renderScene: (c = camera) =>
-      diagnosticRender(() => renderer.render(world, c)),
+      diagnosticRender(() => renderer.render(world, c), c),
     renderDesktop: () => diagnosticRender(() => composer.render()),
     async desktopReference({ time = clock.t, pipeline = "original" } = {}) {
       if (!diagnosticSuspended || renderer.xr.isPresenting || document.hidden)
@@ -2166,7 +2234,10 @@ if (query.has("check")) {
           THREE,
           renderer,
           pipeline === "paged"
-            ? () => pagedScene.render(originalObjects(), draw)
+            ? () =>
+                pagedScene.render(originalObjects(), draw, {
+                  boundedEyes: boundedEyeDescriptors(camera),
+                })
             : draw,
         );
         return {
@@ -2198,36 +2269,59 @@ if (query.has("check")) {
       applySkeletonVisibility(eyes);
       return { ...lineSubmission };
     },
-    observerStatus: () => ({...observerFrames.status(),
-      suspended:diagnosticSuspended, immersive:renderer.xr.isPresenting,
-      identity:observerIdentity()}),
-    observerView({name="dense-all",cameraWorld=null,projection=null}={}) {
+    observerStatus: () => ({
+      ...observerFrames.status(),
+      suspended: diagnosticSuspended,
+      immersive: renderer.xr.isPresenting,
+      identity: observerIdentity(),
+    }),
+    observerView({
+      name = "dense-all",
+      cameraWorld = null,
+      projection = null,
+    } = {}) {
       if (renderer.xr.isPresenting || diagnosticSuspended)
         throw Error("Visible unsuspended desktop observation required");
-      if (!["dense-all","anatomical-motion","close-motion","close-static"].includes(name))
+      if (
+        ![
+          "dense-all",
+          "anatomical-motion",
+          "close-motion",
+          "close-static",
+        ].includes(name)
+      )
         throw Error("Unknown observer view");
       const base = camera.clone();
-      if (cameraWorld) base.matrix.fromArray(cameraWorld).decompose(base.position,base.quaternion,base.scale);
+      if (cameraWorld)
+        base.matrix
+          .fromArray(cameraWorld)
+          .decompose(base.position, base.quaternion, base.scale);
       if (projection) base.projectionMatrix.fromArray(projection);
       if (name.startsWith("close")) base.position.multiplyScalar(0.35);
-      observerView = {name,base,started:performance.now()};
+      observerView = { name, base, started: performance.now() };
       invalidate();
     },
-    observerCapture(seconds=30) {
-      const identity=observerIdentity();
-      if (document.hidden || diagnosticSuspended || renderer.xr.isPresenting ||
-          identity.status!=="ready" || identity.gpu_ready===false || !identity.context_ready ||
-          !diagnosticContinuous)
+    observerCapture(seconds = 30) {
+      const identity = observerIdentity();
+      if (
+        document.hidden ||
+        diagnosticSuspended ||
+        renderer.xr.isPresenting ||
+        identity.status !== "ready" ||
+        identity.gpu_ready === false ||
+        !identity.context_ready ||
+        !diagnosticContinuous
+      )
         throw Error("Continuous complete desktop rendering required");
-      if(observerView)observerView.started=performance.now();
-      observerFrames.start(seconds,identity);
+      if (observerView) observerView.started = performance.now();
+      observerFrames.start(seconds, identity);
       return observerFrames.status();
     },
     observerResult: () => observerFrames.finish(),
     observerWait: () => observerFrames.wait(),
     observerReset() {
       observerFrames.invalidate("observation-reset");
-      observerView=null;
+      observerView = null;
     },
     diagnosticState: () => ({
       suspended: diagnosticSuspended,
@@ -2384,6 +2478,7 @@ if (query.has("check")) {
                   () => renderer.render(world, c),
                   {
                     pass,
+                    boundedEyes: boundedEyeDescriptors(c, width, height),
                     eyes: culling ? skeletonEyes(c, width, height) : null,
                   },
                 )
@@ -2662,6 +2757,9 @@ if (showChrome(location.search)) {
     .add(settings, "representation", {
       "full surfaces": "surface",
       "full skeletons": "skeleton",
+      ...(query.has("check")
+        ? { "bounded skeletons (≤0.5 px; experimental)": "skeleton-bounded" }
+        : {}),
     })
     .name("anatomy")
     .onChange((value) => {
@@ -2984,6 +3082,7 @@ renderer.domElement.addEventListener("webglcontextlost", (e) => {
   e.preventDefault();
   lostEl.hidden = false;
   observerFrames?.contextLost();
+  perf.resetContext(); // abandon timer handles while their owning context is lost
   pagedScene?.contextLost();
   xrMetrics.event("webglcontextlost");
 });
@@ -3015,11 +3114,16 @@ renderer.setAnimationLoop((timestamp) => {
   const steered = inXR ? false : steerWithPad(dt);
   const moved = inXR ? false : controls.update() || steered; // XR headset owns its camera pose
   if (observerView && !inXR) {
-    const {base,name,started}=observerView;
-    camera.position.copy(base.position);camera.quaternion.copy(base.quaternion);
-    camera.scale.copy(base.scale);camera.projectionMatrix.copy(base.projectionMatrix);
+    const { base, name, started } = observerView;
+    camera.position.copy(base.position);
+    camera.quaternion.copy(base.quaternion);
+    camera.scale.copy(base.scale);
+    camera.projectionMatrix.copy(base.projectionMatrix);
     camera.projectionMatrixInverse.copy(base.projectionMatrix).invert();
-    if(name.endsWith("motion"))camera.rotateY(0.15*Math.sin(2*Math.PI*(timestamp-started)/10000));
+    if (name.endsWith("motion"))
+      camera.rotateY(
+        0.15 * Math.sin((2 * Math.PI * (timestamp - started)) / 10000),
+      );
     camera.updateMatrixWorld(true);
   }
   if (inXR) {
@@ -3031,12 +3135,29 @@ renderer.setAnimationLoop((timestamp) => {
   const playing = replay && clock.playing;
   if (playing) clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
   if (replay && clock.t !== shownT) updateActivity(clock.t);
-  const live = inXR || interacting || moved || playing || diagnosticContinuous;
+  // Upload backpressure and the warmup fence depend on this existing loop.
+  // Submit continuously until the complete GPU generation is ready; otherwise
+  // a static page can idle-throttle the very callbacks needed to finish startup.
+  const preparingGpu =
+    pagedScene?.complete &&
+    (["preparing", "warming"].includes(pagedScene.state) ||
+      (boundedEnabled &&
+        pagedScene.state === "ready" &&
+        !pagedScene.bounded.initialized &&
+        !pagedScene.bounded.error));
+  const live =
+    inXR ||
+    interacting ||
+    moved ||
+    playing ||
+    diagnosticContinuous ||
+    preparingGpu;
   if (!inXR) tuneQuality(live); // desktop adaptive compositor is not XR-qualified
   const now = performance.now();
   // the index rebuild walks every drawn segment: coalesce streaming updates
   if (!inXR) fitClip();
-  if (settings.pageCulling && inXR) renderer.xr.updateCamera(camera);
+  if ((settings.pageCulling || boundedEnabled) && inXR)
+    renderer.xr.updateCamera(camera);
   if (
     !pagedScene &&
     (settings.pageCulling ||
@@ -3054,6 +3175,13 @@ renderer.setAnimationLoop((timestamp) => {
     const wasReady = pagedScene.state === "ready";
     syncPagedScene();
     pagedScene.tick();
+    if (boundedEnabled && pagedScene.state === "ready") {
+      const previous = pagedScene.bounded.current;
+      pagedScene.bounded.update(
+        boundedEyeDescriptors(inXR ? renderer.xr.getCamera() : camera),
+      );
+      if (previous !== pagedScene.bounded.current) invalidate();
+    }
     if (!wasReady || pagedScene.state !== "ready") invalidate();
     xrObserver?.refresh?.();
     perf.stage("page_sync_and_upload", performance.now() - uploadStart);
@@ -3074,6 +3202,9 @@ renderer.setAnimationLoop((timestamp) => {
   };
   if (pagedScene)
     pagedScene.render(originalObjects(), draw, {
+      boundedEyes: boundedEyeDescriptors(
+        inXR ? renderer.xr.getCamera() : camera,
+      ),
       eyes: settings.pageCulling
         ? skeletonEyes(inXR ? renderer.xr.getCamera() : camera)
         : null,
@@ -3081,8 +3212,17 @@ renderer.setAnimationLoop((timestamp) => {
   else draw();
   perf.stage("draw_submission", performance.now() - submissionStart);
   const measured = perf.end({ continuous: live });
-  if(observerFrames)observerFrames.frame(timestamp,
-    observerFrames.capture ? observerIdentity() : null, measured);
+  if (observerFrames?.capture && boundedEnabled)
+    measured.bounded = {
+      ...pagedScene.bounded.last,
+      error: pagedScene.bounded.error,
+    };
+  if (observerFrames)
+    observerFrames.frame(
+      timestamp,
+      observerFrames.capture ? observerIdentity() : null,
+      measured,
+    );
   if (inXR)
     xrMetrics.frame(
       timestamp,

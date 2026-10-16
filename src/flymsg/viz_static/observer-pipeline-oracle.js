@@ -1,6 +1,11 @@
 // Real viewer/materials, two explicitly declared source neurons. This fixture
 // tests rendering equivalence; it cannot qualify a reduced scene for performance.
+import {
+  verifyRasterFootprint,
+  bloomFootprint,
+} from "./bounded-raster-oracle.js";
 import { browserProbe } from "./browser-probe.js";
+import { auditBoundedRuntime } from "./bounded-runtime-oracle.js";
 import { serializedGpuProbe } from "./gpu-probe.js";
 
 export async function observerPipelineOracle() {
@@ -24,6 +29,7 @@ export async function observerPipelineOracle() {
   const api = window.flymsg;
   if (api?.fidelity().gpu_ready !== true)
     throw new Error("Viewer preparation timed out");
+  const bounded = api.fidelity().representation === "skeleton-bounded";
   const results = [];
   stage("resources-ready");
   const beforeReferenceResources = api.resources();
@@ -37,11 +43,38 @@ export async function observerPipelineOracle() {
         ...options,
         pipeline: "original",
       });
+      if (bounded) {
+        const state = api.diagnosticState();
+        try {
+          api.diagnostic({ ...state, suspended: true });
+          const projection = original.projection;
+          await api.prepareBounded({ ...options, projection });
+          const modelView = new api.THREE.Matrix4()
+            .fromArray(cameraWorld)
+            .invert()
+            .multiply(new api.THREE.Matrix4().fromArray(original.data_world))
+            .toArray();
+          await auditBoundedRuntime(api, [
+            { modelView, projection, width: 256, height: 256 },
+          ]);
+        } finally {
+          api.diagnostic(state);
+        }
+      }
       const paged = await api.reference({
         ...options,
         pipeline: "paged",
         culling: true,
       });
+      const footprint = bounded
+        ? verifyRasterFootprint(
+            original.images.colour,
+            paged.images.colour,
+            original.images.neuron_id,
+            original.width,
+            original.height,
+          )
+        : null;
       const comparisons = Object.fromEntries(
         Object.keys(original.images).map((pass) => [
           pass,
@@ -57,7 +90,10 @@ export async function observerPipelineOracle() {
         const id = pixels[i] + 256 * pixels[i + 1] + 65536 * pixels[i + 2];
         if (id) ids.add(id);
       }
-      if (!Object.values(comparisons).every(Boolean) || !ids.size)
+      const exactPasses = bounded
+        ? ["neuron_id", "packed_depth"]
+        : Object.keys(comparisons);
+      if (!exactPasses.every((pass) => comparisons[pass]) || !ids.size)
         throw new Error(
           JSON.stringify({ time, eye, comparisons, ids: [...ids] }),
         );
@@ -65,6 +101,8 @@ export async function observerPipelineOracle() {
         time,
         eye,
         comparisons,
+        footprint,
+        bounded_submission: bounded ? api.paged.bounded.report() : null,
         nonempty_ids: [...ids],
         scene_sha256: original.scene_sha256,
         activity_sha256: original.activity_sha256,
@@ -135,9 +173,10 @@ export async function observerPipelineOracle() {
         pipeline: "original",
       });
       stage(`desktop-paged-${time}`);
+      if (bounded) await api.prepareBounded();
       const candidate = await api.desktopReference({ time, pipeline: "paged" });
       if (
-        reference.rgba.sha256 !== candidate.rgba.sha256 ||
+        (!bounded && reference.rgba.sha256 !== candidate.rgba.sha256) ||
         reference.samples !== 4 ||
         candidate.samples !== 4 ||
         JSON.stringify(reference.projection) !==
@@ -146,19 +185,78 @@ export async function observerPipelineOracle() {
           JSON.stringify(candidate.camera_world)
       )
         throw new Error(`Full-quality desktop mismatch at ${time} ms`);
-      desktopCases.push({ time, reference, candidate });
+      let footprint = null;
+      if (bounded) {
+        const source = await api.reference({
+          time,
+          width: reference.width,
+          height: reference.height,
+          projection: reference.projection,
+          cameraWorld: reference.camera_world,
+          pipeline: "original",
+        });
+        footprint = verifyRasterFootprint(
+          reference.rgba,
+          candidate.rgba,
+          source.images.neuron_id,
+          reference.width,
+          reference.height,
+          bloomFootprint(api, reference.width, reference.height),
+        );
+      }
+      desktopCases.push({ time, reference, candidate, footprint });
     }
   } finally {
     api.diagnostic(originalState);
+  }
+  let contextRecovery = null;
+  if (
+    ["skeleton", "skeleton-bounded"].includes(api.fidelity().representation)
+  ) {
+    stage("context-loss");
+    const canvas = api.renderer.domElement,
+      extension = api.renderer.getContext().getExtension("WEBGL_lose_context");
+    if (!extension)
+      throw Error("Context recovery fixture requires WEBGL_lose_context");
+    const generation = api.paged.generation;
+    const lost = new Promise((resolve) =>
+      canvas.addEventListener("webglcontextlost", resolve, { once: true }),
+    );
+    extension.loseContext();
+    await lost;
+    if (api.paged.state !== "context-lost" || api.paged.bounded?.current)
+      throw Error("Lost context retained a bounded selection");
+    const restored = new Promise((resolve) =>
+      canvas.addEventListener("webglcontextrestored", resolve, { once: true }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    extension.restoreContext();
+    await restored;
+    const deadline = performance.now() + 30000;
+    while (!api.fidelity().gpu_ready && performance.now() < deadline)
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    if (!api.fidelity().gpu_ready || api.paged.generation <= generation)
+      throw Error(
+        "Context reconstruction failed: " +
+          JSON.stringify(api.resources().gpu_resources),
+      );
+    contextRecovery = {
+      generation_before: generation,
+      generation_after: api.paged.generation,
+      resources: api.resources().gpu_resources,
+    };
+    stage("context-restored");
   }
   stage("complete");
   return {
     status: "pass",
     before_reference_resources: beforeReferenceResources,
     diagnostic_routing: diagnosticRouting,
+    context_recovery: contextRecovery,
     desktop_cases: desktopCases,
-    qualification:
-      "correctness fixture only; not full-scene hardware performance",
+    qualification: bounded
+      ? "bounded graph, auxiliary passes and colour-support fixture; no full-scene hardware or human qualification"
+      : "correctness fixture only; not full-scene hardware performance",
     fidelity: api.fidelity(),
     resources: api.resources(),
     results,

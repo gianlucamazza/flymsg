@@ -62,6 +62,9 @@ export class XrMetrics {
       resource_samples: [],
       content_checks: 0,
       incomplete_content_frames: 0,
+      content_identity: null,
+      bounded_frames: [],
+      uncertified_bounded_frames: 0,
     };
     const current = this.active;
     session.addEventListener("visibilitychange", () => {
@@ -97,11 +100,53 @@ export class XrMetrics {
   frame(timestamp, cpuMs, gpuMs, resources = null, fidelity = null) {
     const a = this.active;
     if (!a || !a.visible) return;
+    let incomplete = false;
     if (fidelity) {
       if (typeof fidelity.gpu_ready === "boolean") a.content_checks++;
-      if (fidelity.status !== "ready" || fidelity.gpu_ready === false)
-        a.incomplete_content_frames++;
+      const identity = JSON.stringify({
+        representation: fidelity.representation,
+        selected: fidelity.selected,
+        represented: fidelity.represented,
+      });
+      a.content_identity ??= identity;
+      incomplete =
+        fidelity.status !== "ready" ||
+        fidelity.gpu_ready === false ||
+        identity !== a.content_identity;
     }
+    const bounded =
+      fidelity?.representation === "skeleton-bounded" ||
+      a.bounded_frames.length > 0;
+    if (bounded) {
+      const b = fidelity?.bounded;
+      const valid =
+        !!b &&
+        !b.error &&
+        Number.isFinite(b.maximum_error_px) &&
+        b.maximum_error_px >= 0 &&
+        b.maximum_error_px <= 0.5 &&
+        Number.isInteger(b.submitted_indices) &&
+        Number.isInteger(b.source_indices) &&
+        b.submitted_indices >= 0 &&
+        b.source_indices >= b.submitted_indices &&
+        Number.isInteger(b.fallback_pages) &&
+        b.fallback_pages >= 0 &&
+        Number.isInteger(b.coarse_pages) &&
+        b.coarse_pages >= 0;
+      if (!valid) {
+        a.uncertified_bounded_frames++;
+        incomplete = true;
+      }
+      a.bounded_frames.push([
+        b?.maximum_error_px ?? null,
+        b?.submitted_indices ?? null,
+        b?.source_indices ?? null,
+        b?.fallback_pages ?? null,
+        b?.coarse_pages ?? null,
+        valid ? 0 : 1,
+      ]);
+    }
+    if (incomplete) a.incomplete_content_frames++;
     if (a.last !== null && timestamp > a.last)
       a.intervals.push(timestamp - a.last);
     a.last = timestamp;
@@ -115,7 +160,8 @@ export class XrMetrics {
         ...(typeof resources === "function" ? resources() : resources),
       });
       a.last_emit_ms = timestamp;
-      const { raw_intervals_ms, ...summary } = this.report(timestamp);
+      const { raw_intervals_ms, raw_bounded_frames, ...summary } =
+        this.report(timestamp);
       this.emit(summary);
     }
   }
@@ -134,6 +180,7 @@ export class XrMetrics {
       events: [...a.events],
       resources: [...a.resource_samples],
       content: {
+        identity: a.content_identity ? JSON.parse(a.content_identity) : null,
         checked_frames: a.content_checks,
         incomplete_frames: a.incomplete_content_frames,
         verdict: a.incomplete_content_frames
@@ -144,6 +191,26 @@ export class XrMetrics {
       },
       // Raw intervals allow independent scoring; every long frame is retained.
       raw_intervals_ms: [...a.intervals],
+      bounded: a.bounded_frames.length
+        ? {
+            checked_frames: a.bounded_frames.length,
+            uncertified_frames: a.uncertified_bounded_frames,
+            fields: [
+              "maximum_error_px",
+              "submitted_indices",
+              "source_indices",
+              "fallback_pages",
+              "coarse_pages",
+              "invalid",
+            ],
+            verdict: a.uncertified_bounded_frames
+              ? "fail"
+              : a.bounded_frames.length === a.frames
+                ? "pass"
+                : "indeterminate",
+          }
+        : null,
+      raw_bounded_frames: a.bounded_frames.map((row) => [...row]),
       status: "running",
     };
   }

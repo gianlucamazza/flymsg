@@ -46,6 +46,7 @@ export class ObserverFrames {
       gpu_ms: [],
       reasons: [],
       frames: 0,
+      bounded_frames: [],
     };
     this.completion = new Promise((resolve) => {
       this.resolveCompletion = resolve;
@@ -75,6 +76,22 @@ export class ObserverFrames {
     }
     c.last = timestamp;
     c.frames++;
+    if (c.identity.representation === "skeleton-bounded") {
+      const b = measured.bounded;
+      if (
+        !b ||
+        !Number.isFinite(b.maximum_error_px) ||
+        b.maximum_error_px < 0 ||
+        b.maximum_error_px > 0.5 ||
+        !Number.isInteger(b.submitted_indices) ||
+        b.submitted_indices < 0 ||
+        !Number.isInteger(b.source_indices) ||
+        b.source_indices < b.submitted_indices ||
+        b.error
+      )
+        this.invalidate("uncertified-bounded-frame");
+      c.bounded_frames.push(b ? { ...b } : null);
+    }
     if (Number.isFinite(measured.cpu_ms)) c.cpu_ms.push(measured.cpu_ms);
     if (Array.isArray(measured.gpu_ms))
       c.gpu_ms.push(...measured.gpu_ms.filter(Number.isFinite));

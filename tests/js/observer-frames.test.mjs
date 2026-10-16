@@ -67,3 +67,43 @@ test("empty and shortened windows fail, parallel capture refuses", () => {
   assert(r.reasons.includes("incomplete-window"));
   assert(r.reasons.includes("insufficient-application-frames"));
 });
+
+test("every bounded submitted frame requires a finite certified error and counts", () => {
+  const id = { representation: "skeleton-bounded" };
+  for (const bad of [
+    null,
+    { maximum_error_px: 0.50001, submitted_indices: 2, source_indices: 4 },
+    { maximum_error_px: NaN, submitted_indices: 2, source_indices: 4 },
+    { maximum_error_px: 0, submitted_indices: 5, source_indices: 4 },
+    {
+      maximum_error_px: 0,
+      submitted_indices: 2,
+      source_indices: 4,
+      error: "allocation",
+    },
+  ]) {
+    const f = new ObserverFrames("a");
+    f.start(5, id, 0);
+    for (let i = 0; i <= 100; i++)
+      f.frame(i * 50, id, {
+        bounded:
+          i === 50
+            ? bad
+            : { maximum_error_px: 0, submitted_indices: 4, source_indices: 4 },
+      });
+    assert(f.finish(5001).reasons.includes("uncertified-bounded-frame"));
+  }
+  const f = new ObserverFrames("b");
+  f.start(5, id, 0);
+  for (let i = 0; i <= 100; i++)
+    f.frame(i * 50, id, {
+      bounded: {
+        maximum_error_px: i % 2 ? 0.4 : 0,
+        submitted_indices: i % 2 ? 2 : 4,
+        source_indices: 4,
+      },
+    });
+  const report = f.finish(5001);
+  assert(report.eligible);
+  assert.equal(report.bounded_frames.length, 101);
+});

@@ -60,10 +60,13 @@ export async function observerPreflight(
       "main.js",
       "perf.js",
       "observer-frames.js",
+      "xr-metrics.js",
       "paged-scene.js",
       "gpu-upload.js",
       "primitive-pages.js",
       "context-readiness.js",
+      "bounded-selections.js",
+      "projection-error-bound.js",
     ];
     const loaded = await browser.loadedSources(names);
     for (const name of names) {

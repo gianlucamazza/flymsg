@@ -122,6 +122,14 @@ def test_preflight_rejects_sleeping_headset_before_browser_contact(monkeypatch):
 def test_preflight_removes_only_owned_forward_after_bad_target(monkeypatch):
     calls = []
     monkeypatch.setattr(
+        quest,
+        "native_focus",
+        lambda *args: {
+            "browser_focused": True,
+            "components": ["com.oculus.browser/.BrowserActivity"],
+        },
+    )
+    monkeypatch.setattr(
         quest, "snapshot", lambda serial: {"power": "mWakefulness=Awake"}
     )
 
@@ -269,6 +277,14 @@ def test_readback_readiness_cannot_authorize_xr_receipts(monkeypatch, tmp_path):
         quest, "snapshot", lambda *a, **k: {"power": "mWakefulness=Awake"}
     )
     calls = []
+    monkeypatch.setattr(
+        quest,
+        "native_focus",
+        lambda *args: {
+            "components": ["com.oculus.browser/.BrowserActivity"],
+            "browser_focused": True,
+        },
+    )
 
     def ready(*args, **kwargs):
         calls.append(kwargs)
@@ -284,3 +300,116 @@ def test_readback_readiness_cannot_authorize_xr_receipts(monkeypatch, tmp_path):
     assert session.server.ready_document_id is None
     assert session.wait_ready()["eligible"]
     assert session.server.ready_document_id == "current"
+
+
+def test_native_guardian_focus_cannot_be_confused_with_a_resumed_browser(monkeypatch):
+    for raw, expected in [
+        (
+            "mCurrentFocus=null\nmCurrentFocus=Window{abc u0 com.oculus.guardian/.GuardianDialogActivity}",
+            False,
+        ),
+        (
+            "mCurrentFocus=Window{abc u0 com.oculus.browser/com.oculus.browser.BrowserActivity}",
+            True,
+        ),
+        (
+            "mCurrentFocus=Window{abc u0 com.oculus.browser/.BrowserActivity}\nmCurrentFocus=Window{def u0 com.oculus.guardian/.Dialog}",
+            False,
+        ),
+        ("unknown firmware", False),
+    ]:
+        monkeypatch.setattr(quest, "adb", lambda *args, text=raw: text)
+        assert quest.native_focus("192.168.1.146:5555")["browser_focused"] is expected
+
+
+def test_bounded_xr_final_receipt_recomputes_all_raw_frame_certificates():
+    import copy
+
+    identity = {
+        "representation": "skeleton-bounded",
+        "selected": 1128,
+        "represented": 1128,
+    }
+    doc = {
+        "status": "ended",
+        "frames": 2,
+        "content": {"identity": identity, "checked_frames": 2, "incomplete_frames": 0},
+        "bounded": {
+            "fields": [
+                "maximum_error_px",
+                "submitted_indices",
+                "source_indices",
+                "fallback_pages",
+                "coarse_pages",
+                "invalid",
+            ],
+            "checked_frames": 2,
+            "uncertified_frames": 0,
+        },
+        "raw_bounded_frames": [[0.4, 20, 100, 0, 1, 0], [0, 100, 100, 1, 0, 0]],
+    }
+    result = quest.bounded_xr_certificate(doc, identity)
+    assert result["status"] == "pass" and result["fallback_frames"] == 1
+    for damage in (
+        "over-limit",
+        "nan",
+        "boolean",
+        "missing",
+        "identity",
+        "error",
+        "summary",
+    ):
+        bad = copy.deepcopy(doc)
+        if damage == "over-limit":
+            bad["raw_bounded_frames"][0][0] = 0.5001
+        elif damage == "nan":
+            bad["raw_bounded_frames"][0][0] = float("nan")
+        elif damage == "boolean":
+            bad["raw_bounded_frames"][0][1] = True
+        elif damage == "missing":
+            bad["raw_bounded_frames"].pop()
+        elif damage == "identity":
+            bad["content"]["identity"]["selected"] = 2
+        elif damage == "error":
+            bad["raw_bounded_frames"][0][5] = 1
+        else:
+            bad["bounded"]["checked_frames"] = 3
+        assert quest.bounded_xr_certificate(bad, identity)["status"] == "fail"
+    doc["status"] = "running"
+    assert quest.bounded_xr_certificate(doc, identity)["status"] == "pending"
+
+
+def test_native_focus_exclusion_is_durable_before_document_admission(
+    monkeypatch, tmp_path
+):
+    from types import SimpleNamespace
+
+    session = quest.QuestSite("192.168.1.146:5555", tmp_path)
+    session.endpoint, session.target, session.url = "endpoint", "owned", "url"
+    session.server = SimpleNamespace(ready_document_id=None)
+    monkeypatch.setattr(
+        quest, "snapshot", lambda *a, **k: {"power": "mWakefulness=Awake"}
+    )
+    monkeypatch.setattr(
+        quest,
+        "native_focus",
+        lambda *a: {
+            "browser_focused": False,
+            "components": ["com.oculus.guardian/.Dialog"],
+        },
+    )
+    monkeypatch.setattr(
+        quest,
+        "browser_preflight",
+        lambda *a, **k: {
+            "eligible": True,
+            "reasons": [],
+            "state": {"after": {"document_id": "current"}},
+        },
+    )
+    evidence = tmp_path / "preflight.jsonl"
+    check = session.wait_ready(timeout=0, evidence=evidence)
+    saved = json.loads(evidence.read_text())
+    assert not check["eligible"] and not saved["browser"]["eligible"]
+    assert "native-browser-not-focused" in saved["browser"]["reasons"]
+    assert session.server.ready_document_id is None
