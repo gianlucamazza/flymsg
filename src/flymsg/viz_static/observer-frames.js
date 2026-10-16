@@ -47,6 +47,14 @@ export class ObserverFrames {
       reasons: [],
       frames: 0,
     };
+    this.completion = new Promise((resolve) => {
+      this.resolveCompletion = resolve;
+    });
+  }
+
+  wait() {
+    if (!this.capture) throw Error("No observer capture is active");
+    return this.completion;
   }
 
   frame(timestamp, identity, measured = {}) {
@@ -70,22 +78,29 @@ export class ObserverFrames {
     if (Number.isFinite(measured.cpu_ms)) c.cpu_ms.push(measured.cpu_ms);
     if (Array.isArray(measured.gpu_ms))
       c.gpu_ms.push(...measured.gpu_ms.filter(Number.isFinite));
+    if (timestamp >= c.started_ms + c.seconds * 1000) {
+      this.resolveCompletion?.();
+      this.resolveCompletion = null;
+    }
   }
 
   finish(now = performance.now()) {
     const c = this.capture;
     if (!c) throw Error("No observer capture is active");
     this.capture = null;
+    this.resolveCompletion?.();
+    this.resolveCompletion = null;
     const wall_ms = now - c.started_ms;
-    if (wall_ms < c.seconds * 1000) c.reasons.push("incomplete-window");
+    if (
+      wall_ms < c.seconds * 1000 ||
+      c.last === null ||
+      c.last < c.started_ms + c.seconds * 1000
+    )
+      c.reasons.push("incomplete-window");
     if (c.raw_intervals_ms.length < 20)
       c.reasons.push("insufficient-application-frames");
-    const sorted = [...c.raw_intervals_ms].sort((a, b) => a - b);
-    const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : null;
     const terminal_gap_ms =
       c.last === null ? wall_ms : Math.max(0, now - c.last);
-    if (terminal_gap_ms > Math.max(100, 2 * (median ?? 0)))
-      c.reasons.push("incomplete-terminal-cadence");
     return {
       ...c,
       wall_ms,

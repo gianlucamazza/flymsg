@@ -2224,6 +2224,7 @@ if (query.has("check")) {
       return observerFrames.status();
     },
     observerResult: () => observerFrames.finish(),
+    observerWait: () => observerFrames.wait(),
     observerReset() {
       observerFrames.invalidate("observation-reset");
       observerView=null;

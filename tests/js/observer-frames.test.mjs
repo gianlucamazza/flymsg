@@ -23,7 +23,7 @@ test("a complete arm retains more than 600 samples and long stalls", () => {
   assert.equal(r.raw_intervals_ms.length, 1001);
   assert.equal(r.raw_intervals_ms.at(-1), 1500);
 });
-test("context, source-generation, hidden and terminal stalls cannot pass", () => {
+test("context, source-generation, hidden and incomplete windows cannot pass", () => {
   const f = new ObserverFrames("document-a");
   f.start(30, { generation: 1 }, 0);
   for (let i = 0; i < 30; i++)
@@ -36,9 +36,27 @@ test("context, source-generation, hidden and terminal stalls cannot pass", () =>
     "render-identity-changed",
     "hidden-page",
     "context-lost",
-    "incomplete-terminal-cadence",
+    "incomplete-window",
   ])
     assert(r.reasons.includes(reason));
+});
+test("completion requires a submitted frame beyond the deadline, including slow submissions", async () => {
+  const f = new ObserverFrames("a");
+  f.start(5, {}, 0);
+  let completed = false;
+  const completion = f.wait().then(() => {
+    completed = true;
+  });
+  for (let i = 0; i < 100; i++) f.frame(i * 50, {});
+  await Promise.resolve();
+  assert.equal(completed, false);
+  f.frame(6000, {}, { cpu_ms: 1200 });
+  await completion;
+  assert.equal(completed, true);
+  const result = f.finish(7200);
+  assert(result.eligible);
+  assert.equal(result.raw_intervals_ms.at(-1), 1050);
+  assert.equal(result.terminal_gap_ms, 1200);
 });
 test("empty and shortened windows fail, parallel capture refuses", () => {
   const f = new ObserverFrames("a");

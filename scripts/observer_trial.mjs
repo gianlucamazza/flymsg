@@ -54,8 +54,13 @@ export async function observerTrial(
       samples:flymsg.composer.renderTarget1.samples,bloom:flymsg.bloom.enabled})`);
     const sample = await browser.evaluate(`(async()=>{
       flymsg.observerCapture(${JSON.stringify(seconds)});
-      await new Promise(resolve=>setTimeout(resolve,${Math.ceil(seconds * 1000) + 100}));
-      return flymsg.observerResult();})()`);
+      let watchdog;
+      try {
+        await Promise.race([flymsg.observerWait(),new Promise(resolve=>{
+          watchdog=setTimeout(resolve,${Math.ceil(seconds * 1000) + 30000});
+        })]);
+        return flymsg.observerResult();
+      } finally {clearTimeout(watchdog);}})()`);
     write("application-samples.json", sample);
     const after = await observerPreflight(browser, browser.url, {
       requireRendering: true,
