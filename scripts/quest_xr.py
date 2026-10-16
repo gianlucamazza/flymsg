@@ -323,7 +323,8 @@ class QuestSite:
                 if self.unattended
                 else "physical-presence"
             )
-            self.device["normal_xr_qualification"] = not self.unattended
+            self.device["normal_xr_qualification"] = False
+            self.device["normal_xr_profile_eligible"] = not self.unattended
             if self.unattended:
                 wifi_serial(self.serial)
                 original_proximity = proximity_state(self.serial)

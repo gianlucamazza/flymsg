@@ -90,3 +90,15 @@ receipts are ineligible. These campaigns are desktop diagnostics only; do not
 combine their measurements with physical-presence campaigns or claim normal XR,
 comfort, head-motion, or stereo qualification. Rendering quality stays unchanged.
 The initial device roundtrip held Awake for 25 seconds and verified restoration.
+
+## Static readback preparation
+
+`quest_bounded.py` explicitly requests `readback_only` readiness. A complete,
+visible, awake static page can legitimately provide too few animation callbacks
+for the cadence preflight. This separate path still checks URL, document,
+loaded sources, full anatomy, context and GPU state; it requires completed
+nonuniform readback images and actual line counts in the experiment. It cannot
+be combined with required rendering progress or an immersive session, and never
+sets an XR-eligible document receipt. Ordinary cadence/XR collectors retain their
+callback and submitted-frame checks unchanged. Excluded image attempts are
+retained alongside the successful diagnostic, not rescored as timing data.

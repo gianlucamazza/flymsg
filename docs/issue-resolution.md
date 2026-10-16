@@ -172,3 +172,27 @@ also covered by the slow run) and 40 targeted Python tests. Authentication and
 transport failures propagate in all three status readers; a missing file or a
 partial status JSON remains pending. Callback-free desktop or XR observations
 are excluded even when the document reports itself visible.
+
+### Wi-Fi performance and bounded-path experiment — 2026-10-16
+
+The [Wi-Fi investigation](https://github.com/gianlucamazza/flymsg/blob/main/docs/quest-performance-2026-10-16.md)
+retains full-scene 4/16/64 MiB geometric/raster oracles, eligible raw cadence,
+excluded attempts and the corrected Device Portal canaries. Three complete dense
+blocks reject 4 MiB (median paired p95 ratio 2.0498). Remaining 16/64 cadence and
+surface/physical-phone/immersive gates remain open. Serial direct/composer probes
+supply useful stage diagnostics, not a replacement for those missing matrices.
+
+The owner accepted a separate half-pixel path experiment. Independent original
+edge/topology/projected-error checks and actual draw counts preserve all 1,128
+selected neurons. Three fixed-camera A/B/B/A repeats show approximately 66% and
+48% less serialized desktop wall time in dense and close views. Preparation
+still takes 21–24 seconds. This clears an exploratory gate only: moving-eye
+bounds, worker/upload scheduling, raster/depth/picking acceptance and physical XR
+remain required. The production entrypoint does not import the experiment.
+
+At the owner's request, unattended diagnostics temporarily simulate proximity,
+record this distinct power profile and verify return to physical sensor control.
+Static readback readiness cannot qualify cadence or XR receipts; their callback
+checks remain unchanged. The final archive includes independent checksum/raw
+statistics verification and explicit limits. Keep #24 and #177 open; neither a
+hardware qualification nor a complete performance resolution is claimed.
