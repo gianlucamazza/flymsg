@@ -159,12 +159,18 @@ class Job:
 
     def wait(self, states: set, timeout_s: float = 900.0) -> dict:
         start = time.time()
+        last: dict = {}
         while time.time() - start < timeout_s:
             s = self.status()
+            if s:
+                last = s
             if s.get("state") in states:
                 return s
             time.sleep(1.0)
-        return {"state": "timeout"}
+        timed_out = dict(last)
+        timed_out["state"] = "timeout"
+        timed_out["last_state"] = last.get("state")
+        return timed_out
 
     def result(self) -> dict:
         self.portal.get(
@@ -187,6 +193,17 @@ class Job:
             return True
         except AssertionError:
             return False
+
+
+def failure_record(exc: BaseException) -> dict:
+    """A timed-out or rejected trial stays interrupted. It is not a pass."""
+    return {
+        "schema": "flymsg.console_lifecycle/v1",
+        "state": "interrupted",
+        "passed": False,
+        "error_type": type(exc).__name__,
+        "error": str(exc),
+    }
 
 
 def app_call(
@@ -240,6 +257,11 @@ def run(
     job = Job(portal, package, sha, out, extension=extension)
     job.submit()
     final = job.wait(done)
+    if final.get("state") == "timeout":
+        raise RuntimeError(
+            "worker timed out during throughput "
+            f"({final.get('last_state') or 'no status'} at step {final.get('step')})"
+        )
     expected_source = lineage.get("worker_source_commit")
     if expected_source and final.get("source_commit") != expected_source:
         raise RuntimeError("worker source differs from the declared package lineage")
@@ -391,14 +413,7 @@ if __name__ == "__main__":
             a.force_stop,
         )
     except (OSError, RuntimeError, KeyboardInterrupt) as exc:
-        failure = {
-            "schema": "flymsg.console_lifecycle/v1",
-            "state": "interrupted",
-            "passed": False,
-            "error_type": type(exc).__name__,
-            "error": str(exc),
-        }
-        runstore.atomic_json(a.out / "failure.json", failure)
+        runstore.atomic_json(a.out / "failure.json", failure_record(exc))
         sys.exit(f"Lifecycle incomplete; retained progress/failure: {a.out}")
     keys = ("throughput", "cancel", "stop_and_resume", "passed")
     print(json.dumps({k: r[k] for k in keys}))
