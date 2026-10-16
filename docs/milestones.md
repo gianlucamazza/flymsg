@@ -21,11 +21,11 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 
 **Owner issues:** [#148](https://github.com/gianlucamazza/flymsg/issues/148). Related native semantics: [#39](https://github.com/gianlucamazza/flymsg/issues/39).
 
-**Evidence already available:** convergence v1 passes its preregistered battery criterion; weak-pathway sugar → MN9 first-spike latency *does not converge* (35.3 ms at 0.1 ms versus 77.4 ms at 0.025 ms). Sensitivity-grid identifiability remains post-hoc, with no biological parameter distributions or credible intervals. Seven positive battery cases exceed 199 degree-preserving rewires, a topology-specific result only.
+**Evidence already available:** convergence v1 passes its preregistered battery criterion; weak-pathway sugar → MN9 first-spike latency _does not converge_ (35.3 ms at 0.1 ms versus 77.4 ms at 0.025 ms). Sensitivity-grid identifiability remains post-hoc, with no biological parameter distributions or credible intervals. Seven positive battery cases exceed 199 degree-preserving rewires, a topology-specific result only.
 
 **Work:** independently check dimensions/units and timestep-sensitive outputs; freeze latency, count, jitter and rate tolerances separately; specify uncertainty inputs from measured distributions or explicitly refuse propagation; add baseline/alternative-model discrimination and numerical-mode coverage without rewriting convergence v1.
 
-**Exit:** reproduce and independently audit the archived verdicts, record all nonconvergent or unidentifiable outputs and provide a defensible numerical eligibility decision *per prospective biological observable*. An unqualified observable stays excluded from S1/S3 scoring. **No invented intervals**.
+**Exit:** reproduce and independently audit the archived verdicts, record all nonconvergent or unidentifiable outputs and provide a defensible numerical eligibility decision _per prospective biological observable_. An unqualified observable stays excluded from S1/S3 scoring. **No invented intervals**.
 
 ### S1 — Sourced sensory and circuit physiology (P0)
 
@@ -35,15 +35,15 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 
 **Work:** build sourced observation/transfer contracts for at least one eligible modality (e.g. visual motion, looming, odor/APL), including cell identity, sex, stimulus geometry, units, gain/kinetics, measurement type, trial variability, and calibration-versus-holdout separation. Validate alternatives against simpler stimulus-following models and negative controls. Audit what cannot be mapped; do not convert calcium signals into Hz by fiat.
 
-**Exit:** at least one independently defensible sensory/neural input/output comparison is *eligible for prospective scoring* with a frozen protocol. If source/registration/observation semantics remain absent, mark S1 blocked; an engineered Poisson encoder does not pass.
+**Exit:** at least one independently defensible sensory/neural input/output comparison is _eligible for prospective scoring_ with a frozen protocol. If source/registration/observation semantics remain absent, mark S1 blocked; an engineered Poisson encoder does not pass.
 
 ### S2 — Evidenced body coupling and causal geometry (P0)
 
 **Owner issues:** [#19](https://github.com/gianlucamazza/flymsg/issues/19), [#31](https://github.com/gianlucamazza/flymsg/issues/31), [#35](https://github.com/gianlucamazza/flymsg/issues/35), [#176](https://github.com/gianlucamazza/flymsg/issues/176), [#179](https://github.com/gianlucamazza/flymsg/issues/179), [#180](https://github.com/gianlucamazza/flymsg/issues/180).
 
-**Evidence already available:** versioned 6-DoF frames, column optics, FlyGym/NeuroMechFly adapter, five-arm *synthetic* causal loop and deterministic checkpoint/replay. The MaleCNS eye-to-body registration and the neuron → muscle → joint/actuator/force/timing chain remain unqualified. Every unsupported `validation/motor_map.yaml` path stays `unmapped`.
+**Evidence already available:** versioned 6-DoF frames, column optics, FlyGym/NeuroMechFly adapter, five-arm _synthetic_ causal loop and deterministic checkpoint/replay. The MaleCNS eye-to-body registration and the neuron → muscle → joint/actuator/force/timing chain remain unqualified. Every unsupported `validation/motor_map.yaml` path stays `unmapped`.
 
-**Work:** independently qualify optical projection and its error bounds under fixed/moving poses, then obtain sourced coordinate registration and motor mapping/actuator evidence. Verify later sensor observations depend causally on preceding body motion against intact, open-loop, disconnected, shuffled and replayed controls. Archive real units, provenance, restart/failure traces and positive *or null* outcomes.
+**Work:** independently qualify optical projection and its error bounds under fixed/moving poses, then obtain sourced coordinate registration and motor mapping/actuator evidence. Verify later sensor observations depend causally on preceding body motion against intact, open-loop, disconnected, shuffled and replayed controls. Archive real units, provenance, restart/failure traces and positive _or null_ outcomes.
 
 **Exit:** qualified world → eye → sensory → neuron → muscle → actuator → body → later world/eye path for the **specifically mapped** channel, with no engineered link mislabeled as physiological. Without both sourced sensory and motor links, retain the synthetic loop and mark biological S2 blocked.
 
