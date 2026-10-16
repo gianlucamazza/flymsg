@@ -23,7 +23,7 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 
 **Evidence already available:** convergence v1 passes its preregistered battery criterion; weak-pathway sugar → MN9 first-spike latency _does not converge_ (35.3 ms at 0.1 ms versus 77.4 ms at 0.025 ms). Sensitivity-grid identifiability remains post-hoc, with no biological parameter distributions or credible intervals. Seven positive battery cases exceed 199 degree-preserving rewires, a topology-specific result only.
 
-**Work:** dimensional and unit checks remain. Path-metrics v1 already froze latency, jitter, recruitment and rate and archived the 0.1 ms verdicts. Uncertainty propagation stays refused until a measured distribution exists. Shuffle baselines v1 are archived. Numerical-mode coverage stays with #39, and convergence v1 stays as archived.
+**Work:** `flymsg.units` parses every evidence-registry unit and reads the live `sim._constants` and `sim.graded_arrays` values (decays, `gv`, kick, graded count). Path-metrics v1 already froze latency, jitter, recruitment and rate and archived the 0.1 ms verdicts. Uncertainty propagation stays refused until a measured distribution exists. Shuffle baselines v1 are archived. Numerical-mode coverage stays with #39, and convergence v1 stays as archived.
 
 **Exit:** reproduce and independently audit the archived verdicts, record all nonconvergent or unidentifiable outputs and provide a defensible numerical eligibility decision _per prospective biological observable_. An unqualified observable stays excluded from S1/S3 scoring. **No invented intervals**.
 
