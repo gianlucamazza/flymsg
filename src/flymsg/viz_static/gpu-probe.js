@@ -16,6 +16,24 @@ export function serializedGpuProbe(
     throw new Error("Probe requires one shared line material");
   if (renderer.xr.isPresenting)
     throw new Error("Probe requires a non-immersive context");
+  // Check the draw sources, not just the original object's material. Surface
+  // pages use a clone and cannot support this line-shader experiment.
+  if (view.paged) {
+    const lines = view.paged.pages?.filter(
+      (page) => page.layer.primitiveSize === 2 && !page.layer.context,
+    );
+    if (
+      !lines?.length ||
+      lines.some((page) => page.layer.material !== material)
+    )
+      throw new Error("Probe requires the active shared line material");
+    if (
+      view.paged.pages.some(
+        (page) => !page.layer.context && page.layer.primitiveSize !== 2,
+      )
+    )
+      throw new Error("Line probe requires skeleton-only anatomy");
+  }
   if (
     !sizes.length ||
     !sizes.every((s) => Number.isInteger(s) && s > 0 && s <= 2048) ||

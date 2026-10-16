@@ -105,3 +105,33 @@ archive audit must detect source/lock mismatch, missing/extra output and corrupt
 Issue bodies may be corrected to the verified merge/status record now. Hardware and
 scientific boxes remain unchecked until their exact evidence exists. External replica
 sign-off cannot be supplied by another local checkout or by this session.
+
+### Follow-up instrumentation — 2026-10-16
+
+The Quest desktop collector now checks actual loaded module hashes against its
+checkout, the exact page URL, page visibility, full anatomy and GPU readiness
+before measuring. The headset collector independently checks Android wakefulness,
+retains each preflight, and excludes the configuration after three consecutive
+invalid preflights. Its optional `--keep-awake` restores the original powered-display
+setting; it does not override the presence sensor. A visible document on an asleep
+headset is ineligible. Every collector remains unqualified until its timing and
+physical-device gates pass.
+
+Bounded CPU stage windows distinguish frame preparation, page synchronization and
+upload, and draw submission. These wall times overlap (page work is part of
+preparation), and submission can include driver blocking; none is a GPU timer.
+Existing GPU timer queries and raw XR intervals remain separate. Serialized
+readback probes verify that the active anatomy pages use the shared line material;
+surface or inactive-material experiments are refused. The current skeleton pages
+share that material, so an inactive shader was not established as the cause of lag.
+
+Console requests retain HTTP and curl status without credentials or query strings.
+Only a missing status file or a partial JSON replacement is treated as pending;
+authentication and transport failures propagate. Lifecycle trials write a unique
+remote epoch containing package, shader and declared lineage, then reread it before
+stop, after stop, after restart and after recovery. A changed or missing marker
+invalidates the attempt rather than establishing a worker defect. Source checks
+and the requirement for `awaiting_recovery` after a hard stop remain in force.
+
+These changes instrument the pending trials. They do not establish a performance
+improvement, a completed XR matrix, hard-termination recovery or a GPU-fault pass.

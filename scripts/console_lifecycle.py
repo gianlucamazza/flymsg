@@ -37,12 +37,37 @@ from console_gpu_parity import ADAPTER, Portal
 from native_acceptance import EXTENSIONS, SUPPORTED, check
 
 from flymsg import runstore, sim
+from flymsg.console import PortalError
 from flymsg.native import export_fixture, read_output
 from flymsg.runtime import CpuRuntime
 
 # synthetic; about 23 s of advance at the measured 44k steps/s, so a cancel or a stop sent
 # after a 1 s status poll lands mid-run
 N, STEPS, SEED, INPUTS = 2048, 1_000_000, 40, 2
+
+
+class TrialEpoch:
+    """Detect a lost app-data context without treating it as a worker failure."""
+
+    def __init__(self, portal, package, out, lineage, shader_sha):
+        self.portal, self.package, self.out = portal, package, out
+        self.name = f"qualification-epoch-{uuid.uuid4()}.json"
+        self.expected = {
+            "epoch": str(uuid.uuid4()),
+            "package": package,
+            "shader_sha256": shader_sha,
+            "lineage": lineage,
+        }
+        local = out / self.name
+        runstore.atomic_json(local, self.expected)
+        portal.put(package, "", local)
+        self.check("created")
+
+    def check(self, phase):
+        local = self.out / f"epoch-{phase}.json"
+        self.portal.get(self.package, "", self.name, local)
+        if json.loads(local.read_text()) != self.expected:
+            raise RuntimeError(f"trial epoch changed at {phase}; attempt invalid")
 
 
 def oracle(extension: str = "none") -> CpuRuntime:
@@ -125,7 +150,11 @@ class Job:
                 self.package, self.rel, "status.json", self.folder / "status.json"
             )
             return json.loads((self.folder / "status.json").read_text())
-        except (RuntimeError, json.JSONDecodeError):
+        except PortalError as exc:
+            if exc.http_status != 404:
+                raise
+            return {}
+        except json.JSONDecodeError:
             return {}  # not written yet, or caught mid-replacement
 
     def wait(self, states: set, timeout_s: float = 900.0) -> dict:
@@ -204,6 +233,7 @@ def run(
     save("connect")
     portal = Portal()
     sha = hashlib.sha256(shader.read_bytes()).hexdigest()
+    epoch = TrialEpoch(portal, package, out, lineage, sha)
     done = {"completed", "failed", "cancelled"}
 
     save("throughput")
@@ -254,9 +284,12 @@ def run(
     if first.get("source_commit") != lineage["worker_source_commit"]:
         raise RuntimeError("worker source changed before stop")
     save("stop_and_resume", recovery_job_id=job.id, recovery_seen=first)
+    epoch.check("before-stop")
     app_call(portal, "DELETE", package, aumid, force=force_stop)
     time.sleep(5)
+    epoch.check("after-stop")
     app_call(portal, "POST", package, aumid)
+    epoch.check("after-restart")
     waiting = job.wait({"suspended", "awaiting_recovery"} | done, timeout_s=120)
     save("resume_upload", recovery_parked=waiting)
     if waiting.get("state") not in {"suspended", "awaiting_recovery"}:
@@ -265,6 +298,7 @@ def run(
         raise RuntimeError("worker source changed during lifecycle qualification")
     job.control("resume.json", "flymsg.worker_resume/v1")
     final = job.wait(done)
+    epoch.check("after-recovery")
     if final.get("source_commit") != lineage["worker_source_commit"]:
         raise RuntimeError("worker source changed during lifecycle qualification")
     recovery = {

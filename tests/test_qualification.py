@@ -304,6 +304,9 @@ def test_lifecycle_preserves_progress_when_recovery_fails(
                 raise RuntimeError("injected transport failure")
 
     monkeypatch.setattr(module, "Portal", lambda: object())
+    monkeypatch.setattr(
+        module, "TrialEpoch", lambda *a: type("Epoch", (), {"check": lambda *a: None})()
+    )
     monkeypatch.setattr(module, "Job", Job)
     monkeypatch.setattr(module, "app_call", lambda *a, **kw: None)
     monkeypatch.setattr(module.time, "sleep", lambda _: None)
@@ -320,3 +323,23 @@ def test_lifecycle_preserves_progress_when_recovery_fails(
     assert not (out / "report.json").exists()
     with pytest.raises(ValueError, match="already exists"):
         module.run("package", "app", shader, out, {})
+
+
+def test_remote_epoch_detects_replaced_app_context(monkeypatch, tmp_path):
+    module = load("console_lifecycle", monkeypatch)
+    remote = {}
+
+    class Portal:
+        def put(self, package, rel, path):
+            remote[path.name] = path.read_bytes()
+
+        def get(self, package, rel, name, path):
+            path.write_bytes(remote[name])
+
+    epoch = module.TrialEpoch(
+        Portal(), "package", tmp_path, {"source": "pinned"}, "shader"
+    )
+    epoch.check("before-stop")
+    remote[epoch.name] = b"{}"
+    with pytest.raises(RuntimeError, match="epoch changed"):
+        epoch.check("after-restart")

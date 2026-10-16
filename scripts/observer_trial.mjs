@@ -2,6 +2,8 @@
 // node scripts/observer_trial.mjs LOCAL_CDP_ENDPOINT TARGET_ID NEW_DIRECTORY [seconds=15]
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { localObserver } from "./observer_cdp.mjs";
+import { observerPreflight } from "./observer_preflight.mjs";
 const [endpoint, targetId, out, seconds = "15"] = process.argv.slice(2);
 const duration = Number(seconds);
 if (
@@ -68,6 +70,19 @@ const evaluate = async (expression) =>
 let restore;
 try {
   await send("Page.bringToFront");
+  const browser = await localObserver(endpoint, targetId);
+  try {
+    const preflight = await observerPreflight(browser, target.url);
+    writeFileSync(
+      join(out, "preflight.json"),
+      JSON.stringify(preflight, null, 2) + "\n",
+      { flag: "wx" },
+    );
+    if (!preflight.eligible)
+      throw Error(`Preflight excluded: ${preflight.reasons.join(", ")}`);
+  } finally {
+    browser.close();
+  }
   const before = await evaluate(`(() => {
     if(document.hidden||flymsg.renderer.xr.isPresenting)throw Error('Visible desktop page required');
     if(typeof flymsg.diagnosticState!=='function')throw Error('Trial requires diagnostic state restoration support');
@@ -122,7 +137,8 @@ try {
       full_anatomy:
         sample.fidelity.status === "ready" &&
         before.fidelity.status === "ready" &&
-        sample.fidelity.gpu_ready !== false && before.fidelity.gpu_ready !== false,
+        sample.fidelity.gpu_ready !== false &&
+        before.fidelity.gpu_ready !== false,
     },
     qualification: "not-scored; desktop diagnostic, not immersive XR",
   };
@@ -139,6 +155,21 @@ try {
       lines: sample.draws.lines,
     }),
   );
+} catch (error) {
+  writeFileSync(
+    join(out, "failure.json"),
+    JSON.stringify(
+      {
+        status: "excluded",
+        reason: error.message,
+        qualification: "not-scored",
+      },
+      null,
+      2,
+    ) + "\n",
+    { flag: "wx" },
+  );
+  throw error;
 } finally {
   if (restore)
     await evaluate(`flymsg.diagnostic(${JSON.stringify(restore)})`).catch(

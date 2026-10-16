@@ -30,6 +30,27 @@ PACKAGE_ENV = "FLYMSG_WORKER_PACKAGE"  # the installed worker's PackageFullName
 SHADER_ENV = "FLYMSG_WORKER_SHADER"  # a local copy of that package's lif.cso
 
 
+class PortalError(RuntimeError):
+    """Credential-free request failure with transport and HTTP status separated."""
+
+    def __init__(self, method, path, code, status):
+        self.http_status = status
+        self.curl_code = code
+        self.phase = f"{method} {path.split('?')[0]}"
+        category = (
+            "authentication"
+            if status in (401, 403)
+            else "missing-file"
+            if status == 404
+            else "transport"
+            if not status
+            else "http"
+        )
+        super().__init__(
+            f"{self.phase} failed: {category}; HTTP {status or 0}; curl {code}"
+        )
+
+
 class Portal:
     """The few Device Portal calls a job needs, through curl."""
 
@@ -51,7 +72,18 @@ class Portal:
     def curl(self, method, path, out=None, upload=None) -> str:
         # an upload of a whole network can take minutes over a local network
         limit = "1800" if upload else "120"
-        cmd = ["curl", "-sS", "-k", "--fail", "-m", limit, "-K", "-"]
+        cmd = [
+            "curl",
+            "-sS",
+            "-k",
+            "--fail",
+            "-m",
+            limit,
+            "-K",
+            "-",
+            "--write-out",
+            "\nFLYMSG_HTTP_STATUS:%{http_code}",
+        ]
         if self.pin:  # -k skips the CA chain only; curl still enforces the pinned key
             cmd += ["--pinnedpubkey", self.pin]
         cmd += ["-b", self.jar, "-c", self.jar, "-X", method]
@@ -74,9 +106,11 @@ class Portal:
             text=True,
             check=False,
         )
+        body, marker, status = r.stdout.rpartition("\nFLYMSG_HTTP_STATUS:")
+        http_status = int(status) if marker and status.isdigit() else None
         if r.returncode:
-            raise RuntimeError(f"{method} {path.split('?')[0]} failed ({r.returncode})")
-        return r.stdout
+            raise PortalError(method, path, r.returncode, http_status)
+        return body if marker else r.stdout
 
     def close(self) -> None:
         """Remove the session's cookie jar."""
@@ -171,7 +205,11 @@ class Device:
         try:
             self.portal.get(self.package, rel, "status.json", local)
             return json.loads(local.read_text())
-        except (RuntimeError, json.JSONDecodeError):
+        except PortalError as exc:
+            if exc.http_status != 404:
+                raise
+            return {}
+        except json.JSONDecodeError:
             return {}  # not written yet, or caught mid-replacement
 
 
