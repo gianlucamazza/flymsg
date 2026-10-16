@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **SF2 unit check** (#148). `flymsg.units` parses every evidence-registry unit and checks the live LIF step: time ratios are dimensionless and a synapse weight is a voltage. Graded release per step is the same count the kernel uses. No record carries a distribution, so uncertainty is not propagated. No lock, seed, or model default changed.
+- **SF2 unit check** (#148). `flymsg.units` parses every evidence-registry unit and reads `sim._constants` and `sim.graded_arrays`: time-ratio decays are dimensionless, `gv` keeps `g*gv` a voltage, and the kick `poisson_scale*w_syn` is a voltage. Graded release per step is the count `graded_arrays` returns. No record carries a distribution, so uncertainty is not propagated. No lock, seed, or model default changed.
 
 - **Evidence-gated planning (docs only).** Added `docs/milestones.md` with
   S0–S4 scientific and H1/H2 engineering gates, issue ownership, dependencies,
