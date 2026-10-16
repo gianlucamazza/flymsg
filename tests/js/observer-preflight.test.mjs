@@ -11,6 +11,7 @@ for (const damage of [
   "gpu",
   "loading",
   "anatomy",
+  "callbacks",
 ])
   test(`preflight rejects ${damage}`, async () => {
     const expected = "http://localhost:8892/live/looming/?check";
@@ -18,6 +19,7 @@ for (const damage of [
       evaluate: async () => ({
         url: damage === "url" ? "http://localhost:1234/" : expected,
         visibility: damage === "hidden" ? "hidden" : "visible",
+        frame_callbacks: damage === "callbacks" ? 0 : 20,
         stats: damage === "loading" ? "1 loading" : "x · 0 loading · y",
         fidelity: {
           status: damage === "anatomy" ? "unsupported" : "ready",
