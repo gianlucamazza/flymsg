@@ -377,3 +377,39 @@ def test_bounded_xr_final_receipt_recomputes_all_raw_frame_certificates():
         assert quest.bounded_xr_certificate(bad, identity)["status"] == "fail"
     doc["status"] = "running"
     assert quest.bounded_xr_certificate(doc, identity)["status"] == "pending"
+
+
+def test_native_focus_exclusion_is_durable_before_document_admission(
+    monkeypatch, tmp_path
+):
+    from types import SimpleNamespace
+
+    session = quest.QuestSite("192.168.1.146:5555", tmp_path)
+    session.endpoint, session.target, session.url = "endpoint", "owned", "url"
+    session.server = SimpleNamespace(ready_document_id=None)
+    monkeypatch.setattr(
+        quest, "snapshot", lambda *a, **k: {"power": "mWakefulness=Awake"}
+    )
+    monkeypatch.setattr(
+        quest,
+        "native_focus",
+        lambda *a: {
+            "browser_focused": False,
+            "components": ["com.oculus.guardian/.Dialog"],
+        },
+    )
+    monkeypatch.setattr(
+        quest,
+        "browser_preflight",
+        lambda *a, **k: {
+            "eligible": True,
+            "reasons": [],
+            "state": {"after": {"document_id": "current"}},
+        },
+    )
+    evidence = tmp_path / "preflight.jsonl"
+    check = session.wait_ready(timeout=0, evidence=evidence)
+    saved = json.loads(evidence.read_text())
+    assert not check["eligible"] and not saved["browser"]["eligible"]
+    assert "native-browser-not-focused" in saved["browser"]["reasons"]
+    assert session.server.ready_document_id is None

@@ -660,6 +660,12 @@ class QuestSite:
                         "reasons": ["browser-unavailable"],
                         "error": str(exc),
                     }
+            if not readback_only and not state["native_focus"]["browser_focused"]:
+                check = {
+                    **check,
+                    "eligible": False,
+                    "reasons": [*check["reasons"], "native-browser-not-focused"],
+                }
             entry = {
                 "at": datetime.now(UTC).isoformat(),
                 "device": state,
@@ -669,12 +675,6 @@ class QuestSite:
                 stream.write(runstore.canonical(entry) + b"\n")
                 stream.flush()
                 os.fsync(stream.fileno())
-            if not readback_only and not state["native_focus"]["browser_focused"]:
-                check = {
-                    **check,
-                    "eligible": False,
-                    "reasons": [*check["reasons"], "native-browser-not-focused"],
-                }
             if check["eligible"]:
                 fidelity = check.get("state", {}).get("fidelity", {})
                 self.server.ready_content = {

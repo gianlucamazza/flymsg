@@ -260,7 +260,9 @@ def run(
         oracle_dir.mkdir()
         session.open(scene, representation=representation, page_mib=size)
         ready = session.wait_ready(
-            timeout=startup_timeout, evidence=oracle_dir / "preflight.jsonl"
+            timeout=startup_timeout,
+            evidence=oracle_dir / "preflight.jsonl",
+            readback_only=True,
         )
         if not ready["eligible"]:
             row = {
@@ -279,6 +281,7 @@ def run(
                 session.endpoint,
                 session.target,
                 oracle_dir / "readbacks",
+                "--readback-only",
                 timeout=1800,
             )
             if code or report.get("status") != "pass":

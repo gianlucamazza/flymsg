@@ -23,7 +23,11 @@ export function verifyCoverage(expected, pages) {
       throw Error(`Incomplete original primitive coverage: ${key}`);
 }
 
-export async function observerOracle(browser, out) {
+export async function observerOracle(
+  browser,
+  out,
+  { readbackOnly = false } = {},
+) {
   mkdirSync(out, { recursive: false });
   const write = (n, x) =>
     writeFileSync(join(out, n), JSON.stringify(x, null, 2) + "\n", {
@@ -35,9 +39,11 @@ export async function observerOracle(browser, out) {
     status: "running",
     cases: [],
     qualification: "correctness only; no performance claim",
+    readback_only: readbackOnly,
+    normal_xr_qualification: false,
   };
   try {
-    const pre = await observerPreflight(browser, browser.url);
+    const pre = await observerPreflight(browser, browser.url, { readbackOnly });
     write("preflight.json", pre);
     if (!pre.eligible || !pre.state.resources.gpu_resources.complete)
       throw Error("Complete paged observer required");
@@ -142,11 +148,13 @@ export async function observerOracle(browser, out) {
       const candidate = await browser.evaluate(
         `flymsg.desktopReference({time:${time},pipeline:'paged'})`,
       );
-      let footprint = null;
+      let footprint = null,
+        sourceNeuronId = null;
       if (bounded) {
         const source = await browser.evaluate(
           `flymsg.reference(${JSON.stringify({ time, width: original.width, height: original.height, projection: original.projection, cameraWorld: original.camera_world, pipeline: "original" })})`,
         );
+        sourceNeuronId = source.images.neuron_id;
         const radius = await browser.evaluate(
           `(async()=>{const {bloomFootprint}=await import('./bounded-raster-oracle.js');return bloomFootprint(flymsg,${original.width},${original.height});})()`,
         );
@@ -159,7 +167,12 @@ export async function observerOracle(browser, out) {
           radius,
         );
       }
-      write(`desktop-${time}.json`, { original, candidate, footprint });
+      write(`desktop-${time}.json`, {
+        original,
+        candidate,
+        footprint,
+        source_neuron_id: sourceNeuronId,
+      });
       if (
         (!bounded && original.rgba.sha256 !== candidate.rgba.sha256) ||
         original.samples !== candidate.samples ||
@@ -197,11 +210,17 @@ if (
   process.argv[1] &&
   import.meta.url === new URL(`file://${process.argv[1]}`).href
 ) {
-  const [endpoint, target, out] = process.argv.slice(2);
+  const [endpoint, target, out, ...flags] = process.argv.slice(2);
   let browser;
   try {
     browser = await localObserver(endpoint, target);
-    console.log(JSON.stringify(await observerOracle(browser, out)));
+    console.log(
+      JSON.stringify(
+        await observerOracle(browser, out, {
+          readbackOnly: flags.includes("--readback-only"),
+        }),
+      ),
+    );
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;
