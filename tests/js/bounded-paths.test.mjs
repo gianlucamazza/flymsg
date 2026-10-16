@@ -5,6 +5,7 @@ import {
   sourcePaths,
   projectSource,
   simplifyPath,
+  sourceVertexView,
 } from "../../src/flymsg/viz_static/bounded-paths.js";
 import { verifyBoundedPaths } from "../../src/flymsg/viz_static/bounded-path-oracle.js";
 const eye = { matrix: new T.Matrix4().toArray(), width: 100, height: 100 };
@@ -101,4 +102,20 @@ test("perspective with off-axis stereo projections verifies using the pinned vec
   );
   assert.equal(f.report.candidate_edges, 1);
   assert(f.report.maximum_error_px <= 0.5);
+});
+
+test("original source extraction excludes arena padding and checks endpoint owners", () => {
+  const p = new Float32Array([9, 9, 9, 0, 0, 0, 0.1, 0, 0, 8, 8, 8]),
+    owner = new Float32Array([4, 7, 7, 0]);
+  const view = sourceVertexView(p, owner, 1, new Uint32Array([0, 1]), 7);
+  assert.equal(view.buffer, p.buffer);
+  assert.equal(view.length, 6);
+  assert.throws(
+    () => sourceVertexView(p, owner, 2, new Uint32Array([0, 1]), 7),
+    /owner/,
+  );
+  assert.throws(
+    () => sourceVertexView(p, owner, 3, new Uint32Array([0, 1]), 7),
+    /bounds/,
+  );
 });

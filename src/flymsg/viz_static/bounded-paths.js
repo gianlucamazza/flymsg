@@ -122,3 +122,25 @@ export function simplifyPath(path, projections, tolerance = 0.5) {
   }
   return Array.from(keep.keys()).filter((i) => keep[i]);
 }
+
+// The original renderer retains source positions in its shared arena rather than
+// each neuron. Slice only the referenced source span; never copy capacity padding.
+export function sourceVertexView(positions, owners, base, edges, neuron) {
+  let count = 0;
+  for (const index of edges) {
+    if (!Number.isInteger(index) || index < 0)
+      throw Error("Invalid original source index");
+    count = Math.max(count, index + 1);
+  }
+  if (
+    !Number.isInteger(base) ||
+    base < 0 ||
+    3 * (base + count) > positions.length ||
+    base + count > owners.length
+  )
+    throw Error("Original source arena bounds mismatch");
+  for (const index of edges)
+    if (owners[base + index] !== neuron)
+      throw Error("Original source owner mismatch");
+  return positions.subarray(3 * base, 3 * (base + count));
+}

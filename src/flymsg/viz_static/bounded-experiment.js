@@ -1,5 +1,10 @@
 // Disposable fixed-camera experiment. Never imported by the production entrypoint.
-import { sourcePaths, projectSource, simplifyPath } from "./bounded-paths.js";
+import {
+  sourcePaths,
+  projectSource,
+  simplifyPath,
+  sourceVertexView,
+} from "./bounded-paths.js";
 import { verifyBoundedPaths } from "./bounded-path-oracle.js";
 
 export async function boundedExperiment(
@@ -75,8 +80,14 @@ export async function boundedExperiment(
     const preparationStart = performance.now();
     for (const n of view.neurons)
       if (selected.has(n.k)) {
-        const vertices = n.skelLod.vertices,
-          edges = n.skelLod.levels[0];
+        const edges = n.skelLod.levels[0];
+        const vertices = sourceVertexView(
+          sourceGeometry.attributes.position.array,
+          sourceGeometry.attributes.aNeuron.array,
+          n.skelBase,
+          edges,
+          n.k,
+        );
         const projections = projectSource(vertices, eyes);
         const records = [...sourcePaths(vertices.length / 3, edges)].map(
           (path) => ({
