@@ -58,7 +58,7 @@ Preregister the hypothesis, baselines, primary metric, acceptance threshold, neg
 ## Roadmap
 
 SF1 Evidence inventory: provenance and uncertainty coverage for scored parameters; CI rejects missing fields in new evidence records.
-SF2 Numerical and uncertainty: unit/convergence tests, sensitivity, path metrics, the identifiability re-read and simple baselines. Uncertainty propagation remains blocked.
+SF2 Numerical and uncertainty: unit/convergence tests, sensitivity, path metrics, the identifiability re-read and simple baselines. `flymsg.units` parses every evidence-registry unit and checks that the live LIF step is homogeneous. Uncertainty propagation remains blocked: the registry stores text, not a distribution.
 SF3 Physiology: independently preregistered T4/T5 and Kenyon-cell benchmarks.
 SF4 Embodiment: cited neuron-to-muscle-to-actuator mapping, neuromechanical calibration and held-out animal behavior.
 SF5 External replication: frozen reproduction package and independent evaluation.
