@@ -65,3 +65,21 @@ results remain desktop diagnostics; they cannot qualify normal physical XR.
 An admitted configuration still requires the assisted visual, stereo, head-motion,
 entry/exit and sustained XR session. Keep the mode diagnostic if no configuration
 passes, and retain exclusions rather than rescoring them as improvements.
+
+## Startup diagnosis
+
+The first frozen startup was stopped before cadence collection to complete the
+six-plane clipping fallback. It produced no eligible timing arms; cleanup verified
+physical proximity control, zero wake leases and the original powered-display
+setting. Do not interpret this operator stop as a device performance rejection.
+
+Worker stage counters distinguish graph/path preparation, hierarchy construction,
+spatial verification, index assembly and source packing. On the initial four-page
+Quest diagnostic these stages totalled about three seconds, whereas application
+callbacks were initially sparse. A controlled continuous-draw diagnostic later
+observed 92 callbacks in 1.2 seconds. The runtime therefore keeps drawing in the
+existing application loop only while a complete GPU generation is preparing or
+warming; it returns to its ordinary idle behavior after readiness. This does not
+add an animation loop, change refresh rate or relax quality. Native Guardian focus
+was also observed early, but that observation alone does not establish causality.
+No Guardian configuration was changed.
