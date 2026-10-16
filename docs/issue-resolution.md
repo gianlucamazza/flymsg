@@ -26,23 +26,24 @@ units, cell mapping, uncertainty and measured/inferred/compensatory/unknown stat
 The [existing literature audit](leads.md) distinguishes inaccessible/not-found inputs
 from a demonstrated absence of measurements; it is not a substitute for data.
 
-| Issues         | Bounded next deliverable                                                                                                                                                                    | No-go                                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| #84, #97, #140 | Audit v4 traces by cell type, polarity, direction and timing; table of retinal registration, LMC/medulla release and type-specific filters; prospective v5 hypotheses and matched ablations | Missing release curves remain unknown; do not fit to Gruntman holdout or change v4 `robust: neither`            |
-| #85            | Separate electrical, modulatory and APL/KC claims; prevalidate a readout with dynamic range in both APL-on and APL-off arms; quantify soma/claw distinction and odor overlap                | No gap conductance inferred from EM counts, calcium→Hz conversion or global gain retune; v1 stays uninformative |
-| #34            | Source LC4/LPLC2 kinetics and an observation model; assess whether recordings discriminate circuit timing from onset/stimulus-following baselines                                           | No v3 without eligible source/holdout separation; preserve v1/v2 no-go/uninformative                            |
-| #19, #35, #150 | One TTMn→muscle→real joint→actuator chain, with force/time course and sex/model uncertainty; resolve type-level versus neuron-level MANC discrepancies before per-neuron use                | Missing actuator/joint or force remains unmapped; female-body/male-connectome uncertainty stays explicit        |
-| #36, #149      | One eligible independent physiological comparison; auditory tuning and stable model discrimination before song holdout, or another prospectively locked eligible circuit                    | Song v1 stays stopped; physiology cannot close behavioral M4; do not open held-out data to choose a mechanism   |
-| #148           | Separate prospective weak-pathway latency/recruitment convergence, parameter sensitivity, identifiability and uncertainty protocols                                                         | Do not extend the existing rate/verdict convergence claim to latency or manufacture uncertainty ranges          |
+| Issues         | Bounded next deliverable                                                                                                                                                                                  | No-go                                                                                                           |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| #84, #97, #140 | Audit v4 traces by cell type, polarity, direction and timing; table of retinal registration, LMC/medulla release and type-specific filters; prospective v5 hypotheses and matched ablations               | Missing release curves remain unknown; do not fit to Gruntman holdout or change v4 `robust: neither`            |
+| #85            | Separate electrical, modulatory and APL/KC claims; prevalidate a readout with dynamic range in both APL-on and APL-off arms; quantify soma/claw distinction and odor overlap                              | No gap conductance inferred from EM counts, calcium→Hz conversion or global gain retune; v1 stays uninformative |
+| #34            | Source LC4/LPLC2 kinetics and an observation model; assess whether recordings discriminate circuit timing from onset/stimulus-following baselines                                                         | No v3 without eligible source/holdout separation; preserve v1/v2 no-go/uninformative                            |
+| #19, #35, #150 | One TTMn→muscle→real joint→actuator chain, with force/time course and sex/model uncertainty; resolve type-level versus neuron-level MANC discrepancies before per-neuron use                              | Missing actuator/joint or force remains unmapped; female-body/male-connectome uncertainty stays explicit        |
+| #36, #149      | One eligible independent physiological comparison; auditory tuning and stable model discrimination before song holdout, or another prospectively locked eligible circuit                                  | Song v1 stays stopped; physiology cannot close behavioral M4; do not open held-out data to choose a mechanism   |
+| #148           | Path-metrics v1 ran (seeds 5000–5004): latency not converged for sugar → MN9. Identifiability is a post-hoc re-read; all five parameters stay blocked. Uncertainty propagation still needs a distribution | Do not extend convergence v1 to latency, and do not manufacture an uncertainty range                            |
 
-For SF2, the next protocol proposal must fix reference dt, seed partition, response
-windows, latency/recruitment/rate metrics and failure/indeterminate rules before a run.
-Sensitivity ranges must come from evidence records; unsupported ranges are labelled
-engineering envelopes. Identifiability compares distinct parameter sets/mechanisms
-against the same outputs and simple follower/null models. Uncertainty propagation
+Path-metrics v1 fixed the reference dt, the seed partition, the windows and the
+failure and indeterminate rules before the run from `e6a041e`. The verdict is in
+[validation](validation.md#weak-pathway-timestep-metrics-sf2-a-check-not-a-score). It
+does not rewrite convergence v1. The identifiability re-read
+([validation](validation.md#identifiability-re-read-sf2-post-hoc-not-a-score)) is
+post-hoc and scored false. Sensitivity ranges still have to come from evidence records;
+the ±20% `w_syn` factors stay an engineering envelope. Uncertainty propagation still
 retains correlations and mapping uncertainty; absent distributions block a biological
-interval rather than becoming invented point estimates. Thresholds need a prospective
-lock; this ledger is not that lock and changes no existing score.
+interval. This ledger is not a lock and changes no existing score.
 
 ## Physical trial procedure
 

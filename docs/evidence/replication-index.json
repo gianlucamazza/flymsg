@@ -1150,6 +1150,55 @@
    "verdict": "converged"
   },
   {
+   "command": "path-metrics --run",
+   "config": {
+    "grid": {
+     "dt_ms": [
+      0.1,
+      0.05,
+      0.025
+     ],
+     "dt_rule": "halvings of the default; delay (1.8 ms) and t_ref (2.2 ms) stay whole numbers of steps at each",
+     "duration_ms": 600.0,
+     "rate_hz": 100.0,
+     "seed0": 5000,
+     "seed_rule": "disjoint from convergence and sensitivity seeds 0-4, from the baseline shuffles 4000-4198, and from the song, looming and partner-followup seeds",
+     "seeds": 5,
+     "stim_ms": 300.0
+    },
+    "path_metrics_sha256": "6bc92e5a48e3985b960fa84354a402d5aff6b25ac46c5448fc5615a5ebb7e42f",
+    "path_metrics_version": 1
+   },
+   "dataset": {
+    "name": "malecns",
+    "release": "v1.0"
+   },
+   "dirty": false,
+   "execution_sha256": "0c616b348fe32a245e22eade4fa6e8e54511d4d49a9e106044d1e47badfdc313",
+   "flymsg": "0.8.48",
+   "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+   },
+   "lock": "validation/path_metrics.yaml",
+   "lock_sha256": "6bc92e5a48e3985b960fa84354a402d5aff6b25ac46c5448fc5615a5ebb7e42f",
+   "lock_version": 1,
+   "other_results": null,
+   "outputs_sha256": {
+    "cells.csv": "546faa7a9c165751fb7b993b2272478e9c9ac005aa791bafde5c50ac73e9c19e",
+    "judged.csv": "d15a8d61cb9aa91ace5ce132401d8e8224f896b22d6d0ebc83421730d9bd21fd",
+    "report.txt": "6ce4f755e98b1f0d1b2242854ff33e4bf4971b6d33b2a70bd196e21bcdaef4b5"
+   },
+   "python": "3.13.9",
+   "result": "results/path-metrics/v1.executions/0c616b348fe32a245e22eade4fa6e8e54511d4d49a9e106044d1e47badfdc313/output",
+   "seeds": {
+    "seed0": 5000,
+    "seeds": 5
+   },
+   "source_commit": "e6a041ecaea92a22a0b6bde0bd5be39ae56c4f7a",
+   "verdict": "latency: not_converged (sugar feeding/MN9); jitter: converged, indeterminate (bitter feeding/MN9); recruited: converged; rate: converged"
+  },
+  {
    "command": "gf-looming --run",
    "config": {
     "drive": {

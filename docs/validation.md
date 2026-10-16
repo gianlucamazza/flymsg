@@ -364,6 +364,108 @@ the battery's rates and verdicts do not depend on the 0.1 ms step, and first-spi
 and recruitment counts of weak pathways should not be read to better than the step's effect.
 Outputs: `results/convergence/v1.executions/be1ac274…/output/`.
 
+## Weak-pathway timestep metrics (SF2, a check, not a score)
+
+`validation/path_metrics.yaml` v1 (#148) was locked on 2026-10-16, in `e6a041e`, before this
+run. It uses the six sensitivity cases and the live defaults at dt = 0.1 ms (the default),
+0.05 and 0.025 ms, on seeds 5000–5004. Those seeds are disjoint from the convergence and
+sensitivity seeds 0–4. Delay and refractory period stay whole numbers of steps. Four metrics
+are judged apart from the holds gate: first-spike latency, first-spike jitter (the max minus
+the min of the first spikes across seeds), recruited neurons, and the best neuron's rate.
+Latency, recruitment and rate converge when the absolute difference of the seed medians is at
+most the finest timestep's seed range, and never less than the quantum (0.1 ms, one neuron, or
+one spike in the 300 ms window, 3.33 Hz). Jitter converges when the absolute difference of
+those ranges is at most the finest range, floored at 0.1 ms. A seed with no spike makes
+latency and jitter indeterminate, and a silent response is not a failure. The verdict is read
+at 0.1 ms. The 0.05 ms step is reported and does not decide. This verdict does not rewrite
+convergence v1, and `sim.Params` does not change.
+
+**Result of version 1 (2026-10-16): latency not converged; jitter converged, with bitter
+indeterminate; recruitment and rate converged.** Run from `e6a041e`, clean, one attempt,
+8 workers, 12 min.
+
+At the deciding step, 0.1 ms:
+
+- **Latency** is `not_converged (sugar feeding/MN9)`. The sugar → MN9 seed median is 35.3 ms
+  against 77.4 ms at 0.025 ms. The finest seed range is 37.275 ms, and the shift is 42.1 ms.
+  The other six responses that fire stay inside their ranges, including giant-fiber → TTMn
+  (59.1 against 65.6 ms, range 56.4 ms) and pIP10 → dPR1 (9.0 against 10.7 ms, range 16.5 ms).
+  Bitter → MN9 never fires, so its latency is indeterminate and does not fail the metric.
+- **Jitter** at 0.1 ms stays within the finest range for every response that fires. Bitter is
+  indeterminate, so the clause is `converged, indeterminate (bitter feeding/MN9)`. At 0.05 ms,
+  which does not decide, three ranges fall outside the finest range: giant-fiber → TTMn
+  (113.3 against 56.4 ms), P1 → dPR1 (5.05 against 1.68 ms) and sugar → MN9 (76.2 against
+  37.3 ms).
+- **Recruitment** converges, and the tolerance is the seed range. Sugar's recruited count goes
+  from 323 at 0.025 ms to 204 at 0.1 ms, inside a finest range of 274. Under bitter the other
+  neurons go from 106 to 57, inside a range of 90, while MN9's own rate stays 0.
+- **Rate** converges for every response. Every seed-median target rate at 0.1 ms lies within
+  the finest seed range, floored at one spike in the window.
+
+The shifts read before this lock, on seeds 0–4, do not decide it. Convergence v1's
+rate-and-holds verdict stays `converged`.
+
+Outputs: `results/path-metrics/v1.executions/0c616b34…/output/`.
+
+## Identifiability re-read (SF2, post-hoc, not a score)
+
+`validation/identifiability.yaml` v1 (#148) was locked on 2026-10-16, before
+`flymsg identifiability --run` read the archive. It is not a new experiment and not a
+confirmatory claim (`scored: false`). The grid is `results/sensitivity/v1/cells.csv`,
+sensitivity version 1, sha256 `59806931f038d4565eeaee40cb15f5671db1bb3931ddf319f0c0b0b61eb55fef`.
+No spike was simulated for this re-read, and `sim.Params` does not change.
+
+Two cells of one response are equivalent when their holds verdicts match and their
+seed-median rates differ by at most the default cell's seed range, floored at one spike in the
+window (3.33 Hz). A class is a connected component of that relation: a chain of small steps
+can put every cell in one class even when the extremes differ by more than the range. A
+response is undecidable when that tolerance is at least the range of the seed-median rates
+across the grid. A positive response matches the silent null only when its default median is
+within one spike of 0 Hz. There is no p-value.
+
+**Re-read of version 1 (2026-10-16).** Eight responses, ten parameter cells each:
+
+| Response                       | Classes | Default class size | Undecidable | Default median (Hz) | Seed range (Hz) | Median spread (Hz) |
+| ------------------------------ | ------- | ------------------ | ----------- | ------------------- | --------------- | ------------------ |
+| looming escape, DNp01          | 8       | 1                  | no          | 210                 | 3.33            | 96.7               |
+| looming escape, TTMn           | 5       | 1                  | no          | 70                  | 6.67            | 70                 |
+| giant fiber output, TTMn       | 2       | 9                  | no          | 16.7                | 10              | 16.7               |
+| P1 courtship drive, pIP10      | 2       | 5                  | no          | 106.7               | 10              | 43.3               |
+| P1 courtship drive, dPR1       | 1       | 10                 | no          | 100                 | 16.7            | 33.3               |
+| pIP10 song pathway, dPR1       | 1       | 10                 | yes         | 90                  | 26.7            | 23.3               |
+| sugar feeding, MN9             | 2       | 5                  | no          | 30                  | 16.7            | 56.7               |
+| bitter feeding, MN9 (negative) | 1       | 10                 | yes         | 0                   | 0               | 0                  |
+
+Looming → DNp01's default cell is its own class: the seed range is one spike, and the medians
+span 96.7 Hz, so the default rate is not identified with the rest of the grid. Looming → TTMn
+is the same shape, five classes and a default class of one. Giant fiber → TTMn puts 9 of the
+10 cells with the default; the cell that leaves is `th_jump` 2 at `w_syn` × 0.8, the corner
+that does not hold. Sugar → MN9 has two classes: the five cells that hold chain into the
+default class, and the five that do not hold are the other. P1 → dPR1 is one class of all ten
+cells even though the medians span 33.3 Hz and the seed range is 16.7 Hz, because intermediate
+cells bridge the extremes. It is not undecidable. pIP10 → dPR1 is undecidable: the default
+seed range, 26.7 Hz, covers the 23.3 Hz spread of the medians. Bitter → MN9 is 0 Hz in every
+cell, so the spread is 0 and the response is undecidable. It is the negative case, so the
+silent-null flag stays false.
+
+No parameter receives an interval. `validation/evidence.yaml` has no distribution for these
+quantities, and a blocked row stays blocked:
+
+| Parameter       | Status  | Interval |
+| --------------- | ------- | -------- |
+| `w_syn`         | blocked | none     |
+| `th_jump`       | blocked | none     |
+| `sensory_gains` | blocked | none     |
+| `membrane`      | blocked | none     |
+| `release`       | blocked | none     |
+
+Factors 0.8–1.2 on `w_syn`, and `th_jump` 0 and 2, remain the engineering envelope already
+locked in `validation/sensitivity.yaml`. They are not a biological uncertainty. Equivalence
+is not uniqueness, and the five-seed range is not a measurement error from an animal.
+
+`flymsg identifiability --run` rewrites `runs/identifiability/v1/report.txt` from the archived
+cells. The classes above are that report.
+
 ## Simple baselines (SF2, a report, not a score)
 
 `validation/baselines.yaml` v1 (#148) was locked on 2026-10-15, before any battery run on a shuffle. It asks, response by response, whether the battery needs the measured wiring, or only what a degree-preserving shuffle keeps: each neuron's out-weights and the in-degree multiset.
