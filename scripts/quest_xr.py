@@ -221,7 +221,7 @@ def proximity_state(serial):
     raw = adb(serial, "shell", "dumpsys", "vrpowermanager")
     state = re.search(r"Virtual proximity state: (\w+)", raw)
     locks = re.findall(
-        r"^(?:Mount|Unmounted|ForceUnmounted)WakeLock count: (\d+)$", raw, re.M
+        r"^(?:Mount|Unmounted|ForceUnmounted)WakeLock count: (\d+)$", raw, re.MULTILINE
     )
     if state is None or len(locks) != 3:
         raise RuntimeError("unrecognized Quest proximity state")
