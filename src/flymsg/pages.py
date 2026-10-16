@@ -78,6 +78,13 @@ PAGES = (
         "Quest diagnosis",
     ),
     ("adr-observer-rendering", "docs/adr-observer-rendering.md", "Rendering ADR"),
+    (
+        "adr-exact-observer-performance",
+        "docs/adr-exact-observer-performance.md",
+        "Exact fidelity ADR",
+    ),
+    ("quest-exact-performance", "docs/quest-exact-performance.md", "Exact Quest work"),
+    ("quest-wifi-trials", "docs/quest-wifi-trials.md", "Quest Wi-Fi protocol"),
     ("milestones", "docs/milestones.md", "Milestones"),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("approximations", "docs/approximations.md", "Approximations"),

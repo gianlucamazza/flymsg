@@ -679,7 +679,12 @@ class QuestSite:
                 fidelity = check.get("state", {}).get("fidelity", {})
                 self.server.ready_content = {
                     key: fidelity.get(key)
-                    for key in ("representation", "selected", "represented")
+                    for key in (
+                        "representation",
+                        "source_geometry",
+                        "selected",
+                        "represented",
+                    )
                 }
                 self.server.ready_document_id = (
                     None if readback_only else check["state"]["after"]["document_id"]

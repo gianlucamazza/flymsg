@@ -35,6 +35,8 @@ for (const damage of [
         },
         stats: damage === "loading" ? "1 loading" : "x · 0 loading · y",
         fidelity: {
+          representation: "surface",
+          source_geometry: true,
           status: damage === "anatomy" ? "unsupported" : "ready",
           gpu_ready: damage !== "gpu",
         },
@@ -71,7 +73,12 @@ test("explicit idle readback preparation cannot authorize cadence or immersive f
     before: { document_id: "a" },
     after: { document_id: "a", identity: { context_ready: true } },
     stats: "x · 0 loading · y",
-    fidelity: { status: "ready", gpu_ready: true },
+    fidelity: {
+      representation: "surface",
+      source_geometry: true,
+      status: "ready",
+      gpu_ready: true,
+    },
     immersive: false,
   };
   const browser = { evaluate: async () => state };
@@ -93,4 +100,40 @@ test("explicit idle readback preparation cannot authorize cadence or immersive f
   state.immersive = false;
   state.visibility = "hidden";
   assert(!(await observerPreflight(browser, url, options)).eligible);
+});
+
+test("exact requested representations reject approximate or missing fidelity before source inspection", async () => {
+  for (const representation of ["skeleton", "surface"]) {
+    for (const source_geometry of [true, false, undefined]) {
+      const url = `http://localhost:8892/live/looming/?representation=${representation}&check`;
+      const state = {
+        url,
+        visibility: "visible",
+        frame_callbacks: 20,
+        submitted_frames: 20,
+        before: { document_id: "a" },
+        after: { document_id: "a", identity: { context_ready: true } },
+        stats: "x · 0 loading · y",
+        fidelity: {
+          status: "ready",
+          gpu_ready: true,
+          representation,
+          source_geometry,
+        },
+      };
+      const browser = { evaluate: async () => state };
+      const result = await observerPreflight(browser, url, {
+        verifySources: false,
+      });
+      assert.equal(result.eligible, source_geometry === true);
+      if (source_geometry !== true)
+        assert(result.reasons.includes("original-geometry-required"));
+      state.fidelity.representation = "skeleton-bounded";
+      assert(
+        (
+          await observerPreflight(browser, url, { verifySources: false })
+        ).reasons.includes("representation-mismatch"),
+      );
+    }
+  }
 });

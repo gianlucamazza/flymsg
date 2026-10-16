@@ -49,7 +49,12 @@ test("oracle completes all stereo timestamps and retains repeated progress updat
           frame_callbacks: 20,
           submitted_frames: 20,
           stats: "x · 0 loading · y",
-          fidelity: { status: "ready", gpu_ready: true },
+          fidelity: {
+            representation: "surface",
+            source_geometry: true,
+            status: "ready",
+            gpu_ready: true,
+          },
           resources: { gpu_resources: { complete: true } },
         };
       if (expression.startsWith("flymsg.reference(")) {

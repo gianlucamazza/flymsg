@@ -21,6 +21,7 @@ def arm(value):
         "source_sha256": {"main": "same"},
         "identity": {
             "representation": "skeleton",
+            "source_geometry": True,
             "selected": 1128,
             "represented": 1128,
             "width": 100,
@@ -233,4 +234,26 @@ def test_camera_declared_viewport_must_match_actual_receipts():
     for row in records:
         row["identity"]["width"] *= 2
     with pytest.raises(ValueError, match="Frozen camera viewport"):
+        compare.block_summary(records)
+
+
+@pytest.mark.parametrize("representation", ["skeleton", "surface"])
+@pytest.mark.parametrize("source_geometry", [False, None])
+def test_exact_raw_receipts_require_original_geometry(representation, source_geometry):
+    records = [arm(value) for value in (100, 80, 80, 100)]
+    for row in records:
+        row["identity"]["representation"] = representation
+        if source_geometry is None:
+            row["identity"].pop("source_geometry")
+        else:
+            row["identity"]["source_geometry"] = source_geometry
+    with pytest.raises(ValueError, match="original source geometry"):
+        compare.block_summary(records)
+
+
+def test_exact_raw_receipts_reject_a_consistently_approximate_representation():
+    records = [arm(value) for value in (100, 80, 80, 100)]
+    for row in records:
+        row["identity"]["representation"] = "skeleton-bounded"
+    with pytest.raises(ValueError, match="original source geometry"):
         compare.block_summary(records)

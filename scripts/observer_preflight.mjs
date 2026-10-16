@@ -48,6 +48,15 @@ export async function observerPreflight(
   if ((requireRendering || state.immersive) && !(state.submitted_frames > 1))
     reasons.push("no-submitted-frames");
   if (state.fidelity.status !== "ready") reasons.push("incomplete-anatomy");
+  const representation =
+    new URL(expectedUrl).searchParams.get("representation") ?? "surface";
+  if (state.fidelity.representation !== representation)
+    reasons.push("representation-mismatch");
+  if (
+    ["skeleton", "surface"].includes(representation) &&
+    state.fidelity.source_geometry !== true
+  )
+    reasons.push("original-geometry-required");
   if (state.fidelity.gpu_ready === false) reasons.push("gpu-not-ready");
   if (state.after.identity?.context_ready === false)
     reasons.push("context-not-ready");
