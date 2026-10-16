@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Evidence-gated planning (docs only).** Added `docs/milestones.md` with
+  S0–S4 scientific and H1/H2 engineering gates, issue ownership, dependencies,
+  entry/exit and blocked/no-go semantics; indexed from the roadmap and README.
+  After #221 merged and #40 closed, remaining Series S adversarial hardware
+  acceptance is separately tracked by #224. No model, lock, result or issue
+  outcome changed by the documentation PR.
+
 - **Architecture index and the completion list.** The experiments row names `path_metrics`, `identifiability`, `gf_looming`, `apl_claws` and `closedloop_experiment`. The roadmap's second completion step lists runs already read. A graded million-step publish on worker `90249e45` stays interrupted; the collector (#222) names the last state and step. Docs only.
 
 - **Lifecycle collector.** A throughput wait that expires names the worker's last state and step. A package-lineage mismatch stays a finished state whose commit differs from the declared one. No console trial was rerun.
