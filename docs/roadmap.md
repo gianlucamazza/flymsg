@@ -12,21 +12,11 @@ and what would remove it.
 
 ## Evidence-gated delivery milestones (planned 2026-10-16)
 
-The [milestone plan](milestones.md) maps every currently open issue to one primary
-delivery gate: **S0** numerical reliability → **S1** sourced sensory physiology →
-**S2** evidenced body coupling → **S3** independent prospective prediction →
-**S4** external reproduction/claims audit. **H1** native/Series S qualification
-and **H2** full-fidelity viewer/WebXR qualification run in parallel; neither
-is a substitute for independent animal data.
+The [milestone plan](milestones.md) maps every currently open issue to one primary delivery gate: **S0** numerical reliability → **S1** sourced sensory physiology → **S2** evidenced body coupling → **S3** independent prospective prediction → **S4** external reproduction/claims audit. **H1** native/Series S qualification and **H2** full-fidelity viewer/WebXR qualification run in parallel; neither is a substitute for independent animal data.
 
-These are evidence-based planning identifiers, **not yet native GitHub
-Milestone objects or fixed delivery dates**. `blocked`/negative results remain
-visible and do not count as passes. The merged [#221](https://github.com/gianlucamazza/flymsg/pull/221)
-adds diagnostic Quest evidence, not a qualified XR release; closed
-[#40](https://github.com/gianlucamazza/flymsg/issues/40) records its delivered
-Series S baseline, with remaining physical fault gates on
-[#224](https://github.com/gianlucamazza/flymsg/issues/224).
+These are evidence-based planning identifiers, **not yet native GitHub Milestone objects or fixed delivery dates**. `blocked`/negative results remain visible and do not count as passes. The merged [#221](https://github.com/gianlucamazza/flymsg/pull/221) adds diagnostic Quest evidence, not a qualified XR release; closed [#40](https://github.com/gianlucamazza/flymsg/issues/40) records its delivered Series S baseline, with remaining physical fault gates on [#224](https://github.com/gianlucamazza/flymsg/issues/224).
 
+## Results
 
 | Result                                     | Verdict                                                                             | Record                                                                                            |
 | ------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
