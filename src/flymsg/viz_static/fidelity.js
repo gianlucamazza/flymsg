@@ -1,3 +1,6 @@
+export const isSkeletonRepresentation = (value) =>
+  value === "skeleton" || value === "skeleton-bounded";
+
 // Resource admission cannot change anatomical representation. Full-resolution
 // surfaces are admitted as a whole; compressed-size estimates are provisional.
 export function selectFidelity(
@@ -6,7 +9,7 @@ export function selectFidelity(
   budgetTris,
   trisPerByte,
 ) {
-  if (!["surface", "skeleton"].includes(representation))
+  if (representation !== "surface" && !isSkeletonRepresentation(representation))
     throw new RangeError(
       "Explicit surface or skeleton representation required",
     );
@@ -17,7 +20,7 @@ export function selectFidelity(
     status: "ready",
     reasons: [],
   };
-  if (representation === "skeleton") {
+  if (isSkeletonRepresentation(representation)) {
     result.skeletons = neurons.map((n) => n.key);
     return result;
   }

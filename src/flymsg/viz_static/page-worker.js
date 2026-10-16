@@ -1,8 +1,27 @@
+import {
+  sourceAnchors,
+  compilePageLods,
+  composePageLod,
+} from "./certified-lods.js";
 import { PrimitivePages, pageTransfers } from "./primitive-pages.js";
 
 let builder, pending, sortCenter;
+const catalogues = new Map();
+let nextPage = 0;
 self.onmessage = ({ data }) => {
   try {
+    if (data.kind === "bounded-compose") {
+      const pages = data.pages.map(({ page, selection }) => {
+        const catalogue = catalogues.get(page);
+        if (!catalogue) throw Error("Unknown page generation");
+        return { page, indices: composePageLod(catalogue, selection) };
+      });
+      self.postMessage(
+        { id: data.id, pages },
+        pages.map((p) => p.indices.buffer),
+      );
+      return;
+    }
     if (data.kind === "start") {
       builder = new PrimitivePages(data.options);
       pending = null;
@@ -20,6 +39,11 @@ self.onmessage = ({ data }) => {
         }
         sortCenter = min.map((v, axis) => (v + max[axis]) / 2);
       }
+      if (builder.preserveAnchors)
+        data.source.anchors = sourceAnchors(
+          data.source.attributes.position.array.length / 3,
+          data.source.index,
+        );
       pending = builder.append(data.source);
     }
     let page = null;
@@ -28,6 +52,12 @@ self.onmessage = ({ data }) => {
       const result = pending.next();
       if (result.done) pending = null;
       else page = result.value;
+    }
+    if (page?.boundedSource) {
+      const catalogue = compilePageLods(page);
+      const pageId = nextPage++;
+      catalogues.set(pageId, catalogue);
+      page.bounded = { ...catalogue.metadata, page: pageId };
     }
     self.postMessage(
       { id: data.id, page, pending: !!pending, sortCenter },

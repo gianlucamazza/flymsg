@@ -125,3 +125,34 @@ def test_actual_msaa_mismatch_is_rejected_even_when_composer_targets_match():
     records[1]["identity"]["samples"] = 0
     with pytest.raises(ValueError, match="quality mismatch"):
         compare.block_summary(records)
+
+
+def test_bounded_comparison_requires_explicit_order_and_every_frame_certificate():
+    records = [arm(value) for value in (100, 80, 80, 100)]
+    for row in records[1:3]:
+        row["identity"]["representation"] = "skeleton-bounded"
+        row["frames"] = 101
+        row["bounded_frames"] = [
+            {"maximum_error_px": 0.4, "submitted_indices": 20, "source_indices": 100}
+            for _ in range(101)
+        ]
+    assert (
+        compare.block_summary(records, candidate_representation="skeleton-bounded")[
+            "ratio"
+        ]
+        == 0.8
+    )
+    with pytest.raises(ValueError, match="mismatch"):
+        compare.block_summary(records)
+    for damage in ("missing", "over-limit", "nan", "wrong-count"):
+        changed = copy.deepcopy(records)
+        if damage == "missing":
+            changed[1]["bounded_frames"].pop()
+        elif damage == "wrong-count":
+            changed[1]["bounded_frames"][50]["submitted_indices"] = 200
+        else:
+            changed[1]["bounded_frames"][50]["maximum_error_px"] = (
+                float("nan") if damage == "nan" else 0.51
+            )
+        with pytest.raises(ValueError, match="certificate|uncertified"):
+            compare.block_summary(changed, candidate_representation="skeleton-bounded")

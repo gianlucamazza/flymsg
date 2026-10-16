@@ -1,7 +1,12 @@
 // Lossless, source-order packing. Run in a worker; normals are supplied by the
 // original fragment finisher, never recomputed at a page boundary.
 export class PrimitivePages {
-  constructor({ primitiveSize, attributes, maxBytes = 4 * 1024 * 1024 }) {
+  constructor({
+    primitiveSize,
+    attributes,
+    maxBytes = 4 * 1024 * 1024,
+    preserveAnchors = false,
+  }) {
     if (
       attributes.position?.itemSize !== 3 ||
       !Number.isInteger(maxBytes) ||
@@ -12,6 +17,7 @@ export class PrimitivePages {
       );
     if (![1, 2, 3].includes(primitiveSize))
       throw new RangeError("Invalid primitive size");
+    this.preserveAnchors = preserveAnchors;
     this.primitiveSize = primitiveSize;
     this.schema = attributes;
     const stride = Object.values(attributes).reduce(
@@ -36,6 +42,8 @@ export class PrimitivePages {
       ]),
     );
     this.index = new Uint32Array(this.capacity);
+    this.anchors = this.preserveAnchors ? new Uint8Array(this.capacity) : null;
+    this.origins = this.preserveAnchors ? new Uint32Array(this.capacity) : null;
     this.vertices = this.indices = 0;
     this.spans = [];
     this.bounds = {
@@ -58,6 +66,14 @@ export class PrimitivePages {
       index: this.index.slice(0, this.indices),
       bounds: this.bounds,
       spans: this.spans,
+      ...(this.preserveAnchors
+        ? {
+            boundedSource: {
+              anchors: this.anchors.slice(0, this.vertices),
+              origins: this.origins.slice(0, this.vertices),
+            },
+          }
+        : {}),
     };
     this.reset();
     return page;
@@ -110,6 +126,10 @@ export class PrimitivePages {
         if (vertex === undefined) {
           vertex = this.vertices++;
           remap.set(original, vertex);
+          if (this.anchors) {
+            this.anchors[vertex] = source.anchors?.[original] ?? 1;
+            this.origins[vertex] = original;
+          }
           for (const [name, a] of Object.entries(this.attributes)) {
             const input = source.attributes[name];
             if (input.array)
@@ -139,6 +159,9 @@ export class PrimitivePages {
 export function pageTransfers(page) {
   return [
     page.index.buffer,
+    ...(page.boundedSource
+      ? [page.boundedSource.anchors.buffer, page.boundedSource.origins.buffer]
+      : []),
     ...Object.values(page.attributes).map((a) => a.array.buffer),
   ];
 }

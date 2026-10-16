@@ -33,9 +33,43 @@ def blocks(page_sizes=(4, 16, 64), repeats=3):
     ]
 
 
-def block_summary(records):
+def block_summary(records, *, candidate_representation=None):
     if len(records) != 4 or not all(record.get("eligible") for record in records):
         raise ValueError("four eligible A/B/B/A arms required")
+    if candidate_representation == "skeleton-bounded":
+        if [row.get("identity", {}).get("representation") for row in records] != [
+            "skeleton",
+            "skeleton-bounded",
+            "skeleton-bounded",
+            "skeleton",
+        ]:
+            raise ValueError(
+                "bounded comparison requires explicit original/bounded/bounded/original order"
+            )
+        for row in (records[1], records[2]):
+            frames = row.get("bounded_frames", [])
+            if len(frames) != row.get("frames") or not frames:
+                raise ValueError("every bounded frame requires a certificate")
+            for frame in frames:
+                if not isinstance(frame, dict):
+                    raise TypeError("missing bounded frame certificate")
+                error = frame.get("maximum_error_px")
+                submitted, source = (
+                    frame.get("submitted_indices"),
+                    frame.get("source_indices"),
+                )
+                if (
+                    not isinstance(error, (int, float))
+                    or not math.isfinite(error)
+                    or not 0 <= error <= 0.5
+                    or frame.get("error")
+                    or not isinstance(submitted, int)
+                    or not isinstance(source, int)
+                    or not 0 <= submitted <= source
+                ):
+                    raise ValueError("uncertified bounded frame")
+    elif candidate_representation is not None:
+        raise ValueError("unknown candidate representation")
     # Page identity changes per arm; image quality, selected content and frozen camera must not.
     first = records[0]
 
@@ -45,7 +79,12 @@ def block_summary(records):
             "settings": record["render_settings"],
             "source": record["source_sha256"],
             "anatomy": {
-                key: record["identity"][key]
+                key: (
+                    "skeleton"
+                    if key == "representation"
+                    and candidate_representation == "skeleton-bounded"
+                    else record["identity"][key]
+                )
                 for key in (
                     "representation",
                     "selected",
@@ -277,7 +316,12 @@ def run(
                             identity(session.serial, session.device["hardware_serial"])
                             session.open(
                                 scene,
-                                representation=representation,
+                                representation=(
+                                    "skeleton"
+                                    if representation == "skeleton-bounded"
+                                    and mode == "original"
+                                    else representation
+                                ),
                                 page_mib=size,
                                 uploads=mode == "paged",
                                 culling=view != "dense-all" and mode == "paged",
@@ -314,7 +358,12 @@ def run(
                             )
                             phase = "preparation"
                         phase = "assessment"
-                        summary = block_summary(records)
+                        summary = block_summary(
+                            records,
+                            candidate_representation="skeleton-bounded"
+                            if representation == "skeleton-bounded"
+                            else None,
+                        )
                         row = {
                             "page_mib": size,
                             "view": view,
@@ -328,6 +377,7 @@ def run(
                     except (
                         OSError,
                         ValueError,
+                        TypeError,
                         RuntimeError,
                         subprocess.SubprocessError,
                     ) as exc:
@@ -408,7 +458,9 @@ def main():
     parser.add_argument("--port", type=int, default=8892)
     parser.add_argument("--scene", choices=("looming", "anatomy"), default="looming")
     parser.add_argument(
-        "--representation", choices=("skeleton", "surface"), default="skeleton"
+        "--representation",
+        choices=("skeleton", "skeleton-bounded", "surface"),
+        default="skeleton",
     )
     parser.add_argument(
         "--gpu-page-mib", type=int, choices=(4, 16, 64), nargs="+", default=[4, 16, 64]

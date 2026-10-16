@@ -104,7 +104,14 @@ def main():
     )
     parser.add_argument(
         "--oracle",
-        choices=("geometry", "raster", "paged", "viewer-surface", "viewer-skeleton"),
+        choices=(
+            "geometry",
+            "raster",
+            "paged",
+            "viewer-surface",
+            "viewer-skeleton",
+            "viewer-bounded",
+        ),
         default="geometry",
     )
     args = parser.parse_args()
@@ -162,6 +169,7 @@ def main():
         "paged": "__paged.html",
         "viewer-surface": "__viewer.html?check&paused&representation=surface&uploads=1&neuropils=0&somata=0",
         "viewer-skeleton": "__viewer.html?check&paused&representation=skeleton&uploads=1&neuropils=0&somata=0",
+        "viewer-bounded": "__viewer.html?check&paused&representation=skeleton-bounded&uploads=1&neuropils=0&somata=0",
     }[args.oracle]
     hashes = {
         name: hashlib.sha256((viz.STATIC / name).read_bytes()).hexdigest()

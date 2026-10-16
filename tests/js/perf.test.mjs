@@ -78,3 +78,29 @@ test("stage windows stay bounded and never survive a context reset", () => {
   p.resetContext();
   assert.deepEqual(p.stageReport(), {});
 });
+
+test("loss notification abandons timer queries before restoration can delete stale handles", () => {
+  let lost = false,
+    deletions = 0;
+  const extension = { TIME_ELAPSED_EXT: 1, GPU_DISJOINT_EXT: 2 };
+  const gl = {
+    getExtension: () => (lost ? null : extension),
+    isContextLost: () => lost,
+    deleteQuery: () => {
+      deletions++;
+      throw Error("Stale query deletion");
+    },
+  };
+  const p = new Perf({ info: {}, getContext: () => gl });
+  p.pending = [{ old: true }];
+  p.query = { old: true };
+  lost = true;
+  p.resetContext();
+  assert.equal(p.pending.length, 0);
+  assert.equal(p.query, null);
+  assert.equal(p.timer, null);
+  lost = false;
+  p.resetContext();
+  assert.equal(p.timer, extension);
+  assert.equal(deletions, 0);
+});

@@ -1,4 +1,5 @@
 // Full selected anatomy, original renderer oracle. Never used as a cadence trial.
+import { verifyRasterFootprint } from "../src/flymsg/viz_static/bounded-raster-oracle.js";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { localObserver } from "./observer_cdp.mjs";
@@ -40,6 +41,8 @@ export async function observerOracle(browser, out) {
     write("preflight.json", pre);
     if (!pre.eligible || !pre.state.resources.gpu_resources.complete)
       throw Error("Complete paged observer required");
+    const bounded = pre.state.fidelity.representation === "skeleton-bounded";
+    report.representation = pre.state.fidelity.representation;
     saved = await browser.evaluate("flymsg.diagnosticState()");
     await browser.evaluate(
       "flymsg.diagnostic({suspended:true,playing:false,time:20,pageCulling:false})",
@@ -63,6 +66,16 @@ export async function observerOracle(browser, out) {
         const reference = await browser.evaluate(
           `flymsg.reference(${JSON.stringify({ ...options, pipeline: "original" })})`,
         );
+        let geometryProof = null;
+        if (bounded) {
+          await browser.evaluate(
+            `flymsg.prepareBounded(${JSON.stringify(options)})`,
+          );
+          geometryProof = await browser.evaluate(`(async()=>{
+            const {auditBoundedRuntime}=await import('./bounded-runtime-oracle.js');
+            const modelView=new flymsg.THREE.Matrix4().fromArray(${JSON.stringify(world)}).invert().multiply(flymsg.data.matrixWorld).toArray();
+            return auditBoundedRuntime(flymsg,[{modelView,projection:${JSON.stringify(camera.projection)},width:256,height:256}]);})()`);
+        }
         const candidate = await browser.evaluate(
           `flymsg.reference(${JSON.stringify({ ...options, pipeline: "paged", culling: true })})`,
         );
@@ -78,16 +91,39 @@ export async function observerOracle(browser, out) {
         let witness = false;
         for (let i = 0; i < pixels.length; i += 4)
           if (pixels[i] || pixels[i + 1] || pixels[i + 2]) witness = true;
-        report.cases.push({ time, eye, matches, nonempty_ids: witness });
+        const footprint = bounded
+          ? verifyRasterFootprint(
+              reference.images.colour,
+              candidate.images.colour,
+              reference.images.neuron_id,
+              256,
+              256,
+            )
+          : null;
+        report.cases.push({
+          time,
+          eye,
+          matches,
+          nonempty_ids: witness,
+          geometry_proof: geometryProof,
+          footprint,
+        });
         write("progress.json", report);
-        if (!Object.values(matches).every(Boolean) || !witness)
+        if (
+          !(
+            bounded
+              ? [matches.neuron_id, matches.packed_depth]
+              : Object.values(matches)
+          ).every(Boolean) ||
+          !witness
+        )
           throw Error("Original/candidate stereo mismatch or empty scene");
         first ??= reference;
       }
     const expected = await browser.evaluate(`(()=>{
       const expected={};const selected=${JSON.stringify(first.neurons)};
       for(const entry of selected){const n=flymsg.neurons.find(n=>n.k===entry.k);
-        if(flymsg.fidelity().representation==='skeleton')expected['skeleton:'+entry.k]=n.skelLod.levels[0].length/2;
+        if(['skeleton','skeleton-bounded'].includes(flymsg.fidelity().representation))expected['skeleton:'+entry.k]=n.skelLod.levels[0].length/2;
         else for(const key of entry.surfaces)expected['surface:'+entry.k+':'+key]=n.shown.get(key).geometry.index.array.length/3;
       }return expected;})()`);
     const inventory = await browser.evaluate("flymsg.gpuInventory()");
@@ -102,12 +138,30 @@ export async function observerOracle(browser, out) {
       const original = await browser.evaluate(
         `flymsg.desktopReference({time:${time},pipeline:'original'})`,
       );
+      if (bounded) await browser.evaluate("flymsg.prepareBounded()");
       const candidate = await browser.evaluate(
         `flymsg.desktopReference({time:${time},pipeline:'paged'})`,
       );
-      write(`desktop-${time}.json`, { original, candidate });
+      let footprint = null;
+      if (bounded) {
+        const source = await browser.evaluate(
+          `flymsg.reference(${JSON.stringify({ time, width: original.width, height: original.height, projection: original.projection, cameraWorld: original.camera_world, pipeline: "original" })})`,
+        );
+        const radius = await browser.evaluate(
+          `(async()=>{const {bloomFootprint}=await import('./bounded-raster-oracle.js');return bloomFootprint(flymsg,${original.width},${original.height});})()`,
+        );
+        footprint = verifyRasterFootprint(
+          original.rgba,
+          candidate.rgba,
+          source.images.neuron_id,
+          original.width,
+          original.height,
+          radius,
+        );
+      }
+      write(`desktop-${time}.json`, { original, candidate, footprint });
       if (
-        original.rgba.sha256 !== candidate.rgba.sha256 ||
+        (!bounded && original.rgba.sha256 !== candidate.rgba.sha256) ||
         original.samples !== candidate.samples ||
         JSON.stringify(original.projection) !==
           JSON.stringify(candidate.projection) ||

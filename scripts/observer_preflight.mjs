@@ -64,6 +64,8 @@ export async function observerPreflight(
       "gpu-upload.js",
       "primitive-pages.js",
       "context-readiness.js",
+      "bounded-selections.js",
+      "projection-error-bound.js",
     ];
     const loaded = await browser.loadedSources(names);
     for (const name of names) {

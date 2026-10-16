@@ -444,10 +444,13 @@ class QuestSite:
         identity(self.serial, self.device["hardware_serial"])
         if (
             scene not in ("looming", "anatomy")
-            or representation not in ("surface", "skeleton", "mixed")
+            or representation
+            not in ("surface", "skeleton", "skeleton-bounded", "mixed")
             or page_mib not in (4, 16, 64)
         ):
             raise ValueError("invalid observer configuration")
+        if representation == "skeleton-bounded" and not uploads:
+            raise ValueError("bounded skeleton requires paged GPU uploads")
         if uploads and representation == "mixed":
             raise ValueError("paged mixed representation is unavailable")
         if self.unattended and proximity_state(self.serial)["state"] != "CLOSE":
@@ -631,7 +634,9 @@ def main():
     )
     p.add_argument("--scene", choices=("looming", "anatomy"), default="looming")
     p.add_argument(
-        "--representation", choices=("surface", "skeleton", "mixed"), default="surface"
+        "--representation",
+        choices=("surface", "skeleton", "skeleton-bounded", "mixed"),
+        default="surface",
     )
     p.add_argument("--pages", action="store_true")
     p.add_argument("--uploads", action="store_true")

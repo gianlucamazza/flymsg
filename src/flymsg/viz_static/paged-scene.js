@@ -1,3 +1,4 @@
+import { BoundedSelections } from "./bounded-selections.js";
 import { GpuUploads } from "./gpu-upload.js";
 import { pageVisible } from "./primitive-pages.js";
 
@@ -36,10 +37,25 @@ export class PagedScene {
     THREE,
     renderer,
     parent,
-    { maxPageBytes = 4 * 1024 * 1024 } = {},
+    { maxPageBytes = 4 * 1024 * 1024, bounded = false } = {},
   ) {
     Object.assign(this, { THREE, renderer, parent, maxPageBytes });
     this.uploads = new GpuUploads(renderer.getContext());
+    this.boundedEnabled = bounded;
+    if (bounded) {
+      const gl = renderer.getContext();
+      this.bounded = new BoundedSelections(
+        THREE,
+        this.uploads,
+        (pages) => this.request({ kind: "bounded-compose", pages }),
+        {
+          float:
+            gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT)
+              ?.precision ?? 0,
+          subpixel: gl.getParameter(gl.SUBPIXEL_BITS),
+        },
+      );
+    }
     this.group = new THREE.Group();
     this.group.visible = false;
     parent.add(this.group);
@@ -59,10 +75,15 @@ export class PagedScene {
   request(message, transfers = []) {
     return new Promise((resolve, reject) => {
       const id = ++this.requestId;
-      const timer = setTimeout(() => {
-        this.waiters.delete(id);
-        reject(new Error("Geometry worker timed out; no completed generation"));
-      }, 30000);
+      const timer = setTimeout(
+        () => {
+          this.waiters.delete(id);
+          reject(
+            new Error("Geometry worker timed out; no completed generation"),
+          );
+        },
+        this.boundedEnabled ? 120000 : 30000,
+      );
       this.waiters.set(id, {
         resolve: (value) => {
           clearTimeout(timer);
@@ -180,7 +201,7 @@ export class PagedScene {
     object.frustumCulled = false; // union-of-eye culling is explicit below
     object.renderOrder = layer.renderOrder ?? 0;
     this.group.add(object);
-    this.pages.push({
+    const published = {
       object,
       record,
       bounds: page.bounds,
@@ -188,7 +209,10 @@ export class PagedScene {
       layer,
       names,
       counts: arrays.map((a) => a.length),
-    });
+      boundedSource: page.boundedSource,
+    };
+    this.pages.push(published);
+    if (page.bounded) this.bounded.add(published, page.bounded);
     // Release packing arrays after upload. Retain source originals and provenance.
     record.arrays = [];
     this.cpuDuration(performance.now() - begin);
@@ -233,6 +257,10 @@ export class PagedScene {
               ]),
             ),
             maxBytes: this.maxPageBytes,
+            preserveAnchors:
+              this.boundedEnabled &&
+              layer.primitiveSize === 2 &&
+              !layer.context,
           },
         });
       }
@@ -276,8 +304,10 @@ export class PagedScene {
         generation,
       );
     this.current(generation);
-    this.worker.terminate();
-    this.worker = null;
+    if (!this.boundedEnabled) {
+      this.worker.terminate();
+      this.worker = null;
+    }
     this.state = "warming"; // first full-quality draw must complete before XR admission
   }
   sync(sources, complete, admissionError = null) {
@@ -325,6 +355,7 @@ export class PagedScene {
       object.geometry.setIndex(null);
       object.geometry.dispose();
     }
+    this.bounded?.reset();
     this.pages = [];
     this.uploads.reset();
     this.state = "preparing";
@@ -362,7 +393,11 @@ export class PagedScene {
     this.uploads.dispose();
     this.parent.remove(this.group);
   }
-  render(originals, callback, { eyes = null, pass = "colour" } = {}) {
+  render(
+    originals,
+    callback,
+    { eyes = null, pass = "colour", boundedEyes = null } = {},
+  ) {
     const shaderError = this.renderer.debug.onShaderError;
     if (this.state === "warming")
       this.renderer.debug.onShaderError = () => {
@@ -381,6 +416,7 @@ export class PagedScene {
       page.object.material = page.layer[pass] ?? page.layer.material;
     }
     try {
+      if (this.bounded && pass === "colour") this.bounded.apply(boundedEyes);
       const result = callback();
       if (this.state === "warming" && pass === "colour" && !this.warmFence) {
         const gl = this.uploads.gl;
@@ -397,6 +433,7 @@ export class PagedScene {
       this.error = String(error);
       throw error;
     } finally {
+      this.bounded?.restore();
       this.renderer.debug.onShaderError = shaderError;
       this.group.visible = false;
       saved.forEach(([o, visible]) => {
@@ -431,10 +468,39 @@ export class PagedScene {
         });
         await pause();
       }
-      result.push({ spans: page.spans, bounds: page.bounds, buffers });
+      result.push({
+        spans: page.spans,
+        bounds: page.bounds,
+        buffers,
+        bounded: page.bounded,
+        bounded_source: page.boundedSource
+          ? {
+              anchors_sha256: await digest(page.boundedSource.anchors),
+              origins_sha256: await digest(page.boundedSource.origins),
+              cpu_bytes:
+                page.boundedSource.anchors.byteLength +
+                page.boundedSource.origins.byteLength,
+            }
+          : undefined,
+      });
     }
     this.current(generation);
     return result;
+  }
+  async prepareBounded(eyes) {
+    if (!this.bounded) return null;
+    const generation = this.generation,
+      deadline = performance.now() + 120000;
+    do {
+      this.current(generation);
+      this.tick();
+      this.bounded.update(eyes);
+      if (this.bounded.error) throw Error(this.bounded.error);
+      if (this.bounded.settled()) return this.bounded.report();
+      if (performance.now() > deadline)
+        throw Error("Bounded preparation timed out");
+      await new Promise((resolve) => setTimeout(resolve, 16));
+    } while (true);
   }
   report() {
     return {
@@ -444,6 +510,7 @@ export class PagedScene {
       generation: this.generation,
       pages: this.pages.length,
       max_page_bytes: this.maxPageBytes,
+      bounded: this.bounded?.report() ?? null,
       prepared_bytes: this.preparedBytes,
       input_copy_cpu_bytes: this.inputCopyBytes,
       worker_input_bytes: this.workerInputBytes,
