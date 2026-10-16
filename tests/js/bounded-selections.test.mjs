@@ -143,3 +143,145 @@ test("a stricter physical eye or missing pose forces original indices on the sam
   assert.equal(f.page.object.geometry.index.count, 6);
   f.controller.restore();
 });
+
+const scaledEyes = (factor) =>
+  eyes.map((eye) => ({
+    ...eye,
+    width: eye.width * factor,
+    height: eye.height * factor,
+  }));
+test("retain a certified current selection between the preferred and fallback thresholds", async () => {
+  const f = fixture();
+  f.controller.update(eyes);
+  await resolve(f);
+  f.owned[0].state = "ready";
+  f.controller.update(eyes);
+  f.controller.update(scaledEyes(6));
+  f.controller.apply(scaledEyes(6));
+  assert.equal(f.page.object.geometry.index.count, 4);
+  assert(f.controller.report().maximum_error_px > 0.4);
+  assert(f.controller.report().maximum_error_px <= 0.5);
+  assert.equal(f.requests.length, 1);
+  assert.equal(f.released.length, 0);
+  f.controller.restore();
+  f.controller.update(scaledEyes(8));
+  f.controller.apply(scaledEyes(8));
+  assert.equal(f.page.object.geometry.index.count, 6);
+});
+
+test("an older preferred selection may finish while still certified for the actual pose", async () => {
+  const f = fixture();
+  f.controller.update(eyes);
+  f.controller.update(scaledEyes(6));
+  await resolve(f);
+  assert.equal(f.owned.length, 1);
+  f.controller.update(scaledEyes(6));
+  assert.equal(f.released.length, 0);
+  f.owned[0].state = "ready";
+  f.controller.update(scaledEyes(6));
+  f.controller.apply(scaledEyes(6));
+  assert.equal(f.page.object.geometry.index.count, 4);
+  assert(f.controller.report().maximum_error_px <= 0.5);
+});
+
+function twoPages() {
+  const f = fixture();
+  f.page.object.geometry.setIndex([0, 1, 1, 2, 2, 3, 3, 4]);
+  f.page.fullIndex = f.page.object.geometry.index;
+  f.page.bounded.levels[0].ranges[0].count = 8;
+  f.page.bounded.levels.push({
+    id: 2,
+    ranges: [{ owner: 0, first: 0, count: 6 }],
+    errors: { 0: 0.00001 },
+  });
+  const second = {
+    object: {
+      geometry: new T.BufferGeometry().setIndex([0, 1, 1, 2, 2, 3, 3, 4]),
+      visible: true,
+    },
+  };
+  const metadata = structuredClone(f.page.bounded);
+  metadata.page = 8;
+  metadata.levels[1].errors[0] = 0.00001;
+  f.controller.add(second, metadata);
+  const release = f.uploads.release;
+  f.uploads.release = (record) => {
+    assert(
+      !f.released.includes(record),
+      "a shared native record must be released exactly once",
+    );
+    release(record);
+  };
+  return { ...f, second };
+}
+async function resolvePages(f) {
+  const request = f.requests.at(-1);
+  request.resolve({
+    pages: request.pages.map(({ page, selection }) => ({
+      page,
+      indices: new Uint32Array(
+        selection[0] === 1 ? [0, 2, 2, 4] : [0, 1, 1, 2, 2, 4],
+      ),
+    })),
+  });
+  await Promise.resolve();
+}
+async function initializedPair() {
+  const f = twoPages();
+  f.controller.update(scaledEyes(8));
+  await resolvePages(f);
+  for (const r of f.owned) r.state = "ready";
+  f.controller.update(scaledEyes(8));
+  return f;
+}
+test("reuse unchanged native pages and publish a changed selection only when complete", async () => {
+  const f = await initializedPair();
+  const previous = f.controller.current,
+    shared = previous.records.get(8);
+  f.controller.update(eyes);
+  await resolvePages(f);
+  assert.equal(f.owned.length, 3);
+  assert.equal(f.controller.pending.records.get(8), shared);
+  f.controller.apply(eyes);
+  assert.equal(f.page.object.geometry.index.count, 6);
+  f.controller.restore();
+  f.owned.at(-1).state = "ready";
+  f.controller.update(eyes);
+  f.controller.apply(eyes);
+  assert.equal(f.page.object.geometry.index.count, 4);
+  assert.equal(f.controller.current.records.get(8), shared);
+  assert(!f.released.includes(shared));
+  assert(f.released.includes(previous.records.get(7)));
+  assert.equal(f.controller.report().composed_pages, 4);
+  assert.equal(f.controller.report().reused_pages, 1);
+  assert.equal(f.controller.report().installed_selections, 2);
+  f.controller.restore();
+  f.controller.reset();
+  assert.equal(f.released.length, 3);
+});
+test("discard invalid pending proofs without releasing pages shared with the current selection", async () => {
+  const f = await initializedPair();
+  const previous = f.controller.current;
+  f.controller.update(eyes);
+  await resolvePages(f);
+  const replacement = f.owned.at(-1);
+  f.controller.update(scaledEyes(8));
+  assert.equal(f.controller.current, previous);
+  assert(f.released.includes(replacement));
+  assert(!f.released.includes(previous.records.get(8)));
+  f.controller.apply(scaledEyes(8));
+  assert.equal(f.page.object.geometry.index.count, 6);
+  f.controller.restore();
+  f.controller.reset();
+  assert.equal(f.released.length, 3);
+});
+test("context reset releases current and pending shared buffers once", async () => {
+  const f = await initializedPair();
+  f.controller.update(eyes);
+  await resolvePages(f);
+  assert.equal(f.owned.length, 3);
+  f.controller.reset();
+  assert.equal(f.released.length, 3);
+  assert.equal(f.controller.current, null);
+  assert.equal(f.controller.pending, null);
+});
