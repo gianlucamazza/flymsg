@@ -78,6 +78,6 @@ path retains the explicit historical boundary-reset mode. For the new continuous
 it is equivalent only for coupled cells that cannot become refractory (graded, silenced,
 stimulated, or a model without a refractory hold). The fixture exporter proves that
 condition before admitting an electrical fixture; otherwise it raises
-`NativeCapabilityError`. The acceptance report preserves original fixtures in their named boundary mode, lists
-continuous refractory fixtures as unsupported, and separately qualifies all-free fixtures. This is not native
-qualification of dynamic continuous clamps or GPU hardware.
+`NativeCapabilityError`. The acceptance report preserves original fixtures in their named boundary mode and lists
+dynamic continuous refractory fixtures as unsupported. The 12 gap-all-free fixtures are qualified on the Series S
+GPU (2026-10-16). This is not qualification of dynamic continuous clamps.

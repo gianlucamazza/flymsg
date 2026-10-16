@@ -137,11 +137,11 @@ three stay off unless a lock names them.
 
 ## Blocked on hardware
 
-| Issue                                                            | Blocked by                                                          | Ready                                                                                                                         |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Version-2 fixtures (graded, coupled) on the GPU (#215)              | Series S GPU parity bit for bit: 12 version-1 (2026-10-15) and 60 version-2 fixtures (2026-10-16)                             |
-| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | GPU fault and hard termination on the console                       | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; full connectome bit for bit at about 2,320 steps/s |
-| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))                                   |
+| Issue                                                            | Blocked by                                                          | Ready                                                                                                                                           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Dynamic continuous clamp, refused on every native lane              | Series S GPU parity bit for bit, 12 version-1 fixtures (2026-10-15) and 60 version-2 fixtures (2026-10-16), including the 12 gap-all-free cases |
+| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | GPU fault and hard termination on the console                       | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; full connectome bit for bit at about 2,320 steps/s                   |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))                                                     |
 
 ## What an animal test could check
 
