@@ -135,8 +135,8 @@ presence, clocks, refresh, resolution, foveation or a browser backend.
 
 ## Recorded software evidence
 
-The [summary](evidence/quest2-paged-2026-10-16.json) and
-[raw archive](evidence/quest2-paged-2026-10-16.zip) freeze source revision
+The [summary](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-paged-2026-10-16.json) and
+[raw archive](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-paged-2026-10-16.zip) freeze source revision
 `754c65e`, exact source hashes, both raw images in all 42 comparisons, camera
 matrices, actual native buffer hashes, worker/lifecycle checks and the reproduced
 depth-tie regression. Extract the archive and run `python verify.py .` to check

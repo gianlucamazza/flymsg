@@ -70,6 +70,7 @@ PAGES = (
     ("viz", "docs/viz.md", "3D view"),
     ("vee-qualification", "docs/vee-qualification.md", "VEE qualification"),
     ("observer-rendering", "docs/observer-rendering.md", "Observer rendering"),
+    ("quest-paged-pipeline", "docs/quest-paged-pipeline.md", "GPU page candidate"),
     (
         "quest-rendering-diagnosis",
         "docs/quest-rendering-diagnosis.md",

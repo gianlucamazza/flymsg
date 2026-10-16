@@ -209,7 +209,7 @@ make Quest 2 qualified.
 
 The [paged pipeline implementation](quest-paged-pipeline.md) now implements the
 CPU worker preparation, explicit readiness and owned bounded upload scheduling
-identified above. Its [software evidence](evidence/quest2-paged-2026-10-16.json)
+identified above. Its [software evidence](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-paged-2026-10-16.json)
 retains exact original/candidate primitive and pixel comparisons, including the
 unchanged desktop MSAA/bloom path. The preceding measurements remain historical;
 they do not qualify this candidate. Both complete original representations still
