@@ -160,6 +160,11 @@ checksum verifier. No scientific result or historical lock changed.
   (`HTTP 0`, curl 28). A diagnostic forced stop preserved the epoch and produced
   `awaiting_recovery`; explicit resume completed with CPU-identical output. Its
   interventions keep it unscored, and its root cause remains undetermined.
+- As of `f201060`, a native checkpoint publish whose temporary file does not
+  grow is recorded as `failed` and is not replaced. A temporary file that grows
+  is replaced and recorded as `completed`. The graded million-step job on worker
+  `90249e45` was not rerun. The cause of its empty temporary file remains
+  undetermined. This does not meet the exit of #224.
 - Independent software WebGL oracles pass for pages, real skeletons and real
   surfaces, including stereo color/depth/ID and full-quality desktop comparisons.
   Surface timeouts also reproduced on the old baseline under concurrent load;
