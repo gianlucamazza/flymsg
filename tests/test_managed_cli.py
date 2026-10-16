@@ -209,6 +209,7 @@ def test_sister_writer_policy_is_explicit_and_complete():
         "baselines",
         "apl-claws",
         "convergence",
+        "path-metrics",
         "nulls",
         "select-model",
         "calibrate",

@@ -1,0 +1,447 @@
+{
+  "command": "path-metrics --run",
+  "config": {
+    "grid": {
+      "dt_ms": [
+        0.1,
+        0.05,
+        0.025
+      ],
+      "dt_rule": "halvings of the default; delay (1.8 ms) and t_ref (2.2 ms) stay whole numbers of steps at each",
+      "duration_ms": 600.0,
+      "rate_hz": 100.0,
+      "seed0": 5000,
+      "seed_rule": "disjoint from convergence and sensitivity seeds 0-4, from the baseline shuffles 4000-4198, and from the song, looming and partner-followup seeds",
+      "seeds": 5,
+      "stim_ms": 300.0
+    },
+    "path_metrics_sha256": "6bc92e5a48e3985b960fa84354a402d5aff6b25ac46c5448fc5615a5ebb7e42f",
+    "path_metrics_version": 1
+  },
+  "dataset": {
+    "files": {
+      "edges.parquet": {
+        "bytes": 98482393,
+        "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+      },
+      "neurons.parquet": {
+        "bytes": 2375250,
+        "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+      }
+    },
+    "n_edges": 25563197,
+    "n_neurons": 165122,
+    "name": "malecns",
+    "release": "v1.0"
+  },
+  "extra": {
+    "attempts": [
+      {
+        "checkpoint": "runs/path-metrics/v1.executions/0c616b348fe32a245e22eade4fa6e8e54511d4d49a9e106044d1e47badfdc313/draws.ckpt.jsonl",
+        "computed_jobs": [
+          [
+            0.05,
+            "giant fiber output"
+          ],
+          [
+            0.05,
+            "looming escape"
+          ],
+          [
+            0.025,
+            "giant fiber output"
+          ],
+          [
+            0.025,
+            "bitter feeding"
+          ],
+          [
+            0.025,
+            "pIP10 song pathway"
+          ],
+          [
+            0.025,
+            "sugar feeding"
+          ],
+          [
+            0.05,
+            "pIP10 song pathway"
+          ],
+          [
+            0.05,
+            "P1 courtship drive"
+          ],
+          [
+            0.05,
+            "sugar feeding"
+          ],
+          [
+            0.025,
+            "P1 courtship drive"
+          ],
+          [
+            0.1,
+            "giant fiber output"
+          ],
+          [
+            0.1,
+            "looming escape"
+          ],
+          [
+            0.025,
+            "looming escape"
+          ],
+          [
+            0.05,
+            "bitter feeding"
+          ],
+          [
+            0.1,
+            "P1 courtship drive"
+          ],
+          [
+            0.1,
+            "pIP10 song pathway"
+          ],
+          [
+            0.1,
+            "bitter feeding"
+          ],
+          [
+            0.1,
+            "sugar feeding"
+          ]
+        ],
+        "finished_at": "2026-10-16T08:22:49.626817+00:00",
+        "host": "lenovo",
+        "id": "cd32d20a22af45ff9c45b9257d051ae5",
+        "kernel": "7.2.9-arch1-1",
+        "resumed_jobs": [],
+        "started_at": "2026-10-16T08:10:37.753259+00:00",
+        "status": "completed",
+        "system": "Linux"
+      }
+    ],
+    "data_dir": "data",
+    "execution": {
+      "command": "path-metrics",
+      "config": {
+        "dataset": "malecns",
+        "run": true,
+        "workers": 8
+      },
+      "default_electrical_semantics": "flymsg.gap/continuous-clamp-v1",
+      "environment": {
+        "byteorder": "little",
+        "cpu": {
+          "cpu family": "6",
+          "flags": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l2 cdp_l2 ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid movdiri movdir64b fsrm avx512_vp2intersect md_clear ibt flush_l1d arch_capabilities",
+          "microcode": "0xbe",
+          "model": "140",
+          "model name": "11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz",
+          "stepping": "1",
+          "vendor_id": "GenuineIntel"
+        },
+        "machine": "x86_64",
+        "numerical_threads": {
+          "MKL_NUM_THREADS": null,
+          "NUMBA_NUM_THREADS": null,
+          "OMP_NUM_THREADS": null,
+          "OPENBLAS_NUM_THREADS": null
+        },
+        "packages": {
+          "absl-py": "2.5.1",
+          "asttokens": "3.0.2",
+          "contourpy": "1.4.0",
+          "cycler": "0.12.1",
+          "etils": "1.14.0",
+          "executing": "2.3.0",
+          "flygym": "2.1.0",
+          "flymsg": "0.8.48",
+          "fonttools": "4.66.1",
+          "fsspec": "2026.9.0",
+          "glfw": "2.10.2",
+          "imageio": "2.38.1",
+          "imageio-ffmpeg": "0.6.0",
+          "iniconfig": "2.3.0",
+          "ipython": "9.17.1",
+          "ipython_pygments_lexers": "1.1.1",
+          "jaxtyping": "0.3.7",
+          "jedi": "0.20.1",
+          "kiwisolver": "1.5.1",
+          "llvmlite": "0.50.0",
+          "loguru": "0.7.3",
+          "markdown": "3.11",
+          "matplotlib": "3.11.2",
+          "matplotlib-inline": "0.2.2",
+          "mediapy": "1.2.7",
+          "mujoco": "3.9.0",
+          "numba": "0.68.0",
+          "numpy": "2.5.3",
+          "packaging": "26.3",
+          "pandas": "3.0.6",
+          "parso": "0.8.7",
+          "pexpect": "4.9.0",
+          "pillow": "12.3.0",
+          "pluggy": "1.6.0",
+          "prompt_toolkit": "3.0.53",
+          "psutil": "7.2.2",
+          "ptyprocess": "0.7.0",
+          "pure_eval": "0.2.4",
+          "pyarrow": "25.0.1",
+          "pygments": "2.21.0",
+          "pyopengl": "3.1.10",
+          "pyparsing": "3.3.3",
+          "pytest": "9.1.1",
+          "python-dateutil": "2.9.0.post0",
+          "pyyaml": "6.0.3",
+          "rdata": "1.1.0",
+          "ruff": "0.16.10",
+          "scipy": "1.18.1",
+          "six": "1.17.0",
+          "stack-data": "0.6.3",
+          "tabulate": "0.9.0",
+          "traitlets": "5.16.1",
+          "typing_extensions": "4.16.0",
+          "wadler_lindig": "0.1.7",
+          "wcwidth": "0.9.2",
+          "xarray": "2026.9.0",
+          "zipp": "4.1.1"
+        },
+        "python": "3.13.9",
+        "system": "Linux"
+      },
+      "inputs": {
+        "edges.parquet": {
+          "bytes": 98482393,
+          "sha256": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a"
+        },
+        "neurons.parquet": {
+          "bytes": 2375250,
+          "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+        }
+      },
+      "protocol": {
+        "cases": {
+          "negative": [
+            "bitter feeding"
+          ],
+          "positive": [
+            "looming escape",
+            "giant fiber output",
+            "P1 courtship drive",
+            "pIP10 song pathway",
+            "sugar feeding"
+          ]
+        },
+        "claim": {
+          "kind": "numerical_path_metrics",
+          "reason": "Checks whether first-spike latency, first-spike jitter, recruitment and target rate at the default timestep stay within the finest timestep's seed variability. It does not replace the convergence v1 rate-and-holds gate, does not select a timestep, and does not change sim.Params.",
+          "scored": false
+        },
+        "content_sha256": "6bc92e5a48e3985b960fa84354a402d5aff6b25ac46c5448fc5615a5ebb7e42f",
+        "decides": {
+          "at": "the default timestep (0.1 ms); 0.05 ms is reported and does not decide",
+          "per_metric": "latency, recruited and rate converge when the absolute difference of seed medians is at most the finest timestep's seed range, and never less than the quantum. Jitter is the max-minus-min of the first spikes; it converges when the absolute difference of those ranges is at most the finest range, and never less than the quantum.",
+          "reference": "the finest timestep (0.025 ms)",
+          "silent": "latency and jitter are indeterminate when any seed at that timestep or at the reference has no spike. A silent response is not a failure. Recruitment and rate stay decided, including zeros.",
+          "verdict": "one line per metric: converged, not_converged with the case/target list, or converged with the indeterminate responses named. This verdict does not rewrite convergence v1."
+        },
+        "defaults_changed": false,
+        "evidence": "none",
+        "evidence_none": "A numerical check of latencies, jitter, recruitment and rates. Every parameter is the live default of sim.Params. None is a newly sourced biological value.",
+        "grid": {
+          "dt_ms": [
+            0.1,
+            0.05,
+            0.025
+          ],
+          "dt_rule": "halvings of the default; delay (1.8 ms) and t_ref (2.2 ms) stay whole numbers of steps at each",
+          "duration_ms": 600.0,
+          "rate_hz": 100.0,
+          "seed0": 5000,
+          "seed_rule": "disjoint from convergence and sensitivity seeds 0-4, from the baseline shuffles 4000-4198, and from the song, looming and partner-followup seeds",
+          "seeds": 5,
+          "stim_ms": 300.0
+        },
+        "issue": 148,
+        "limits": [
+          "Poisson input is drawn per step, so the input streams differ between timesteps; responses are compared as seed statistics, not spike for spike.",
+          "The best neuron of each target type is picked at each timestep, as validate.respond does, so a left/right switch can compare different neurons.",
+          "Jitter has one number per response and timestep, so its tolerance is the finest timestep's own jitter, floored at the quantum, not a second seed replicate.",
+          "Five seeds give a coarse range. A response near that range can change status with the seeds as well as with the step.",
+          "The shifts named in seen_before_lock were read before this lock. They motivate the metrics. They are not this protocol's result."
+        ],
+        "metrics_decide": [
+          "latency",
+          "jitter",
+          "recruited",
+          "rate"
+        ],
+        "quanta": {
+          "jitter_ms": 0.1,
+          "latency_ms": 0.1,
+          "rate": "one spike in stim_ms",
+          "recruited_neurons": 1
+        },
+        "seen_before_lock": "convergence v1 (results/convergence, seeds 0-4, dt 0.1 against 0.025 ms) already showed rate-and-holds convergence and these shifts, which do not decide this protocol: giant-fiber TTMn latency 35 to 82 ms, sugar MN9 latency 40.5 to 66.4 ms, pIP10 dPR1 latency 12.9 to 7.4 ms, sugar recruited neurons 439 to 155. No run of these six cases at seeds 5000-5004 has been made.",
+        "version": 1,
+        "yaml_subset": 2
+      },
+      "schema": "flymsg.execution/v1",
+      "source": {
+        "commit": "e6a041ecaea92a22a0b6bde0bd5be39ae56c4f7a",
+        "dirty": false
+      }
+    },
+    "execution_sha256": "0c616b348fe32a245e22eade4fa6e8e54511d4d49a9e106044d1e47badfdc313",
+    "verdict": "latency: not_converged (sugar feeding/MN9); jitter: converged, indeterminate (bitter feeding/MN9); recruited: converged; rate: converged"
+  },
+  "git": {
+    "commit": "e6a041ecaea92a22a0b6bde0bd5be39ae56c4f7a",
+    "dirty": false
+  },
+  "packages": {
+    "absl-py": "2.5.1",
+    "asttokens": "3.0.2",
+    "contourpy": "1.4.0",
+    "cycler": "0.12.1",
+    "etils": "1.14.0",
+    "executing": "2.3.0",
+    "flygym": "2.1.0",
+    "flymsg": "0.8.48",
+    "fonttools": "4.66.1",
+    "fsspec": "2026.9.0",
+    "glfw": "2.10.2",
+    "imageio": "2.38.1",
+    "imageio-ffmpeg": "0.6.0",
+    "iniconfig": "2.3.0",
+    "ipython": "9.17.1",
+    "ipython_pygments_lexers": "1.1.1",
+    "jaxtyping": "0.3.7",
+    "jedi": "0.20.1",
+    "kiwisolver": "1.5.1",
+    "llvmlite": "0.50.0",
+    "loguru": "0.7.3",
+    "markdown": "3.11",
+    "matplotlib": "3.11.2",
+    "matplotlib-inline": "0.2.2",
+    "mediapy": "1.2.7",
+    "mujoco": "3.9.0",
+    "numba": "0.68.0",
+    "numpy": "2.5.3",
+    "packaging": "26.3",
+    "pandas": "3.0.6",
+    "parso": "0.8.7",
+    "pexpect": "4.9.0",
+    "pillow": "12.3.0",
+    "pluggy": "1.6.0",
+    "prompt_toolkit": "3.0.53",
+    "psutil": "7.2.2",
+    "ptyprocess": "0.7.0",
+    "pure_eval": "0.2.4",
+    "pyarrow": "25.0.1",
+    "pygments": "2.21.0",
+    "pyopengl": "3.1.10",
+    "pyparsing": "3.3.3",
+    "pytest": "9.1.1",
+    "python-dateutil": "2.9.0.post0",
+    "pyyaml": "6.0.3",
+    "rdata": "1.1.0",
+    "ruff": "0.16.10",
+    "scipy": "1.18.1",
+    "six": "1.17.0",
+    "stack-data": "0.6.3",
+    "tabulate": "0.9.0",
+    "traitlets": "5.16.1",
+    "typing_extensions": "4.16.0",
+    "wadler_lindig": "0.1.7",
+    "wcwidth": "0.9.2",
+    "xarray": "2026.9.0",
+    "zipp": "4.1.1"
+  },
+  "platform": {
+    "implementation": "CPython",
+    "machine": "x86_64",
+    "platform": "Linux-7.2.9-arch1-1-x86_64-with-glibc2.44",
+    "python": "3.13.9",
+    "release": "7.2.9-arch1-1",
+    "system": "Linux"
+  },
+  "preregistration": {
+    "cases": {
+      "negative": [
+        "bitter feeding"
+      ],
+      "positive": [
+        "looming escape",
+        "giant fiber output",
+        "P1 courtship drive",
+        "pIP10 song pathway",
+        "sugar feeding"
+      ]
+    },
+    "claim": {
+      "kind": "numerical_path_metrics",
+      "reason": "Checks whether first-spike latency, first-spike jitter, recruitment and target rate at the default timestep stay within the finest timestep's seed variability. It does not replace the convergence v1 rate-and-holds gate, does not select a timestep, and does not change sim.Params.",
+      "scored": false
+    },
+    "content_sha256": "6bc92e5a48e3985b960fa84354a402d5aff6b25ac46c5448fc5615a5ebb7e42f",
+    "decides": {
+      "at": "the default timestep (0.1 ms); 0.05 ms is reported and does not decide",
+      "per_metric": "latency, recruited and rate converge when the absolute difference of seed medians is at most the finest timestep's seed range, and never less than the quantum. Jitter is the max-minus-min of the first spikes; it converges when the absolute difference of those ranges is at most the finest range, and never less than the quantum.",
+      "reference": "the finest timestep (0.025 ms)",
+      "silent": "latency and jitter are indeterminate when any seed at that timestep or at the reference has no spike. A silent response is not a failure. Recruitment and rate stay decided, including zeros.",
+      "verdict": "one line per metric: converged, not_converged with the case/target list, or converged with the indeterminate responses named. This verdict does not rewrite convergence v1."
+    },
+    "defaults_changed": false,
+    "evidence": "none",
+    "evidence_none": "A numerical check of latencies, jitter, recruitment and rates. Every parameter is the live default of sim.Params. None is a newly sourced biological value.",
+    "grid": {
+      "dt_ms": [
+        0.1,
+        0.05,
+        0.025
+      ],
+      "dt_rule": "halvings of the default; delay (1.8 ms) and t_ref (2.2 ms) stay whole numbers of steps at each",
+      "duration_ms": 600.0,
+      "rate_hz": 100.0,
+      "seed0": 5000,
+      "seed_rule": "disjoint from convergence and sensitivity seeds 0-4, from the baseline shuffles 4000-4198, and from the song, looming and partner-followup seeds",
+      "seeds": 5,
+      "stim_ms": 300.0
+    },
+    "issue": 148,
+    "limits": [
+      "Poisson input is drawn per step, so the input streams differ between timesteps; responses are compared as seed statistics, not spike for spike.",
+      "The best neuron of each target type is picked at each timestep, as validate.respond does, so a left/right switch can compare different neurons.",
+      "Jitter has one number per response and timestep, so its tolerance is the finest timestep's own jitter, floored at the quantum, not a second seed replicate.",
+      "Five seeds give a coarse range. A response near that range can change status with the seeds as well as with the step.",
+      "The shifts named in seen_before_lock were read before this lock. They motivate the metrics. They are not this protocol's result."
+    ],
+    "metrics_decide": [
+      "latency",
+      "jitter",
+      "recruited",
+      "rate"
+    ],
+    "quanta": {
+      "jitter_ms": 0.1,
+      "latency_ms": 0.1,
+      "rate": "one spike in stim_ms",
+      "recruited_neurons": 1
+    },
+    "seen_before_lock": "convergence v1 (results/convergence, seeds 0-4, dt 0.1 against 0.025 ms) already showed rate-and-holds convergence and these shifts, which do not decide this protocol: giant-fiber TTMn latency 35 to 82 ms, sugar MN9 latency 40.5 to 66.4 ms, pIP10 dPR1 latency 12.9 to 7.4 ms, sugar recruited neurons 439 to 155. No run of these six cases at seeds 5000-5004 has been made.",
+    "version": 1,
+    "yaml_subset": 2
+  },
+  "schema": "flymsg.run_manifest/v1",
+  "seeds": {
+    "seed0": 5000,
+    "seeds": 5
+  },
+  "timestamps": {
+    "finished_at": "2026-10-16T08:22:47.072468+00:00",
+    "started_at": "2026-10-16T08:10:37.729537+00:00"
+  }
+}

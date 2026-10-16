@@ -43,6 +43,7 @@ DIRS = (
     "loop",
     "sensitivity/v1",
     "convergence/v1.executions/be1ac2741e08d8f0432fd49fed5ebd74fab5062d79cb280a39637f49ae31997c/output",
+    "path-metrics/v1.executions/0c616b348fe32a245e22eade4fa6e8e54511d4d49a9e106044d1e47badfdc313/output",
     "gf_looming/v1",
     "gf_looming/v2",
     "song/v1",

@@ -1,6 +1,6 @@
 # Scientific fidelity, evidence and validation architecture
 
-Status: proposed, 2026-10-13; SF1 implemented 2026-10-14 (#147). SF2 timestep convergence v1 converged (2026-10-14) and simple baselines v1 are specific (2026-10-16); identifiability and uncertainty propagation remain. SF5's replication package ([replication](replication.md)) exists (2026-10-14). Neither SF2 nor SF5 is complete. No changes to scored results or model defaults.
+Status: proposed, 2026-10-13; SF1 implemented 2026-10-14 (#147). SF2 timestep convergence v1 converged (2026-10-14) and simple baselines v1 are specific (2026-10-16). Path-metrics v1 (2026-10-16, seeds 5000–5004) leaves latency not converged for sugar → MN9; jitter at 0.1 ms is within range except the indeterminate bitter silence; recruitment and rate converge under the pre-registered seed-range rule. The identifiability re-read is post-hoc and every listed parameter stays blocked. Uncertainty propagation remains. SF5's replication package ([replication](replication.md)) exists (2026-10-14). Neither SF2 nor SF5 is complete. No changes to scored results or model defaults.
 
 ## Scientific baseline
 
@@ -58,7 +58,7 @@ Preregister the hypothesis, baselines, primary metric, acceptance threshold, neg
 ## Roadmap
 
 SF1 Evidence inventory: provenance and uncertainty coverage for scored parameters; CI rejects missing fields in new evidence records.
-SF2 Numerical and uncertainty: unit/convergence tests, sensitivity, identifiability and simple baselines.
+SF2 Numerical and uncertainty: unit/convergence tests, sensitivity, path metrics, the identifiability re-read and simple baselines. Uncertainty propagation remains blocked.
 SF3 Physiology: independently preregistered T4/T5 and Kenyon-cell benchmarks.
 SF4 Embodiment: cited neuron-to-muscle-to-actuator mapping, neuromechanical calibration and held-out animal behavior.
 SF5 External replication: frozen reproduction package and independent evaluation.

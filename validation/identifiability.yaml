@@ -1,0 +1,53 @@
+# Identifiability re-read of the sensitivity grid (SF2, issue 148). Version 1, fixed
+# 2026-10-16. This is not a new experiment: the grid was read before this lock.
+# Changing a locked field requires incrementing `version` and updating `content_sha256`
+# and flymsg.identifiability.VERSION_HASHES. `flymsg identifiability` prints this file;
+# `--run` re-expresses the named archive and writes no simulated spike.
+version: 1
+content_sha256: 7005af13b01014f69bc431ed4e5b4662f4f95fa02bff69afadbce17d3bf90f7c
+yaml_subset: 2
+evidence: none
+evidence_none: "No new biological value. The synaptic-weight factors and the jump threshold below are the engineering envelope already locked in validation/sensitivity.yaml. evidence.yaml has no distribution for them."
+
+issue: 148
+claim:
+  kind: identifiability_reread
+  scored: false
+  reason: "Applies a pre-declared equivalence rule to results/sensitivity/v1, which docs/validation.md already describes. It does not select a parameter, does not change sim.Params, and does not replace any frozen score."
+
+seen_before_lock: "The sensitivity grid v1 was reported before this file existed: four positive cases hold across the grid, sugar to MN9 is narrow, giant fiber to TTMn drops only at the weakest corner, and that response's latency seed range exceeds the range of its medians. Those sentences are not this protocol's output. No cell was resimulated for this re-read."
+
+archive:
+  cells: results/sensitivity/v1/cells.csv
+  sensitivity_version: 1
+  sensitivity_sha256: 59806931f038d4565eeaee40cb15f5671db1bb3931ddf319f0c0b0b61eb55fef
+
+rule:
+  equivalent: "two cells of one response are equivalent when their holds verdicts match and their seed-median rates differ by at most the default cell's seed range, floored at one spike in the window"
+  undecidable: "a response is undecidable when the default cell's seed range is at least the range of the seed-median rates across the grid"
+  null: "a positive response matches the silent null when its default seed-median rate is within one spike in the window of 0 Hz"
+  holds: "the v4 floor, as validation/sensitivity.yaml names it: at least 3 spikes in the stimulus in at least 2/3 of the seeds"
+
+parameters:
+  - name: w_syn
+    status: blocked
+    why: "validation/evidence.yaml has no distribution for the synaptic weight. Factors 0.8 to 1.2 are the engineering envelope in validation/sensitivity.yaml."
+  - name: th_jump
+    status: blocked
+    why: "no evidence record gives a distribution for the jump threshold. 0 and 2 are the grid's engineering values."
+  - name: sensory_gains
+    status: blocked
+    why: "no evidence record gives a distribution this re-read may turn into an interval"
+  - name: membrane
+    status: blocked
+    why: "type-specific membrane parameters have no distribution used here"
+  - name: release
+    status: blocked
+    why: "a Drosophila voltage-to-release curve is not in validation/evidence.yaml"
+
+limits:
+  - "Equivalence is not uniqueness. A class can contain every cell and still not identify the default."
+  - "The seed range is the five seeds of the original grid. It is not a biological uncertainty."
+  - "A blocked parameter emits no interval. An engineering envelope is not promoted to one."
+
+defaults_changed: false
