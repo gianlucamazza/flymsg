@@ -9,7 +9,7 @@ import pytest
 from scipy import sparse
 from test_core import chain
 
-from flymsg.native import export_fixture, read_output
+from flymsg.native import NativeCapabilityError, export_fixture, read_output
 from flymsg.runtime import CpuRuntime
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -157,20 +157,26 @@ def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word
     assert not output.exists()
 
 
-def test_the_console_parity_script_builds_the_twelve_version_one_fixtures(tmp_path):
+def test_the_console_parity_script_builds_version_one_and_two_fixtures(tmp_path):
     import importlib.util
 
     path = Path(__file__).resolve().parents[1] / "scripts" / "console_gpu_parity.py"
     spec = importlib.util.spec_from_file_location("console_gpu_parity", path)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    cases = list(module.fixtures())
-    assert len(cases) == 12
-    for (seed, _, _), oracle in cases:
+    spec.loader.exec_module(module)  # puts scripts/ on the path for its siblings
+    assert len(list(module.fixtures())) == 12
+    versions = {1: 0, 2: 0}
+    for (seed, _, _, ext), oracle in module.fixtures(tuple(module.EXTENSIONS)):
         fixture = tmp_path / f"{seed}.bin"
-        export_fixture(oracle, fixture)
+        try:
+            export_fixture(oracle, fixture)
+        except NativeCapabilityError:
+            continue  # the dynamic clamp, refused on every native lane
         header = np.frombuffer(fixture.read_bytes(), dtype="<u4")
-        assert int(header[1]) == 1  # the DX12 lane runs version-1 fixtures only
+        assert int(header[1]) == (1 if ext == "none" else 2)
+        versions[int(header[1])] += 1
+    # the acceptance's 60 version-2 cases, as the CPU executor runs them
+    assert versions == {1: 12, 2: 60}
 
 
 def test_the_console_lifecycle_fixture_is_version_one_and_long(tmp_path):
