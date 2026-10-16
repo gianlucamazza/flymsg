@@ -1,7 +1,8 @@
 """GPU parity of the native lane on a console through Windows Device Portal (#39, #40).
 
-Builds the 12 version-1 acceptance fixtures of `scripts/native_acceptance.py` and their CPU
-oracles, writes one `flymsg.neural_job/v1` per fixture bound to the installed package's shader
+Builds the acceptance fixtures of `scripts/native_acceptance.py` (12 version-1 ones and,
+with `--v2`, the version-2 ones the exporter accepts: graded neurons, coupled groups,
+spikelets) and their CPU oracles, writes one `flymsg.neural_job/v1` per fixture bound to the installed package's shader
 and the expected adapter, uploads them to the running worker's `LocalState/inbox` (fixture
 first, job last), waits for each, fetches `output.bin` and checks it bit for bit against the
 oracle. The worker must already be installed and running.
@@ -28,47 +29,59 @@ import numpy as np
 from scipy import sparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from native_acceptance import check  # the acceptance comparator, unchanged
+from native_acceptance import EXTENSIONS, check  # the acceptance's, unchanged
 
 from flymsg import sim
 from flymsg.console import (  # the scripts beside this one import them here
     ADAPTER,
     Portal,
 )
-from flymsg.native import export_fixture, read_output
+from flymsg.native import NativeCapabilityError, export_fixture, read_output
 from flymsg.runtime import CpuRuntime
 
 
-def fixtures():
-    for seed in (3, 7, 19):
-        for adapt in (0.0, 2.0):
-            for silent in (False, True):
-                p = sim.Params(th_jump=adapt, delay=0.3 if seed == 3 else 1.8)
-                rng = np.random.default_rng(seed)
-                W = sparse.csc_matrix(rng.integers(-20, 80, (8, 8)).astype(np.float32))
-                oracle = CpuRuntime(
-                    W,
-                    np.array([0, 1]),
-                    steps=1000,
-                    kicks=sim.poisson_kicks(seed, 700, p.dt, 700, 2),
-                    p=p,
-                    per_bin=100,
-                    trace=np.arange(8),
-                    silence=np.array([3]) if silent else None,
-                )
-                yield (seed, adapt, silent), oracle
+def fixtures(extensions=("none",)):
+    for ext in extensions:
+        for seed in (3, 7, 19):
+            for adapt in (0.0, 2.0):
+                for silent in (False, True):
+                    p = sim.Params(th_jump=adapt, delay=0.3 if seed == 3 else 1.8)
+                    rng = np.random.default_rng(seed)
+                    W = sparse.csc_matrix(
+                        rng.integers(-20, 80, (8, 8)).astype(np.float32)
+                    )
+                    oracle = CpuRuntime(
+                        W,
+                        np.array([0, 1]),
+                        steps=1000,
+                        kicks=sim.poisson_kicks(seed, 700, p.dt, 700, 2),
+                        p=p,
+                        per_bin=100,
+                        trace=np.arange(8),
+                        silence=np.array([3]) if silent else None,
+                        **EXTENSIONS[ext],
+                    )
+                    yield (seed, adapt, silent, ext), oracle
 
 
-def run(package: str, shader: Path, out: Path, timeout_s: float = 600.0) -> dict:
+def run(
+    package: str, shader: Path, out: Path, v2: bool = False, timeout_s: float = 600.0
+) -> dict:
     portal = Portal()
     shader_sha = hashlib.sha256(shader.read_bytes()).hexdigest()
-    cases = []
-    for (seed, adapt, silent), oracle in fixtures():
+    cases, unsupported = [], []
+    for (seed, adapt, silent, ext), oracle in fixtures(
+        tuple(EXTENSIONS) if v2 else ("none",)
+    ):
         job_id = str(uuid.uuid4())
         folder = out / job_id
         folder.mkdir(parents=True)
         fixture = folder / "fixture.bin"
-        meta = export_fixture(oracle, fixture)
+        try:
+            meta = export_fixture(oracle, fixture)
+        except NativeCapabilityError:  # as on the CPU executor (the dynamic clamp)
+            unsupported.append(ext)
+            continue
         job = {
             "schema": "flymsg.neural_job/v1",
             "job_id": job_id,
@@ -104,6 +117,7 @@ def run(package: str, shader: Path, out: Path, timeout_s: float = 600.0) -> dict
             "seed": seed,
             "adaptation": adapt,
             "silenced": silent,
+            "extension": ext,
             "fixture_sha256": job["fixture_sha256"],
             "state": status.get("state"),
             "error": status.get("error", ""),
@@ -128,7 +142,14 @@ def run(package: str, shader: Path, out: Path, timeout_s: float = 600.0) -> dict
             json.dumps(
                 {
                     k: case[k]
-                    for k in ("seed", "adaptation", "silenced", "state", "parity")
+                    for k in (
+                        "seed",
+                        "adaptation",
+                        "silenced",
+                        "extension",
+                        "state",
+                        "parity",
+                    )
                 }
             )
         )
@@ -138,9 +159,11 @@ def run(package: str, shader: Path, out: Path, timeout_s: float = 600.0) -> dict
         "package": package,
         "shader_sha256": shader_sha,
         "cases": cases,
+        "unsupported_extensions": sorted(set(unsupported)),
         "passed": sum(c["parity"] for c in cases),
-        "scope": "12 version-1 synthetic fixtures on the console GPU; not full-connectome "
-        "throughput, lifecycle or biological validation",
+        "scope": "synthetic acceptance fixtures (version 1, and version 2 with --v2) on "
+        "the console GPU; not full-connectome throughput, lifecycle or biological "
+        "validation",
     }
     (out / "report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n"
@@ -155,7 +178,8 @@ if __name__ == "__main__":
         "--shader", type=Path, required=True, help="the package's lif.cso"
     )
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--v2", action="store_true", help="add the version-2 fixtures")
     a = parser.parse_args()
-    r = run(a.package, a.shader, a.out)
+    r = run(a.package, a.shader, a.out, a.v2)
     print(f"passed {r['passed']} of {len(r['cases'])}")
-    sys.exit(0 if r["passed"] == len(r["cases"]) == 12 else 1)
+    sys.exit(0 if r["passed"] == len(r["cases"]) and len(r["cases"]) >= 12 else 1)
