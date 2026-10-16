@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import * as T from "../../src/flymsg/viz_static/vendor/three/build/three.module.min.js";
 import { PrimitivePages } from "../../src/flymsg/viz_static/primitive-pages.js";
@@ -309,4 +310,33 @@ test("an invalid box or other eye cannot poison a prepared eye certificate", () 
     Infinity,
   );
   assert.deepEqual(prepared(box), expected);
+});
+
+test("prepared certificates match frozen independent full-scene reference vectors bit for bit", () => {
+  const corpus = JSON.parse(
+    readFileSync(
+      new URL("../fixtures/projection-bound-b4427da.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.equal(
+    corpus.reference_commit,
+    "b4427daa400fbe3ea723b7ec0eb569265c7539c3",
+  );
+  assert.equal(corpus.cases.length, 80);
+  let compared = 0;
+  for (const sample of corpus.cases) {
+    const project = projectionErrorProjector(sample.eye, corpus.precision);
+    for (const { box, bound, unproved } of sample.boxes) {
+      const result = project(box);
+      if (unproved)
+        assert.deepEqual(result, { scale: Infinity, rounding: Infinity });
+      else {
+        assert(Object.is(result.scale, bound.scale));
+        assert(Object.is(result.rounding, bound.rounding));
+      }
+      compared++;
+    }
+  }
+  assert.equal(compared, 1120);
 });
