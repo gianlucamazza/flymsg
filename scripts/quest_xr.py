@@ -382,9 +382,9 @@ class QuestSite:
             "am",
             "start",
             "-a",
-            "android.intent.action.VIEW",
-            "-d",
-            "about:blank",
+            "android.intent.action.MAIN",
+            "-c",
+            "android.intent.category.LAUNCHER",
             "-p",
             "com.oculus.browser",
         )
