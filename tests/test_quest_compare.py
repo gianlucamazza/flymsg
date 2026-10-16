@@ -100,3 +100,19 @@ def test_memory_tie_break_and_regression_gate():
         if row["page_mib"] == 4 and row["view"] == "close-static":
             row["summary"]["ratio"] = 1.11
     assert compare.admission(rows, (4, 16))["winner_mib"] == 16
+
+
+def test_partial_matrix_can_prove_a_veto_but_never_admit():
+    rows = [row for row in matrix(ratio=1.5) if row["view"] == "dense-all"]
+    decision = compare.admission(rows, (4,))
+    assert decision["winner_mib"] is None
+    candidate = decision["candidates"][0]
+    assert candidate["regression_views"] == ["dense-all"]
+    assert "regression-over-ten-percent" in candidate["reasons"]
+    assert set(candidate["unmeasured_views"]) == set(compare.VIEWS) - {"dense-all"}
+    # No early positive admission and no veto from an incomplete set of repeats.
+    for row in rows:
+        row["summary"]["ratio"] = 0.5
+    assert compare.admission(rows, (4,))["winner_mib"] is None
+    rows[0]["summary"]["ratio"] = 1.5
+    assert not compare.admission(rows[:1], (4,))["candidates"][0]["regression_views"]

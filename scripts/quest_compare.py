@@ -111,9 +111,20 @@ def admission(results, page_sizes=(4, 16, 64), repeats=3):
             ]
             for view in VIEWS
         }
+        regression_views = [
+            view
+            for view in VIEWS
+            if collections.Counter(
+                row.get("repeat")
+                for row in rows
+                if row.get("view") == view and row.get("valid")
+            )
+            == collections.Counter(range(repeats))
+            and statistics.median(ratios[view]) > 1.10
+        ]
+        if regression_views:
+            reasons.append("regression-over-ten-percent")
         if not reasons:
-            if any(statistics.median(values) > 1.10 for values in ratios.values()):
-                reasons.append("regression-over-ten-percent")
             motion = [ratios[view] for view in ("anatomical-motion", "close-motion")]
             if not any(
                 statistics.median(values) <= 0.90 and all(value < 1 for value in values)
@@ -131,6 +142,10 @@ def admission(results, page_sizes=(4, 16, 64), repeats=3):
                 "reasons": reasons,
                 "ratios": ratios,
                 "memory_bytes": max(memory) if memory else None,
+                "regression_views": regression_views,
+                "unmeasured_views": [
+                    view for view in VIEWS if len(ratios[view]) < repeats
+                ],
             }
         )
     eligible = [row for row in candidates if row["admitted"]]
@@ -170,6 +185,7 @@ def run(
     representation="skeleton",
     page_sizes=(4, 16, 64),
     startup_timeout=600,
+    stop_on_regression=False,
 ):
     results = []
     session.record(
@@ -194,6 +210,7 @@ def run(
                 "tie_ratio": 0.01,
             },
             "qualification": "not-scored",
+            "stop_on_confirmed_regression": stop_on_regression,
         },
     )
     camera_file = session.out / "frozen-camera.json"
@@ -350,6 +367,30 @@ def run(
                     break
             if invalid >= 3 or preparation_failed:
                 break
+            completed_view = [
+                row
+                for row in results
+                if row.get("page_mib") == size
+                and row.get("view") == view
+                and row.get("valid")
+            ]
+            if (
+                stop_on_regression
+                and len(completed_view) == 3
+                and statistics.median(row["summary"]["ratio"] for row in completed_view)
+                > 1.10
+            ):
+                session.record(
+                    "progress.json",
+                    {
+                        "phase": "confirmed-performance-veto",
+                        "page_mib": size,
+                        "view": view,
+                        "results": results,
+                        "qualification": "rejected; remaining views unmeasured",
+                    },
+                )
+                break
     decision = admission(results, page_sizes)
     session.record("comparison.json", {"results": results, **decision})
     return decision
@@ -369,6 +410,11 @@ def main():
     )
     parser.add_argument("--startup-timeout", type=int, default=600)
     parser.add_argument("--keep-awake", action="store_true")
+    parser.add_argument(
+        "--stop-on-regression",
+        action="store_true",
+        help="Stop a candidate after three valid repeats establish a mandatory regression veto; never admit early",
+    )
     args = parser.parse_args()
     if not 1 <= args.startup_timeout <= 600 or len(set(args.gpu_page_mib)) != len(
         args.gpu_page_mib
@@ -389,6 +435,7 @@ def main():
                 representation=args.representation,
                 page_sizes=tuple(args.gpu_page_mib),
                 startup_timeout=args.startup_timeout,
+                stop_on_regression=args.stop_on_regression,
             )
             print(json.dumps(decision), flush=True)
         return 0 if session.cleanup["ok"] else 1

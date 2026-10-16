@@ -66,3 +66,14 @@ automated timing cannot certify stereo comfort or menu responsiveness.
 These commands are collection infrastructure. Hardware qualification remains open
 until complete, valid device evidence and the physical checks exist. Scientific
 validation, Xbox hard-stop/GPU-fault recovery and surface admission remain separate.
+
+## Optional mandatory-veto stopping rule
+
+After discussing the measured collection cost with the owner on 2026-10-16, use
+`--stop-on-regression` to stop a candidate after three valid repeats in any one
+view establish a median ratio above 1.10. This is the existing mandatory rejection
+criterion. It can reject a candidate with explicitly unmeasured views; it cannot
+admit one. Positive admission still requires every repeat of every view. The
+first 4 MiB campaign used this amendment after its three dense blocks completed;
+its interruption and independent veto record remain alongside all raw samples.
+Subsequent configurations record the option in their protocol before collection.
