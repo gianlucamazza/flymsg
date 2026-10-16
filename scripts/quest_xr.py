@@ -323,13 +323,25 @@ class QuestSite:
         self.server.server_close()
 
     def close_page(self):
-        if self.target:
+        targets = [self.target] if self.target else []
+        if not targets and self.endpoint and getattr(self, "url", None):
+            # Target creation can succeed even if bringing it forward fails or times out.
+            # Recover ownership through our exact temporary site URL before removing CDP.
+            with urllib.request.urlopen(
+                self.endpoint + "/json/list", timeout=10
+            ) as response:
+                targets = [
+                    page["id"]
+                    for page in json.load(response)
+                    if page.get("url") == self.url
+                ]
+        for target in targets:
             result, code = node_json(
-                "observer_open.mjs", self.endpoint, self.url, self.target
+                "observer_open.mjs", self.endpoint, self.url, target
             )
             if code or not (result.get("success") or result.get("already_absent")):
                 raise RuntimeError("owned observer tab did not close")
-            self.target = None
+        self.target = None
 
     def open(
         self,

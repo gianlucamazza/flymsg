@@ -197,3 +197,39 @@ def test_identity_refuses_changed_hardware_without_other_actions(monkeypatch):
     )
     with pytest.raises(ValueError, match="identity changed"):
         quest.identity("192.168.1.146:5555", "expected")
+
+
+def test_cleanup_recovers_a_created_target_after_foreground_handshake_failed(
+    monkeypatch, tmp_path
+):
+    session = quest.QuestSite("192.168.1.146:5555", tmp_path)
+    session.endpoint = "http://127.0.0.1:45541"
+    session.url = "http://localhost:8892/live/looming/?check"
+    calls = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def read(self):
+            return json.dumps(
+                [
+                    {"id": "owned", "url": session.url},
+                    {"id": "other", "url": "http://localhost:8893/?check"},
+                ]
+            ).encode()
+
+    monkeypatch.setattr(
+        quest.urllib.request, "urlopen", lambda *args, **kwargs: Response()
+    )
+    monkeypatch.setattr(
+        quest,
+        "node_json",
+        lambda *args, **kwargs: (calls.append(args) or {"success": True}, 0),
+    )
+    session.close_page()
+    assert calls == [("observer_open.mjs", session.endpoint, session.url, "owned")]
+    assert session.target is None
