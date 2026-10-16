@@ -1,0 +1,121 @@
+{
+  "schema": "flymsg.quest-browser-followup/v1",
+  "qualification": "not-qualified; no eligible XR cadence",
+  "inventory_files": 46,
+  "direct": {
+    "samples": 146,
+    "serialized_wall_median_ms": 50.20000000298023,
+    "system_gpu_counter_medians": {
+      "GPU % Utilization": 87.018,
+      "GPU % Bus Busy": 29.482999999999997,
+      "% Vertex Fetch Stall": 1.133,
+      "% Texture Fetch Stall": 0.0,
+      "% Stalled on System Memory": 0.0135,
+      "% Prims Trivially Rejected": 0.0,
+      "% Shaders Busy": 88.63,
+      "Vertices Shaded / Second": 425936544.0,
+      "Fragments Shaded / Second": 17939159.0,
+      "% Time Shading Fragments": 11.025500000000001,
+      "% Time Shading Vertices": 88.95349999999999,
+      "GPU Frequency": 587000000.0
+    },
+    "initial_upload_bytes": 203647016,
+    "initial_upload_submission_ms": 463.09999999403954,
+    "steady_upload_bytes": 0
+  },
+  "desktop": {
+    "samples": 56,
+    "serialized_wall_median_ms": 137.3500000052154,
+    "system_gpu_counter_medians": {
+      "GPU % Utilization": 91.376,
+      "GPU % Bus Busy": 7.824,
+      "% Vertex Fetch Stall": 0.138,
+      "% Texture Fetch Stall": 0.222,
+      "% Stalled on System Memory": 0.122,
+      "% Prims Trivially Rejected": 0.0,
+      "% Shaders Busy": 33.94,
+      "Vertices Shaded / Second": 115753040.0,
+      "Fragments Shaded / Second": 30092120.0,
+      "% Time Shading Fragments": 34.535,
+      "% Time Shading Vertices": 65.465,
+      "GPU Frequency": 587000000.0
+    },
+    "initial_upload_bytes": 66068712,
+    "initial_upload_submission_ms": 38,
+    "steady_upload_bytes": 60
+  },
+  "raster": {
+    "rgba_comparisons": 96,
+    "timings": [
+      {
+        "workload": "same-bin-replay",
+        "mode": "original",
+        "order": 0,
+        "samples": 200,
+        "serialized_wall_median_ms": 18.100000001490116
+      },
+      {
+        "workload": "same-bin-replay",
+        "mode": "cached",
+        "order": 1,
+        "samples": 200,
+        "serialized_wall_median_ms": 6.599999997764826
+      },
+      {
+        "workload": "same-bin-replay",
+        "mode": "cached",
+        "order": 2,
+        "samples": 200,
+        "serialized_wall_median_ms": 7.399999998509884
+      },
+      {
+        "workload": "same-bin-replay",
+        "mode": "original",
+        "order": 3,
+        "samples": 200,
+        "serialized_wall_median_ms": 19.299999997019768
+      },
+      {
+        "workload": "every-bin-changes",
+        "mode": "original",
+        "order": 0,
+        "samples": 200,
+        "serialized_wall_median_ms": 18.19999999552965
+      },
+      {
+        "workload": "every-bin-changes",
+        "mode": "cached",
+        "order": 1,
+        "samples": 200,
+        "serialized_wall_median_ms": 19.0
+      },
+      {
+        "workload": "every-bin-changes",
+        "mode": "cached",
+        "order": 2,
+        "samples": 200,
+        "serialized_wall_median_ms": 17.900000002235174
+      },
+      {
+        "workload": "every-bin-changes",
+        "mode": "original",
+        "order": 3,
+        "samples": 200,
+        "serialized_wall_median_ms": 18.5
+      }
+    ]
+  },
+  "detailed_stage_capture": "unavailable; initial disabled mode restored",
+  "application_commit": "635c20a67f2f029f4dd8b604502428193a6f5d5a",
+  "software_raster_helper_commit": "0d4c8547b3f0df720995a667751318030249b159",
+  "archive": {
+    "path": "quest2-browser-2026-10-16.zip",
+    "sha256": "73cc9971072a6c71e55118741e17282e82d61969363b6e979aeff8a7e366b665"
+  },
+  "limits": [
+    "Serialized wall time is not GPU time or frame cadence.",
+    "Native counters are system-wide, sampled once per second.",
+    "Source geometry, resolution and shading unchanged in production. Desktop/direct variants are diagnostics at different quality.",
+    "No eligible rAF or immersive validation was obtained. Initial/cache upload scheduling remains unresolved."
+  ]
+}

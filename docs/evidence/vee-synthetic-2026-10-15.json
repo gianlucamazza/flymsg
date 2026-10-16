@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-15",
+  "source_commit": "122355117c612fee0899e6a95b0f28fbf64fc18d",
+  "execution_sha256": "4cd1d81c8413b32b1e8d35f0694f6bf7534c5474d4a8440a4375fe218b97ac2d",
+  "grade": "synthetic engineering fixture only",
+  "cold_clone": "fresh git clone, uv sync --locked; independent output directory",
+  "arms": {
+    "intact": {
+      "sha256": "0cde36b4262fbbbc95072f048bc0cea3daf561c806f975b40bfdfce2f2235ca7",
+      "byte_identical": true
+    },
+    "disconnected": {
+      "sha256": "e52ac3439bf375c76c289ed43bff48b5f5d989edb09c1d8f7b4b312444ce9931",
+      "byte_identical": true
+    },
+    "shuffled": {
+      "sha256": "5a0496eda096da7a2a92da55e8c4d31fcab6db6a1841831744d921d3401b82a3",
+      "byte_identical": true
+    },
+    "replay": {
+      "sha256": "aeb267767e1dc28f3a1de6ef7a75debf59f07feaa56eedfa9fdf7c40392e5b9f",
+      "byte_identical": true
+    },
+    "silenced": {
+      "sha256": "aa2ab5951eff611a657db4502c7c61a7400d0b4d3134ca6d3bd8d50c4d17503f",
+      "byte_identical": true
+    }
+  },
+  "summary": {
+    "evidence": {
+      "body": "engineered",
+      "motor_map": "synthetic",
+      "registration": "synthetic",
+      "transducer": "engineered"
+    },
+    "label": "synthetic",
+    "metrics": {
+      "disconnected": {
+        "input_events": 68,
+        "new_simulated_s_per_wall_s": 0.003971371184163487,
+        "new_ticks": 200,
+        "spikes": 5,
+        "tick_wall_ms": {
+          "p100": 229.915380012244,
+          "p50": 8.79738300864119,
+          "p95": 30.84015189233464,
+          "p99": 104.24322337406898
+        },
+        "total_ticks": 200,
+        "wall_s": 5.036043994012289
+      },
+      "intact": {
+        "input_events": 22,
+        "new_simulated_s_per_wall_s": 0.004481990918029994,
+        "new_ticks": 200,
+        "spikes": 4,
+        "tick_wall_ms": {
+          "p100": 1178.2253040000796,
+          "p50": 4.918152495520189,
+          "p95": 17.915602844732337,
+          "p99": 132.62167171225863
+        },
+        "total_ticks": 200,
+        "wall_s": 4.462302660977002
+      },
+      "replay": {
+        "input_events": 22,
+        "new_simulated_s_per_wall_s": 0.010465982665907278,
+        "new_ticks": 200,
+        "spikes": 4,
+        "tick_wall_ms": {
+          "p100": 117.4508600088302,
+          "p50": 1.0920464992523193,
+          "p95": 4.8806161546963205,
+          "p99": 95.86568431346669
+        },
+        "total_ticks": 200,
+        "wall_s": 1.9109529069974087
+      },
+      "shuffled": {
+        "input_events": 63,
+        "new_simulated_s_per_wall_s": 0.0062158722371688305,
+        "new_ticks": 200,
+        "spikes": 5,
+        "tick_wall_ms": {
+          "p100": 154.730167996604,
+          "p50": 4.153228001086973,
+          "p95": 13.04778189660282,
+          "p99": 96.28330317296778
+        },
+        "total_ticks": 200,
+        "wall_s": 3.2175693509925622
+      },
+      "silenced": {
+        "input_events": 68,
+        "new_simulated_s_per_wall_s": 0.005118813440370201,
+        "new_ticks": 200,
+        "spikes": 0,
+        "tick_wall_ms": {
+          "p100": 112.70636899280362,
+          "p50": 5.264816005364992,
+          "p95": 16.062167880591,
+          "p99": 95.84260065981643
+        },
+        "total_ticks": 200,
+        "wall_s": 3.907155483000679
+      }
+    },
+    "note": "Synthetic engineering fixture: two invented neurons, test-only eye registration and torque decoder; no biological claim.",
+    "peak_process_rss_bytes": 526606336,
+    "pose_changes_later_optics": true,
+    "replay_spikes_identical": true,
+    "silenced_spikes": 0
+  },
+  "performance_eligibility": "Observed on a loaded host alongside existing jobs; includes JIT/checkpoints; not an isolated throughput baseline."
+}

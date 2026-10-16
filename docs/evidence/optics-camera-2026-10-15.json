@@ -1,0 +1,110 @@
+{
+  "source": {
+    "commit": "9e722f5dc54616905dece19c04a930855824f09d",
+    "dirty": false
+  },
+  "grade": "synthetic camera geometry only",
+  "registration": "synthetic",
+  "resolution": [
+    1024,
+    1024
+  ],
+  "mujoco_gl": "egl",
+  "flygym": "2.1.0",
+  "mujoco": "3.9.0",
+  "assets_sha256": "706defc4bc5727114c2144357d57e42f90513757792cc48dda837ac0b568328c",
+  "criterion": "one-pixel erosion/dilation interval plus existing 0.0085 planar bound; no tuned thresholds",
+  "cases": [
+    {
+      "side": "L",
+      "distance_mm": 20.0,
+      "offset_mm": 0.0,
+      "radius_mm": 2.0,
+      "pixels": 332,
+      "raster_coverage": 0.7282141648882289,
+      "one_pixel_interval": [
+        0.6616243758626332,
+        0.7848484398173088
+      ],
+      "planar_coverage": 0.7403166389934921,
+      "absolute_error": 0.012102474105263217,
+      "verdict": "pass"
+    },
+    {
+      "side": "L",
+      "distance_mm": 20.0,
+      "offset_mm": 2.0,
+      "radius_mm": 2.0,
+      "pixels": 344,
+      "raster_coverage": 0.3709181386010987,
+      "one_pixel_interval": [
+        0.31072754698651944,
+        0.43235362466216637
+      ],
+      "planar_coverage": 0.3700638169500455,
+      "absolute_error": 0.0008543216510532026,
+      "verdict": "pass"
+    },
+    {
+      "side": "L",
+      "distance_mm": 10.0,
+      "offset_mm": 0.0,
+      "radius_mm": 2.0,
+      "pixels": 1396,
+      "raster_coverage": 0.9953298351711707,
+      "one_pixel_interval": [
+        0.9927850034366056,
+        0.9970075852255388
+      ],
+      "planar_coverage": 0.9956967886532851,
+      "absolute_error": 0.00036695348211446266,
+      "verdict": "pass"
+    },
+    {
+      "side": "R",
+      "distance_mm": 20.0,
+      "offset_mm": 0.0,
+      "radius_mm": 2.0,
+      "pixels": 332,
+      "raster_coverage": 0.7282141648882289,
+      "one_pixel_interval": [
+        0.6616243758626332,
+        0.7848484398173088
+      ],
+      "planar_coverage": 0.7403166389934924,
+      "absolute_error": 0.01210247410526355,
+      "verdict": "pass"
+    },
+    {
+      "side": "R",
+      "distance_mm": 20.0,
+      "offset_mm": 2.0,
+      "radius_mm": 2.0,
+      "pixels": 344,
+      "raster_coverage": 0.3709181386010987,
+      "one_pixel_interval": [
+        0.31072754698651944,
+        0.43235362466216637
+      ],
+      "planar_coverage": 0.3700638169500455,
+      "absolute_error": 0.0008543216510532026,
+      "verdict": "pass"
+    },
+    {
+      "side": "R",
+      "distance_mm": 10.0,
+      "offset_mm": 0.0,
+      "radius_mm": 2.0,
+      "pixels": 1396,
+      "raster_coverage": 0.9953298351711707,
+      "one_pixel_interval": [
+        0.9927850034366056,
+        0.9970075852255388
+      ],
+      "planar_coverage": 0.9956967886532853,
+      "absolute_error": 0.0003669534821145737,
+      "verdict": "pass"
+    }
+  ],
+  "verdict": "pass"
+}

@@ -23,6 +23,7 @@ export class Perf {
     this.intervals = [];
     this.t0 = performance.now();
     this.last = null;
+    this.wasContinuous = false;
     this.loaded = {
       manifests: 0,
       fragments: 0,
@@ -36,25 +37,28 @@ export class Perf {
     this.frame = { calls: 0, triangles: 0, lines: 0 };
   }
 
-  begin() {
+  begin(cpuStart = performance.now()) {
     this.renderer.info.reset();
-    this.cpuStart = performance.now();
+    this.cpuStart = cpuStart;
     if (this.timer && !this.query) {
       this.query = this.gl.createQuery();
       this.gl.beginQuery(this.timer.TIME_ELAPSED_EXT, this.query);
     }
   }
 
-  end() {
+  end({ continuous = false } = {}) {
     const now = performance.now();
     const push = (a, v) => {
       a.push(v);
       if (a.length > KEEP) a.shift();
     };
     push(this.cpu, now - this.cpuStart);
-    // only consecutive frames count: renders on demand leave long idle gaps
-    if (this.last !== null && now - this.last < 100) push(this.intervals, now - this.last);
+    // The caller knows whether frames are continuous. A duration cutoff hides slow
+    // active frames from the no-GPU-timer adaptive fallback (notably on Quest).
+    if (this.last !== null && continuous && this.wasContinuous)
+      push(this.intervals, now - this.last);
     this.last = now;
+    this.wasContinuous = continuous;
     const r = this.renderer.info.render;
     this.frame = { calls: r.calls, triangles: r.triangles, lines: r.lines };
     if (this.query) {
@@ -62,20 +66,42 @@ export class Perf {
       this.pending.push(this.query);
       this.query = null;
     }
-    this.poll(push);
+    const gpu = this.poll(push);
+    return { cpu_ms: now - this.cpuStart, gpu_ms: gpu };
   }
 
   poll(push) {
+    const samples = [];
     const gl = this.gl;
     const disjoint = this.timer && gl.getParameter(this.timer.GPU_DISJOINT_EXT);
     while (this.pending.length) {
       const q = this.pending[0];
       if (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) break;
       const ns = gl.getQueryParameter(q, gl.QUERY_RESULT);
-      if (!disjoint) push(this.gpu, ns / 1e6);
+      if (!disjoint) {
+        push(this.gpu, ns / 1e6);
+        samples.push(ns / 1e6);
+      }
       gl.deleteQuery(q);
       this.pending.shift();
     }
+    return samples;
+  }
+
+  resetContext() {
+    // Queries from a lost context are invalid; never recycle their numbers as GPU time.
+    if (!this.gl.isContextLost()) {
+      for (const q of this.pending) this.gl.deleteQuery(q);
+    }
+    this.query = null;
+    this.pending = [];
+    this.last = null;
+    this.wasContinuous = false;
+    this.cpu = [];
+    this.gpu = [];
+    this.intervals = [];
+    this.gl = this.renderer.getContext();
+    this.timer = this.gl.getExtension("EXT_disjoint_timer_query_webgl2");
   }
 
   /** Recent GPU frame time (ms), or null when the timer extension is missing. */
@@ -88,7 +114,15 @@ export class Perf {
     return this.gpu.length >= n ? percentile(this.gpu.slice(-n), 50) : null;
   }
 
+  /** Match the GPU tuning window when timers are unavailable; don't reuse the HUD's 60. */
+  recentFrameMs(n) {
+    return this.intervals.length >= n
+      ? percentile(this.intervals.slice(-n), 50)
+      : null;
+  }
+
   get fps() {
+    if (!this.wasContinuous) return 0;
     const i = percentile(this.intervals.slice(-60), 50);
     return i ? 1000 / i : 0;
   }
@@ -108,7 +142,7 @@ export class Perf {
     const gpu = this.gpuMs;
     const sel = percentile(this.selectMs.slice(-20), 50);
     return (
-      `${this.fps.toFixed(0)} fps · cpu ${(percentile(this.cpu.slice(-30), 50) ?? 0).toFixed(1)} ms` +
+      `${this.wasContinuous ? `${this.fps.toFixed(0)} fps` : "idle"} · cpu ${(percentile(this.cpu.slice(-30), 50) ?? 0).toFixed(1)} ms` +
       ` · gpu ${gpu === null ? "n/a" : gpu.toFixed(1) + " ms"} · ${this.frame.calls} draws` +
       ` · ${(this.frame.triangles / 1e6).toFixed(1)} M tris · ${(this.frame.lines / 1e6).toFixed(1)} M lines` +
       ` · ×${pixelRatio.toFixed(2)} px · MSAA ${samples || "off"} · select ${sel === null ? "–" : sel.toFixed(1) + " ms"}`
@@ -119,6 +153,7 @@ export class Perf {
     const elapsed = (performance.now() - this.t0) / 1000;
     const ms = (a) => ({ p50: percentile(a, 50), p95: percentile(a, 95) });
     const fps = (p) => {
+      if (!this.wasContinuous) return null;
       const i = percentile(this.intervals, p);
       return i ? +(1000 / i).toFixed(1) : null;
     };

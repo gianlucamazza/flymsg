@@ -1,0 +1,603 @@
+{
+  "schema": "flymsg.observer-rendering-evidence/v1",
+  "qualification": "not-qualified; no performance fix claimed",
+  "raster_fixture": {
+    "backend": "SwiftShader; correctness only",
+    "fixture": "synthetic; not headset qualification",
+    "records": [
+      {
+        "checks": {
+          "colour": {
+            "candidate_sha256": "a0b507979681f4bf3895a731a3761843d75881a1671238ac4ad900e39cabc23a",
+            "different_bytes": 0,
+            "reference_sha256": "a0b507979681f4bf3895a731a3761843d75881a1671238ac4ad900e39cabc23a"
+          },
+          "neuron_id": {
+            "candidate_sha256": "3066c655c2ce7b3d20422399f9a707bee0c8912cd347a9cf03910c6a7cf13a70",
+            "different_bytes": 0,
+            "reference_sha256": "3066c655c2ce7b3d20422399f9a707bee0c8912cd347a9cf03910c6a7cf13a70"
+          },
+          "packed_depth": {
+            "candidate_sha256": "29b7039222900b2247b20d5c4cd471d6dc17bd969361d61fa0b9d21ecd4f3af6",
+            "different_bytes": 0,
+            "reference_sha256": "29b7039222900b2247b20d5c4cd471d6dc17bd969361d61fa0b9d21ecd4f3af6"
+          }
+        },
+        "name": "dense-full-view",
+        "source_edges": 1947,
+        "submitted_edges": 1947
+      },
+      {
+        "checks": {
+          "colour": {
+            "candidate_sha256": "b7dbf190d516b755b372f177a3de986aea40d60a45c4e3210357407b12a6fdbc",
+            "different_bytes": 0,
+            "reference_sha256": "b7dbf190d516b755b372f177a3de986aea40d60a45c4e3210357407b12a6fdbc"
+          },
+          "neuron_id": {
+            "candidate_sha256": "af62e4d5705087b8763fa5452e47f0805bbb00c65aca5a980309381e80b2eff4",
+            "different_bytes": 0,
+            "reference_sha256": "af62e4d5705087b8763fa5452e47f0805bbb00c65aca5a980309381e80b2eff4"
+          },
+          "packed_depth": {
+            "candidate_sha256": "49f85c617dbf67182b26e226aed07ba5e45395a5029901c0b40123cd4f04a082",
+            "different_bytes": 0,
+            "reference_sha256": "49f85c617dbf67182b26e226aed07ba5e45395a5029901c0b40123cd4f04a082"
+          }
+        },
+        "name": "close",
+        "source_edges": 1947,
+        "submitted_edges": 183
+      },
+      {
+        "checks": {
+          "colour": {
+            "candidate_sha256": "007e2ca564951702844ceedf5e1312f26d26b0a9b988e565f7002b2c313260f2",
+            "different_bytes": 0,
+            "reference_sha256": "007e2ca564951702844ceedf5e1312f26d26b0a9b988e565f7002b2c313260f2"
+          },
+          "neuron_id": {
+            "candidate_sha256": "55b8a942ee40411041b6d231149a5dc2fc64816e8da41eb576c490586c5ac027",
+            "different_bytes": 0,
+            "reference_sha256": "55b8a942ee40411041b6d231149a5dc2fc64816e8da41eb576c490586c5ac027"
+          },
+          "packed_depth": {
+            "candidate_sha256": "c6701f2432a14e662b244c83d2c2a37139b9606f77ef2161d20207495afa0354",
+            "different_bytes": 0,
+            "reference_sha256": "c6701f2432a14e662b244c83d2c2a37139b9606f77ef2161d20207495afa0354"
+          }
+        },
+        "name": "left-eye",
+        "source_edges": 1947,
+        "submitted_edges": 914
+      },
+      {
+        "checks": {
+          "colour": {
+            "candidate_sha256": "002751fa7a7ffe3486bb46350d1cc7936801655ad06d39159cd4c12217cf3252",
+            "different_bytes": 0,
+            "reference_sha256": "002751fa7a7ffe3486bb46350d1cc7936801655ad06d39159cd4c12217cf3252"
+          },
+          "neuron_id": {
+            "candidate_sha256": "f6edbdecc61929a786cb9b1889e410660551907b7f89d2f0c1fe23cbc0d82331",
+            "different_bytes": 0,
+            "reference_sha256": "f6edbdecc61929a786cb9b1889e410660551907b7f89d2f0c1fe23cbc0d82331"
+          },
+          "packed_depth": {
+            "candidate_sha256": "99fabb02bd8cab5eb1f357a69644945ccf2709d4ef3342265215e2222017ac42",
+            "different_bytes": 0,
+            "reference_sha256": "99fabb02bd8cab5eb1f357a69644945ccf2709d4ef3342265215e2222017ac42"
+          }
+        },
+        "name": "right-eye",
+        "source_edges": 1947,
+        "submitted_edges": 914
+      },
+      {
+        "checks": {
+          "colour": {
+            "candidate_sha256": "75ec0d5cf0f81cc3085ac904cb7aaff782bbf066fc39001db6834cb81a9f6580",
+            "different_bytes": 0,
+            "reference_sha256": "75ec0d5cf0f81cc3085ac904cb7aaff782bbf066fc39001db6834cb81a9f6580"
+          },
+          "neuron_id": {
+            "candidate_sha256": "47097def4a103da3b2363f319339740e6fbdea2d00afcb5c7021bc8b69d4bec0",
+            "different_bytes": 0,
+            "reference_sha256": "47097def4a103da3b2363f319339740e6fbdea2d00afcb5c7021bc8b69d4bec0"
+          },
+          "packed_depth": {
+            "candidate_sha256": "9b5dfbc04eb64382c82729d578bc2db4e1fa82dea02a413af84b9bce62bda798",
+            "different_bytes": 0,
+            "reference_sha256": "9b5dfbc04eb64382c82729d578bc2db4e1fa82dea02a413af84b9bce62bda798"
+          }
+        },
+        "name": "near-plane",
+        "source_edges": 1947,
+        "submitted_edges": 122
+      },
+      {
+        "checks": {
+          "colour": {
+            "candidate_sha256": "6dc9650beb44e099c1e671bde9b4e0ab80ac530a9c5f9239086fd403619743ac",
+            "different_bytes": 0,
+            "reference_sha256": "6dc9650beb44e099c1e671bde9b4e0ab80ac530a9c5f9239086fd403619743ac"
+          },
+          "neuron_id": {
+            "candidate_sha256": "aeba0c14f820fb17d2f07c91bb3fb3e934cfb4d3e6f42cd053d6dbc983d2def2",
+            "different_bytes": 0,
+            "reference_sha256": "aeba0c14f820fb17d2f07c91bb3fb3e934cfb4d3e6f42cd053d6dbc983d2def2"
+          },
+          "packed_depth": {
+            "candidate_sha256": "0befe082e1061ee838edcb589cb359a6cdf492d8e4471a30d87956d87779b6df",
+            "different_bytes": 0,
+            "reference_sha256": "0befe082e1061ee838edcb589cb359a6cdf492d8e4471a30d87956d87779b6df"
+          }
+        },
+        "name": "off-axis",
+        "source_edges": 1947,
+        "submitted_edges": 548
+      }
+    ],
+    "schema": "flymsg.geometry-page-oracle/v1",
+    "source": {
+      "commit": "8fe71fa905f6030b6bfd3d81348f0c04462b165f",
+      "dirty": false
+    },
+    "source_sha256": {
+      "geometry-pages-oracle.js": "f2d41433fccb74090354287c345450290ae3b23ab0a9e4459cb446c56b71e729",
+      "geometry-pages.js": "197a2b10908cac3fd0f23a1216784357c7f2a1b4c3539bdda6f3a7e02cd72a37",
+      "page-views.js": "3a33c8063678afa7076e27b03c58b59cc5d88fd341f00b9af5e33d79c42e95bf",
+      "render-reference.js": "05252b72dfcebc360d030aa8e3166b3ed97a25f384f12e9d5dcaaa093716c815",
+      "vendor/three/build/three.module.min.js": "08fd7545d13d2c7fb65ab691530a802dafefd638596501854f267d0fb13c39e7"
+    },
+    "status": "pass"
+  },
+  "real_scene": {
+    "device": "Quest 2",
+    "baseline_commit": "18224c3",
+    "candidate_commit": "8fe71fa",
+    "time_ms": 20,
+    "selected_neurons": 1128,
+    "original_vs_candidate_different_bytes": {
+      "colour": 0,
+      "neuron_id": 0,
+      "packed_depth": 0
+    },
+    "full_vs_paged_different_bytes": {
+      "colour": 0,
+      "neuron_id": 0,
+      "packed_depth": 0
+    },
+    "line_indices_full": 6866518,
+    "line_indices_paged": 6579024,
+    "reduction_fraction": 0.041868964735838454,
+    "selection_limitations": {
+      "representation_changed_body_ids": [
+        76505
+      ],
+      "fragment_order_only_changed_body_ids": [
+        531983
+      ],
+      "interpretation": "Exact image parity on these fixed views; not identical mixed-policy geometry selection across reloads or full-surface proof."
+    }
+  },
+  "interleaved_trials": [
+    {
+      "case": "0-pages0",
+      "intervals": 0,
+      "visibility": [
+        {
+          "at_ms": 0,
+          "state": "visible"
+        },
+        {
+          "at_ms": 15000.699999999255,
+          "state": "visible"
+        }
+      ],
+      "eligibility": {
+        "visible": false,
+        "camera_unchanged": true,
+        "full_anatomy": false
+      },
+      "verdict": "ineligible: no animation callback cadence"
+    },
+    {
+      "case": "1-pages1",
+      "intervals": 0,
+      "visibility": [
+        {
+          "at_ms": 0,
+          "state": "visible"
+        },
+        {
+          "at_ms": 15000.20000000298,
+          "state": "visible"
+        }
+      ],
+      "eligibility": {
+        "visible": false,
+        "camera_unchanged": true,
+        "full_anatomy": false
+      },
+      "verdict": "ineligible: no animation callback cadence"
+    },
+    {
+      "case": "2-pages1",
+      "intervals": 0,
+      "visibility": [
+        {
+          "at_ms": 0,
+          "state": "visible"
+        },
+        {
+          "at_ms": 15000.39999999851,
+          "state": "visible"
+        }
+      ],
+      "eligibility": {
+        "visible": false,
+        "camera_unchanged": true,
+        "full_anatomy": false
+      },
+      "verdict": "ineligible: no animation callback cadence"
+    },
+    {
+      "case": "3-pages0",
+      "intervals": 0,
+      "visibility": [
+        {
+          "at_ms": 0,
+          "state": "visible"
+        },
+        {
+          "at_ms": 15000.199999999255,
+          "state": "visible"
+        }
+      ],
+      "eligibility": {
+        "visible": false,
+        "camera_unchanged": true,
+        "full_anatomy": false
+      },
+      "verdict": "ineligible: no animation callback cadence"
+    }
+  ],
+  "serialized_probe": {
+    "viewer_commit": "0a26a49",
+    "metric": "CPU wall including submission, driver IPC and full RGBA8 readback; not GPU timer",
+    "pipeline": "offscreen direct render, zero MSAA, no composer, fixed projection",
+    "protocol": {
+      "sizes": [
+        256,
+        512,
+        1024
+      ],
+      "warmup": 2,
+      "repeats": 5,
+      "implementation_sha256": "a617b56bc6cc197126fb3db533b2c99bc5aeba1e5c029723fd6a254c90d85f49",
+      "rule": "Compare full vs discard at fixed geometry; compare discard vs minimal line vertex at fixed geometry; pixel scaling is diagnostic. No GPU-time/FPS or qualification claim."
+    },
+    "records": [
+      {
+        "size": 256,
+        "mode": "clear-readback",
+        "serialized_wall_ms": [
+          1,
+          0.8000000007450581,
+          0.8999999985098839,
+          1,
+          0.5999999977648258
+        ],
+        "draws": {
+          "frame": 107,
+          "calls": 0,
+          "triangles": 0,
+          "points": 0,
+          "lines": 0
+        },
+        "non_uniform_readback": false,
+        "readback_bytes": 262144
+      },
+      {
+        "size": 256,
+        "mode": "full",
+        "serialized_wall_ms": [
+          49.30000000074506,
+          49.400000002235174,
+          50.100000001490116,
+          49.69999999925494,
+          52.19999999925494
+        ],
+        "draws": {
+          "frame": 114,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": true,
+        "readback_bytes": 262144
+      },
+      {
+        "size": 256,
+        "mode": "raster-discard",
+        "serialized_wall_ms": [
+          48,
+          47.69999999925494,
+          48.100000001490116,
+          48.5,
+          48.900000002235174
+        ],
+        "draws": {
+          "frame": 121,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": false,
+        "readback_bytes": 262144
+      },
+      {
+        "size": 256,
+        "mode": "raster-discard-minimal-line-vertex",
+        "serialized_wall_ms": [
+          50.899999998509884,
+          51,
+          49.30000000074506,
+          51.69999999925494,
+          49.20000000298023
+        ],
+        "draws": {
+          "frame": 128,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": false,
+        "readback_bytes": 262144
+      },
+      {
+        "size": 256,
+        "mode": "full-repeat",
+        "serialized_wall_ms": [
+          50.30000000074506,
+          50.69999999925494,
+          51.30000000074506,
+          50.599999997764826,
+          51.5
+        ],
+        "draws": {
+          "frame": 135,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": true,
+        "readback_bytes": 262144
+      },
+      {
+        "size": 512,
+        "mode": "clear-readback",
+        "serialized_wall_ms": [
+          1.8999999985098839,
+          2.100000001490116,
+          2.100000001490116,
+          2,
+          2.100000001490116
+        ],
+        "draws": {
+          "frame": 135,
+          "calls": 0,
+          "triangles": 0,
+          "points": 0,
+          "lines": 0
+        },
+        "non_uniform_readback": false,
+        "readback_bytes": 1048576
+      },
+      {
+        "size": 512,
+        "mode": "full",
+        "serialized_wall_ms": [
+          45.900000002235174,
+          46.19999999925494,
+          46.30000000074506,
+          46.100000001490116,
+          46.399999998509884
+        ],
+        "draws": {
+          "frame": 142,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": true,
+        "readback_bytes": 1048576
+      },
+      {
+        "size": 512,
+        "mode": "raster-discard",
+        "serialized_wall_ms": [
+          26,
+          25.5,
+          25.599999997764826,
+          26.800000000745058,
+          27.399999998509884
+        ],
+        "draws": {
+          "frame": 149,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": false,
+        "readback_bytes": 1048576
+      },
+      {
+        "size": 512,
+        "mode": "raster-discard-minimal-line-vertex",
+        "serialized_wall_ms": [
+          47.400000002235174,
+          47,
+          48.100000001490116,
+          48.80000000074506,
+          49
+        ],
+        "draws": {
+          "frame": 156,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": false,
+        "readback_bytes": 1048576
+      },
+      {
+        "size": 512,
+        "mode": "full-repeat",
+        "serialized_wall_ms": [
+          47.30000000074506,
+          48.19999999925494,
+          48.20000000298023,
+          48,
+          48
+        ],
+        "draws": {
+          "frame": 163,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": true,
+        "readback_bytes": 1048576
+      },
+      {
+        "size": 1024,
+        "mode": "clear-readback",
+        "serialized_wall_ms": [
+          5,
+          3.5,
+          3.399999998509884,
+          3.2999999970197678,
+          3.400000002235174
+        ],
+        "draws": {
+          "frame": 163,
+          "calls": 0,
+          "triangles": 0,
+          "points": 0,
+          "lines": 0
+        },
+        "non_uniform_readback": false,
+        "readback_bytes": 4194304
+      },
+      {
+        "size": 1024,
+        "mode": "full",
+        "serialized_wall_ms": [
+          61.30000000074506,
+          61.69999999925494,
+          61.80000000074506,
+          61.30000000074506,
+          60.899999998509884
+        ],
+        "draws": {
+          "frame": 170,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": true,
+        "readback_bytes": 4194304
+      },
+      {
+        "size": 1024,
+        "mode": "raster-discard",
+        "serialized_wall_ms": [
+          28.399999998509884,
+          30.100000001490116,
+          29.800000000745058,
+          30.399999998509884,
+          30.5
+        ],
+        "draws": {
+          "frame": 177,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": false,
+        "readback_bytes": 4194304
+      },
+      {
+        "size": 1024,
+        "mode": "raster-discard-minimal-line-vertex",
+        "serialized_wall_ms": [
+          47.400000002235174,
+          47.30000000074506,
+          47.599999997764826,
+          47.399999998509884,
+          50.5
+        ],
+        "draws": {
+          "frame": 184,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": false,
+        "readback_bytes": 4194304
+      },
+      {
+        "size": 1024,
+        "mode": "full-repeat",
+        "serialized_wall_ms": [
+          63.5,
+          62.599999997764826,
+          63.399999998509884,
+          64.19999999925494,
+          64
+        ],
+        "draws": {
+          "frame": 191,
+          "calls": 3,
+          "triangles": 7216034,
+          "points": 140024,
+          "lines": 3429447
+        },
+        "non_uniform_readback": true,
+        "readback_bytes": 4194304
+      }
+    ],
+    "restore_images_equal": {
+      "colour": true,
+      "neuron_id": true,
+      "packed_depth": true
+    },
+    "limitations": [
+      "Offscreen single-view mixed geometry; not full-fidelity admission or XR frame cadence.",
+      "CPU/driver/readback included; cannot call these GPU milliseconds.",
+      "Sequential sizes; clock/thermal drift and cache effects are not excluded.",
+      "No-render/discard/minimal-shader variants change output and cannot qualify."
+    ],
+    "rejected_attempts": [
+      "finish-only probe lacked independent completion witness",
+      "first readback probe rejected stale image: clear was issued with raster discard enabled"
+    ]
+  },
+  "archive": {
+    "file": "render-pages-8fe71fa-t20.zip",
+    "sha256": "751f30ab71d8a6cd88ed09a7e833002b39c6d46e5f81e6cfa0e00a63fd536274"
+  }
+}

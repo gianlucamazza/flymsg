@@ -1,0 +1,92 @@
+{
+  "schema": "flymsg.paged-software-summary/v1",
+  "at": "2026-10-16T00:39:15.930633+00:00",
+  "source_commit": "754c65eb2e0abc4c72a144fce03611d98da70dda",
+  "status": "software-correctness-pass; physical qualification open",
+  "artifact": {
+    "file": "quest2-paged-2026-10-16.zip",
+    "bytes": 899888,
+    "sha256": "ef36307b0fd4739c67c0d88b97b34416f9af51b54ddd1f4328416d3b59c1c07a",
+    "inventory_files": 78,
+    "uncompressed_bytes": 67075517,
+    "independent_verifier": "Extract and run python verify.py . OPTIONAL_REPOSITORY"
+  },
+  "checks": {
+    "raw_rgba_pairs": 42,
+    "direct_colour_id_depth_pairs": 36,
+    "desktop_msaa4_bloom_pairs": 6,
+    "viewer_neurons": 2,
+    "times_ms": [
+      0,
+      20,
+      350
+    ],
+    "fixed_camera_offsets": [
+      -1,
+      1
+    ],
+    "primitive_arities": [
+      1,
+      2,
+      3
+    ],
+    "gpu_source_stream_exact": true,
+    "worker_soma_neuropil_skeleton_exact": true,
+    "cancel_and_stale_generation": true,
+    "release_cycles": 5,
+    "synthetic_context_restore": true,
+    "depth_tie_regression_reproduced_then_fixed": true
+  },
+  "tests": {
+    "python_full": {
+      "commit": "c32de77183902fc0330269c7df4103c468563b3f",
+      "passed": 711,
+      "deselected": 2
+    },
+    "node": {
+      "passed": 129,
+      "skipped_optional_network": 1
+    },
+    "python_focused": {
+      "passed": 20,
+      "deselected": 1
+    }
+  },
+  "ci_before_collector_timeout_change": [
+    {
+      "conclusion": "success",
+      "headSha": "c32de77183902fc0330269c7df4103c468563b3f",
+      "status": "completed",
+      "url": "https://github.com/gianlucamazza/flymsg/actions/runs/38829812328"
+    },
+    {
+      "conclusion": "success",
+      "headSha": "c32de77183902fc0330269c7df4103c468563b3f",
+      "status": "completed",
+      "url": "https://github.com/gianlucamazza/flymsg/actions/runs/38829812412"
+    }
+  ],
+  "qualification": {
+    "surface": "not-run",
+    "skeleton": "not-run",
+    "reason": "Quest asleep; no Browser DevTools socket on last read; both complete original representations require separate physical acceptance",
+    "pr": "draft"
+  },
+  "limitations": [
+    "Software timing is not Quest timing; background scheduling can exceed the soft upload budget.",
+    "Runtime geometry-stream assertions are reproduced by the archived core oracle; raw pixel parity alone does not prove topology.",
+    "Baseline Three.js stale-context deletion warnings reproduced without candidate.",
+    "Full original surface admission capacity remains unchanged; exceeding it is not a measured headset limit.",
+    "Two-neuron software fixtures do not qualify full-source memory, stereo, refresh cadence, thermal behaviour, sustained desktop or immersive performance.",
+    "The retained concurrent and serial collector timeouts are incomplete attempts, not passes; final run uses the explicit 240-second software collector limit.",
+    "Final documentation/evidence-head CI is linked in PR #205."
+  ],
+  "device_cleanup": {
+    "at": "2026-10-16T00:33:09.509540+00:00",
+    "owned_adb_port": 5038,
+    "removed_reverse": "tcp:8901",
+    "forward_list_was_empty": true,
+    "preview_pid": 2218288,
+    "shared_adb_5037_untouched": true
+  }
+}

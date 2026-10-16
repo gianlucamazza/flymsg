@@ -211,8 +211,8 @@ list (#85), a Drosophila voltage → release curve (#97), muscle → body actuat
 per-type neuromodulatory gains. Meanwhile: envelopes over measured ranges and inverse
 predictions (what value the result would need), never a chosen value.
 
-The sensorimotor gates G1 (B6 v2 pose contract, #178) and G2 (geometric optics onto the
-columns, #179) are implemented; G2 runs on the real eye once the micro-CT → NeuroMechFly head
+The sensorimotor gate G1 (B6 v2 pose contract, #178) is complete. G2's geometric projection
+(#179) is implemented but qualification remains open; G2 runs on the real eye once the micro-CT → NeuroMechFly head
 registration has a source. G5 (#180) has its schedule, evidence gate and record on synthetic
 components; the [body-wiring ADR](adr-body-wiring.md) is accepted, and a biological closed
 loop refuses until G3 and G4 are measured.
@@ -221,6 +221,10 @@ loop refuses until G3 and G4 are measured.
 (#39), and the worker's cancel, suspension with checkpoint and resume pass on it (#40); full-connectome throughput is next. A headset for the WebXR
 observer (#177); until then the native executor refuses whatever is not qualified, and the
 observer stays experimental.
+
+A Quest 2 is available and USB debugging is verified (2026-10-15); #177 stays open until
+its hardware matrix passes. The [qualification runbook](vee-qualification.md) provides the
+collector, predeclared timing budget, synthetic closed-loop CLI and G0–G7 ledger.
 
 Sources for each step are in [leads](leads.md); the simplifications they would lift are in
 [approximations](approximations.md).

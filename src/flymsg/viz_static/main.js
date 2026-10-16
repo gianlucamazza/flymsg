@@ -20,9 +20,7 @@ import {
   fragmentBounds,
   fragmentTransform,
   mergeRanges,
-  parseLegacyMesh,
   parseMultilodManifest,
-  parseSkeleton,
 } from "./precomputed.js";
 import { priorityOf, select } from "./lod.js";
 import {
@@ -64,6 +62,23 @@ import { binAt, rasterRows, selectionExport, selectionRows } from "./raster.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
 import { installXrObserver } from "./xr.js";
+import { XrMetrics } from "./xr-metrics.js";
+import { visibleLinePages, writeVisibleEdges } from "./geometry-pages.js";
+import { RasterPainter } from "./raster-painter.js";
+import { ResidentLineIndex } from "./resident-lines.js";
+import { localEyePlanes, sameEyePlanes } from "./page-views.js";
+import { selectFidelity } from "./fidelity.js";
+import { bufferBytes, geometryArrays } from "./resource-bytes.js";
+import { PagedScene } from "./paged-scene.js";
+import { SourceSlots } from "./source-slots.js";
+import { contextReadiness } from "./context-readiness.js";
+import {
+  base64,
+  capturePasses,
+  captureDesktopPixels,
+  geometryInventory,
+  sha256,
+} from "./render-reference.js";
 import { BUTTON, motion, padHint, pressedSince, tvMode } from "./gamepad.js";
 
 const SEG = "v1.0/segmentation";
@@ -77,6 +92,11 @@ const ROIS = {
 const TAU_MS = 15; // display decay of a spike's glow
 const HISTORY_BINS = 5;
 const MAX_INSTANCES = 65536; // loaded fragments at once
+const DECODED_CACHE_BYTES = 128 * 1024 * 1024;
+const GEOMETRY_WORKERS = Math.max(
+  1,
+  Math.min(4, (navigator.hardwareConcurrency || 4) - 1),
+);
 const INST_TEX_W = 256; // MAX_INSTANCES = 256 x 256
 const TEX_W = 1024; // per-neuron textures for skeletons
 const IDLE_REDRAW_MS = 250; // scene changes from loading redraw at most this often when nothing moves
@@ -91,10 +111,21 @@ const SKEL_ERROR_PX = 0.5;
 
 const query = new URLSearchParams(location.search);
 const coarse = matchMedia(COARSE).matches;
+const representation = query.get("representation") ?? "surface";
+if (!["surface", "skeleton", "mixed"].includes(representation))
+  throw new Error("Unknown anatomical representation");
+const pagedEnabled = query.get("uploads") === "1";
+let pagedInputsDirty = true;
+if (pagedEnabled && representation === "mixed")
+  throw new Error("Paged uploads require an explicit original representation");
+const gpuPageMiB = Number(query.get("gpuPageMiB") ?? 4);
+if (![4, 16, 64].includes(gpuPageMiB))
+  throw new Error("GPU page size must be 4, 16 or 64 MiB");
 // a console's browser (or ?tv=1): larger text, the panel closed, controller hints
 const tv = tvMode(location.search, navigator.userAgent);
 if (tv) document.documentElement.classList.add("tv");
 const settings = {
+  representation,
   // a console's browser stops a tab far below a desktop's memory (Edge on a Series S at
   // the desktop defaults: SBOX_FATAL_MEMORY_EXCEEDED), so the TV layout starts leaner
   detailPx: Number(query.get("detail")) || (tv ? 512 : 256), // refine a fragment when its chunk exceeds this on screen
@@ -103,7 +134,9 @@ const settings = {
   // shown in anatomy views and hidden in replays, where the silent skeletons already outline
   // the whole CNS and the 11 M translucent shell triangles cost ~40 ms per frame on an Iris Xe
   neuropils: query.has("neuropils") ? query.get("neuropils") !== "0" : null,
-  adaptive: query.get("adaptive") !== "0", // drop MSAA, then pixel ratio, while moving if frames run long
+  adaptive: representation === "mixed" && query.get("adaptive") !== "0",
+  pageCulling: query.get("pages") === "1", // qualification candidate; full reference remains the default until visual/device gates pass
+  residentLines: query.get("resident") !== "0", // applies only to strict skeleton page culling
 };
 
 // ---------- a small priority queue for network work ----------
@@ -142,12 +175,13 @@ class Queue {
 const manifestQueue = new Queue(32),
   fragmentQueue = new Queue(8),
   skeletonQueue = new Queue(24),
+  skeletonPreparationQueue = new Queue(GEOMETRY_WORKERS),
   roiQueue = new Queue(6);
 
 // ---------- fragment finishing off the main thread ----------
 const workers = Array.from(
   {
-    length: Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 4) - 1)),
+    length: GEOMETRY_WORKERS,
   },
   () =>
     new Worker(new URL("./geometry-worker.js", import.meta.url), {
@@ -155,39 +189,65 @@ const workers = Array.from(
     }),
 );
 const jobs = new Map();
+const failedWorkers = new Map();
 let jobId = 0;
 for (const w of workers) {
   w.onmessage = ({ data }) => {
-    jobs.get(data.id)(data);
+    const job = jobs.get(data.id);
+    if (!job) return;
+    if (data.error) job.reject(new Error(data.error));
+    else job.resolve(data);
     jobs.delete(data.id);
   };
+  w.onerror = (event) => {
+    const error = new Error(event.message || "Geometry worker failed");
+    failedWorkers.set(w, error);
+    for (const [id, job] of jobs)
+      if (job.worker === w) {
+        jobs.delete(id);
+        job.reject(error);
+      }
+  };
+}
+function geometryJob(payload, buffers, transfer = true) {
+  return new Promise((resolve, reject) => {
+    const id = ++jobId,
+      worker = workers[id % workers.length];
+    if (failedWorkers.has(worker)) {
+      reject(failedWorkers.get(worker));
+      return;
+    }
+    const unique = [...new Set(buffers)];
+    jobs.set(id, {
+      resolve,
+      reject,
+      worker,
+      inputBytes: unique.reduce((n, b) => n + b.byteLength, 0),
+    });
+    try {
+      worker.postMessage({ ...payload, id }, transfer ? unique : []);
+    } catch (error) {
+      jobs.delete(id);
+      reject(error);
+    }
+  });
 }
 /** Dequantize + normals in a worker; `q` and `index` are transferred (not usable afterwards). */
 function finish(q, index, scale, offset) {
   if (q.buffer === index.buffer) index = index.slice(); // both are transferred
-  return new Promise((resolve) => {
-    const id = ++jobId;
-    jobs.set(id, resolve);
-    workers[id % workers.length].postMessage({ id, q, index, scale, offset }, [
-      q.buffer,
-      index.buffer,
-    ]);
-  });
+  return geometryJob({ q, index, scale, offset }, [q.buffer, index.buffer]);
 }
-/** Skeleton levels of detail in a worker (see skeletonLevels); `edges` stays usable here. */
-function skeletonLod(vertices, edges) {
-  return new Promise((resolve) => {
-    const id = ++jobId;
-    jobs.set(id, resolve);
-    workers[id % workers.length].postMessage({
-      kind: "skeleton",
-      id,
-      vertices,
-      edges,
+/** Transfer raw skeleton input; the worker returns immutable source arrays and levels. */
+function skeletonSource(buffer) {
+  return geometryJob(
+    {
+      kind: "skeleton-source",
+      buffer,
       base: SKEL_EPS_NM,
-      count: SKEL_LEVELS,
-    });
-  });
+      count: representation === "mixed" ? SKEL_LEVELS : 0,
+    },
+    [buffer],
+  );
 }
 function geometryFrom({ positions, normals, index }) {
   const g = new THREE.BufferGeometry();
@@ -492,6 +552,8 @@ meshMaterial.onBeforeCompile = (shader) => {
 };
 
 let batched = null;
+const sourceSlots = new SourceSlots(MAX_INSTANCES);
+let referenceSurfacesDirty = true;
 const capacity = { vertices: 0, indices: 0 }; // of the BatchedMesh buffers (allocated lazily by three)
 function flushInstanceTextures() {
   if (!instanceTexturesDirty) return;
@@ -501,6 +563,8 @@ function flushInstanceTextures() {
 let instanceTexturesDirty = false;
 
 function makeBatched() {
+  sourceSlots.reset();
+  referenceSurfacesDirty = true;
   if (batched) {
     data.remove(batched);
     batched.dispose();
@@ -509,7 +573,8 @@ function makeBatched() {
       n.shownSig = n.loadingSig = "";
     }
   }
-  const tris = settings.budgetM * 1e6;
+  const tris =
+    settings.representation === "skeleton" ? 0 : settings.budgetM * 1e6;
   capacity.vertices = Math.ceil(tris * 0.65); // measured 0.54 vertices per triangle, see vertsPerTri
   capacity.indices = Math.ceil(tris * 3);
   batched = new THREE.BatchedMesh(
@@ -529,14 +594,20 @@ makeBatched();
 
 // decoded fragments kept on the CPU after leaving the GPU, so zooming back is instant
 const lru = new Map();
-let lruTris = 0;
+let lruBytes = 0;
 function remember(key, geometry) {
+  if (lru.has(key)) {
+    const previous = lru.get(key);
+    lruBytes -= bufferBytes(geometryArrays(previous));
+    lru.delete(key);
+    if (previous !== geometry) previous.dispose();
+  }
   lru.set(key, geometry);
-  lruTris += geometry.index.count / 3;
-  while (lruTris > settings.budgetM * 1e6 * 0.5 && lru.size) {
+  lruBytes += bufferBytes(geometryArrays(geometry));
+  while (lruBytes > DECODED_CACHE_BYTES && lru.size) {
     const [k, g] = lru.entries().next().value;
     lru.delete(k);
-    lruTris -= g.index.count / 3;
+    lruBytes -= bufferBytes(geometryArrays(g));
     g.dispose();
   }
 }
@@ -544,7 +615,7 @@ function recall(key) {
   const g = lru.get(key);
   if (g) {
     lru.delete(key);
-    lruTris -= g.index.count / 3;
+    lruBytes -= bufferBytes(geometryArrays(g));
   }
   return g;
 }
@@ -554,6 +625,20 @@ function recall(key) {
 const stats = { bytes: 0, tris: 0, verts: 0, capacityHits: 0 };
 
 function addFragment(n, key, geometry) {
+  if (pagedEnabled) {
+    const iid = sourceSlots.allocate();
+    n.shown.set(key, {
+      gid: null,
+      iid,
+      geometry,
+      tris: geometry.index.count / 3,
+    });
+    instanceNeuron.image.data[iid] = n.k + 1;
+    instanceActivity.image.data[iid] = activity[n.k];
+    instanceTexturesDirty = referenceSurfacesDirty = pagedInputsDirty = true;
+    invalidate();
+    return true;
+  }
   let gid;
   try {
     gid = batched.addGeometry(geometry);
@@ -574,16 +659,21 @@ function addFragment(n, key, geometry) {
   instanceActivity.image.data[iid] = activity[n.k];
   instanceTexturesDirty = true;
   n.shown.set(key, { gid, iid, geometry, tris: geometry.index.count / 3 });
+  pagedInputsDirty = true;
   invalidate();
   return true;
 }
 
 function removeFragment(n, key) {
   const f = n.shown.get(key);
-  batched.deleteGeometry(f.gid);
+  if (pagedEnabled) {
+    sourceSlots.release(f.iid);
+    referenceSurfacesDirty = true;
+  } else batched.deleteGeometry(f.gid);
   instanceNeuron.image.data[f.iid] = 0;
   instanceTexturesDirty = true;
   n.shown.delete(key);
+  pagedInputsDirty = true;
   remember(`${key}@${n.k}`, f.geometry);
   invalidate();
 }
@@ -719,11 +809,10 @@ function checkWinding(n) {
   console.log(`WINDING ${JSON.stringify(windingChecks.at(-1))}`);
 }
 
-// ---------- skeletons: coarsest LOD, and the placeholder while meshes load ----------
-// All skeletons share one vertex buffer and one LineSegments. The index lists, for every neuron
-// whose skeleton is on, the segments of its current level, so hidden skeletons cost nothing and
-// everything draws in one call (on an Iris Xe, 2,662 separate draws took 46 ms per frame and
-// the same lines in one draw 27 ms).
+// ---------- original skeletons; LOD/fallback only in the mixed diagnostic ----------
+// One vertex arena and LineSegments object. The compact reference draws once;
+// resident page scheduling uses at most eight public geometry groups, preserving
+// original order. Hidden neurons remain hard barriers between eligible ranges.
 const texH = Math.max(1, Math.ceil(N / TEX_W));
 const neuronTex = () => {
   const t = new THREE.DataTexture(
@@ -775,14 +864,29 @@ const skelMaterial = new THREE.ShaderMaterial({
     }`,
 });
 const pool = {
-  positions: new Float32Array(3 << 20),
-  neuron: new Float32Array(1 << 20), // aNeuron: neuron index per vertex
+  positions: new Float32Array(pagedEnabled ? 0 : 3 << 20),
+  neuron: new Float32Array(pagedEnabled ? 0 : 1 << 20), // aNeuron: neuron index per vertex
   used: 0, // vertices
-  index: new Uint32Array(1 << 22),
+  index: new Uint32Array(pagedEnabled ? 0 : 1 << 22),
   state: new Int8Array(N).fill(-1), // level drawn per neuron, -1 = off
 };
 const skelGeometry = new THREE.BufferGeometry();
+const residentLines = new ResidentLineIndex(8);
+let residentGeometry = null,
+  compactGeneration = -1;
+let lineSubmission = { mode: "compact", draws: 0 };
+function releaseResidentGeometry() {
+  if (!residentGeometry) return;
+  // Vertex attributes belong to skelGeometry; dispose only this index/VAO owner.
+  for (const name of Object.keys(residentGeometry.attributes))
+    residentGeometry.deleteAttribute(name);
+  residentGeometry.dispose();
+  residentGeometry = null;
+}
 function poolAttributes() {
+  releaseResidentGeometry();
+  compactGeneration = -1;
+  residentLines.releaseArena();
   skelGeometry.dispose(); // frees the GPU buffers of the arrays being replaced
   skelGeometry.setAttribute(
     "position",
@@ -794,9 +898,22 @@ function poolAttributes() {
   );
   skelGeometry.setIndex(new THREE.BufferAttribute(pool.index, 1));
 }
+function ensureCompactCapacity(count) {
+  if (count <= pool.index.length) return;
+  const attributes = { ...skelGeometry.attributes };
+  for (const name of Object.keys(attributes))
+    skelGeometry.deleteAttribute(name);
+  skelGeometry.dispose(); // shared vertices and their other VAO remain resident
+  for (const [name, attribute] of Object.entries(attributes))
+    skelGeometry.setAttribute(name, attribute);
+  pool.index = new Uint32Array(Math.max(count, 2 * pool.index.length));
+  skelGeometry.setIndex(new THREE.BufferAttribute(pool.index, 1));
+  compactGeneration = -1;
+}
 poolAttributes();
 skelGeometry.setDrawRange(0, 0);
-const skeletons = new THREE.LineSegments(skelGeometry, skelMaterial);
+// Arrays make geometry groups apply to colour AND picking/depth passes.
+const skeletons = new THREE.LineSegments(skelGeometry, [skelMaterial]);
 skeletons.frustumCulled = false; // bounds change as skeletons stream in
 data.add(skeletons);
 
@@ -830,25 +947,43 @@ async function loadSkeleton(n) {
   const buf = await fetchBytes(`${SKELETONS}/${n.bodyId}`);
   if (!buf) {
     n.skeletonState = "missing";
+    if (isShown(n)) pagedInputsDirty = true;
+    invalidate();
     return;
   }
   perf.count("skeletons", buf.byteLength);
-  const s = parseSkeleton(buf);
-  const lod = await skeletonLod(s.vertices, s.edges);
-  appendVertices(n, s.vertices);
+  const { s, lod } = await skeletonPreparationQueue.push(
+    priorityOf(n, eyeView()),
+    async () => {
+      const lod = await skeletonSource(buf);
+      const s = { vertices: lod.vertices, edges: lod.edges };
+      return { s, lod };
+    },
+  );
+  if (!pagedEnabled) appendVertices(n, s.vertices);
   n.skelLod = {
+    vertices: pagedEnabled ? s.vertices : null, // immutable worker source; never transfer the reference
     eps: lod.eps,
     levels: [s.edges, ...lod.coarser],
     bounds: lod.bounds,
+    pages: lod.pages,
     level: 0,
   };
   setSkeletonLevel(n, eyeView());
   n.skeletonState = "ready";
+  if (isShown(n)) pagedInputsDirty = true;
   skeletonsDirty = true;
 }
 
 /** Coarsest skeleton level whose tolerance stays under SKEL_ERROR_PX at the nearest point. */
 function setSkeletonLevel(n, v) {
+  if (settings.representation !== "mixed") {
+    if (n.skelLod.level !== 0) {
+      n.skelLod.level = 0;
+      skeletonsDirty = true;
+    }
+    return;
+  }
   const { eps, bounds } = n.skelLod;
   let d2 = 0;
   for (let a = 0; a < 3; a++) {
@@ -874,40 +1009,176 @@ function setSkeletonLevel(n, v) {
 let skeletonWanted = new Set();
 let skeletonsDirty = true,
   lastSkeletonBuild = 0;
+let lastSkeletonEyes, lastSkeletonRepresentation, lastResidentEnabled;
 const skeletonOn = (n) =>
-  isShown(n) && (skeletonWanted.has(n.k) || n.shown.size === 0);
+  isShown(n) &&
+  (settings.representation === "skeleton" ||
+    (settings.representation === "mixed" &&
+      (skeletonWanted.has(n.k) || n.shown.size === 0)));
+function skeletonEyes(
+  c = camera,
+  width = renderer.domElement.width,
+  height = renderer.domElement.height,
+) {
+  world.updateMatrixWorld(true);
+  c.updateMatrixWorld(true);
+  const cameras = c.isArrayCamera ? c.cameras : [c];
+  return localEyePlanes(
+    THREE,
+    data.matrixWorld,
+    cameras.map((eye) => ({
+      projection: eye.projectionMatrix,
+      inverseWorld: eye.matrixWorldInverse,
+      width: eye.viewport?.z ?? width,
+      height: eye.viewport?.w ?? height,
+    })),
+  );
+}
 /** Rebuild the shared index when some neuron's skeleton turned on or off or changed level. */
-function applySkeletonVisibility() {
+function applySkeletonVisibility(eyes = null) {
+  if (
+    !skeletonsDirty &&
+    !selectionDirty &&
+    lastSkeletonRepresentation === settings.representation &&
+    lastResidentEnabled === settings.residentLines &&
+    sameEyePlanes(lastSkeletonEyes, eyes)
+  ) {
+    if (
+      lineSubmission.mode === "resident" &&
+      lineSubmission.backend === "groups" &&
+      (lineSubmission.bridged_indices || lineSubmission.draws > 1)
+    ) {
+      ensureCompactCapacity(residentLines.visibleIndices);
+      const count = residentLines.copyVisible(pool.index);
+      const index = skelGeometry.getIndex();
+      index.clearUpdateRanges();
+      index.addUpdateRange(0, count);
+      index.needsUpdate = true;
+      skelGeometry.clearGroups();
+      if (count) skelGeometry.addGroup(0, count, 0);
+      skelGeometry.setDrawRange(0, count);
+      compactGeneration = residentLines.generation;
+      skeletons.geometry = skelGeometry;
+      lineSubmission = {
+        ...lineSubmission,
+        backend: "cached-compact",
+        draws: Number(count > 0),
+        ranges: Number(count > 0),
+        submitted_indices: count,
+        bridged_indices: 0,
+      };
+      invalidate();
+    }
+    return;
+  }
+  // Copy the stamp: diagnostic callers may reuse and mutate their plane arrays.
+  lastSkeletonEyes = eyes?.map((eye) => eye.map((plane) => [...plane])) ?? null;
+  lastSkeletonRepresentation = settings.representation;
+  lastResidentEnabled = settings.residentLines;
   skeletonsDirty = false;
-  let changed = false,
+  let fallback = null;
+  if (
+    eyes !== null &&
+    settings.residentLines &&
+    settings.representation === "skeleton" &&
+    neurons.every((n) => !isShown(n) || n.skeletonState === "ready")
+  ) {
+    const rebuilt = residentLines.sync(neurons);
+    if (rebuilt || !residentGeometry) {
+      releaseResidentGeometry();
+      residentGeometry = new THREE.BufferGeometry();
+      for (const [name, attribute] of Object.entries(skelGeometry.attributes))
+        residentGeometry.setAttribute(name, attribute);
+      residentGeometry.setIndex(
+        new THREE.BufferAttribute(residentLines.index, 1),
+      );
+      compactGeneration = -1;
+    }
+    const plan = residentLines.plan(eyes, skeletonOn, visibleLinePages);
+    if (!plan.fallback) {
+      const cached = compactGeneration === plan.generation;
+      if (rebuilt || plan.changed || lineSubmission.mode !== "resident") {
+        residentGeometry.clearGroups();
+        for (const r of plan.ranges)
+          residentGeometry.addGroup(r.start, r.count, 0);
+        residentGeometry.setDrawRange(0, residentLines.count);
+        invalidate();
+      }
+      skeletons.geometry = cached ? skelGeometry : residentGeometry;
+      lineSubmission = {
+        mode: "resident",
+        backend: cached ? "cached-compact" : "groups",
+        draws: cached ? Number(plan.visibleIndices > 0) : plan.ranges.length,
+        ranges: cached ? Number(plan.visibleIndices > 0) : plan.ranges.length,
+        visible_indices: plan.visibleIndices,
+        submitted_indices: cached ? plan.visibleIndices : plan.submittedIndices,
+        bridged_indices: cached
+          ? 0
+          : plan.submittedIndices - plan.visibleIndices,
+        catalog_builds: residentLines.builds,
+      };
+      return;
+    }
+    fallback = plan.fallback;
+  }
+  // Legacy/reference writes invalidate only the single compact-view cache.
+  let changed = lineSubmission.mode === "resident",
     total = 0;
+  skeletons.geometry = skelGeometry;
   for (const n of neurons) {
     const st = n.skelLod && skeletonOn(n) ? n.skelLod.level : -1;
     if (st !== pool.state[n.k]) {
       pool.state[n.k] = st;
       changed = true;
     }
-    if (st >= 0) total += n.skelLod.levels[st].length;
+    if (st >= 0) {
+      const pages = n.skelLod.pages[st];
+      const result = visibleLinePages(pages, eyes);
+      const previous = n.visiblePages;
+      if (
+        !previous ||
+        previous.length !== result.visible.length ||
+        result.visible.some((v, i) => v !== previous[i])
+      )
+        changed = true;
+      n.visiblePages = result.visible;
+      total += 2 * result.edges;
+    }
   }
-  if (!changed) return;
-  if (total > pool.index.length) {
-    pool.index = new Uint32Array(Math.max(total, 2 * pool.index.length));
-    poolAttributes();
+  if (!changed) {
+    lineSubmission = { ...lineSubmission, mode: "compact", fallback };
+    return;
   }
+  ensureCompactCapacity(total);
+  compactGeneration = -1;
   let o = 0;
   for (const n of neurons) {
     const st = pool.state[n.k];
     if (st < 0) continue;
-    const lv = n.skelLod.levels[st],
-      base = n.skelBase;
-    for (let i = 0; i < lv.length; i++) pool.index[o + i] = lv[i] + base;
-    o += lv.length;
+    o = writeVisibleEdges(
+      pool.index,
+      o,
+      n.skelLod.levels[st],
+      n.skelLod.pages[st],
+      n.visiblePages,
+      n.skelBase,
+    );
   }
   const index = skelGeometry.getIndex();
   index.clearUpdateRanges();
   index.addUpdateRange(0, total);
   index.needsUpdate = true;
   skelGeometry.setDrawRange(0, total);
+  skelGeometry.clearGroups();
+  if (total) skelGeometry.addGroup(0, total, 0);
+  lineSubmission = {
+    mode: "compact",
+    draws: Number(total > 0),
+    visible_indices: total,
+    submitted_indices: total,
+    bridged_indices: 0,
+    fallback,
+  };
   invalidate();
 }
 
@@ -940,61 +1211,81 @@ const shellMaterial = new THREE.ShaderMaterial({
   side: THREE.DoubleSide, // a see-through shell shows both sides on purpose
 });
 const shells = {}; // name -> {region, dir, id, mesh | null, visible, state}
+const neuropilCatalogs = Object.fromEntries(
+  Object.keys(ROIS).map((region) => [region, "loading"]),
+);
+const neuropilCatalogErrors = {};
+let allNeuropilsRequested = settings.neuropils;
 // a shell is downloaded the first time it becomes visible
 function ensureNeuropil(name) {
   const s = shells[name];
   if (!s.visible || s.state !== "idle") return;
   s.state = "loading";
-  roiQueue.push(-1, () => loadNeuropil(s.dir, s.id, name)).catch(console.error); // after neurons
+  roiQueue
+    .push(-1, () => loadNeuropil(s.dir, s.id, name))
+    .catch((error) => {
+      s.state = "error";
+      s.error = String(error);
+      if (s.visible) pagedInputsDirty = true;
+      invalidate();
+      console.error(error);
+    }); // after neurons
 }
 async function loadNeuropil(dir, id, name) {
   const manifest = await fetchJson(`${dir}/mesh/${id}:0`);
-  if (!manifest) return;
+  if (!manifest)
+    throw new Error(`Neuropil ${name}: source manifest unavailable`);
   const parts = [];
   for (const frag of manifest.fragments) {
     const buf = await fetchBytes(`${dir}/mesh/${frag}`);
+    if (!buf) throw new Error(`Neuropil ${name}: source fragment unavailable`);
     if (buf) {
-      parts.push(parseLegacyMesh(buf));
+      parts.push(buf);
       perf.count("neuropils", buf.byteLength);
     }
   }
-  if (!parts.length) return;
-  const nv = parts.reduce((s, p) => s + p.vertices.length / 3, 0);
-  const pos = new Float32Array(3 * nv);
-  const idx = new Uint32Array(parts.reduce((s, p) => s + p.indices.length, 0));
-  let v0 = 0,
-    i0 = 0;
-  for (const p of parts) {
-    pos.set(p.vertices, 3 * v0);
-    for (let i = 0; i < p.indices.length; i++) idx[i0 + i] = p.indices[i] + v0;
-    v0 += p.vertices.length / 3;
-    i0 += p.indices.length;
-  }
+  if (!parts.length) throw new Error(`Neuropil ${name}: empty source mesh`);
   const mesh = new THREE.Mesh(
-    geometryFrom(await finish(pos, idx, [1, 1, 1], [0, 0, 0])),
+    geometryFrom(await geometryJob({ kind: "neuropil", parts }, parts)),
     shellMaterial,
   );
   mesh.renderOrder = 1;
   mesh.visible = shells[name].visible;
   shells[name].mesh = mesh;
+  shells[name].state = "ready";
   data.add(mesh);
+  if (mesh.visible) pagedInputsDirty = true;
   invalidate();
 }
 const neuropilsListed = (async () => {
   for (const [region, dir] of Object.entries(ROIS)) {
-    const props = (await fetchJson(`${dir}/segment_properties/info`)).inline;
-    props.ids.forEach((id, i) => {
-      const name = props.properties[0].values[i];
-      shells[name] = {
-        region,
-        dir,
-        id,
-        mesh: null,
-        visible: settings.neuropils,
-        state: "idle",
-      };
-      ensureNeuropil(name);
-    });
+    try {
+      const props = (await fetchJson(`${dir}/segment_properties/info`)).inline;
+      props.ids.forEach((id, i) => {
+        const name = props.properties[0].values[i];
+        shells[name] = {
+          region,
+          dir,
+          id,
+          mesh: null,
+          visible: settings.neuropils,
+          state: "idle",
+        };
+        ensureNeuropil(name);
+      });
+      neuropilCatalogs[region] = "ready";
+    } catch (error) {
+      neuropilCatalogs[region] = "error";
+      neuropilCatalogErrors[region] = String(error);
+      console.warn(error);
+    } finally {
+      if (
+        allNeuropilsRequested ||
+        Object.values(shells).some((s) => s.region === region && s.visible)
+      )
+        pagedInputsDirty = true;
+      invalidate();
+    }
   }
 })();
 
@@ -1005,6 +1296,9 @@ const neuropilsListed = (async () => {
 // neither picked nor coloured by activity.
 const somataQuery = query.get("somata");
 const somata = {
+  state: somataQuery === "0" ? "hidden" : "loading",
+  requested: !!somataQuery && somataQuery !== "0",
+  error: null,
   visible: somataQuery !== "0",
   opacity: 0.12, // context: the active neurons stay in front
   size: 1.5,
@@ -1026,41 +1320,57 @@ const somataLoaded = (async () => {
   let buf;
   try {
     const r = await fetch(url);
-    if (!r.ok) return;
+    if (r.status === 404 || r.status === 410) {
+      somata.state = "absent";
+      return;
+    }
+    if (!r.ok) throw new Error(`Soma context HTTP ${r.status}`);
     buf = await r.arrayBuffer();
-  } catch {
-    return; // no layer for this page
+  } catch (error) {
+    throw new Error(`Soma context unavailable: ${error}`);
   }
-  const n = buf.byteLength / 13;
-  if (!Number.isInteger(n)) return console.warn(`${url}: not a soma file`);
-  const vox = new Float32Array(buf, 0, 3 * n);
-  const codes = new Uint8Array(buf, 12 * n, n);
-  const pos = new Float32Array(3 * n);
-  const col = new Float32Array(3 * n);
-  const palette = Object.values(REGION_COLORS).map((c) => new THREE.Color(c));
-  for (let i = 0; i < n; i++) {
-    for (let a = 0; a < 3; a++)
-      pos[3 * i + a] = vox[3 * i + a] * scale0.resolution[a];
-    const c = palette[Math.min(codes[i], palette.length - 1)];
-    col.set([c.r, c.g, c.b], 3 * i);
-  }
+  const bytes = buf.byteLength;
+  const palette = Object.values(REGION_COLORS).map((value) => {
+    const c = new THREE.Color(value);
+    return [c.r, c.g, c.b];
+  });
+  const {
+    positions: pos,
+    colors: col,
+    count: n,
+  } = await geometryJob(
+    { kind: "somata", buffer: buf, resolution: scale0.resolution, palette },
+    [buf],
+  );
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   g.setAttribute("color", new THREE.BufferAttribute(col, 3));
   somata.points = new THREE.Points(g, somataMaterial);
   somata.points.renderOrder = 2;
   somata.count = n;
-  perf.count("somata", buf.byteLength);
+  somata.state = "ready";
+  perf.count("somata", bytes);
   data.add(somata.points);
+  pagedInputsDirty = true;
   renderLegend();
   invalidate();
-})();
+})()
+  .catch((error) => {
+    somata.state = "error";
+    somata.error = String(error);
+    console.warn(error);
+  })
+  .finally(() => {
+    pagedInputsDirty = true;
+    invalidate();
+  });
 
 // ---------- level-of-detail selection ----------
 // Recomputed once the camera settles (or at most every 250 ms while it keeps moving) and when
 // new manifests arrive.
 let selectionDirty = true,
   lastSelection = 0;
+let fidelityState = { status: "loading", reasons: [] };
 controls.addEventListener("change", () => {
   selectionDirty = true;
   lastMove = performance.now();
@@ -1068,13 +1378,19 @@ controls.addEventListener("change", () => {
 });
 
 function eyeView() {
-  const eye = data.worldToLocal(camera.position.clone()).toArray();
-  // in XR the canvas keeps its desktop CSS size; the drawing buffer is one eye's pixels
-  const heightPx = renderer.xr.isPresenting
-    ? renderer.getSize(new THREE.Vector2()).y
-    : renderer.domElement.clientHeight;
-  const pxPerUnit =
-    heightPx / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+  const xrCamera = renderer.xr.isPresenting ? renderer.xr.getCamera() : null;
+  const eye = data
+    .worldToLocal((xrCamera ?? camera).getWorldPosition(new THREE.Vector3()))
+    .toArray();
+  // XR owns the framebuffer: use actual per-eye viewports and projection, never desktop CSS.
+  const pxPerUnit = xrCamera?.cameras.length
+    ? Math.max(
+        ...xrCamera.cameras.map(
+          (c) => (c.viewport.w * c.projectionMatrix.elements[5]) / 2,
+        ),
+      )
+    : renderer.domElement.clientHeight /
+      (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
   return { eye, pxPerUnit };
 }
 
@@ -1083,32 +1399,60 @@ function updateSelection() {
   if (!selectionDirty || (now - lastMove < 120 && now - lastSelection < 250))
     return;
   selectionDirty = false;
+  pagedInputsDirty = true;
   lastSelection = now;
   const v = eyeView();
   const candidates = neurons.filter(isShown);
   for (const n of candidates) {
-    if (n.manifestState === "idle") {
+    if (settings.representation !== "skeleton" && n.manifestState === "idle") {
       n.manifestState = "queued"; // mark now, or every pass would queue it again
       manifestQueue
         .push(priorityOf(n, v), () => loadManifest(n))
-        .catch(console.error);
+        .catch((error) => {
+          n.manifestState = "missing";
+          selectionDirty = true;
+          console.error(error);
+        });
     }
   }
   const selectStart = performance.now();
-  const sel = select(
-    candidates.map((n) => ({
-      key: n.k,
-      priority: priorityOf(n, v),
-      manifest: n.manifest,
-    })),
-    v,
-    {
-      detailPx: settings.detailPx,
-      budgetTris: effectiveBudget(stats, capacity, settings.budgetM),
-      trisPerByte: trisPerByte(stats),
-      transform: meshInfo.transform,
-    },
-  );
+  const selectedNeurons = candidates.map((n) => ({
+    key: n.k,
+    priority: priorityOf(n, v),
+    manifest: n.manifest,
+    missing: n.manifestState === "missing",
+  }));
+  const sel =
+    settings.representation !== "mixed"
+      ? selectFidelity(
+          selectedNeurons,
+          settings.representation,
+          effectiveBudget(stats, capacity, settings.budgetM),
+          trisPerByte(stats),
+        )
+      : select(
+          candidates.map((n) => ({
+            key: n.k,
+            priority: priorityOf(n, v),
+            manifest: n.manifest,
+          })),
+          v,
+          {
+            detailPx: settings.detailPx,
+            budgetTris: effectiveBudget(stats, capacity, settings.budgetM),
+            trisPerByte: trisPerByte(stats),
+            transform: meshInfo.transform,
+          },
+        );
+  fidelityState =
+    settings.representation === "mixed"
+      ? {
+          status: "unqualified",
+          reasons: [
+            { reason: "mixed representation changes with resource pressure" },
+          ],
+        }
+      : sel;
   perf.selectMs.push(performance.now() - selectStart);
   skeletonWanted = new Set(sel.skeletons);
   for (const n of neurons) if (n.skelLod) setSkeletonLevel(n, v);
@@ -1119,11 +1463,17 @@ function updateSelection() {
       continue;
     }
     const sig = want.map(({ lod, i }) => `${lod}:${i}`).join(",");
-    if (sig !== n.shownSig && sig !== n.loadingSig) {
+    if (!n.surfaceError && sig !== n.shownSig && sig !== n.loadingSig) {
       n.loadingSig = sig; // the latest selection wins; older queued jobs see it and stop
       fragmentQueue
         .push(priorityOf(n, v), () => showFragments(n, want, sig))
-        .catch(console.error);
+        .catch((error) => {
+          n.surfaceError = String(error);
+          if (isShown(n)) pagedInputsDirty = true;
+          n.loadingSig = "";
+          console.error(error);
+          invalidate();
+        });
     }
   }
   for (const n of candidates) {
@@ -1131,7 +1481,12 @@ function updateSelection() {
       n.skeletonState = "queued";
       skeletonQueue
         .push(priorityOf(n, v), () => loadSkeleton(n))
-        .catch(console.error);
+        .catch((error) => {
+          n.skeletonState = "missing";
+          if (isShown(n)) pagedInputsDirty = true;
+          console.error(error);
+          invalidate();
+        });
     }
   }
   skeletonsDirty = true;
@@ -1140,11 +1495,13 @@ setInterval(updateSelection, 50);
 
 // ---------- colours, legend, stats ----------
 function refreshColours() {
+  pagedInputsDirty = true;
   const c = new THREE.Color();
   const d = skelColour.image.data;
   for (const n of neurons) {
     c.set(colourOf(n));
-    for (const f of n.shown.values()) batched.setColorAt(f.iid, c);
+    if (!pagedEnabled || !referenceSurfacesDirty)
+      for (const f of n.shown.values()) batched.setColorAt(f.iid, c);
     d.set([c.r, c.g, c.b, 1], 4 * n.k);
   }
   skelColour.needsUpdate = true;
@@ -1203,7 +1560,102 @@ refreshColours();
 
 const statsEl = document.getElementById("stats");
 const perfEl = document.getElementById("perf");
+function contextStatus() {
+  return contextReadiness({
+    catalogs: neuropilCatalogs,
+    catalogErrors: neuropilCatalogErrors,
+    shells: Object.values(shells),
+    allNeuropils: allNeuropilsRequested,
+    somata,
+  });
+}
+function fidelityReport() {
+  const selected = neurons.filter(isShown);
+  const represented = selected.filter((n) =>
+    settings.representation === "skeleton"
+      ? n.skeletonState === "ready"
+      : settings.representation === "surface"
+        ? n.shown.size > 0 &&
+          n.shown.size === fidelityState.meshes?.get(n.k)?.length
+        : n.shown.size > 0 || n.skeletonState === "ready",
+  ).length;
+  const unavailable = selected.filter((n) =>
+    settings.representation === "skeleton"
+      ? n.skeletonState === "missing"
+      : n.manifestState === "missing" || !!n.surfaceError,
+  ).length;
+  return {
+    representation: settings.representation,
+    source_geometry: settings.representation !== "mixed",
+    status:
+      settings.representation === "mixed"
+        ? "unqualified"
+        : unavailable ||
+            stats.capacityHits ||
+            fidelityState.status === "unsupported"
+          ? "unsupported"
+          : represented === selected.length
+            ? "ready"
+            : "loading",
+    selected: selected.length,
+    represented,
+    unavailable,
+    capacity_hits: stats.capacityHits,
+    reasons: fidelityState.reasons,
+    page_culling: settings.pageCulling,
+    renderer_qualified: false,
+    gpu_ready: gpuResourcesReady(),
+  };
+}
+function resourceReport() {
+  const arrays = [];
+  world.traverse((o) => {
+    if (o.geometry) arrays.push(...geometryArrays(o.geometry));
+  });
+  for (const n of neurons) {
+    for (const f of n.shown.values())
+      arrays.push(...geometryArrays(f.geometry));
+    if (n.skelLod) {
+      arrays.push(n.skelLod.vertices);
+      arrays.push(...n.skelLod.levels);
+      for (const p of n.skelLod.pages)
+        arrays.push(p.edgePage, p.bounds, p.sizes, p.runs);
+    }
+  }
+  for (const g of lru.values()) arrays.push(...geometryArrays(g));
+  arrays.push(...geometryArrays(skelGeometry));
+  if (residentGeometry) arrays.push(...geometryArrays(residentGeometry));
+  arrays.push(...residentLines.arrays());
+  return {
+    managed_geometry_cpu_bytes: bufferBytes(arrays),
+    decoded_cache_bytes: lruBytes,
+    decoded_cache_limit_bytes: DECODED_CACHE_BYTES,
+    gpu_total_bytes: null,
+    contexts: contextStatus(),
+    geometry_preparation: {
+      jobs: jobs.size,
+      input_bytes: [...jobs.values()].reduce((n, job) => n + job.inputBytes, 0),
+    },
+    gpu_resources: pagedScene?.report() ?? {
+      state: "untracked",
+      complete: false,
+    },
+    line_submission: pagedScene
+      ? {
+          mode: "immutable-pages",
+          draws: pagedScene.pages.filter(
+            (p) => p.layer === skeletonLayer && p.object.visible,
+          ).length,
+          submitted_indices: pagedScene.pages
+            .filter((p) => p.layer === skeletonLayer && p.object.visible)
+            .reduce((sum, p) => sum + p.object.geometry.index.count, 0),
+        }
+      : { ...lineSubmission },
+    browser_heap_bytes: performance.memory?.usedJSHeapSize ?? null,
+  };
+}
 function updateStats() {
+  xrObserver?.refresh?.();
   let surfaces = 0,
     tris = 0;
   for (const n of neurons) {
@@ -1214,19 +1666,21 @@ function updateStats() {
   const loading = manifestQueue.size + fragmentQueue.size + skeletonQueue.size;
   const rois = Object.values(shells);
   if (surfaces) perf.mark("first_surface");
-  if (
-    neurons.every(
-      (n) =>
-        !isShown(n) ||
-        n.shown.size ||
-        ["ready", "missing"].includes(n.skeletonState),
-    )
-  ) {
+  if (fidelityReport().status === "ready") {
     perf.mark("all_represented");
   }
+  if (pagedScene?.state === "ready") perf.mark("gpu_resources_ready");
   statsEl.textContent =
     `${surfaces} surfaces · ${lines} skeletons · ${(tris / 1e6).toFixed(1)} / ${settings.budgetM} M triangles` +
-    ` · ${loading} loading · neuropils ${rois.filter((s) => s.mesh).length}/${rois.length}`;
+    ` · ${loading} loading · neuropils ${rois.filter((s) => s.mesh).length}/${rois.length}` +
+    ` · ${settings.representation}: ${fidelityReport().status}` +
+    (pagedScene ? ` · GPU: ${pagedScene.state}` : "") +
+    (stats.capacityHits
+      ? " · capacity exhausted; incomplete representation"
+      : "") +
+    (fidelityState.reasons.length
+      ? ` · ${fidelityState.reasons[0].reason}`
+      : "");
   perfEl.textContent = perf.line(renderer.getPixelRatio(), samples);
 }
 setInterval(updateStats, 500);
@@ -1285,6 +1739,8 @@ const clock = {
   speed: 40,
 };
 const clockEl = document.getElementById("clock");
+let diagnosticContinuous = false;
+let diagnosticSuspended = false;
 let shownT = null; // replay time whose activity is on the GPU
 function updateActivity(t) {
   activityAt(
@@ -1308,7 +1764,8 @@ function updateActivity(t) {
   for (const n of neurons)
     for (const f of n.shown.values()) inst[f.iid] = activity[n.k];
   instanceTexturesDirty = true;
-  clockEl.textContent = `t = ${t.toFixed(0)} ms · stimulus ${t < A.stim_ms ? "on" : "off"}`;
+  const label = `t = ${t.toFixed(0)} ms · stimulus ${t < A.stim_ms ? "on" : "off"}`;
+  if (clockEl.textContent !== label) clockEl.textContent = label;
   shownT = t;
   drawRaster();
   invalidate();
@@ -1356,6 +1813,233 @@ const pickLineMaterial = new THREE.ShaderMaterial({
     void main() { gl_FragColor = vec4(vId, 1.0); }`,
 });
 
+// The page layout removes per-fragment matrix/indirection fetches (all source
+// fragment transforms are identity after worker finishing). It reads exactly
+// the same neuron colour/activity values; images are qualified independently.
+const pagedMeshMaterial = meshMaterial.clone();
+pagedMeshMaterial.onBeforeCompile = (shader) => {
+  Object.assign(shader.uniforms, shared, {
+    uNeuronColor: { value: skelColour },
+    uNeuronAct: { value: skelActivity },
+  });
+  shader.vertexShader = shader.vertexShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+    attribute float aNeuron;
+    uniform sampler2D uNeuronColor, uNeuronAct;
+    varying float vActivity;
+    varying vec3 vNeuronColor;`,
+    )
+    .replace(
+      "#include <begin_vertex>",
+      `#include <begin_vertex>
+    ivec2 neuronPixel = ${neuronIndexGlsl};
+    vActivity = texelFetch(uNeuronAct, neuronPixel, 0).r;
+    vNeuronColor = texelFetch(uNeuronColor, neuronPixel, 0).rgb;`,
+    );
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+    uniform float uGain, uInactiveAlpha;
+    varying float vActivity;
+    varying vec3 vNeuronColor;
+    ${BAYER4}`,
+    )
+    .replace(
+      "#include <color_fragment>",
+      `#include <color_fragment>
+    diffuseColor.rgb *= vNeuronColor;`,
+    )
+    .replace(
+      "#include <clipping_planes_fragment>",
+      `#include <clipping_planes_fragment>
+    if (bayer4(gl_FragCoord.xy) >= mix(uInactiveAlpha, 1.0, clamp(4.0 * abs(vActivity), 0.0, 1.0))) discard;`,
+    )
+    .replace(
+      "#include <emissivemap_fragment>",
+      `#include <emissivemap_fragment>
+    totalEmissiveRadiance += (vActivity >= 0.0 ? diffuseColor.rgb : ${HYPER_GLSL}) * abs(vActivity) * uGain;`,
+    );
+};
+const pagedMeshId = pickLineMaterial.clone();
+pagedMeshId.side = THREE.FrontSide;
+const pageDepth = (material) => {
+  const depth = material.clone();
+  depth.fragmentShader = `#include <packing>
+    void main() { gl_FragColor = packDepthToRGBA(gl_FragCoord.z); }`;
+  return depth;
+};
+const surfaceLayer = {
+  primitiveSize: 3,
+  material: pagedMeshMaterial,
+  neuron_id: pagedMeshId,
+  packed_depth: pageDepth(pagedMeshId),
+};
+const skeletonLayer = {
+  primitiveSize: 2,
+  material: skelMaterial,
+  neuron_id: pickLineMaterial,
+  packed_depth: pageDepth(pickLineMaterial),
+};
+const contextLayers = new WeakMap();
+const pagedScene = pagedEnabled
+  ? new PagedScene(THREE, renderer, data, {
+      maxPageBytes: gpuPageMiB * 1024 * 1024,
+    })
+  : null;
+function originalObjects() {
+  return data.children.filter((o) => o.geometry);
+}
+function gpuResourcesReady() {
+  return pagedScene
+    ? !pagedInputsDirty && pagedScene.state === "ready" && pagedScene.complete
+    : null;
+}
+function diagnosticRender(draw) {
+  if (!pagedScene) return draw();
+  if (!gpuResourcesReady())
+    throw new Error("Diagnostic requires ready GPU resources");
+  return pagedScene.render(originalObjects(), draw);
+}
+function prepareOriginalOracle() {
+  if (!pagedEnabled) return;
+  // Only an explicit diagnostic allocates the legacy global arenas. Production
+  // page preparation must not pay their unbounded CPU allocation/copy cost.
+  for (const n of neurons)
+    if (n.skelLod && !n.referenceSkeletonReady) {
+      appendVertices(n, n.skelLod.vertices);
+      n.referenceSkeletonReady = true;
+    }
+  if (!referenceSurfacesDirty) return;
+  const entries = neurons
+    .flatMap((n) => [...n.shown.values()].map((f) => ({ n, f })))
+    .sort((a, b) => a.f.iid - b.f.iid);
+  if (!entries.length) {
+    referenceSurfacesDirty = false;
+    return;
+  }
+  const next = new THREE.BatchedMesh(
+    MAX_INSTANCES,
+    capacity.vertices,
+    capacity.indices,
+    meshMaterial,
+  );
+  next.sortObjects = false;
+  next.frustumCulled = false;
+  const assigned = [],
+    last = entries.at(-1).f.iid;
+  let at = 0,
+    firstGid = null,
+    reservedFirstGid = null;
+  try {
+    for (let id = 0; id <= last; id++) {
+      const entry = entries[at];
+      if (entry?.f.iid === id) {
+        const gid = reservedFirstGid ?? next.addGeometry(entry.f.geometry);
+        reservedFirstGid = null;
+        firstGid ??= gid;
+        if (next.addInstance(gid) !== id)
+          throw new Error("Reference instance order differs from source");
+        next.setColorAt(id, new THREE.Color(colourOf(entry.n)));
+        assigned.push([entry.f, gid]);
+        at++;
+      } else {
+        // Reserve holes so texture IDs and original tie ownership stay exact.
+        // If the first live slot is nonzero its geometry supplies hidden slots.
+        if (firstGid === null) {
+          firstGid = next.addGeometry(entries[0].f.geometry);
+          reservedFirstGid = firstGid;
+        }
+        next.addInstance(firstGid);
+        next.setVisibleAt(id, false);
+      }
+    }
+  } catch (error) {
+    next.dispose();
+    throw error;
+  }
+  data.remove(batched);
+  batched.dispose();
+  batched = next;
+  data.add(batched);
+  for (const [fragment, gid] of assigned) fragment.gid = gid;
+  referenceSurfacesDirty = false;
+}
+function syncPagedScene() {
+  if (!pagedScene || !pagedInputsDirty) return;
+  pagedInputsDirty = false;
+  const sources = [];
+  if (settings.representation === "skeleton") {
+    for (const n of neurons)
+      if (isShown(n) && n.skelLod)
+        sources.push({
+          key: `skeleton:${n.k}`,
+          layer: skeletonLayer,
+          attributes: {
+            position: { array: n.skelLod.vertices, itemSize: 3 },
+            aNeuron: { constant: n.k, itemSize: 1 },
+          },
+          index: n.skelLod.levels[0],
+        });
+  } else {
+    const fragments = neurons
+      .filter(isShown)
+      .flatMap((n) => [...n.shown.entries()].map(([key, f]) => ({ n, key, f })))
+      .sort((a, b) => a.f.iid - b.f.iid);
+    for (const { n, key, f } of fragments)
+      sources.push({
+        key: `surface:${n.k}:${key}`,
+        layer: surfaceLayer,
+        attributes: {
+          position: {
+            array: f.geometry.attributes.position.array,
+            itemSize: 3,
+          },
+          normal: { array: f.geometry.attributes.normal.array, itemSize: 3 },
+          aNeuron: { constant: n.k, itemSize: 1 },
+        },
+        index: f.geometry.index.array,
+      });
+  }
+  for (const o of originalObjects()) {
+    if (o === batched || o === skeletons || !o.visible) continue;
+    let layer = contextLayers.get(o);
+    if (!layer) {
+      layer = {
+        primitiveSize: o.isPoints ? 1 : 3,
+        material: o.material,
+        renderOrder: o.renderOrder,
+        context: true,
+      };
+      contextLayers.set(o, layer);
+    }
+    sources.push({
+      key: `context:${o.id}`,
+      layer,
+      attributes: Object.fromEntries(
+        Object.entries(o.geometry.attributes).map(([name, a]) => [
+          name,
+          { array: a.array, itemSize: a.itemSize },
+        ]),
+      ),
+      index: o.geometry.index?.array ?? null,
+    });
+  }
+  const fidelity = fidelityReport();
+  const anatomyReady = fidelity.status === "ready";
+  const contexts = contextStatus();
+  pagedScene.sync(
+    sources,
+    anatomyReady && contexts.ready,
+    contexts.error ??
+      (fidelity.status === "unsupported"
+        ? "Selected source anatomy exceeds admission capacity or is unavailable"
+        : null),
+  );
+}
+
 function pickAt(x, y) {
   if (renderer.xr.isPresenting) return null; // the stereo cameras own the view in XR
   const w = renderer.domElement.clientWidth,
@@ -1380,16 +2064,20 @@ function pickAt(x, y) {
   const somataShown = somata.points?.visible ?? false;
   if (somata.points) somata.points.visible = false; // context, not pickable
   batched.material = pickMeshMaterial;
-  skeletons.material = pickLineMaterial;
+  skeletons.material = [pickLineMaterial];
   renderer.setRenderTarget(pickTarget);
   renderer.setClearColor(0x000000, 0);
   renderer.clear();
-  renderer.render(world, camera);
+  if (pagedScene)
+    pagedScene.render(originalObjects(), () => renderer.render(world, camera), {
+      pass: "neuron_id",
+    });
+  else renderer.render(world, camera);
   const px = new Uint8Array(4 * PICK * PICK);
   renderer.readRenderTargetPixels(pickTarget, 0, 0, PICK, PICK, px);
   renderer.setRenderTarget(null);
   batched.material = meshMaterial;
-  skeletons.material = skelMaterial;
+  skeletons.material = [skelMaterial];
   saved.shells.forEach((o) => (o.visible = true));
   if (somata.points) somata.points.visible = somataShown;
   world.background = saved.background;
@@ -1424,6 +2112,285 @@ if (query.has("check")) {
     pickTarget,
     pickMeshMaterial,
     meshMaterial,
+    fidelity: fidelityReport,
+    resources: resourceReport,
+    paged: pagedScene,
+    gpuInventory: () => pagedScene?.inventory(sha256) ?? null,
+    renderScene: (c = camera) =>
+      diagnosticRender(() => renderer.render(world, c)),
+    renderDesktop: () => diagnosticRender(() => composer.render()),
+    async desktopReference({ time = clock.t, pipeline = "original" } = {}) {
+      if (!diagnosticSuspended || renderer.xr.isPresenting || document.hidden)
+        throw new Error(
+          "Desktop capture requires a suspended non-immersive diagnostic",
+        );
+      if (
+        !["original", "paged"].includes(pipeline) ||
+        (pipeline === "paged" && gpuResourcesReady() !== true)
+      )
+        throw new Error("Requested desktop pipeline is unavailable");
+      if (
+        !contextStatus().ready ||
+        fidelityReport().status !== "ready" ||
+        !Number.isFinite(time) ||
+        time < 0 ||
+        (replay && time >= A.bins * A.bin_ms)
+      )
+        throw new Error(
+          "Complete original anatomy and a valid timestamp required",
+        );
+      const saved = { playing: clock.playing, time: clock.t };
+      try {
+        clock.playing = false;
+        clock.t = time;
+        if (replay) updateActivity(time);
+        prepareOriginalOracle();
+        applySkeletonVisibility(null);
+        flushInstanceTextures();
+        const draw = () => composer.render();
+        const capture = captureDesktopPixels(
+          THREE,
+          renderer,
+          pipeline === "paged"
+            ? () => pagedScene.render(originalObjects(), draw)
+            : draw,
+        );
+        return {
+          pipeline,
+          time,
+          width: capture.width,
+          height: capture.height,
+          samples,
+          pixel_ratio: renderer.getPixelRatio(),
+          bloom: bloom.enabled,
+          projection: camera.projectionMatrix.toArray(),
+          camera_world: camera.matrixWorld.toArray(),
+          rgba: {
+            sha256: await sha256(capture.pixels),
+            base64: base64(capture.pixels),
+          },
+        };
+      } finally {
+        clock.playing = saved.playing;
+        clock.t = saved.time;
+        if (replay) updateActivity(saved.time);
+        skeletonsDirty = true;
+        invalidate();
+      }
+    },
+    raster: () => rasterPainter.report(),
+    scheduleLines: (eyes) => {
+      prepareOriginalOracle();
+      applySkeletonVisibility(eyes);
+      return { ...lineSubmission };
+    },
+    diagnosticState: () => ({
+      suspended: diagnosticSuspended,
+      continuous: diagnosticContinuous,
+      time: clock.t,
+      playing: clock.playing,
+      pageCulling: settings.pageCulling,
+      residentLines: settings.residentLines,
+    }),
+    diagnostic({
+      suspended = false,
+      continuous = false,
+      time = 0,
+      playing = false,
+      pageCulling = settings.pageCulling,
+      residentLines = settings.residentLines,
+    } = {}) {
+      if (suspended && renderer.xr.isPresenting)
+        throw new Error("Cannot suspend an immersive session for a diagnostic");
+      if (
+        !Number.isFinite(time) ||
+        time < 0 ||
+        (replay && time >= A.bins * A.bin_ms)
+      )
+        throw new RangeError("Diagnostic timestamp outside scene");
+      const previous = {
+        suspended: diagnosticSuspended,
+        continuous: diagnosticContinuous,
+        time: clock.t,
+        playing: clock.playing,
+        pageCulling: settings.pageCulling,
+        residentLines: settings.residentLines,
+      };
+      diagnosticContinuous = continuous;
+      // Suspended tabs/headsets may emit no callbacks at all. Probe wall time
+      // must not become replay time on the first ordinary frame after resume.
+      if (previous.suspended !== suspended) timer.getDelta();
+      diagnosticSuspended = suspended;
+      xrObserver?.refresh?.();
+      clock.playing = playing;
+      clock.t = time;
+      settings.pageCulling = pageCulling;
+      settings.residentLines = residentLines;
+      skeletonsDirty = true;
+      invalidate();
+      return previous;
+    },
+    async reference({
+      width = 512,
+      height = 512,
+      time = 0,
+      culling = false,
+      projection = null,
+      cameraWorld = null,
+      pipeline = "original",
+    } = {}) {
+      if (renderer.xr.isPresenting || document.hidden)
+        throw new Error("Reference requires a visible non-immersive page");
+      if (!["original", "paged"].includes(pipeline))
+        throw new Error("Unknown capture pipeline");
+      if (pipeline === "paged" && gpuResourcesReady() !== true)
+        throw new Error("Paged GPU resources are not ready");
+      if (
+        manifestQueue.size +
+        fragmentQueue.size +
+        skeletonQueue.size +
+        roiQueue.size
+      )
+        throw new Error("Reference requires completed geometry loading");
+      if (
+        settings.representation !== "mixed" &&
+        fidelityReport().status !== "ready"
+      )
+        throw new Error("Reference requires complete selected anatomy");
+      if (!contextStatus().ready)
+        throw new Error("Reference requires completed selected context layers");
+      if (
+        !Number.isFinite(time) ||
+        time < 0 ||
+        (replay && time >= A.bins * A.bin_ms)
+      )
+        throw new RangeError("Reference replay timestamp outside scene");
+      const saved = { playing: clock.playing, t: clock.t };
+      prepareOriginalOracle();
+      const objects = [];
+      world.updateMatrixWorld(true);
+      world.traverse((o) => {
+        if (o.geometry && o.visible && !pagedScene?.group.children.includes(o))
+          objects.push(o);
+      });
+      const materials = objects.map((o) => [o, o.material]);
+      const depthFragment = `#include <packing>
+        void main() { gl_FragColor = packDepthToRGBA(gl_FragCoord.z); }`;
+      const depthMesh = pickMeshMaterial.clone();
+      const depthLine = pickLineMaterial.clone();
+      depthMesh.fragmentShader = depthLine.fragmentShader = depthFragment;
+      const c = camera.clone();
+      c.aspect = width / height;
+      c.clearViewOffset();
+      c.updateProjectionMatrix();
+      if (projection) c.projectionMatrix.fromArray(projection);
+      if (cameraWorld)
+        c.matrix
+          .fromArray(cameraWorld)
+          .decompose(c.position, c.quaternion, c.scale);
+      c.updateMatrixWorld(true);
+      try {
+        clock.playing = false;
+        clock.t = time;
+        if (replay) updateActivity(time);
+        applySkeletonVisibility(
+          culling ? skeletonEyes(c, width, height) : null,
+        );
+        flushInstanceTextures();
+        const geometry = geometryInventory(objects);
+        const replace = (mesh, line) => () => {
+          const context = objects.filter(
+            (o) => o !== batched && o !== skeletons,
+          );
+          context.forEach((o) => {
+            o.visible = false;
+          });
+          batched.material = mesh;
+          skeletons.material = [line];
+          const background = world.background;
+          world.background = null;
+          renderer.setClearColor(0, 0);
+          return () => {
+            materials.forEach(([o, material]) => {
+              o.material = material;
+            });
+            context.forEach((o) => {
+              o.visible = true;
+            });
+            world.background = background;
+          };
+        };
+        const buffers = capturePasses(
+          THREE,
+          renderer,
+          world,
+          c,
+          {
+            colour: () => () => {},
+            neuron_id: replace(pickMeshMaterial, pickLineMaterial),
+            packed_depth: replace(depthMesh, depthLine),
+          },
+          width,
+          height,
+          pipeline === "paged"
+            ? (pass) =>
+                pagedScene.render(
+                  originalObjects(),
+                  () => renderer.render(world, c),
+                  {
+                    pass,
+                    eyes: culling ? skeletonEyes(c, width, height) : null,
+                  },
+                )
+            : undefined,
+        );
+        const activityCopy = activity.slice();
+        return {
+          schema: "flymsg.render-reference/v1",
+          pipeline,
+          page_culling: culling,
+          width,
+          height,
+          time_ms: time,
+          pixel_format:
+            "RGBA8 bottom-left origin; depth = three.js packDepthToRGBA",
+          colour_pipeline: "direct scene render; no desktop compositor",
+          depth_policy:
+            "opaque geometry depth; ID/depth exclude contextual shells and somata",
+          projection: c.projectionMatrix.toArray(),
+          camera_world: c.matrixWorld.toArray(),
+          data_world: data.matrixWorld.toArray(),
+          settings: { ...settings },
+          scene_sha256: await sha256(
+            new TextEncoder().encode(JSON.stringify(meta)),
+          ),
+          activity_sha256: await sha256(activityCopy),
+          geometry: await geometry,
+          neurons: neurons.filter(isShown).map((n) => ({
+            bodyId: n.bodyId,
+            k: n.k,
+            surfaces: [...n.shown.keys()],
+            skeleton_level: n.skelLod?.level ?? null,
+          })),
+          images: Object.fromEntries(
+            await Promise.all(
+              Object.entries(buffers).map(async ([key, bytes]) => [
+                key,
+                { sha256: await sha256(bytes), base64: base64(bytes) },
+              ]),
+            ),
+          ),
+        };
+      } finally {
+        clock.playing = saved.playing;
+        clock.t = saved.t;
+        if (replay) updateActivity(saved.t);
+        depthMesh.dispose();
+        depthLine.dispose();
+        skeletonsDirty = true;
+        invalidate();
+      }
+    },
     get batched() {
       return batched;
     },
@@ -1523,15 +2490,21 @@ panel.querySelector("button").addEventListener("click", clearSelection);
 // ---------- raster: the selection's spikes per bin, in step with the replay ----------
 const rasterEl = document.getElementById("raster");
 const rasterCanvas = rasterEl.querySelector("canvas");
-const RASTER_LABEL_PX = 120,
-  RASTER_ROW_PX = 9,
-  RASTER_AXIS_PX = 18;
+const RASTER_LABEL_PX = 120;
+const rasterPainter = new RasterPainter(rasterCanvas);
 let rasterState = null;
 function showRaster(k, entry) {
   if (!replay) return;
   const { rows, hidden } = selectionRows(k, entry);
   rasterState = {
-    rows: rasterRows(spikes, { n: N, bins: A.bins }, rows),
+    rows: rasterRows(spikes, { n: N, bins: A.bins }, rows).map((row) => ({
+      ...row,
+      label: (neurons[row.k].instance || neurons[row.k].type).slice(0, 18),
+      colour: FOCUS_COLORS[view.focus?.get(row.k) ?? "context"],
+    })),
+    bins: A.bins,
+    binMs: A.bin_ms,
+    stimMs: A.stim_ms,
     hidden,
   };
   rasterEl.querySelector("header span").textContent =
@@ -1546,6 +2519,7 @@ function showRaster(k, entry) {
 }
 function hideRaster() {
   rasterState = null;
+  rasterPainter.clear();
   rasterEl.hidden = true;
 }
 const rasterSpanMs = () => A.bins * A.bin_ms;
@@ -1556,65 +2530,11 @@ function rasterX(ms, width) {
 }
 function drawRaster() {
   if (!rasterState) return;
-  const { rows } = rasterState;
-  const width = Math.min(560, innerWidth - 48);
-  const height = rows.length * RASTER_ROW_PX + RASTER_AXIS_PX;
-  const ratio = devicePixelRatio || 1;
-  rasterCanvas.width = width * ratio;
-  rasterCanvas.height = height * ratio;
-  rasterCanvas.style.width = `${width}px`;
-  rasterCanvas.style.height = `${height}px`;
-  const ctx = rasterCanvas.getContext("2d");
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  ctx.clearRect(0, 0, width, height);
-  const plotH = rows.length * RASTER_ROW_PX;
-  ctx.fillStyle = "rgba(76, 201, 240, 0.12)"; // stimulus window
-  ctx.fillRect(
-    rasterX(0, width),
-    0,
-    rasterX(A.stim_ms, width) - rasterX(0, width),
-    plotH,
-  );
-  ctx.font = "10px system-ui, sans-serif";
-  ctx.textBaseline = "middle";
-  const cellW = Math.max(1, rasterX(A.bin_ms, width) - rasterX(0, width) - 0.5);
-  rows.forEach(({ k, counts, total }, i) => {
-    const y = i * RASTER_ROW_PX;
-    const n = neurons[k];
-    const colour = FOCUS_COLORS[view.focus?.get(k) ?? "context"];
-    ctx.fillStyle = colour;
-    ctx.fillText((n.instance || n.type).slice(0, 18), 2, y + RASTER_ROW_PX / 2);
-    if (!total) {
-      ctx.fillStyle = "#7b8494";
-      ctx.fillText(
-        "no spikes in this replay",
-        RASTER_LABEL_PX,
-        y + RASTER_ROW_PX / 2,
-      );
-      return;
-    }
-    for (let b = 0; b < counts.length; b++) {
-      if (!counts[b]) continue;
-      ctx.globalAlpha = Math.min(1, 0.35 + counts[b] / 3);
-      ctx.fillStyle = colour;
-      ctx.fillRect(
-        rasterX(b * A.bin_ms, width),
-        y + 1,
-        cellW,
-        RASTER_ROW_PX - 2,
-      );
-    }
-    ctx.globalAlpha = 1;
+  rasterPainter.draw(rasterState, {
+    width: Math.min(560, innerWidth - 48),
+    ratio: devicePixelRatio || 1,
+    time: clock.t,
   });
-  // axis every 100 ms
-  ctx.fillStyle = "#7b8494";
-  ctx.textBaseline = "top";
-  for (let ms = 0; ms <= rasterSpanMs(); ms += 100)
-    ctx.fillText(`${ms}`, rasterX(ms, width) - 6, plotH + 4);
-  // cursor on the bin the glow is showing
-  const b = binAt(clock.t, A.bin_ms, A.bins);
-  ctx.strokeStyle = "#ffffff";
-  ctx.strokeRect(rasterX(b * A.bin_ms, width), 0, cellW, plotH);
 }
 function rasterTime(e) {
   const r = rasterCanvas.getBoundingClientRect();
@@ -1649,6 +2569,10 @@ addEventListener("keydown", (e) => {
   stepBin(e.key === "ArrowRight" ? 1 : -1);
 });
 addEventListener("resize", drawRaster);
+rasterCanvas.addEventListener("contextrestored", () => {
+  rasterPainter.clear();
+  drawRaster();
+});
 rasterEl.querySelector("button").addEventListener("click", async () => {
   const manifest = await fetch("manifest.json")
     .then((r) => (r.ok ? r.json() : null))
@@ -1689,6 +2613,17 @@ applyChrome(
 let guiPanel = null; // the lil-gui panel, which the controller's View button opens and closes
 if (showChrome(location.search)) {
   const gui = new GUI({ title: "flymsg" });
+  gui
+    .add(settings, "representation", {
+      "full surfaces": "surface",
+      "full skeletons": "skeleton",
+    })
+    .name("anatomy")
+    .onChange((value) => {
+      const url = new URL(location.href);
+      url.searchParams.set("representation", value);
+      location.assign(url);
+    });
   guiPanel = gui;
   // the open panel would cover the scene on a phone, and wants a pointer on a TV
   if (matchMedia(NARROW).matches || tv) gui.close();
@@ -1716,13 +2651,15 @@ if (showChrome(location.search)) {
     .add(settings, "budgetM", 1, 40, 1)
     .name("budget (M tris)")
     .onFinishChange(() => {
+      stats.capacityHits = 0;
       makeBatched();
       selectionDirty = true;
     });
-  gui
-    .add(settings, "adaptive")
-    .name("adaptive quality")
-    .onChange((on) => on || setQuality(nativeRatio, MSAA));
+  if (settings.representation === "mixed")
+    gui
+      .add(settings, "adaptive")
+      .name("adaptive quality")
+      .onChange((on) => on || setQuality(nativeRatio, MSAA));
   if (replay) {
     gui.add(bloom, "strength", 0, 3).name("bloom").onChange(invalidate);
     gui
@@ -1745,6 +2682,7 @@ if (showChrome(location.search)) {
     f.add(somata.points, "visible")
       .name("show")
       .onChange(() => {
+        pagedInputsDirty = true;
         renderLegend();
         invalidate();
       });
@@ -1767,6 +2705,8 @@ if (showChrome(location.search)) {
       );
       const boxes = {};
       const set = (name, v) => {
+        allNeuropilsRequested = false; // explicit selection supersedes the initial all-catalog request
+        pagedInputsDirty = true;
         shells[name].visible = v;
         if (shells[name].mesh) shells[name].mesh.visible = v;
         ensureNeuropil(name);
@@ -1840,7 +2780,7 @@ function tuneQuality(live) {
     return;
   }
   if (++tuneFrames < 12) return;
-  const frameMs = perf.recentGpuMs(8) ?? (perf.fps ? 1000 / perf.fps : 0);
+  const frameMs = perf.recentGpuMs(8) ?? perf.recentFrameMs(8);
   if (!frameMs) return;
   // fewer pixels only help when rasterization dominates; otherwise keep the sharper image
   if (lastStep && ratio < lastStep.ratio) {
@@ -1964,12 +2904,48 @@ if (query.has("bench")) {
 // Mobile browsers drop the WebGL context under memory pressure or in a background tab.
 // preventDefault asks for it back; three.js re-uploads every resource on restore.
 const lostEl = document.getElementById("lost");
+const xrMetrics = new XrMetrics(
+  {
+    url: location.href,
+    user_agent: navigator.userAgent,
+    scene_schema: meta.schema,
+  },
+  (record) => {
+    console.log(`XR_BENCH ${JSON.stringify(record)}`);
+    if (query.get("xrcollect") === "1")
+      fetch("/__xr_evidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record),
+      })
+        .then((response) => {
+          if (!response.ok)
+            throw new Error(`collector HTTP ${response.status}`);
+        })
+        .catch((error) => console.warn("XR evidence delivery failed", error));
+  },
+);
+if (query.get("xr") === "1") {
+  // Read-only snapshot for the hardware collector; no control over scientific state.
+  window.flymsgXrReport = () => xrMetrics.report();
+  renderer.xr.addEventListener("sessionstart", () => {
+    perf.resetContext();
+    xrMetrics.start(renderer.xr.getSession());
+  });
+  window.addEventListener("pagehide", () => xrMetrics.finish("pagehide"));
+}
 renderer.domElement.addEventListener("webglcontextlost", (e) => {
   e.preventDefault();
   lostEl.hidden = false;
+  pagedScene?.contextLost();
+  xrMetrics.event("webglcontextlost");
 });
 renderer.domElement.addEventListener("webglcontextrestored", () => {
   lostEl.hidden = true;
+  pagedScene?.contextRestored();
+  pagedInputsDirty = true;
+  xrMetrics.event("webglcontextrestored");
+  perf.resetContext();
   selectionDirty = true;
   invalidate();
 });
@@ -1978,10 +2954,14 @@ renderer.domElement.addEventListener("webglcontextrestored", () => {
 // frame clock when the tab is shown, so the first frame back does not jump.
 const timer = new THREE.Clock();
 document.addEventListener("visibilitychange", () => {
+  perf.last = null;
+  perf.wasContinuous = false;
   if (!document.hidden) timer.getDelta();
 });
-renderer.setAnimationLoop(() => {
+renderer.setAnimationLoop((timestamp) => {
+  const frameStart = performance.now();
   const dt = timer.getDelta();
+  if (diagnosticSuspended) return; // explicit offscreen probes own the renderer until restoration
   const inXR = renderer.xr.isPresenting;
   const steered = inXR ? false : steerWithPad(dt);
   const moved = inXR ? false : controls.update() || steered; // XR headset owns its camera pose
@@ -1994,26 +2974,68 @@ renderer.setAnimationLoop(() => {
   const playing = replay && clock.playing;
   if (playing) clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
   if (replay && clock.t !== shownT) updateActivity(clock.t);
-  const live = inXR || interacting || moved || playing;
+  const live = inXR || interacting || moved || playing || diagnosticContinuous;
   if (!inXR) tuneQuality(live); // desktop adaptive compositor is not XR-qualified
   const now = performance.now();
   // the index rebuild walks every drawn segment: coalesce streaming updates
-  if (skeletonsDirty && now - lastSkeletonBuild >= IDLE_REDRAW_MS) {
-    applySkeletonVisibility();
+  if (!inXR) fitClip();
+  if (settings.pageCulling && inXR) renderer.xr.updateCamera(camera);
+  if (
+    !pagedScene &&
+    (settings.pageCulling ||
+      (skeletonsDirty && now - lastSkeletonBuild >= IDLE_REDRAW_MS))
+  ) {
+    applySkeletonVisibility(
+      settings.pageCulling
+        ? skeletonEyes(inXR ? renderer.xr.getCamera() : camera)
+        : null,
+    );
     lastSkeletonBuild = now;
+  }
+  if (pagedScene) {
+    const wasReady = pagedScene.state === "ready";
+    syncPagedScene();
+    pagedScene.tick();
+    if (!wasReady || pagedScene.state !== "ready") invalidate();
+    xrObserver?.refresh?.();
   }
   if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
   flushInstanceTextures();
-  if (inXR) {
-    // Three.js supplies the two eye cameras; never run desktop postprocessing
-    // against the XR framebuffer. One existing animation loop owns both modes.
-    renderer.render(world, camera);
-  } else {
-    fitClip();
-    perf.begin();
-    composer.render();
-    perf.end();
-  }
+  perf.begin(frameStart); // include activity, visibility, index preparation and uploads
+  const draw = () => {
+    if (inXR) {
+      // Three.js supplies the two eye cameras; never run desktop postprocessing
+      // against the XR framebuffer. One existing animation loop owns both modes.
+      renderer.render(world, camera);
+    } else {
+      composer.render();
+    }
+  };
+  if (pagedScene)
+    pagedScene.render(originalObjects(), draw, {
+      eyes: settings.pageCulling
+        ? skeletonEyes(inXR ? renderer.xr.getCamera() : camera)
+        : null,
+    });
+  else draw();
+  const measured = perf.end({ continuous: live });
+  if (inXR)
+    xrMetrics.frame(
+      timestamp,
+      performance.now() - frameStart,
+      measured.gpu_ms,
+      () => ({
+        geometries: renderer.info.memory.geometries,
+        textures: renderer.info.memory.textures,
+        programs: renderer.info.programs?.length ?? null,
+        triangles: renderer.info.render.triangles,
+        draws: renderer.info.render.calls,
+        lines: renderer.info.render.lines,
+        fidelity: fidelityReport(),
+        ...resourceReport(),
+      }),
+      fidelityReport(),
+    );
   sceneDirty = false;
   lastRender = now;
 });
@@ -2028,10 +3050,24 @@ const xrOptions = {
   camera,
   controls,
   extentUm: extent,
+  entryError: () => {
+    if (diagnosticSuspended) return "A rendering diagnostic is in progress.";
+    const context = contextStatus();
+    if (!context.ready)
+      return context.error ?? "Selected context layers are loading.";
+    const fidelity = fidelityReport();
+    if (pagedScene && fidelity.gpu_ready !== true)
+      return `GPU resources are ${pagedScene.state === "ready" ? "preparing" : pagedScene.state}. VR requires completed uploads.`;
+    return fidelity.status === "ready" ||
+      (settings.representation === "mixed" && query.has("check"))
+      ? null
+      : `Selected anatomy is ${fidelity.status}. VR requires a complete representation.`;
+  },
   onTransition: () => {
     selectionDirty = true;
     invalidate();
     if (!renderer.xr.isPresenting) {
+      perf.resetContext();
       // the desktop may have been resized while the headset owned its framebuffer
       camera.aspect = innerWidth / innerHeight;
       camera.updateProjectionMatrix();
@@ -2041,7 +3077,10 @@ const xrOptions = {
     }
   },
 };
+let xrObserver = null;
 if (showChrome(location.search))
-  installXrObserver(xrOptions).catch((error) =>
-    console.warn("XR observer not installed:", error),
-  );
+  installXrObserver(xrOptions)
+    .then((observer) => {
+      xrObserver = observer;
+    })
+    .catch((error) => console.warn("XR observer not installed:", error));

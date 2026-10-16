@@ -68,6 +68,20 @@ Gaussian profile integrated over the sphere: with an acceptance of 8.23° its la
 0.0007 for caps up to 10° in radius, 0.0022 up to 30°, 0.0046 up to 60° and 0.0076 up to 89°
 (coverage is a share, 0 to 1).
 
+`tests/test_optics_oracle.py` independently integrates the acceptance profile with Sobol
+3D rays and closest-approach sphere hits, without using the production cap quadrature or
+Rice CDF as its reference. The numerical checks allow 0.0005 absolute spherical error and
+0.0085 planar error at acceptance 8.23° for the declared test cases. This checks the assumed
+profile's geometry, not its physiology, the missing head registration or a camera renderer.
+
+The separate `scripts/check_optics_camera.py` oracle uses FlyGym 2.1.0's actual eye cameras
+and renderer, with the body hidden to isolate a synthetic target. At 1024×1024, all six
+left/right centred, offset and approaching-target cases pass the predeclared one-pixel
+silhouette erosion/dilation interval plus the existing planar error allowance. The
+[rendered-camera record](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/optics-camera-2026-10-15.json)
+retains the absolute errors (up to 0.0122) and pixel bounds. It qualifies these synthetic
+camera cases, not the missing MaleCNS-head registration or a physiological transfer.
+
 ## T4/T5 direction selectivity through the eye (lock, 2026-10-13)
 
 `eye.edge_coverage` moves a straight edge across each eye's measured columns (direction per

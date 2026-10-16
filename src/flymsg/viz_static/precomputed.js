@@ -332,11 +332,14 @@ export function fragmentTransform(
 
 /** Axis-aligned bounds of a fragment's chunk, in the same space as fragmentTransform. */
 export function fragmentBounds(manifest, lod, pos, transform) {
-  const min = [], max = [];
+  const min = [],
+    max = [];
   for (let a = 0; a < 3; a++) {
     const side = manifest.chunkShape[a] * 2 ** lod;
-    const lo = manifest.gridOrigin[a] + manifest.vertexOffsets[lod][a] + side * pos[a];
-    const d = transform[a * 5], t = transform[a * 4 + 3];
+    const lo =
+      manifest.gridOrigin[a] + manifest.vertexOffsets[lod][a] + side * pos[a];
+    const d = transform[a * 5],
+      t = transform[a * 4 + 3];
     min.push(d * lo + t);
     max.push(d * (lo + side) + t);
   }
@@ -357,10 +360,15 @@ export function parseSkeleton(buf) {
 }
 
 /** Legacy mesh fragment: uint32 nv; float32 xyz[nv]; uint32 triangles[...]. */
-export function parseLegacyMesh(buf) {
+export function parseLegacyMesh(buf, { copy = true } = {}) {
   const nv = new DataView(buf).getUint32(0, true);
   return {
-    vertices: new Float32Array(buf.slice(4, 4 + 12 * nv)),
-    indices: new Uint32Array(buf.slice(4 + 12 * nv)),
+    // Transferred worker-owned input can be viewed without a redundant copy.
+    vertices: copy
+      ? new Float32Array(buf.slice(4, 4 + 12 * nv))
+      : new Float32Array(buf, 4, 3 * nv),
+    indices: copy
+      ? new Uint32Array(buf.slice(4 + 12 * nv))
+      : new Uint32Array(buf, 4 + 12 * nv),
   };
 }
