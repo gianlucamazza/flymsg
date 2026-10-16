@@ -99,6 +99,15 @@ function ranges(index, owner) {
   return result;
 }
 export function compilePageLods(page, { base = 1, count = 10 } = {}) {
+  const started = performance.now();
+  const preparation = {
+    paths_ms: 0,
+    hierarchy_ms: 0,
+    boxes_ms: 0,
+    cuts_ms: 0,
+    verification_ms: 0,
+    assembly_ms: 0,
+  };
   const positions = page.attributes.position.array,
     owner = page.attributes.aNeuron.array;
   const anchors = page.boundedSource.anchors,
@@ -124,7 +133,11 @@ export function compilePageLods(page, { base = 1, count = 10 } = {}) {
       a.edges.reduce((x, y) => Math.min(x, y), Infinity) -
       b.edges.reduce((x, y) => Math.min(x, y), Infinity),
   );
+  preparation.paths_ms = performance.now() - started;
+  let stage = performance.now();
   const errors = records.map((path) => hierarchy(positions, path.vertices));
+  preparation.hierarchy_ms = performance.now() - stage;
+  stage = performance.now();
   const boxes = {};
   let magnitude = 1;
   for (let v = 0; v < owner.length; v++) {
@@ -145,13 +158,17 @@ export function compilePageLods(page, { base = 1, count = 10 } = {}) {
     ranges: ranges(page.index, owner),
     errors: Object.fromEntries(Object.keys(boxes).map((k) => [k, 0])),
   };
+  preparation.boxes_ms = performance.now() - stage;
   const variants = new Map([[0, full]]);
   let bytes = 0;
   for (let level = count; level >= 1; level--) {
+    stage = performance.now();
     const tolerance = base * 2 ** (level - 1);
     const cuts = records.map((p, r) =>
       Array.from(errors[r].keys()).filter((i) => errors[r][i] > tolerance),
     );
+    preparation.cuts_ms += performance.now() - stage;
+    stage = performance.now();
     const proof = verifySpatialPaths(
       positions,
       page.index,
@@ -159,6 +176,8 @@ export function compilePageLods(page, { base = 1, count = 10 } = {}) {
       records,
       cuts,
     );
+    preparation.verification_ms += performance.now() - stage;
+    stage = performance.now();
     const length = cuts.reduce((sum, k) => sum + 2 * (k.length - 1), 0);
     if (
       length >= page.index.length ||
@@ -193,11 +212,13 @@ export function compilePageLods(page, { base = 1, count = 10 } = {}) {
     };
     variants.set(level, record);
     bytes += index.byteLength;
+    preparation.assembly_ms += performance.now() - stage;
   }
   return {
     variants,
     metadata: {
       boxes,
+      preparation,
       levels: [...variants].map(([id, v]) => ({
         id,
         ranges: v.ranges,

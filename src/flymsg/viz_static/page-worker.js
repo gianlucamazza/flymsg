@@ -7,7 +7,9 @@ import { PrimitivePages, pageTransfers } from "./primitive-pages.js";
 
 let builder, pending, sortCenter;
 const catalogues = new Map();
-let nextPage = 0;
+let nextPage = 0,
+  anchorMs = 0,
+  packingMs = 0;
 self.onmessage = ({ data }) => {
   try {
     if (data.kind === "bounded-compose") {
@@ -39,13 +41,17 @@ self.onmessage = ({ data }) => {
         }
         sortCenter = min.map((v, axis) => (v + max[axis]) / 2);
       }
-      if (builder.preserveAnchors)
+      if (builder.preserveAnchors) {
+        const started = performance.now();
         data.source.anchors = sourceAnchors(
           data.source.attributes.position.array.length / 3,
           data.source.index,
         );
+        anchorMs += performance.now() - started;
+      }
       pending = builder.append(data.source);
     }
+    const packingStarted = performance.now();
     let page = null;
     if (data.kind === "finish") page = builder.flush();
     else if (pending) {
@@ -53,8 +59,13 @@ self.onmessage = ({ data }) => {
       if (result.done) pending = null;
       else page = result.value;
     }
+    packingMs += performance.now() - packingStarted;
     if (page?.boundedSource) {
       const catalogue = compilePageLods(page);
+      catalogue.metadata.preparation.source_anchor_ms = anchorMs;
+      anchorMs = 0;
+      catalogue.metadata.preparation.packing_ms = packingMs;
+      packingMs = 0;
       const pageId = nextPage++;
       catalogues.set(pageId, catalogue);
       page.bounded = { ...catalogue.metadata, page: pageId };

@@ -23,6 +23,9 @@ export class BoundedSelections {
     page.bounded = metadata;
     page.fullIndex = page.object.geometry.index;
     this.pages.push(page);
+    this.preparation ??= {};
+    for (const [name, value] of Object.entries(metadata.preparation ?? {}))
+      this.preparation[name] = (this.preparation[name] ?? 0) + value;
     this.cachedEyeKey = null;
   }
   bounds(eyes) {
@@ -92,6 +95,7 @@ export class BoundedSelections {
     this.current = this.pending = this.desired = null;
     this.inflight = false;
     this.pages = [];
+    this.preparation = {};
     this.error = null;
     this.initialized = false;
     this.cachedEyeKey = null;
@@ -279,6 +283,7 @@ export class BoundedSelections {
   report() {
     return {
       initialized: this.initialized,
+      worker_preparation_ms: this.preparation,
       state: this.error
         ? "fallback-full"
         : this.inflight || this.pending
