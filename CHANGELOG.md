@@ -4,7 +4,7 @@
 
 - **Version-2 fixtures on the GPU, qualified** (#39, #215). The DX12 lane runs graded neurons and electrically coupled groups, spikelets included: the groups step in float64 in the CPU's order, and the graded release divides as a correctly rounded float32. On a Series S all 72 acceptance fixtures (12 version 1, 60 version 2) match the CPU oracle bit for bit (`docs/evidence/series-s-gpu-parity-v2-2026-10-16.json`), and the whole-connectome battery still matches in all 30 runs. The host also refuses a graded span whose reciprocal would leave the normal float32 range. Only the dynamic continuous clamp stays refused, as on the C++ executor.
 
-- **Status and the 2026-10-16 literature re-read.** The roadmap, the README and the status lines name the verdicts already recorded in 0.8.48. They also record that version-2 fixtures are implemented on the GPU lane (#215) and that a Series S measurement of them is not archived. `docs/leads.md` records what was re-read; the four blockers stay. No lock, no run, and no model change.
+- **Status and the 2026-10-16 literature re-read.** The roadmap, the README and the status lines name the verdicts already recorded in 0.8.48. The literature re-read changed no lock, no scored run, and no model default. Version-2 GPU fixtures (#215) now have the Series S measurement recorded above (#216); the dynamic continuous clamp stays refused. `docs/leads.md` records what was re-read; the four blockers stay.
 
 - **Lighter batch preparation** (#40, #214). A console batch builds its runtimes one at a time and exports each fixture in memory: the whole-connectome battery prepares in 25.2 s instead of 97.6 s, peaking at 2.6 GB instead of 11.3 GB, with byte-identical files.
 
