@@ -143,7 +143,16 @@ export async function boundedExperiment(
       blocks = [],
       images = {};
     const draw = () => {
+      r.info.reset();
       view.composer.render();
+      const expected =
+        skeletons.geometry === candidate
+          ? index.length / 2
+          : neurons.reduce((sum, n) => sum + n.original_edges, 0);
+      if (r.info.render.lines !== expected)
+        throw Error(
+          "Rendered skeleton count differs from independently checked index",
+        );
       gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     };
     for (let repeat = 0; repeat < 3; repeat++) {
@@ -168,7 +177,11 @@ export async function boundedExperiment(
             sha256: await digest(pixels),
             pixels: pixels.slice(),
           };
-        arms.push({ mode, serialized_wall_ms: samples });
+        arms.push({
+          mode,
+          submitted_lines: r.info.render.lines,
+          serialized_wall_ms: samples,
+        });
       }
       blocks.push({ repeat, arms });
     }
