@@ -260,6 +260,10 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 
 ## Documentation
 
+- [Evidence-gated delivery milestones](docs/milestones.md): S0–S4 scientific
+  gates, H1/H2 independent hardware tracks, issue ownership, acceptance and
+  explicit no-go rules.
+
 A fact has one home. The [roadmap](docs/roadmap.md#results) is the index of verdicts. A
 protocol stays in its own page and in `validation/*.yaml`. A negative result is one line in
 the [findings log](docs/validation.md#findings-log). A public source enters

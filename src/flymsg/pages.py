@@ -78,6 +78,7 @@ PAGES = (
         "Quest diagnosis",
     ),
     ("adr-observer-rendering", "docs/adr-observer-rendering.md", "Rendering ADR"),
+    ("milestones", "docs/milestones.md", "Milestones"),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("approximations", "docs/approximations.md", "Approximations"),
     ("leads", "docs/leads.md", "Leads"),
