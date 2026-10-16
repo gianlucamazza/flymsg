@@ -16,12 +16,14 @@ from flymsg import (
     dimorphism,
     draws,
     gf_looming,
+    identifiability,
     intervention,
     jump3d_lock,
     kc_sparseness,
     managed,
     manifest,
     partner_followup,
+    path_metrics,
     plasticity,
     prereg,
     sensitivity,
@@ -69,6 +71,7 @@ from flymsg.cli.validation import (
     cmd_convergence,
     cmd_gf_looming,
     cmd_nulls,
+    cmd_path_metrics,
     cmd_select_model,
     cmd_sensitivity,
     cmd_song,
@@ -119,6 +122,7 @@ COMMANDS = {
     "sensitivity": cmd_sensitivity,
     "baselines": cmd_baselines,
     "convergence": cmd_convergence,
+    "path-metrics": cmd_path_metrics,
     "song": cmd_song,
     "gf-looming": cmd_gf_looming,
     "apl-claws": cmd_apl_claws,
@@ -155,6 +159,7 @@ MALECNS_ONLY = (
     "sensitivity",
     "baselines",
     "convergence",
+    "path-metrics",
     "song",
     "gf-looming",
     "apl-claws",
@@ -210,6 +215,12 @@ def main() -> None:
             return print(baselines.summary())
         if a.cmd == "convergence" and not a.run:
             return print(convergence.summary())
+        if a.cmd == "path-metrics" and not a.run:
+            return print(path_metrics.summary())
+        if a.cmd == "identifiability":
+            if not a.run:
+                return print(identifiability.summary())
+            return print(f"report -> {identifiability.write_report()}")
         if a.cmd == "song" and not a.run:
             return print(song.summary())
         if a.cmd == "gf-looming" and not a.run:
@@ -276,6 +287,10 @@ def main() -> None:
     except baselines.BaselineError as err:
         sys.exit(f"flymsg: {err}")
     except convergence.ConvergenceError as err:
+        sys.exit(f"flymsg: {err}")
+    except path_metrics.PathMetricsError as err:
+        sys.exit(f"flymsg: {err}")
+    except identifiability.IdentifiabilityError as err:
         sys.exit(f"flymsg: {err}")
     except song.SongError as err:
         sys.exit(f"flymsg: {err}")

@@ -161,6 +161,18 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--workers", type=int, default=1)
     s.add_argument("--checkpoint", type=Path)
     s = sub.add_parser(
+        "identifiability",
+        help="print the locked sensitivity-grid re-read, or write it with --run (SF2; no new simulation)",
+    )
+    s.add_argument("--run", action="store_true")
+    s = sub.add_parser(
+        "path-metrics",
+        help="print the locked weak-pathway timestep metrics, or run them with --run (SF2)",
+    )
+    s.add_argument("--run", action="store_true")
+    s.add_argument("--workers", type=int, default=1)
+    s.add_argument("--checkpoint", type=Path)
+    s = sub.add_parser(
         "song",
         help="print the locked pulse/sine benchmark (Pacheco et al. 2021), or run it with --run (#36)",
     )

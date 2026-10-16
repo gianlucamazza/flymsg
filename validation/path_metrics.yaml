@@ -1,0 +1,59 @@
+# Weak-pathway timestep metrics (SF2, issue 148). Version 1, fixed 2026-10-16 before any run.
+# Changing a locked field requires incrementing `version` and updating `content_sha256` and
+# flymsg.path_metrics.VERSION_HASHES. `flymsg path-metrics` prints this file; `--run` executes it.
+version: 1
+content_sha256: 6bc92e5a48e3985b960fa84354a402d5aff6b25ac46c5448fc5615a5ebb7e42f
+yaml_subset: 2
+evidence: none
+evidence_none: "A numerical check of latencies, jitter, recruitment and rates. Every parameter is the live default of sim.Params. None is a newly sourced biological value."
+
+issue: 148
+claim:
+  kind: numerical_path_metrics
+  scored: false
+  reason: "Checks whether first-spike latency, first-spike jitter, recruitment and target rate at the default timestep stay within the finest timestep's seed variability. It does not replace the convergence v1 rate-and-holds gate, does not select a timestep, and does not change sim.Params."
+
+seen_before_lock: "convergence v1 (results/convergence, seeds 0-4, dt 0.1 against 0.025 ms) already showed rate-and-holds convergence and these shifts, which do not decide this protocol: giant-fiber TTMn latency 35 to 82 ms, sugar MN9 latency 40.5 to 66.4 ms, pIP10 dPR1 latency 12.9 to 7.4 ms, sugar recruited neurons 439 to 155. No run of these six cases at seeds 5000-5004 has been made."
+
+grid:
+  dt_ms: [0.1, 0.05, 0.025]
+  dt_rule: "halvings of the default; delay (1.8 ms) and t_ref (2.2 ms) stay whole numbers of steps at each"
+  seed0: 5000
+  seeds: 5
+  seed_rule: "disjoint from convergence and sensitivity seeds 0-4, from the baseline shuffles 4000-4198, and from the song, looming and partner-followup seeds"
+  rate_hz: 100.0
+  stim_ms: 300.0
+  duration_ms: 600.0
+
+cases:
+  positive:
+    - looming escape
+    - giant fiber output
+    - P1 courtship drive
+    - pIP10 song pathway
+    - sugar feeding
+  negative: [bitter feeding]
+
+metrics_decide: [latency, jitter, recruited, rate]
+
+quanta:
+  latency_ms: 0.1
+  jitter_ms: 0.1
+  recruited_neurons: 1
+  rate: "one spike in stim_ms"
+
+decides:
+  reference: "the finest timestep (0.025 ms)"
+  at: "the default timestep (0.1 ms); 0.05 ms is reported and does not decide"
+  per_metric: "latency, recruited and rate converge when the absolute difference of seed medians is at most the finest timestep's seed range, and never less than the quantum. Jitter is the max-minus-min of the first spikes; it converges when the absolute difference of those ranges is at most the finest range, and never less than the quantum."
+  silent: "latency and jitter are indeterminate when any seed at that timestep or at the reference has no spike. A silent response is not a failure. Recruitment and rate stay decided, including zeros."
+  verdict: "one line per metric: converged, not_converged with the case/target list, or converged with the indeterminate responses named. This verdict does not rewrite convergence v1."
+
+limits:
+  - "Poisson input is drawn per step, so the input streams differ between timesteps; responses are compared as seed statistics, not spike for spike."
+  - "The best neuron of each target type is picked at each timestep, as validate.respond does, so a left/right switch can compare different neurons."
+  - "Jitter has one number per response and timestep, so its tolerance is the finest timestep's own jitter, floored at the quantum, not a second seed replicate."
+  - "Five seeds give a coarse range. A response near that range can change status with the seeds as well as with the step."
+  - "The shifts named in seen_before_lock were read before this lock. They motivate the metrics. They are not this protocol's result."
+
+defaults_changed: false
