@@ -257,3 +257,30 @@ def test_unknown_proximity_format_is_rejected(monkeypatch):
     monkeypatch.setattr(quest, "adb", lambda *args: "unknown firmware")
     with pytest.raises(RuntimeError, match="unrecognized"):
         quest.proximity_state("192.168.1.146:5555")
+
+
+def test_readback_readiness_cannot_authorize_xr_receipts(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    session = quest.QuestSite("192.168.1.146:5555", tmp_path)
+    session.endpoint, session.target, session.url = "endpoint", "owned", "url"
+    session.server = SimpleNamespace(ready_document_id="previous")
+    monkeypatch.setattr(
+        quest, "snapshot", lambda *a, **k: {"power": "mWakefulness=Awake"}
+    )
+    calls = []
+
+    def ready(*args, **kwargs):
+        calls.append(kwargs)
+        return {
+            "eligible": True,
+            "state": {"after": {"document_id": "current"}},
+            "reasons": [],
+        }
+
+    monkeypatch.setattr(quest, "browser_preflight", ready)
+    assert session.wait_ready(readback_only=True)["eligible"]
+    assert all(call["readback_only"] for call in calls)
+    assert session.server.ready_document_id is None
+    assert session.wait_ready()["eligible"]
+    assert session.server.ready_document_id == "current"

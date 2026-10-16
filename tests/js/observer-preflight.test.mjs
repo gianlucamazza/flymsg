@@ -60,3 +60,37 @@ for (const damage of [
     await observerPreflight(browser, url, { verifySources: false });
     assert.equal(debuggers, damage === "none" || damage === "source" ? 1 : 0);
   });
+
+test("explicit idle readback preparation cannot authorize cadence or immersive frames", async () => {
+  const url = "http://localhost:8894/live/looming/?check";
+  const state = {
+    url,
+    visibility: "visible",
+    frame_callbacks: 0,
+    submitted_frames: 0,
+    before: { document_id: "a" },
+    after: { document_id: "a", identity: { context_ready: true } },
+    stats: "x · 0 loading · y",
+    fidelity: { status: "ready", gpu_ready: true },
+    immersive: false,
+  };
+  const browser = { evaluate: async () => state };
+  const options = { verifySources: false, readbackOnly: true };
+  assert((await observerPreflight(browser, url, options)).eligible);
+  assert(
+    !(await observerPreflight(browser, url, { verifySources: false })).eligible,
+  );
+  assert(
+    !(
+      await observerPreflight(browser, url, {
+        ...options,
+        requireRendering: true,
+      })
+    ).eligible,
+  );
+  state.immersive = true;
+  assert(!(await observerPreflight(browser, url, options)).eligible);
+  state.immersive = false;
+  state.visibility = "hidden";
+  assert(!(await observerPreflight(browser, url, options)).eligible);
+});

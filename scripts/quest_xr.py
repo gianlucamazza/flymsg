@@ -110,7 +110,9 @@ def node_json(script, *args, timeout=45):
     return json.loads(result.stdout), result.returncode
 
 
-def browser_preflight(endpoint, url, *, verify_sources=True, target=None):
+def browser_preflight(
+    endpoint, url, *, verify_sources=True, target=None, readback_only=False
+):
     if target is None:
         with urllib.request.urlopen(endpoint + "/json/list", timeout=10) as response:
             targets = json.load(response)
@@ -124,6 +126,7 @@ def browser_preflight(endpoint, url, *, verify_sources=True, target=None):
         target,
         url,
         *([] if verify_sources else ["--health"]),
+        *(["--readback-only"] if readback_only else []),
     )
     return result
 
@@ -522,7 +525,7 @@ class QuestSite:
         self.target = created["targetId"]
         return self.url
 
-    def wait_ready(self, *, timeout=600, evidence=None):
+    def wait_ready(self, *, timeout=600, evidence=None, readback_only=False):
         deadline = time.monotonic() + timeout
         path = evidence or self.out / "preflight.jsonl"
         while True:
@@ -535,6 +538,7 @@ class QuestSite:
                         self.url,
                         verify_sources=False,
                         target=self.target,
+                        **({"readback_only": True} if readback_only else {}),
                     )
                     if check["eligible"]:
                         check = browser_preflight(
@@ -542,6 +546,7 @@ class QuestSite:
                             self.url,
                             verify_sources=True,
                             target=self.target,
+                            **({"readback_only": True} if readback_only else {}),
                         )
                 except (
                     OSError,
@@ -564,11 +569,14 @@ class QuestSite:
                 stream.flush()
                 os.fsync(stream.fileno())
             if check["eligible"]:
-                self.server.ready_document_id = check["state"]["after"]["document_id"]
+                self.server.ready_document_id = (
+                    None if readback_only else check["state"]["after"]["document_id"]
+                )
                 self.record(
                     "progress.json",
                     {
                         "phase": "ready",
+                        "readback_only": readback_only,
                         "document_id": self.server.ready_document_id,
                         "url": self.url,
                         "qualification": "not-scored",

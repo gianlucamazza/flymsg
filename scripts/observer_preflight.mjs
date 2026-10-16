@@ -10,6 +10,7 @@ export async function observerPreflight(
     verifySources = true,
     expectedDocument = null,
     requireRendering = false,
+    readbackOnly = false,
   } = {},
 ) {
   const state = await browser.evaluate(`(async() => {
@@ -40,7 +41,10 @@ export async function observerPreflight(
     reasons.push("document-changed");
   if (state.after.capture_running) reasons.push("measurement-active");
   if (state.after.suspended) reasons.push("application-suspended");
-  if (!(state.frame_callbacks > 1)) reasons.push("no-application-callbacks");
+  if (readbackOnly && (requireRendering || state.immersive))
+    reasons.push("readback-only-requires-idle-desktop");
+  if (!readbackOnly && !(state.frame_callbacks > 1))
+    reasons.push("no-application-callbacks");
   if ((requireRendering || state.immersive) && !(state.submitted_frames > 1))
     reasons.push("no-submitted-frames");
   if (state.fidelity.status !== "ready") reasons.push("incomplete-anatomy");
@@ -80,6 +84,7 @@ export async function observerPreflight(
     state,
     sources,
     source_verification: verifySources && Object.keys(sources).length > 0,
+    readback_only: readbackOnly,
     reasons,
     eligible: reasons.length === 0,
   };
@@ -96,6 +101,7 @@ if (
     const result = await observerPreflight(browser, expectedUrl, {
       verifySources: !flags.includes("--health"),
       requireRendering: flags.includes("--rendering"),
+      readbackOnly: flags.includes("--readback-only"),
     });
     console.log(JSON.stringify(result));
     if (!result.eligible) process.exitCode = 1;

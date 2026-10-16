@@ -94,7 +94,9 @@ def main():
     )
     with session:
         session.open(representation="skeleton", uploads=False, culling=False)
-        ready = session.wait_ready(timeout=600, evidence=args.out / "preflight.jsonl")
+        ready = session.wait_ready(
+            timeout=600, evidence=args.out / "preflight.jsonl", readback_only=True
+        )
         if not ready["eligible"]:
             raise RuntimeError("source scene unavailable: " + str(ready["reasons"]))
         results = {}

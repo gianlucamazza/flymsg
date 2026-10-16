@@ -16,7 +16,9 @@ const write = (n, d) =>
   });
 const browser = await localObserver(endpoint, target);
 try {
-  const pre = await observerPreflight(browser, browser.url);
+  const pre = await observerPreflight(browser, browser.url, {
+    readbackOnly: true,
+  });
   write("preflight.json", pre);
   if (!pre.eligible || new URL(browser.url).searchParams.get("uploads") === "1")
     throw Error("Ready original observer required");
