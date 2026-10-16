@@ -45,8 +45,12 @@ from flymsg.runtime import CpuRuntime
 PROTOCOL = {
     "schema": "flymsg.console_sustained_protocol/v1",
     "declared": "2026-10-16, before any sustained measurement",
-    "revision": 2,
+    "revision": 3,
     "revision_reason": "attempt 1 (1d1fde5) kept each job's fixture, checkpoint and output on the console; the third 500k-step upload got HTTP 500 and the script stopped without a record. Revision 2 deletes a job's large files from the console once its output is downloaded and hashed, and records a Device Portal error as the job's final state",
+    "revision_3": "cross-vendor review fixes, no change to cases or measures: a failed "
+    "result or output read-back is recorded as `readback_failed`; the console copy is "
+    "deleted only when the downloaded bytes match the worker's reported hash; a zero first "
+    "window gives no last/first ratio instead of an exception",
     "console_cleanup": ["fixture.bin", "checkpoint.bin", "output.bin"],
     "model": "MaleCNS v1.0 default model, version-1 fixture (no graded or coupled neurons)",
     "rate_hz": validate.RATE_HZ,
@@ -215,27 +219,37 @@ def one_job(portal, args, sha, out, rt, case, index) -> dict:
         "window_steps_per_s": windows(samples, PROTOCOL["window_s"]),
     }
     if record["final_state"] == "completed":
-        result = job.result()
-        record["advance_steps_per_s"] = result["advance_steps"] / (
-            result["advance_ms"] / 1000.0
-        )
-        t1 = time.time()
-        portal.get(args.package, job.rel, "output.bin", job.folder / "output.bin")
-        record["download_s"] = time.time() - t1
-        record["output_bytes"] = (job.folder / "output.bin").stat().st_size
-        record["output_sha256"] = hashlib.sha256(
-            (job.folder / "output.bin").read_bytes()
-        ).hexdigest()
-        record["reported_sha_matches"] = (
-            record["output_sha256"] == result["output_sha256"]
-        )
-        # the output is local and hashed: free the console's storage for the next job
-        for name in PROTOCOL["console_cleanup"]:
-            try:
-                portal.delete(args.package, job.rel, name)
-            except PortalError as exc:
-                record.setdefault("cleanup_errors", []).append(str(exc))
+        try:
+            readback(portal, args, job, record)
+        except (PortalError, KeyError, ValueError, OSError) as exc:
+            # completed on the console but not read back: recorded, never a pass
+            record["final_state"] = "readback_failed"
+            record["error"] = f"{type(exc).__name__}: {exc}"
     return record, job
+
+
+def readback(portal, args, job: Job, record: dict) -> None:
+    """Result, output download and hash; the console copy is deleted only once the local
+    bytes match the hash the worker reported, so a transfer fault keeps its evidence."""
+    result = job.result()
+    record["advance_steps_per_s"] = result["advance_steps"] / (
+        result["advance_ms"] / 1000.0
+    )
+    t1 = time.time()
+    portal.get(args.package, job.rel, "output.bin", job.folder / "output.bin")
+    record["download_s"] = time.time() - t1
+    record["output_bytes"] = (job.folder / "output.bin").stat().st_size
+    record["output_sha256"] = hashlib.sha256(
+        (job.folder / "output.bin").read_bytes()
+    ).hexdigest()
+    record["reported_sha_matches"] = record["output_sha256"] == result["output_sha256"]
+    if not record["reported_sha_matches"]:
+        return
+    for name in PROTOCOL["console_cleanup"]:
+        try:
+            portal.delete(args.package, job.rel, name)
+        except PortalError as exc:
+            record.setdefault("cleanup_errors", []).append(str(exc))
 
 
 def parity(job: Job) -> bool:
@@ -244,7 +258,7 @@ def parity(job: Job) -> bool:
     try:
         check(job.rt, read_output(job.folder / "output.bin", job.fixture))
         return True
-    except AssertionError:
+    except (AssertionError, ValueError):
         return False
 
 
@@ -256,7 +270,8 @@ def summary(values: list[float]) -> dict:
         "min": min(values),
         "median": statistics.median(values),
         "max": max(values),
-        "last_over_first": values[-1] / values[0],
+        # a stalled first window has no ratio; the job's state records the stall
+        "last_over_first": values[-1] / values[0] if values[0] else None,
     }
 
 
