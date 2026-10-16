@@ -111,3 +111,20 @@ coverage, error and performance thresholds remain unchanged. Desktop correctness
 still records its actual per-document camera; it is independent of timed arms.
 The geometry audit now uses the camera/projection returned by the original
 capture, including its matrix reconstruction, rather than the undecomposed input.
+
+## Final-source hardware status
+
+Clean source `6b2865a3c9bbb91be59e36c22dc3ccf428362ad0` passed sampled
+Quest 2 static correctness at 4, 16 and 64 MiB, each covering all 1,128
+neurons and 8,258,589 source segments. These are readback-only checks,
+not cadence or physical XR admission.
+
+The first 4 MiB dense ABBA block was excluded before completion. Collection
+subsequently terminated on a Wi-Fi ADB device-identity timeout while opening
+the next configuration. No complete valid ABBA block or final-source performance
+benefit was established. Initial cleanup also encountered the disconnected
+transport; recovery is recorded separately rather than overwriting that failure.
+
+The implementation can merge as an explicit diagnostic mode. Performance
+admission and physical XR qualification remain open under #177 and #24;
+merging this change does not satisfy either gate.
