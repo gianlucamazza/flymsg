@@ -71,6 +71,22 @@ worktrees (v0.8.41): `results/behavior`, `results/jump/intact`, `results/jump/dn
 `results/loop`. Their source commit alone does not reproduce them; the index marks them
 `dirty`.
 
+## Local inventory audit (2026-10-16)
+
+`uv run python scripts/replication_audit.py --out NEW_FILE.json` independently checks
+the indexed source commits, the protocol content hash **at each run's source commit**,
+and the complete archived output inventory and checksums. It never runs a simulation
+or reads external held-out recordings. Output creation is exclusive. Integrity failure
+returns a nonzero exit status. Known historical provenance exceptions are reported
+separately from checksum failures, and external sign-off remains absent.
+
+The [29-result ledger](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/replication-audit-2026-10-16.json) records four dirty
+historical source trees and three unversioned jump/loop protocols. The replication
+index now identifies the GF looming v1/v2 and song v1 locks even though those commands
+do not use `managed.PROTOCOLS`; execution semantics and archived results are unchanged.
+Input licences and acquisition obligations remain in the data table above. Local
+integrity success does not establish that an external operator can acquire every input.
+
 ## A rerun done here
 
 The synapse weight rule v1 was rerun from its source commit `78f0673` in a clean detached
@@ -101,7 +117,11 @@ against it.
 | Residual partner scan v2/v3; partner follow-up v1   | Causal prediction                                 | DNp02 and DNp06; DNp06 alone reaches the jump bit; no animal test yet            |
 | Held-out behavior milestone                         | none                                              | no eligible case left in the frozen partition                                    |
 | Sensitivity grid v1; timestep convergence v1        | Model diagnostic                                  | where responses hold over w_syn and th_jump; rates converge at 0.1 ms            |
-| T4/T5 v1–v3                                         | Reproduction (attempted)                          | neither                                                                          |
+| T4/T5 v1–v4                                         | Reproduction (attempted)                          | neither                                                                          |
+| GF looming v1/v2                                    | Reproduction (attempted)                          | no-go / uninformative; no validated transducer                                   |
+| Song v1                                             | Reproduction (attempted)                          | uninformative; stopped before held-out access                                    |
+| APL claw contrast v1                                | Reproduction (attempted)                          | uninformative; KC readout saturates or averages below rest                       |
+| Simple wiring baselines v1                          | Model diagnostic                                  | seven positive responses specific against shuffles; no physiological validation  |
 | Synapse weight rule v1                              | Reproduction (attempted)                          | undecided                                                                        |
 | NeuroMechFly jump v1                                | Reproduction (attempted)                          | short                                                                            |
 | Male vs female synapse counts; sugar set, LB3 split | Model diagnostic                                  | dataset comparisons                                                              |

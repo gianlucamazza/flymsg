@@ -59,6 +59,12 @@ def test_native_full_acceptance(native_exe, tmp_path):
     )
     report = json.loads((tmp_path / "report.json").read_text())
     assert report["passed"] == 72
+    assert report["qualification"] == {
+        "qualified": True,
+        "expected_cases": 72,
+        "expected_refusals": 12,
+        "errors": [],
+    }
     assert len(report["unsupported"]) == 12
     assert {c["extension"] for c in report["unsupported"]} == {
         "gap-continuous-refractory"
@@ -197,7 +203,7 @@ def test_the_console_lifecycle_fixture_is_version_one_and_long(tmp_path):
     fixture = tmp_path / "lifecycle.bin"
     meta = export_fixture(oracle, fixture)
     header = np.frombuffer(fixture.read_bytes()[:64], dtype="<u4")
-    assert int(header[1]) == 1  # the DX12 lane runs version-1 fixtures only
+    assert int(header[1]) == 1  # the default lifecycle fixture remains version 1
     assert meta["steps"] == module.STEPS
     # at least 20 s of advance at the 44k steps/s measured on the console, so a cancel
     # or stop sent after a 1 s status poll lands mid-run

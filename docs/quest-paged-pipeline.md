@@ -1,8 +1,9 @@
 # Immutable GPU page candidate
 
-Status: implementation candidate, **not a Quest 2 qualification**. Both complete
-original surfaces and complete original skeletons must pass separately before
-PR #205 leaves draft. This implements resource scheduling within the accepted
+Status: experimental implementation merged in #205 on 2026-10-16,
+**not a Quest 2 qualification**. Both complete original surfaces and complete
+original skeletons must pass separately before hardware support is claimed in #177.
+This implements resource scheduling within the accepted
 [observer rendering ADR](adr-observer-rendering.md); it does not amend that ADR.
 
 ## Runtime contract
@@ -153,6 +154,12 @@ These correctness results do not establish a performance improvement on Quest.
 
 ## Outstanding acceptance
 
+The [2026-10-16 physical attempt](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-qualification-2026-10-16.json)
+now reaches complete 4 MiB paged skeletons on Quest. Its partial 90 Hz immersive
+session fails timing (p95 723.923 ms, p99 773.669 ms; 94.58% estimated missed slots)
+while content checks pass. A later 72/90 Hz aggregate is indeterminate, not a pass.
+No complete surface or 4/16/64 MiB qualification is established by this attempt.
+
 - Full original surfaces still obey the existing explicit admission capacity.
   A complete selection exceeding that capacity is unsupported, not rendered
   partially. This is **not** a measured Quest hardware limit. No automatic budget
@@ -170,6 +177,7 @@ These correctness results do not establish a performance improvement on Quest.
   compositor drops separate. At actual XR refresh require p95 <= 1.1 frame
   budgets, p99 <= 2 budgets and estimated missed slots <= 1%. Desktop targets
   60 Hz. Timing alone cannot override failed or unverified content readiness.
-- Keep the PR in draft until both representations pass on the exact candidate
-  tree with CI and hardware evidence. An alternative renderer, transport or host
+- Keep hardware qualification open until both representations pass on the exact
+  candidate tree with CI and hardware evidence. Merge of #205 did not pass these gates.
+  An alternative renderer, transport or host
   requires a separate accepted ADR; missing evidence never authorizes a fallback.

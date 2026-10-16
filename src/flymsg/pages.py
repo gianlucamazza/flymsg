@@ -69,6 +69,7 @@ PAGES = (
     ("related", "docs/related.md", "Related"),
     ("viz", "docs/viz.md", "3D view"),
     ("vee-qualification", "docs/vee-qualification.md", "VEE qualification"),
+    ("issue-resolution", "docs/issue-resolution.md", "Issue resolution"),
     ("observer-rendering", "docs/observer-rendering.md", "Observer rendering"),
     ("quest-paged-pipeline", "docs/quest-paged-pipeline.md", "GPU page candidate"),
     (

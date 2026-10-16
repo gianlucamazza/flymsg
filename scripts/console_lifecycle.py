@@ -1,6 +1,6 @@
 """Worker lifecycle on a console through Windows Device Portal (#40).
 
-Three runs of one synthetic version-1 fixture, long enough to be interrupted, each as a dx12
+Three runs of one synthetic fixture, long enough to be interrupted, each as a dx12
 job to the installed worker:
 
 - throughput: run to completion; steps per second over the advance, timed by the worker
@@ -34,9 +34,9 @@ from scipy import sparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from console_gpu_parity import ADAPTER, Portal
-from native_acceptance import check  # the acceptance comparator, unchanged
+from native_acceptance import EXTENSIONS, SUPPORTED, check
 
-from flymsg import sim
+from flymsg import runstore, sim
 from flymsg.native import export_fixture, read_output
 from flymsg.runtime import CpuRuntime
 
@@ -45,7 +45,9 @@ from flymsg.runtime import CpuRuntime
 N, STEPS, SEED, INPUTS = 2048, 1_000_000, 40, 2
 
 
-def oracle() -> CpuRuntime:
+def oracle(extension: str = "none") -> CpuRuntime:
+    if extension not in SUPPORTED:
+        raise ValueError("unqualified lifecycle extension")
     p = sim.Params()
     rng = np.random.default_rng(SEED)
     W = sparse.random(N, N, density=0.01, random_state=rng, format="csc")
@@ -58,6 +60,7 @@ def oracle() -> CpuRuntime:
         p=p,
         per_bin=1000,
         trace=np.arange(8),
+        **EXTENSIONS[extension],
     )
 
 
@@ -75,13 +78,14 @@ class Job:
         dataset: str = "synthetic",
         seed: int = SEED,
         scope: str = "lifecycle qualification fixture, not biological validation",
+        extension: str = "none",
     ):
         self.portal, self.package = portal, package
         self.id = str(uuid.uuid4())
         self.folder = out / self.id
         self.folder.mkdir(parents=True)
         self.rel = f"inbox\\{self.id}"
-        self.rt = oracle() if rt is None else rt
+        self.rt = oracle(extension) if rt is None else rt
         fixture = self.folder / "fixture.bin"
         meta = export_fixture(self.rt, fixture)
         self.steps = int(meta["steps"])
@@ -143,6 +147,11 @@ class Job:
         self.portal.get(
             self.package, self.rel, "output.bin", self.folder / "output.bin"
         )
+        actual_sha = hashlib.sha256(
+            (self.folder / "output.bin").read_bytes()
+        ).hexdigest()
+        if actual_sha != self.result()["output_sha256"]:
+            return False
         self.rt.advance_to(self.steps)
         try:
             check(self.rt, read_output(self.folder / "output.bin", self.fixture))
@@ -151,23 +160,59 @@ class Job:
             return False
 
 
-def app_call(portal: Portal, method: str, package: str, aumid: str) -> None:
+def app_call(
+    portal: Portal, method: str, package: str, aumid: str, *, force: bool = False
+) -> None:
     pkg = base64.b64encode(package.encode()).decode()
     if method == "DELETE":
-        portal.curl("DELETE", f"/api/taskmanager/app?package={pkg}")
+        portal.curl(
+            "DELETE",
+            f"/api/taskmanager/app?package={pkg}" + ("&forcestop=yes" if force else ""),
+        )
     else:
         app = base64.b64encode(aumid.encode()).decode()
         portal.curl("POST", f"/api/taskmanager/app?appid={app}&package={pkg}")
 
 
-def run(package: str, aumid: str, shader: Path, out: Path, lineage: dict) -> dict:
+def run(
+    package: str,
+    aumid: str,
+    shader: Path,
+    out: Path,
+    lineage: dict,
+    extension: str = "none",
+    force_stop: bool = False,
+) -> dict:
+    if any(
+        (out / name).exists()
+        for name in ("report.json", "progress.json", "failure.json")
+    ):
+        raise ValueError("lifecycle output already exists; choose a new directory")
+    out.mkdir(parents=True, exist_ok=True)
+    progress = {
+        "schema": "flymsg.console_lifecycle/v1",
+        "state": "running",
+        "passed": False,
+        "extension": extension,
+        "force_stop_requested": force_stop,
+    }
+
+    def save(phase, **fields):
+        progress.update(phase=phase, **fields)
+        runstore.atomic_json(out / "progress.json", progress)
+
+    save("connect")
     portal = Portal()
     sha = hashlib.sha256(shader.read_bytes()).hexdigest()
     done = {"completed", "failed", "cancelled"}
 
-    job = Job(portal, package, sha, out)
+    save("throughput")
+    job = Job(portal, package, sha, out, extension=extension)
     job.submit()
     final = job.wait(done)
+    expected_source = lineage.get("worker_source_commit")
+    if expected_source and final.get("source_commit") != expected_source:
+        raise RuntimeError("worker source differs from the declared package lineage")
     # FLYMSG_COMMIT baked into the worker, as its status reports it
     lineage = {**lineage, "worker_source_commit": final.get("source_commit")}
     rate = None
@@ -184,10 +229,13 @@ def run(package: str, aumid: str, shader: Path, out: Path, lineage: dict) -> dic
         "app_memory_limit_bytes": final.get("app_memory_limit_bytes"),
         "parity": final.get("state") == "completed" and job.parity(),
     }
+    save("cancel", throughput=throughput, package_lineage=lineage)
 
-    job = Job(portal, package, sha, out)
+    job = Job(portal, package, sha, out, extension=extension)
     job.submit()
     first = job.wait({"running"} | done)
+    if first.get("source_commit") != lineage["worker_source_commit"]:
+        raise RuntimeError("worker source changed before cancellation")
     job.control("cancel.json", "flymsg.worker_cancel/v1")
     final = job.wait(done)
     cancel = {
@@ -198,16 +246,27 @@ def run(package: str, aumid: str, shader: Path, out: Path, lineage: dict) -> dic
         and final.get("state") == "cancelled"
         and 0 < final.get("step", 0) < STEPS,
     }
+    save("stop_and_resume", cancel=cancel)
 
-    job = Job(portal, package, sha, out)
+    job = Job(portal, package, sha, out, extension=extension)
     job.submit()
     first = job.wait({"running"} | done)
-    app_call(portal, "DELETE", package, aumid)
+    if first.get("source_commit") != lineage["worker_source_commit"]:
+        raise RuntimeError("worker source changed before stop")
+    save("stop_and_resume", recovery_job_id=job.id, recovery_seen=first)
+    app_call(portal, "DELETE", package, aumid, force=force_stop)
     time.sleep(5)
     app_call(portal, "POST", package, aumid)
     waiting = job.wait({"suspended", "awaiting_recovery"} | done, timeout_s=120)
+    save("resume_upload", recovery_parked=waiting)
+    if waiting.get("state") not in {"suspended", "awaiting_recovery"}:
+        raise RuntimeError("worker did not park for recovery; no resume was uploaded")
+    if waiting.get("source_commit") != lineage["worker_source_commit"]:
+        raise RuntimeError("worker source changed during lifecycle qualification")
     job.control("resume.json", "flymsg.worker_resume/v1")
     final = job.wait(done)
+    if final.get("source_commit") != lineage["worker_source_commit"]:
+        raise RuntimeError("worker source changed during lifecycle qualification")
     recovery = {
         "seen_running": first.get("state") == "running",
         "parked_as": waiting.get("state"),
@@ -215,6 +274,7 @@ def run(package: str, aumid: str, shader: Path, out: Path, lineage: dict) -> dic
         "state": final.get("state"),
         "how": "Device Portal stop of the running app, restart, then a "
         "flymsg.worker_resume/v1",
+        "force_stop_requested": force_stop,
         "parity": final.get("state") == "completed" and job.parity(),
     }
     if final.get("state") == "completed":
@@ -224,6 +284,7 @@ def run(package: str, aumid: str, shader: Path, out: Path, lineage: dict) -> dic
         recovery["seen_running"]
         and recovery["parked_as"] in ("suspended", "awaiting_recovery")
         and recovery["parity"]
+        and (not force_stop or recovery["parked_as"] == "awaiting_recovery")
     )
 
     report = {
@@ -243,17 +304,19 @@ def run(package: str, aumid: str, shader: Path, out: Path, lineage: dict) -> dic
             "inputs": INPUTS,
             "seed": SEED,
             "synthetic": True,
+            "extension": extension,
         },
         "throughput": throughput,
         "cancel": cancel,
         "stop_and_resume": recovery,
         "passed": bool(throughput["parity"] and cancel["ok"] and recovery["ok"]),
-        "scope": "one synthetic version-1 fixture; not full-connectome throughput or "
+        "scope": "one synthetic fixture; not full-connectome throughput or "
         "biological validation",
     }
     (out / "report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n"
     )
+    save("finished", state="completed", passed=report["passed"])
     return report
 
 
@@ -266,13 +329,43 @@ if __name__ == "__main__":
     )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument(
+        "--extension",
+        choices=SUPPORTED,
+        default="none",
+        help="fixture extension; each requires its own physical trial",
+    )
+    parser.add_argument(
         "--lineage",
         type=Path,
         required=True,
         help="JSON of the installed package's lineage (CI run, source commit, msix hashes)",
     )
+    parser.add_argument(
+        "--force-stop",
+        action="store_true",
+        help="request WDP forcestop=yes; must recover without graceful suspension",
+    )
     a = parser.parse_args()
-    r = run(a.package, a.aumid, a.shader, a.out, json.loads(a.lineage.read_text()))
+    try:
+        r = run(
+            a.package,
+            a.aumid,
+            a.shader,
+            a.out,
+            json.loads(a.lineage.read_text()),
+            a.extension,
+            a.force_stop,
+        )
+    except (OSError, RuntimeError, KeyboardInterrupt) as exc:
+        failure = {
+            "schema": "flymsg.console_lifecycle/v1",
+            "state": "interrupted",
+            "passed": False,
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+        }
+        runstore.atomic_json(a.out / "failure.json", failure)
+        sys.exit(f"Lifecycle incomplete; retained progress/failure: {a.out}")
     keys = ("throughput", "cancel", "stop_and_resume", "passed")
     print(json.dumps({k: r[k] for k in keys}))
     sys.exit(0 if r["passed"] else 1)

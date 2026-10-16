@@ -32,6 +32,7 @@ def adb(serial, *args):
 def snapshot(serial):
     out = {"at": datetime.now(UTC).isoformat()}
     for key, args in {
+        "power": ("shell", "dumpsys", "power"),
         "battery": ("shell", "dumpsys", "battery"),
         "thermal": ("shell", "dumpsys", "thermalservice"),
         "browser_memory": ("shell", "dumpsys", "meminfo", "com.oculus.browser"),

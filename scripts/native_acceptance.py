@@ -4,7 +4,9 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 import tempfile
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -66,6 +68,61 @@ EXTENSIONS["gap-all-free"] = {
     "gap": sim.Gap(i=np.array([2, 3]), j=np.array([3, 4]), coupling=[0.3, 1.5]),
     "graded": sim.Graded(idx=np.array([2, 3, 4]), v_lo=-62.0, span=20.0, rate_hz=150.0),
 }
+
+
+# The qualification contract is intentionally independent of EXTENSIONS: deleting a
+# fixture must fail coverage, not silently shrink the set required for a pass.
+SUPPORTED = ("none", "graded", "gap", "spikelets", "both", "gap-all-free")
+REFUSED = "gap-continuous-refractory"
+REFUSAL_REASON = (
+    "native continuous-clamp electrical coupling with refractory cells is unqualified"
+)
+
+
+def qualification(cases, unsupported, *, v2=True, success_field="passed") -> dict:
+    """Require every declared case exactly once and only the known native refusal.
+
+    Used by both native and physical-console collectors; numerical oracles stay
+    independent of this coverage check.
+    """
+
+    def key(case):
+        return tuple(
+            case.get(k) for k in ("seed", "adaptation", "silenced", "extension")
+        )
+
+    def matrix(extensions):
+        return Counter(
+            (seed, adapt, silent, ext)
+            for seed in (3, 7, 19)
+            for adapt in (0.0, 2.0)
+            for silent in (False, True)
+            for ext in extensions
+        )
+
+    expected = matrix(SUPPORTED if v2 else ("none",))
+    refused = matrix((REFUSED,)) if v2 else Counter()
+    observed = Counter(key(c) for c in cases)
+    rejected = Counter(key(c) for c in unsupported)
+    errors = []
+    for label, actual, required in (
+        ("accepted", observed, expected),
+        ("refused", rejected, refused),
+    ):
+        if actual != required:
+            errors.append(
+                f"{label} case matrix differs: missing {list((required - actual).elements())}, unexpected {list((actual - required).elements())}"
+            )
+    if any(c.get(success_field) is not True for c in cases):
+        errors.append("at least one case did not pass numerical parity")
+    if any(c.get("reason") != REFUSAL_REASON for c in unsupported):
+        errors.append("unexpected native refusal reason")
+    return {
+        "qualified": not errors,
+        "expected_cases": sum(expected.values()),
+        "expected_refusals": sum(refused.values()),
+        "errors": errors,
+    }
 
 
 def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
@@ -182,6 +239,7 @@ def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
         "dynamic_electrical_clamp_qualified": False,
         "cases": cases,
         "passed": len(cases),
+        "qualification": qualification(cases, unsupported),
         "corrupt_checkpoint_rejected": True,
         "executable_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
         "shader_sha256": hashlib.sha256(shader.read_bytes()).hexdigest()
@@ -198,7 +256,16 @@ def check(oracle: CpuRuntime, actual: dict) -> None:
     if actual["step"] != oracle.step:
         raise AssertionError("wrong cursor")
     for name in ("v", "g", "th", "ref_until", "counts", "first"):
-        np.testing.assert_array_equal(actual[name], expected[name], err_msg=name)
+        if expected[name].dtype.kind == "f":
+            # Value equality accepts opposite signed zeros and different NaN payloads.
+            np.testing.assert_array_equal(
+                np.ascontiguousarray(actual[name]).view(np.uint8),
+                np.ascontiguousarray(expected[name]).view(np.uint8),
+                err_msg=name,
+            )
+        else:
+            # Native counters are serialized as uint32; CPU bins use uint16.
+            np.testing.assert_array_equal(actual[name], expected[name], err_msg=name)
     # the runtime keeps one placeholder column when nothing is traced; compare the
     # traced neurons only
     width = oracle.traced_spikes(0, 0).shape[1]
@@ -223,4 +290,6 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--shader", type=Path)
     args = parser.parse_args()
-    print(json.dumps(run(args.exe, args.out, args.shader), indent=2))
+    report = run(args.exe, args.out, args.shader)
+    print(json.dumps(report, indent=2))
+    sys.exit(0 if report["qualification"]["qualified"] else 1)

@@ -4,8 +4,6 @@ import importlib.util
 import json
 from pathlib import Path
 
-from flymsg import managed
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -39,6 +37,20 @@ def test_every_archived_lock_hash_is_a_registered_version():
     for r in results:
         if r["lock"] is None:
             continue
-        hashes = managed.PROTOCOLS[r["command"].split()[0]].VERSION_HASHES
+        hashes = _index_module().PROTOCOLS[r["command"].split()[0]].VERSION_HASHES
         assert hashes[int(r["lock_version"])] == r["lock_sha256"], r["result"]
     assert {r["result"] for r in results if r["dirty"]} == DIRTY
+
+
+def test_unmanaged_scored_runs_still_name_their_protocols():
+    entries = _index_module().build()["results"]
+    found = {
+        r["result"]: r["lock"]
+        for r in entries
+        if r["command"].split()[0] in {"gf-looming", "song"}
+    }
+    assert found == {
+        "results/gf_looming/v1": "validation/gf_looming.yaml",
+        "results/gf_looming/v2": "validation/gf_looming.yaml",
+        "results/song/v1": "validation/song.yaml",
+    }

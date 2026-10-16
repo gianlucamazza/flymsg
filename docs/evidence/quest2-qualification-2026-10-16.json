@@ -1,0 +1,75 @@
+{
+  "schema": "flymsg.quest-qualification/v1",
+  "date": "2026-10-16",
+  "protocol": {
+    "source_commit": "b5c6d3b75d9122e603d7bf0fc37502f72b1caddf",
+    "clean_source": true,
+    "device": "Quest 2",
+    "representation": "full original skeletons",
+    "selected_neurons": 1128,
+    "original_segments": 8258589,
+    "max_gpu_page_mib": 4,
+    "page_culling": true,
+    "uploads": true,
+    "loaded_source_hashes_match_clean_source": true,
+    "initial_profile": "no device clock/refresh/resolution/foveation/proximity override; before keep-awake change",
+    "later_profile": "owner-requested keep-awake, original setting 0, temporary 15; sensor unchanged; later mixed refresh is indeterminate",
+    "operator_observation": "Lag both outside and inside VR; reported by owner",
+    "limitations": [
+      "not a completed 2-minute matrix",
+      "final session aggregate mixes refresh and visibility segments",
+      "no compositor drop counter",
+      "browser-closed subjective menu comparison unavailable",
+      "empty desktop diagnostic has zero callback samples and is unscored",
+      "64 MiB attempt could not obtain an awake Browser session; no timing claim"
+    ]
+  },
+  "initial_partial_session": {
+    "status": "running",
+    "elapsed_s": 107.4635,
+    "timing": {
+      "intervals_ms": {
+        "p50": 100.20100000000093,
+        "p95": 723.9229999999807,
+        "p99": 773.6689999999944
+      },
+      "intervals": 198,
+      "refresh_hz": 90,
+      "budget_ms": 11.11111111111111,
+      "estimated_missed_slots": 3456,
+      "estimated_missed_fraction": 0.9458128078817734,
+      "compositor_dropped_frames": null,
+      "verdict": "fail"
+    },
+    "content": {
+      "checked_frames": 199,
+      "incomplete_frames": 0,
+      "verdict": "pass"
+    }
+  },
+  "later_mixed_refresh_session": {
+    "status": "running",
+    "timing": {
+      "intervals_ms": {
+        "p50": 11.15600000001723,
+        "p95": 99.93400000000838,
+        "p99": 475.5770000000193
+      },
+      "intervals": 2752,
+      "refresh_hz": null,
+      "budget_ms": null,
+      "estimated_missed_slots": null,
+      "estimated_missed_fraction": null,
+      "compositor_dropped_frames": null,
+      "verdict": "indeterminate"
+    },
+    "content": {
+      "checked_frames": 2755,
+      "incomplete_frames": 0,
+      "verdict": "pass"
+    }
+  },
+  "qualification": "not_qualified",
+  "raw_archive": "quest2-qualification-2026-10-16.zip",
+  "raw_archive_sha256": "8d5db664ad37d5a2ca75ee903cf7c751bbb26e9082d56ac96407cfb3385b199c"
+}

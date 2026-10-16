@@ -17,6 +17,19 @@ quest = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(quest)
 
 
+def test_power_state_is_retained_separately_from_page_visibility(monkeypatch):
+    monkeypatch.setattr(
+        quest,
+        "adb",
+        lambda serial, *args: (
+            "mWakefulness=Asleep" if args == ("shell", "dumpsys", "power") else "sample"
+        ),
+    )
+    snapshot = quest.snapshot("explicit-headset")
+    assert snapshot["power"] == "mWakefulness=Asleep"
+    assert snapshot["browser_memory"] == "sample"
+
+
 def test_collector_refuses_foreign_device_before_mutations(monkeypatch, tmp_path):
     calls = []
 

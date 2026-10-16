@@ -1208,7 +1208,7 @@
     "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
     "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
    },
-   "lock": null,
+   "lock": "validation/gf_looming.yaml",
    "lock_sha256": "c868e4ec8a84cc375492f4a26b3e3f7a47ced35966d4ad575a328a285c65f0c4",
    "lock_version": 1,
    "other_results": null,
@@ -1287,7 +1287,7 @@
     "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
     "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
    },
-   "lock": null,
+   "lock": "validation/gf_looming.yaml",
    "lock_sha256": "dea19e71409fefdc62d2db657e76322e4f4144d3c7dbe318162326170dcc29f1",
    "lock_version": 2,
    "other_results": null,
@@ -1340,7 +1340,7 @@
     "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
     "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
    },
-   "lock": null,
+   "lock": "validation/song.yaml",
    "lock_sha256": "a346c59b6fa1729912015d0d32c8f017f7f0ae03cd18006e9a00f09c4d838db3",
    "lock_version": 1,
    "other_results": null,
