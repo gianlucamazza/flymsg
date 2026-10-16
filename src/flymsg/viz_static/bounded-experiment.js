@@ -202,6 +202,12 @@ export async function boundedExperiment(
     });
     if (JSON.stringify(before) !== JSON.stringify(after))
       throw Error("Original reference restoration mismatch");
+    const encode = (bytes) => {
+      let text = "";
+      for (let at = 0; at < bytes.length; at += 32768)
+        text += String.fromCharCode(...bytes.subarray(at, at + 32768));
+      return btoa(text);
+    };
     return {
       schema: "flymsg.bounded-skeleton-experiment/v1",
       normal_xr_qualification: false,
@@ -220,6 +226,9 @@ export async function boundedExperiment(
         bounded_sha256: images.bounded.sha256,
         changed_pixels: changedPixels,
         total_pixels: width * height,
+        pixel_format: "RGBA8, bottom-up",
+        original_rgba_base64: encode(images.original.pixels),
+        bounded_rgba_base64: encode(images.bounded.pixels),
       },
       original_reference: before,
       original_reference_unchanged: true,
