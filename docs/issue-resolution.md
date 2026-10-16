@@ -138,7 +138,7 @@ improvement, a completed XR matrix, hard-termination recovery or a GPU-fault pas
 
 ### Follow-up trials — 2026-10-16
 
-The [follow-up evidence](evidence/device-trials-followup-2026-10-16.json)
+The [follow-up evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/device-trials-followup-2026-10-16.json)
 archives raw preflights, lifecycle jobs, epoch readbacks, software oracles and a
 checksum verifier. No scientific result or historical lock changed.
 
