@@ -187,7 +187,14 @@ def main():
                     env={
                         **os.environ,
                         "GL": "swiftshader",
-                        "EVAL": "window.oracle",
+                        "EVAL": (
+                            "(async()=>{const deadline=performance.now()+"
+                            f"{(args.timeout_seconds - 30) * 1000};"
+                            "while(!window.oracle){"
+                            "if(performance.now()>=deadline)throw Error('Oracle module did not initialize');"
+                            "await new Promise(resolve=>setTimeout(resolve,50));}"
+                            "return await window.oracle;})()"
+                        ),
                         "EVAL_TIMEOUT_MS": str((args.timeout_seconds - 15) * 1000),
                     },
                     text=True,
