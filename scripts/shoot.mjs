@@ -22,9 +22,9 @@ const evaluateTimeout = Number(process.env.EVAL_TIMEOUT_MS ?? 10000);
 if (
   !Number.isInteger(evaluateTimeout) ||
   evaluateTimeout < 1000 ||
-  evaluateTimeout > 90000
+  evaluateTimeout > 600000
 )
-  throw new Error("EVAL_TIMEOUT_MS must be 1000..90000");
+  throw new Error("EVAL_TIMEOUT_MS must be 1000..600000");
 let port;
 const profile = mkdtempSync(join(tmpdir(), "shoot-"));
 const GL_FLAGS = {

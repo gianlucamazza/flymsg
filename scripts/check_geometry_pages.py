@@ -108,8 +108,8 @@ def main():
         default="geometry",
     )
     args = parser.parse_args()
-    if args.timeout_seconds < 30:
-        parser.error("--timeout-seconds must be at least 30")
+    if not 30 <= args.timeout_seconds <= 600:
+        parser.error("--timeout-seconds must be 30..600")
     args.out.mkdir(parents=True, exist_ok=False)
     source = manifest.git_info()
     files = (
