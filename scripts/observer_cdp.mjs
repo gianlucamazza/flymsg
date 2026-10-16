@@ -14,7 +14,11 @@ export async function localObserver(endpoint, targetId) {
     !new URL(target.url).searchParams.has("check")
   )
     throw Error("Explicit local ?check target required");
-  const ws = new WebSocket(target.webSocketDebuggerUrl);
+  return connectProtocol(target.webSocketDebuggerUrl, target.url);
+}
+
+async function connectProtocol(socketUrl, url) {
+  const ws = new WebSocket(socketUrl);
   await new Promise((resolve, reject) => {
     ws.addEventListener("open", resolve, { once: true });
     ws.addEventListener("error", reject, { once: true });
@@ -81,8 +85,8 @@ export async function localObserver(endpoint, targetId) {
       await command("Debugger.enable");
       const result = {};
       for (const name of names) {
-        const url = new URL(name, target.url).href,
-          scriptId = scripts.get(url);
+        const moduleUrl = new URL(name, url).href,
+          scriptId = scripts.get(moduleUrl);
         if (!scriptId) throw Error(`Loaded module unavailable: ${name}`);
         result[name] = (
           await command("Debugger.getScriptSource", { scriptId })
@@ -95,10 +99,44 @@ export async function localObserver(endpoint, targetId) {
     }
   };
   return {
-    url: target.url,
+    url,
     command,
     evaluate,
     loadedSources,
     close: () => ws.close(),
   };
+}
+
+// Create/close only explicitly owned local observer tabs through the local browser endpoint.
+export async function observerTarget(endpoint, url, closeId = null) {
+  if (
+    !["localhost", "127.0.0.1"].includes(new URL(endpoint).hostname) ||
+    !url.startsWith("http://localhost:") ||
+    !new URL(url).searchParams.has("check")
+  )
+    throw Error("Explicit local observer endpoint and URL required");
+  if (closeId) {
+    const targets = await (
+      await fetch(new URL("/json/list", endpoint), {
+        signal: AbortSignal.timeout(10000),
+      })
+    ).json();
+    const current = targets.find((t) => t.id === closeId);
+    if (!current) return { closed: true, already_absent: true };
+    if (current.url !== url)
+      throw Error("Owned observer tab navigated; refusing to close it");
+  }
+  const version = await (
+    await fetch(new URL("/json/version", endpoint), {
+      signal: AbortSignal.timeout(10000),
+    })
+  ).json();
+  const browser = await connectProtocol(version.webSocketDebuggerUrl, endpoint);
+  try {
+    return closeId
+      ? await browser.command("Target.closeTarget", { targetId: closeId })
+      : await browser.command("Target.createTarget", { url });
+  } finally {
+    browser.close();
+  }
 }

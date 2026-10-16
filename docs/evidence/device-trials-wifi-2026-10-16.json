@@ -1,0 +1,285 @@
+{
+  "schema": "flymsg.quest-wifi-performance/v1",
+  "date": "2026-10-16",
+  "pr": 221,
+  "source_commits": {
+    "exact_stage_probes": "7c140db",
+    "bounded_first_pass": "887de49",
+    "bounded_verified_draws": "6d9bef1",
+    "bounded_visual_artifacts": "c2205a1"
+  },
+  "hardware": {
+    "model": "Quest 2",
+    "hardware_serial": "1WMHHA43LY1466",
+    "transport": "explicit TCP ADB",
+    "usb_transport_used": false
+  },
+  "exact_scene": {
+    "representation": "original skeletons",
+    "selected_neurons": 1128,
+    "segments": 8258589
+  },
+  "physical_4mib_veto": {
+    "recorded_at": "2026-10-16T08:58:22.413242+00:00",
+    "source_protocol": "protocol.json",
+    "page_mib": 4,
+    "view": "dense-all",
+    "valid_abba_repeats": 3,
+    "ratios": [2.0498316498316598, 1.599928173819353, 2.05086306098964],
+    "median_ratio": 2.0498316498316598,
+    "admitted": false,
+    "reason": "confirmed mandatory regression veto",
+    "unmeasured_views": ["anatomical-motion", "close-motion", "close-static"],
+    "stopping_rule_amendment": "After discussion with the user, stop only after three valid repeats establish a mandatory veto. No early positive admission; remaining views unmeasured. Current campaign interrupted between completed blocks; subsequent configurations use the explicit stop-on-regression option.",
+    "results": [
+      {
+        "page_mib": 4,
+        "repeat": 0,
+        "summary": {
+          "original_p95_ms": 222.75,
+          "paged_memory_bytes": 202199784,
+          "paged_p95_ms": 456.6000000000022,
+          "ratio": 2.0498316498316598
+        },
+        "valid": true,
+        "view": "dense-all"
+      },
+      {
+        "page_mib": 4,
+        "repeat": 1,
+        "summary": {
+          "original_p95_ms": 278.4500000000007,
+          "paged_memory_bytes": 202199784,
+          "paged_p95_ms": 445.5,
+          "ratio": 1.599928173819353
+        },
+        "valid": true,
+        "view": "dense-all"
+      },
+      {
+        "page_mib": 4,
+        "repeat": 2,
+        "summary": {
+          "original_p95_ms": 217.25,
+          "paged_memory_bytes": 202199784,
+          "paged_p95_ms": 445.5499999999993,
+          "ratio": 2.05086306098964
+        },
+        "valid": true,
+        "view": "dense-all"
+      }
+    ]
+  },
+  "exact_stage_probes": [
+    {
+      "configuration": "original-desktop",
+      "samples": 47,
+      "median_completed_image_ms": 165.09999999403954,
+      "reference_unchanged": true,
+      "normal_xr_qualification": false
+    },
+    {
+      "configuration": "original-direct",
+      "samples": 119,
+      "median_completed_image_ms": 62.599999994039536,
+      "reference_unchanged": true,
+      "normal_xr_qualification": false
+    },
+    {
+      "configuration": "paged16-desktop",
+      "samples": 40,
+      "median_completed_image_ms": 196.25,
+      "reference_unchanged": true,
+      "normal_xr_qualification": false
+    },
+    {
+      "configuration": "paged16-direct",
+      "samples": 110,
+      "median_completed_image_ms": 68.5,
+      "reference_unchanged": true,
+      "normal_xr_qualification": false
+    },
+    {
+      "configuration": "paged64-desktop",
+      "samples": 45,
+      "median_completed_image_ms": 175.80000001192093,
+      "reference_unchanged": true,
+      "normal_xr_qualification": false
+    },
+    {
+      "configuration": "paged64-direct",
+      "samples": 114,
+      "median_completed_image_ms": 65.29999999701977,
+      "reference_unchanged": true,
+      "normal_xr_qualification": false
+    }
+  ],
+  "bounded_fixed_camera_replications": {
+    "verified_draw_counts": {
+      "close": {
+        "bounded_segments": 4392101,
+        "exploratory_gain_gate": true,
+        "maximum_error_px": 0.4999993620508619,
+        "normal_xr_qualification": false,
+        "original_segments": 8258589,
+        "paired_medians": [
+          {
+            "bounded_ms": 62.474999994039536,
+            "original_ms": 120.77500000223517
+          },
+          {
+            "bounded_ms": 62.25,
+            "original_ms": 120.375
+          },
+          {
+            "bounded_ms": 62.45000000298023,
+            "original_ms": 121.09999999776483
+          }
+        ],
+        "preparation_ms": 23022.89999999106,
+        "production_admitted": false,
+        "ratios": [0.5172842061095699, 0.5171339563862928, 0.5156895128334673],
+        "selected_neurons": 1128
+      },
+      "dense": {
+        "bounded_segments": 2090860,
+        "exploratory_gain_gate": true,
+        "maximum_error_px": 0.49999909341994564,
+        "normal_xr_qualification": false,
+        "original_segments": 8258589,
+        "paired_medians": [
+          {
+            "bounded_ms": 62.5,
+            "original_ms": 183.17499999701977
+          },
+          {
+            "bounded_ms": 61.92500000074506,
+            "original_ms": 183.57500000298023
+          },
+          {
+            "bounded_ms": 62.024999998509884,
+            "original_ms": 182.1250000037253
+          }
+        ],
+        "preparation_ms": 20917.5,
+        "production_admitted": false,
+        "ratios": [0.3412037668951378, 0.3373280675459063, 0.34056280025938884],
+        "selected_neurons": 1128
+      }
+    },
+    "visual_artifacts": {
+      "close": {
+        "bounded_segments": 4392101,
+        "exploratory_gain_gate": true,
+        "maximum_error_px": 0.4999993620508619,
+        "normal_xr_qualification": false,
+        "original_segments": 8258589,
+        "paired_medians": [
+          {
+            "bounded_ms": 62.774999998509884,
+            "original_ms": 122.57499999925494
+          },
+          {
+            "bounded_ms": 62.75,
+            "original_ms": 122.64999999850988
+          },
+          {
+            "bounded_ms": 62.525000002235174,
+            "original_ms": 123.60000000149012
+          }
+        ],
+        "preparation_ms": 23156.69999998808,
+        "production_admitted": false,
+        "ratios": [0.5121354272803709, 0.5116184264228485, 0.5058656958048655],
+        "selected_neurons": 1128
+      },
+      "dense": {
+        "bounded_segments": 2090861,
+        "exploratory_gain_gate": true,
+        "maximum_error_px": 0.49999909341994564,
+        "normal_xr_qualification": false,
+        "original_segments": 8258589,
+        "paired_medians": [
+          {
+            "bounded_ms": 62.474999997764826,
+            "original_ms": 183.67500000447035
+          },
+          {
+            "bounded_ms": 62.30000000074506,
+            "original_ms": 182.52500000596046
+          },
+          {
+            "bounded_ms": 62.42499999701977,
+            "original_ms": 181.9750000052154
+          }
+        ],
+        "preparation_ms": 20801,
+        "production_admitted": false,
+        "ratios": [0.3401388321559509, 0.34132310641671343, 0.3430416265708513],
+        "selected_neurons": 1128
+      }
+    }
+  },
+  "visual_artifacts": [
+    "quest-bounded-dense-original-2026-10-16.png",
+    "quest-bounded-dense-bounded-2026-10-16.png",
+    "quest-bounded-close-original-2026-10-16.png",
+    "quest-bounded-close-bounded-2026-10-16.png"
+  ],
+  "software_and_portal": {
+    "portal_canaries": 2,
+    "portal_exact_cpu_parity": true,
+    "software_paged_skeleton_surface_oracles": "pass on declared reduced fixtures; not full-surface device admission"
+  },
+  "qualification": {
+    "normal_xr": false,
+    "production_bounded_mode": false,
+    "complete_16_64_cadence_matrix": false,
+    "full_surface_hardware_admission": false,
+    "physical_phone_baseline": false
+  },
+  "limits": [
+    "Serialized completed-image wall time includes readback/driver wait; it is not headset FPS or pure GPU time.",
+    "Unattended virtual proximity diagnostics are separate from worn measurements.",
+    "Half-pixel proof covers the captured synthetic projections, not moving physical eye poses.",
+    "Path preparation remains 21-24 seconds; worker scheduling and dynamic conservative bounds remain open.",
+    "Pixel differences are deliberate; visual/depth/picking and physical stereo acceptance remain open.",
+    "Offline verification checks hashes/raw timing/reported bounds; source-path error verification is independent in-browser, not reconstructed offline."
+  ],
+  "next_tasks": [
+    "generation-safe worker preparation and bounded uploads",
+    "conservative changing-eye error certification and context recovery",
+    "preregistered raster/depth/picking plus human visual acceptance",
+    "full four-view cadence and sustained memory/thermal matrix",
+    "physical XR lifecycle and head motion after admission"
+  ],
+  "archive": {
+    "path": "device-trials-wifi-2026-10-16.zip",
+    "sha256": "eaef3da380f9e993b26e76959a66b06634984bc29dc0fd9c19f854d6013043d3",
+    "bytes": 41667202,
+    "checksummed_files": 705,
+    "verifier": "extract and run python verify.py; optional --cpu PATH_TO_CLEAN_CHECKOUT"
+  },
+  "verification": {
+    "fresh_archive_extraction": "pass",
+    "checksummed_files": 705,
+    "cpu_canaries_reconstructed": 2,
+    "full_hardware_readback_oracles": 6,
+    "bounded_fixed_view_experiments": 6,
+    "native_stage_probes": 6,
+    "offline_scope": "hashes, raw statistics, image bytes and reported bounds; geometric error itself is independently verified in-browser"
+  },
+  "validation": {
+    "python_ci": {
+      "passed": 809,
+      "deselected": 2,
+      "run": "https://github.com/gianlucamazza/flymsg/actions/runs/38885783606"
+    },
+    "node": {
+      "passed": 160,
+      "skipped": 1
+    },
+    "targeted_collectors": 35,
+    "dirty_local_full_attempts": "retained; source cleanliness gates failed during concurrent edits; all three cases pass in clean frozen checkout"
+  }
+}

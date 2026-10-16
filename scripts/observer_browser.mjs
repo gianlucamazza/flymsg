@@ -8,7 +8,7 @@ import { localObserver } from "./observer_cdp.mjs";
 import { browserProbe } from "../src/flymsg/viz_static/browser-probe.js";
 const [endpoint, target, out, serial, pipeline = "direct"] =
   process.argv.slice(2);
-if (!endpoint || !target || !out || !serial || !/^[A-Za-z0-9]+$/.test(serial))
+if (!endpoint || !target || !out || !serial || !/^[A-Za-z0-9.:[\]-]+$/.test(serial))
   throw Error(
     "usage: observer_browser.mjs LOCAL_CDP_ENDPOINT TARGET_ID NEW_DIRECTORY QUEST_SERIAL",
   );

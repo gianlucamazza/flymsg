@@ -148,3 +148,139 @@ def test_preflight_removes_only_owned_forward_after_bad_target(monkeypatch):
     assert not check["eligible"]
     assert "expected page URL" in check["reasons"][0]
     assert calls[-1] == ("forward", "--remove", "tcp:39261")
+
+
+@pytest.mark.parametrize("serial", ["192.168.1.146:5555", "[::1]:5555"])
+def test_wifi_transport_is_explicit(serial):
+    assert quest.wifi_serial(serial) == serial
+
+
+@pytest.mark.parametrize(
+    "serial", ["USB-serial", "192.168.1.1", "192.168.1.1:0", "192.168.1.1:65536"]
+)
+def test_wifi_profile_rejects_usb_or_invalid_endpoints(serial):
+    import argparse
+
+    with pytest.raises(argparse.ArgumentTypeError):
+        quest.wifi_serial(serial)
+
+
+def test_cleanup_attempts_remaining_resources_after_restore_failure(tmp_path):
+    calls = []
+
+    def fail():
+        calls.append("restore")
+        raise RuntimeError("disconnected")
+
+    report = quest.cleanup_resources(
+        "192.168.1.146:5555",
+        tmp_path,
+        [
+            ("keep-awake", fail),
+            ("remove-owned-forward", lambda: calls.append("forward")),
+            ("remove-owned-reverse", lambda: calls.append("reverse")),
+            ("snapshot", lambda: calls.append("snapshot")),
+        ],
+    )
+    assert calls == ["restore", "forward", "reverse", "snapshot"]
+    assert not report["ok"]
+    assert json.loads((tmp_path / "cleanup.json").read_text()) == report
+
+
+def test_identity_refuses_changed_hardware_without_other_actions(monkeypatch):
+    monkeypatch.setattr(
+        quest,
+        "adb",
+        lambda serial, *args: (
+            "Quest 2" if args[-1] == "ro.product.model" else "changed"
+        ),
+    )
+    with pytest.raises(ValueError, match="identity changed"):
+        quest.identity("192.168.1.146:5555", "expected")
+
+
+def test_cleanup_recovers_a_created_target_after_foreground_handshake_failed(
+    monkeypatch, tmp_path
+):
+    session = quest.QuestSite("192.168.1.146:5555", tmp_path)
+    session.endpoint = "http://127.0.0.1:45541"
+    session.url = "http://localhost:8892/live/looming/?check"
+    calls = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def read(self):
+            return json.dumps(
+                [
+                    {"id": "owned", "url": session.url},
+                    {"id": "other", "url": "http://localhost:8893/?check"},
+                ]
+            ).encode()
+
+    monkeypatch.setattr(
+        quest.urllib.request, "urlopen", lambda *args, **kwargs: Response()
+    )
+    monkeypatch.setattr(
+        quest,
+        "node_json",
+        lambda *args, **kwargs: (calls.append(args) or {"success": True}, 0),
+    )
+    session.close_page()
+    assert calls == [("observer_open.mjs", session.endpoint, session.url, "owned")]
+    assert session.target is None
+
+
+def test_proximity_restore_checks_identity_and_readback(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        quest, "identity", lambda serial, expected: calls.append((serial, expected))
+    )
+    monkeypatch.setattr(quest, "adb", lambda *args: calls.append(args) or "")
+    monkeypatch.setattr(
+        quest,
+        "proximity_state",
+        lambda serial: {"state": "DISABLED", "locks": [0, 0, 0]},
+    )
+    assert (
+        quest.restore_proximity("192.168.1.146:5555", "hardware")["state"] == "DISABLED"
+    )
+    assert calls[0] == ("192.168.1.146:5555", "hardware")
+    assert calls[1][-1] == "com.oculus.vrpowermanager.automation_disable"
+
+
+def test_unknown_proximity_format_is_rejected(monkeypatch):
+    monkeypatch.setattr(quest, "adb", lambda *args: "unknown firmware")
+    with pytest.raises(RuntimeError, match="unrecognized"):
+        quest.proximity_state("192.168.1.146:5555")
+
+
+def test_readback_readiness_cannot_authorize_xr_receipts(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    session = quest.QuestSite("192.168.1.146:5555", tmp_path)
+    session.endpoint, session.target, session.url = "endpoint", "owned", "url"
+    session.server = SimpleNamespace(ready_document_id="previous")
+    monkeypatch.setattr(
+        quest, "snapshot", lambda *a, **k: {"power": "mWakefulness=Awake"}
+    )
+    calls = []
+
+    def ready(*args, **kwargs):
+        calls.append(kwargs)
+        return {
+            "eligible": True,
+            "state": {"after": {"document_id": "current"}},
+            "reasons": [],
+        }
+
+    monkeypatch.setattr(quest, "browser_preflight", ready)
+    assert session.wait_ready(readback_only=True)["eligible"]
+    assert all(call["readback_only"] for call in calls)
+    assert session.server.ready_document_id is None
+    assert session.wait_ready()["eligible"]
+    assert session.server.ready_document_id == "current"

@@ -87,8 +87,13 @@ class Portal:
         if self.pin:  # -k skips the CA chain only; curl still enforces the pinned key
             cmd += ["--pinnedpubkey", self.pin]
         cmd += ["-b", self.jar, "-c", self.jar, "-X", method]
+        config = self.config
         if method != "GET":
-            cmd += ["-H", f"X-CSRF-Token:{getattr(self, 'token', '')}"]
+            token = getattr(self, "token", "")
+            if "\n" in token or "\r" in token:
+                raise ValueError("Invalid Device Portal token")
+            escaped = token.replace("\\", "\\\\").replace('"', '\\"')
+            config += f'header = "X-CSRF-Token:{escaped}"\n'
         if upload:
             name = Path(upload).name
             cmd += [
@@ -101,7 +106,7 @@ class Portal:
             cmd += ["-o", out]
         r = subprocess.run(
             [*cmd, self.base + path],
-            input=self.config,
+            input=config,
             capture_output=True,
             text=True,
             check=False,
@@ -128,8 +133,17 @@ class Portal:
                     f"/api/filesystem/apps/folder?knownfolderid=LocalAppData"
                     f"&packagefullname={package}&path={parent}&newfoldername={part}",
                 )
-            except RuntimeError:
-                pass  # it exists
+            except PortalError as exc:
+                if exc.http_status not in (400, 409):
+                    raise
+                # WDP can report an existing directory as bad request/conflict.
+                # Prove that the exact directory is readable before accepting it.
+                child = parent + "%5C" + part
+                self.curl(
+                    "GET",
+                    f"/api/filesystem/apps/files?knownfolderid=LocalAppData"
+                    f"&packagefullname={package}&path={child}",
+                )
             parent += "%5C" + part
 
     def put(self, package: str, rel: str, local: Path) -> None:

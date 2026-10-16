@@ -61,6 +61,7 @@ import { findNeuron, focusRoles, panelLines, selectParam } from "./partners.js";
 import { binAt, rasterRows, selectionExport, selectionRows } from "./raster.js";
 import { centroid, signedVolume } from "./geometry.js";
 import { Perf } from "./perf.js";
+import { ObserverFrames } from "./observer-frames.js";
 import { installXrObserver } from "./xr.js";
 import { XrMetrics } from "./xr-metrics.js";
 import { visibleLinePages, writeVisibleEdges } from "./geometry-pages.js";
@@ -2098,6 +2099,18 @@ function pickAt(x, y) {
 }
 
 // ?check exposes internals for headless diagnostics (scripts/shoot.mjs EVAL=...)
+const observerFrames = query.has("check") ? new ObserverFrames() : null;
+let observerView = null;
+function observerIdentity() {
+  const f = fidelityReport();
+  return {url:location.href,representation: f.representation, selected: f.selected,
+    represented: f.represented, status: f.status, gpu_ready: f.gpu_ready,
+    gpu_generation: pagedScene?.generation ?? null,
+    context_ready:contextStatus().ready, width:renderer.domElement.width,
+    height:renderer.domElement.height, page_culling:settings.pageCulling,
+    pixel_ratio:renderer.getPixelRatio(),samples:msaaTarget.samples,
+    replay_time:clock.t,playing:clock.playing,immersive:renderer.xr.isPresenting};
+}
 if (query.has("check")) {
   window.flymsg = {
     THREE,
@@ -2184,6 +2197,37 @@ if (query.has("check")) {
       prepareOriginalOracle();
       applySkeletonVisibility(eyes);
       return { ...lineSubmission };
+    },
+    observerStatus: () => ({...observerFrames.status(),
+      suspended:diagnosticSuspended, immersive:renderer.xr.isPresenting,
+      identity:observerIdentity()}),
+    observerView({name="dense-all",cameraWorld=null,projection=null}={}) {
+      if (renderer.xr.isPresenting || diagnosticSuspended)
+        throw Error("Visible unsuspended desktop observation required");
+      if (!["dense-all","anatomical-motion","close-motion","close-static"].includes(name))
+        throw Error("Unknown observer view");
+      const base = camera.clone();
+      if (cameraWorld) base.matrix.fromArray(cameraWorld).decompose(base.position,base.quaternion,base.scale);
+      if (projection) base.projectionMatrix.fromArray(projection);
+      if (name.startsWith("close")) base.position.multiplyScalar(0.35);
+      observerView = {name,base,started:performance.now()};
+      invalidate();
+    },
+    observerCapture(seconds=30) {
+      const identity=observerIdentity();
+      if (document.hidden || diagnosticSuspended || renderer.xr.isPresenting ||
+          identity.status!=="ready" || identity.gpu_ready===false || !identity.context_ready ||
+          !diagnosticContinuous)
+        throw Error("Continuous complete desktop rendering required");
+      if(observerView)observerView.started=performance.now();
+      observerFrames.start(seconds,identity);
+      return observerFrames.status();
+    },
+    observerResult: () => observerFrames.finish(),
+    observerWait: () => observerFrames.wait(),
+    observerReset() {
+      observerFrames.invalidate("observation-reset");
+      observerView=null;
     },
     diagnosticState: () => ({
       suspended: diagnosticSuspended,
@@ -2909,6 +2953,7 @@ const xrMetrics = new XrMetrics(
   {
     url: location.href,
     user_agent: navigator.userAgent,
+    observer_document_id: observerFrames?.documentId ?? null,
     scene_schema: meta.schema,
   },
   (record) => {
@@ -2938,6 +2983,7 @@ if (query.get("xr") === "1") {
 renderer.domElement.addEventListener("webglcontextlost", (e) => {
   e.preventDefault();
   lostEl.hidden = false;
+  observerFrames?.contextLost();
   pagedScene?.contextLost();
   xrMetrics.event("webglcontextlost");
 });
@@ -2955,17 +3001,27 @@ renderer.domElement.addEventListener("webglcontextrestored", () => {
 // frame clock when the tab is shown, so the first frame back does not jump.
 const timer = new THREE.Clock();
 document.addEventListener("visibilitychange", () => {
+  if (document.hidden) observerFrames?.invalidate("hidden-page");
   perf.last = null;
   perf.wasContinuous = false;
   if (!document.hidden) timer.getDelta();
 });
 renderer.setAnimationLoop((timestamp) => {
+  observerFrames?.loop();
   const frameStart = performance.now();
   const dt = timer.getDelta();
   if (diagnosticSuspended) return; // explicit offscreen probes own the renderer until restoration
   const inXR = renderer.xr.isPresenting;
   const steered = inXR ? false : steerWithPad(dt);
   const moved = inXR ? false : controls.update() || steered; // XR headset owns its camera pose
+  if (observerView && !inXR) {
+    const {base,name,started}=observerView;
+    camera.position.copy(base.position);camera.quaternion.copy(base.quaternion);
+    camera.scale.copy(base.scale);camera.projectionMatrix.copy(base.projectionMatrix);
+    camera.projectionMatrixInverse.copy(base.projectionMatrix).invert();
+    if(name.endsWith("motion"))camera.rotateY(0.15*Math.sin(2*Math.PI*(timestamp-started)/10000));
+    camera.updateMatrixWorld(true);
+  }
   if (inXR) {
     // head motion moves the camera without OrbitControls events: refine as the view
     // changes, at the selection's own rate
@@ -3025,6 +3081,8 @@ renderer.setAnimationLoop((timestamp) => {
   else draw();
   perf.stage("draw_submission", performance.now() - submissionStart);
   const measured = perf.end({ continuous: live });
+  if(observerFrames)observerFrames.frame(timestamp,
+    observerFrames.capture ? observerIdentity() : null, measured);
   if (inXR)
     xrMetrics.frame(
       timestamp,
