@@ -50,7 +50,8 @@ uint xin(uint at) { return input.Load(at*4); }
 double xd(uint at) { uint2 r=input.Load2(at*4); return asdouble(r.x,r.y); }
 uint sw(uint at) { return state.Load(at*4); }
 void sput(uint at,uint v) { state.Store(at*4,v); }
-// a / b rounded to nearest even as float32, for 0 < a < b, b normal: Newton in
+// a / b rounded to nearest even as float32, for 0 < a < b, b in [2^-126, 2^126]
+// (the host checks it, so 1/b is a normal float32): Newton in
 // double from a float32 reciprocal, then the exact test against the midpoints
 // beside the candidate (a midpoint has 25 bits and b 24, so midpoint * b is
 // exact in double, as is every comparison)
