@@ -135,11 +135,12 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   require(target >= runtime.step && target <= runtime.input[3],
           "invalid GPU target");
   // Version 2: the shader divides by a graded neuron's span through a float32
-  // reciprocal, so a span must be a normal float32
-  for (uint64_t k = 0; k < runtime.ng; ++k)
-    require(std::bit_cast<float>(runtime.input[runtime.x_span + k]) >=
-                std::numeric_limits<float>::min(),
-            "BLOCKED: a graded span below the normal float32 range");
+  // reciprocal, which must be normal: span within [2^-126, 2^126]
+  for (uint64_t k = 0; k < runtime.ng; ++k) {
+    const float span = std::bit_cast<float>(runtime.input[runtime.x_span + k]);
+    require(span >= std::numeric_limits<float>::min() && span <= 0x1p126f,
+            "BLOCKED: a graded span outside the GPU lane's float32 range");
+  }
   if (target == runtime.step)
     return;
   const uint32_t n = runtime.input[2];
