@@ -133,6 +133,24 @@ Repeat separately for surfaces. The collector requires clean committed source;
 it records upload/page settings and never substitutes content or forces headset
 presence, clocks, refresh, resolution, foveation or a browser backend.
 
+## Recorded software evidence
+
+The [summary](evidence/quest2-paged-2026-10-16.json) and
+[raw archive](evidence/quest2-paged-2026-10-16.zip) freeze source revision
+`754c65e`, exact source hashes, both raw images in all 42 comparisons, camera
+matrices, actual native buffer hashes, worker/lifecycle checks and the reproduced
+depth-tie regression. Extract the archive and run `python verify.py .` to check
+inventory, raw byte equality, nonempty neuron IDs and provenance independently.
+An optional repository argument also verifies source blobs at the frozen commit.
+The compressed archive was extracted afresh and verified before publication.
+
+Node tests: 129 passed, one optional network test skipped. The clean complete
+Python suite passed 711 tests with two deselected on `c32de77`; subsequent code
+changes only make the software collector timeout configurable and align its CDP
+limit. The final exact PR head must additionally pass CI. Both incomplete surface
+collector attempts remain in the archive and are not counted as passing trials.
+These correctness results do not establish a performance improvement on Quest.
+
 ## Outstanding acceptance
 
 - Full original surfaces still obey the existing explicit admission capacity.

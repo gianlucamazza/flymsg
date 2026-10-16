@@ -204,3 +204,13 @@ uploads. Dense single-view and warmed stereo timing remain mandatory gates.
 This follow-up completes the browser investigations above and the verified UI
 optimization; it does not complete those remaining renderer implementations or
 make Quest 2 qualified.
+
+### Subsequent immutable-page candidate
+
+The [paged pipeline implementation](quest-paged-pipeline.md) now implements the
+CPU worker preparation, explicit readiness and owned bounded upload scheduling
+identified above. Its [software evidence](evidence/quest2-paged-2026-10-16.json)
+retains exact original/candidate primitive and pixel comparisons, including the
+unchanged desktop MSAA/bloom path. The preceding measurements remain historical;
+they do not qualify this candidate. Both complete original representations still
+require independent full-scene physical Quest acceptance before PR #205 is ready.
