@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { localObserver } from "./observer_cdp.mjs";
 import { observerPreflight } from "./observer_preflight.mjs";
+import { frozenCameraProfile } from "./observer-camera.mjs";
 
 export async function observerTrial(
   browser,
@@ -25,10 +26,11 @@ export async function observerTrial(
     saved =
       await browser.evaluate(`({state:flymsg.diagnosticState(),camera:flymsg.camera.matrixWorld.toArray(),
       projection:flymsg.camera.projectionMatrix.toArray(),near:flymsg.camera.near,far:flymsg.camera.far})`);
-    const frozen = camera ?? {
-      camera_world: saved.camera,
-      projection: saved.projection,
-    };
+    const frozen = frozenCameraProfile(
+      { camera_world: saved.camera, projection: saved.projection },
+      camera,
+      preflight.state.after.identity,
+    );
     write("camera.json", frozen);
     const culling =
       view !== "dense-all" &&

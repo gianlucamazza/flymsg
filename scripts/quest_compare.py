@@ -97,6 +97,13 @@ def block_summary(records, *, candidate_representation=None):
             },
         }
 
+    for row in records:
+        viewport = row["camera_profile"].get("viewport")
+        if viewport is not None and any(
+            row["identity"].get(key) != viewport.get(key)
+            for key in ("width", "height", "pixel_ratio", "samples")
+        ):
+            raise ValueError("Frozen camera viewport or quality mismatch")
     if any(invariant(row) != invariant(first) for row in records[1:]):
         raise ValueError("A/B/B/A source, geometry, viewport or quality mismatch")
 
@@ -276,14 +283,16 @@ def run(
             session.record("progress.json", {"results": results})
             continue
         try:
-            report, code = node_json(
+            oracle_args = [
                 "observer_oracle.mjs",
                 session.endpoint,
                 session.target,
                 oracle_dir / "readbacks",
                 "--readback-only",
-                timeout=1800,
-            )
+            ]
+            if camera_file.exists():
+                oracle_args.extend(("--camera-file", camera_file))
+            report, code = node_json(*oracle_args, timeout=1800)
             if code or report.get("status") != "pass":
                 raise RuntimeError("original/candidate correctness failed")
             oracle_camera = json.loads(

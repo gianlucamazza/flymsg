@@ -92,3 +92,22 @@ A host exploratory rerun reduced median certification from 14–15 to 10–11 ms
 its level selection timing varied. Treat this as CPU diagnosis, not device speed
 or admission. Repeat the software viewer/context oracle and clean-commit device
 protocol before qualifying the complete corrected runtime.
+
+## Canonical camera calibration
+
+The b4427da diagnostic campaign passed static correctness at 4/16/64 MiB, but
+ordinary 4/16 MiB preparation was excluded by native Guardian focus. The 64 MiB
+configuration was additionally excluded because its default camera differed from
+the first profile by about 1e-13. No timing arms completed and no configuration
+was admitted; the old exclusion remains unchanged.
+
+Freeze the first complete camera as an explicit input to subsequent direct
+correctness captures, as already done for cadence arms. Save the observed default
+separately. Do not use tolerance or round values to accept a changed output.
+Both correctness and cadence validate the frozen viewport, pixel ratio and MSAA
+against actual preflight identity; the Python raw-receipt checker independently
+rejects even a common viewport drift across all four arms. Original source
+coverage, error and performance thresholds remain unchanged. Desktop correctness
+still records its actual per-document camera; it is independent of timed arms.
+The geometry audit now uses the camera/projection returned by the original
+capture, including its matrix reconstruction, rather than the undecomposed input.
