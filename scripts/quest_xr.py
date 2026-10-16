@@ -15,6 +15,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import urllib.request
 from datetime import UTC, datetime
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -32,6 +33,7 @@ def adb(serial, *args):
 def snapshot(serial):
     out = {"at": datetime.now(UTC).isoformat()}
     for key, args in {
+        "power": ("shell", "dumpsys", "power"),
         "battery": ("shell", "dumpsys", "battery"),
         "thermal": ("shell", "dumpsys", "thermalservice"),
         "browser_memory": ("shell", "dumpsys", "meminfo", "com.oculus.browser"),
@@ -41,6 +43,57 @@ def snapshot(serial):
         except (OSError, subprocess.SubprocessError) as exc:
             out[key] = {"unavailable": str(exc)}
     return out
+
+
+def preflight(serial, url):
+    """No rendering measurement is eligible while the headset is asleep."""
+    state = snapshot(serial)
+    result = {"device": state, "eligible": False, "reasons": []}
+    if "mWakefulness=Awake" not in str(state["power"]):
+        result["reasons"].append("headset-not-awake")
+        return result
+    forward = None
+    try:
+        sockets = adb(serial, "shell", "cat", "/proc/net/unix")
+        names = {
+            line.split()[-1][1:]
+            for line in sockets.splitlines()
+            if "@chrome_devtools_remote" in line
+        }
+        if len(names) != 1:
+            raise RuntimeError("one Quest Browser diagnostic socket required")
+        port = adb(serial, "forward", "tcp:0", f"localabstract:{names.pop()}")
+        forward = f"tcp:{port}"
+        endpoint = f"http://127.0.0.1:{port}"
+        with urllib.request.urlopen(endpoint + "/json/list", timeout=10) as response:
+            targets = json.load(response)
+        matches = [target for target in targets if target.get("url") == url]
+        if len(matches) != 1:
+            raise RuntimeError("expected page URL is not the unique loaded target")
+        process = subprocess.run(
+            [
+                "node",
+                str(Path(__file__).with_name("observer_preflight.mjs")),
+                endpoint,
+                matches[0]["id"],
+                url,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=45,
+            check=False,
+        )
+        if not process.stdout.strip():
+            raise RuntimeError("browser preflight unavailable")
+        result["browser"] = json.loads(process.stdout)
+        result["eligible"] = process.returncode == 0 and result["browser"]["eligible"]
+        result["reasons"] = result["browser"]["reasons"]
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+        result["reasons"].append(str(exc))
+    finally:
+        if forward:
+            adb(serial, "forward", "--remove", forward)
+    return result
 
 
 class EvidenceHandler(SimpleHTTPRequestHandler):
@@ -103,6 +156,11 @@ def main():
     )
     p.add_argument("--gpu-page-mib", type=int, choices=(4, 16, 64), default=4)
     p.add_argument("--out", type=Path)
+    p.add_argument(
+        "--keep-awake",
+        action="store_true",
+        help="temporarily keep the powered display awake; restore its setting",
+    )
     a = p.parse_args()
     if a.uploads and a.representation == "mixed":
         p.error("paged uploads require explicit original surfaces or skeletons")
@@ -170,13 +228,14 @@ def main():
             server.evidence_lock = threading.Lock()
             threading.Thread(target=server.serve_forever, daemon=True).start()
             try:
+                if a.keep_awake:
+                    adb(a.serial, "shell", "svc", "power", "stayon", "true")
                 adb(a.serial, "reverse", reverse, reverse)
                 owned_reverse = True
                 url = (
                     f"http://localhost:{a.port}/live/{a.scene}/?xr=1&xrcollect=1&paused"
                     f"&representation={a.representation}&pages={int(a.pages)}&adaptive=0"
-                    f"&uploads={int(a.uploads)}&gpuPageMiB={a.gpu_page_mib}"
-                    + ("&check" if a.check else "")
+                    f"&uploads={int(a.uploads)}&gpuPageMiB={a.gpu_page_mib}" + "&check"
                 )
                 adb(
                     a.serial,
@@ -195,7 +254,25 @@ def main():
                     flush=True,
                 )
                 until = time.monotonic() + a.seconds
+                excluded = 0
                 while time.monotonic() < until:
+                    check = preflight(a.serial, url)
+                    with (out / "preflight.jsonl").open("ab") as stream:
+                        stream.write(runstore.canonical(check) + b"\n")
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                    excluded = 0 if check["eligible"] else excluded + 1
+                    if excluded >= 3:
+                        runstore.atomic_json(
+                            out / "exclusion.json",
+                            {
+                                "status": "excluded",
+                                "qualification": "not-scored",
+                                "consecutive_invalid_preflights": excluded,
+                                "reasons": check["reasons"],
+                            },
+                        )
+                        break
                     with (out / "device-samples.jsonl").open("ab") as stream:
                         stream.write(runstore.canonical(snapshot(a.serial)) + b"\n")
                         stream.flush()
@@ -205,6 +282,16 @@ def main():
                 print("Stopped; collected evidence is retained.")
             finally:
                 server.shutdown()
+                if a.keep_awake:
+                    adb(
+                        a.serial,
+                        "shell",
+                        "settings",
+                        "put",
+                        "global",
+                        "stay_on_while_plugged_in",
+                        device["development"]["stay_on_while_plugged_in"],
+                    )
                 if owned_reverse:
                     adb(a.serial, "reverse", "--remove", reverse)
                 runstore.atomic_json(out / "after.json", snapshot(a.serial))

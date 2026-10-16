@@ -34,7 +34,29 @@ export class Perf {
     };
     this.marks = {};
     this.selectMs = [];
+    this.stages = new Map();
     this.frame = { calls: 0, triangles: 0, lines: 0 };
+  }
+
+  stage(name, milliseconds) {
+    const values = this.stages.get(name) ?? [];
+    values.push(milliseconds);
+    if (values.length > KEEP) values.shift();
+    this.stages.set(name, values);
+  }
+
+  stageReport() {
+    return Object.fromEntries(
+      [...this.stages].map(([name, values]) => [
+        name,
+        {
+          samples: values.length,
+          p50_ms: percentile(values, 50),
+          p95_ms: percentile(values, 95),
+          max_ms: Math.max(...values),
+        },
+      ]),
+    );
   }
 
   begin(cpuStart = performance.now()) {
@@ -89,6 +111,7 @@ export class Perf {
   }
 
   resetContext() {
+    this.stages.clear();
     // Queries from a lost context are invalid; never recycle their numbers as GPU time.
     if (!this.gl.isContextLost()) {
       for (const q of this.pending) this.gl.deleteQuery(q);

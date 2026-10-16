@@ -29,7 +29,7 @@ import numpy as np
 from scipy import sparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from native_acceptance import EXTENSIONS, check  # the acceptance's, unchanged
+from native_acceptance import EXTENSIONS, check, qualification
 
 from flymsg import sim
 from flymsg.console import (  # the scripts beside this one import them here
@@ -79,8 +79,16 @@ def run(
         fixture = folder / "fixture.bin"
         try:
             meta = export_fixture(oracle, fixture)
-        except NativeCapabilityError:  # as on the CPU executor (the dynamic clamp)
-            unsupported.append(ext)
+        except NativeCapabilityError as exc:
+            unsupported.append(
+                {
+                    "seed": seed,
+                    "adaptation": adapt,
+                    "silenced": silent,
+                    "extension": ext,
+                    "reason": str(exc),
+                }
+            )
             continue
         job = {
             "schema": "flymsg.neural_job/v1",
@@ -131,12 +139,18 @@ def run(
             case["output_sha256"] = json.loads((folder / "result.json").read_text())[
                 "output_sha256"
             ]
-            oracle.advance_to(1000)
-            try:
-                check(oracle, read_output(folder / "output.bin", fixture))
-                case["parity"] = True
-            except AssertionError as err:
-                case["mismatch"] = str(err)[:400]
+            actual_sha = hashlib.sha256(
+                (folder / "output.bin").read_bytes()
+            ).hexdigest()
+            if actual_sha != case["output_sha256"]:
+                case["mismatch"] = "downloaded output checksum differs from result"
+            else:
+                oracle.advance_to(1000)
+                try:
+                    check(oracle, read_output(folder / "output.bin", fixture))
+                    case["parity"] = True
+                except AssertionError as err:
+                    case["mismatch"] = str(err)[:400]
         cases.append(case)
         print(
             json.dumps(
@@ -159,7 +173,11 @@ def run(
         "package": package,
         "shader_sha256": shader_sha,
         "cases": cases,
-        "unsupported_extensions": sorted(set(unsupported)),
+        "unsupported_extensions": sorted({c["extension"] for c in unsupported}),
+        "unsupported": unsupported,
+        "qualification": qualification(
+            cases, unsupported, v2=v2, success_field="parity"
+        ),
         "passed": sum(c["parity"] for c in cases),
         "scope": "synthetic acceptance fixtures (version 1, and version 2 with --v2) on "
         "the console GPU; not full-connectome throughput, lifecycle or biological "
@@ -182,4 +200,4 @@ if __name__ == "__main__":
     a = parser.parse_args()
     r = run(a.package, a.shader, a.out, a.v2)
     print(f"passed {r['passed']} of {len(r['cases'])}")
-    sys.exit(0 if r["passed"] == len(r["cases"]) and len(r["cases"]) >= 12 else 1)
+    sys.exit(0 if r["qualification"]["qualified"] else 1)

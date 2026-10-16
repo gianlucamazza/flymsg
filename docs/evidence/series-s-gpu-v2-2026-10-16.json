@@ -1,0 +1,37 @@
+{
+  "schema": "flymsg.console-gpu-v2-evidence/v1",
+  "date": "2026-10-16",
+  "lineage": {
+    "schema": "flymsg.console-qualification-lineage/v1",
+    "worker_source_commit": "30ebc5369e16ee2b339b70ceb4ca341c0fb08cb0",
+    "ci_head": "c03d88d9695e422923d28e1acb373f4c80a05b97",
+    "ci_url": "https://github.com/gianlucamazza/flymsg/actions/runs/38857488474",
+    "msix_sha256": "ac83487482676a8a3093aa1186c8750dffcf9f2aa3ed1aa4194a630003109052",
+    "shader_sha256": "957a1202cb387b6ea29617c0865978e5fb1dbbbcaf93cf9f4a0e4e0478f41b14",
+    "ci_worker_exe_sha256": "d36024ec7fe02023aa77f4f800ccb78a6ec0427a10ad42d85d48d5792fc8ced6",
+    "installed_executable_independently_downloaded": false,
+    "native_tree_matches_baseline": true,
+    "collector_base": "b5c6d3b75d9122e603d7bf0fc37502f72b1caddf",
+    "collector_dirty": true,
+    "scope": "72 synthetic GPU parity cases; not performance, lifecycle, Membrane, continuous refractory clamps or biological validation"
+  },
+  "qualification": {
+    "errors": [],
+    "expected_cases": 72,
+    "expected_refusals": 12,
+    "qualified": true
+  },
+  "passed": 72,
+  "v1": 12,
+  "v2": 60,
+  "expected_refusals": 12,
+  "raw_archive": "series-s-gpu-v2-2026-10-16.zip",
+  "raw_archive_sha256": "d9b37cf7effd3839bda71d80fa4b3e19f820c3d88d771867910359f53f2cd53b",
+  "reverification": "verify.py with clean baseline repository compares raw float32 state bits and the CPU oracle; canonical integer values permit the native serialization widths",
+  "remaining_gates": [
+    "v2 physical lifecycle",
+    "hard termination/device fault",
+    "adversarial stress beyond the fixed matrix",
+    "sustained thermal/memory and full-connectome v2 performance"
+  ]
+}

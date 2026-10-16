@@ -1628,6 +1628,7 @@ function resourceReport() {
   arrays.push(...residentLines.arrays());
   return {
     managed_geometry_cpu_bytes: bufferBytes(arrays),
+    cpu_stage_wall: perf.stageReport(),
     decoded_cache_bytes: lruBytes,
     decoded_cache_limit_bytes: DECODED_CACHE_BYTES,
     gpu_total_bytes: null,
@@ -2993,15 +2994,19 @@ renderer.setAnimationLoop((timestamp) => {
     lastSkeletonBuild = now;
   }
   if (pagedScene) {
+    const uploadStart = performance.now();
     const wasReady = pagedScene.state === "ready";
     syncPagedScene();
     pagedScene.tick();
     if (!wasReady || pagedScene.state !== "ready") invalidate();
     xrObserver?.refresh?.();
+    perf.stage("page_sync_and_upload", performance.now() - uploadStart);
   }
   if (!live && !(sceneDirty && now - lastRender >= IDLE_REDRAW_MS)) return;
   flushInstanceTextures();
   perf.begin(frameStart); // include activity, visibility, index preparation and uploads
+  const submissionStart = performance.now();
+  perf.stage("frame_preparation", submissionStart - frameStart);
   const draw = () => {
     if (inXR) {
       // Three.js supplies the two eye cameras; never run desktop postprocessing
@@ -3018,6 +3023,7 @@ renderer.setAnimationLoop((timestamp) => {
         : null,
     });
   else draw();
+  perf.stage("draw_submission", performance.now() - submissionStart);
   const measured = perf.end({ continuous: live });
   if (inXR)
     xrMetrics.frame(

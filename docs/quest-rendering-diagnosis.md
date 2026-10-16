@@ -8,6 +8,16 @@ Passing software checks or loading every neuron does not close this issue.
 
 ## Findings
 
+The [2026-10-16 paged hardware attempt](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-qualification-2026-10-16.json)
+loaded every selected original skeleton and independently matched loaded module
+hashes to clean `b5c6d3b`. Its partial 90 Hz session recorded p50 100.201 ms,
+p95 723.923 ms and p99 773.669 ms, with no incomplete-content frames and 94.58%
+estimated missed slots. This fails timing. It is not a completed two-minute matrix.
+The later aggregate mixes 72/90 Hz and remains indeterminate. The archive retains
+raw intervals and an independent scorer, zero-callback diagnostics and the owner's
+report of lag outside and inside VR. Ordinary keep-awake was enabled only after
+the initial failed measurement; it does not disable the headset's presence sensor.
+
 The authorized physical Quest 2 is reachable through an isolated libusb ADB
 server. USB rules and developer authorization are not the current rendering
 failure. No persistent USB rules, device clocks, refresh, resolution, foveation,

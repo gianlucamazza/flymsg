@@ -1,0 +1,372 @@
+{
+  "external_replication": "not_run",
+  "independent_signoff": null,
+  "integrity_passed": true,
+  "licences": "Per-input licence and acquisition requirements remain in docs/replication.md; this check does not establish redistribution rights.",
+  "records": [
+    {
+      "command": "behavior --run",
+      "errors": [],
+      "exceptions": [
+        "source_tree_not_reconstructible_from_commit"
+      ],
+      "lock": "validation/behavior.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/behavior",
+      "source_commit": "96cee3bc991dc6b62dbf84077df7d809686ad05f",
+      "verdict": "calibration feasibility FAIL: silence"
+    },
+    {
+      "command": "silence-scan --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/silence_scan.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 4,
+      "result": "results/silence-scan/v1",
+      "source_commit": "7d939b2758181e292d0ab9bc6ead75fafc2422fd",
+      "verdict": "none: the residual drive is not one cell type"
+    },
+    {
+      "command": "silence-scan --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/silence_scan.yaml",
+      "lock_version": 2,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/silence-scan/v2",
+      "source_commit": "764af9e385cde72c6b3502891197768b6275deca",
+      "verdict": "names_partner: DNp02, DNp06"
+    },
+    {
+      "command": "silence-scan --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/silence_scan.yaml",
+      "lock_version": 3,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/silence-scan/v3",
+      "source_commit": "1bbf60e4c0b769b28611b6bf30e984a7379f060a",
+      "verdict": "names_partner: DNp02, DNp06"
+    },
+    {
+      "command": "mb-plasticity --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/mb_plasticity.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/mb-plasticity/v1",
+      "source_commit": "ce20fcefc067fa3201705910c866f0a4a98d3011",
+      "verdict": "inconsistent"
+    },
+    {
+      "command": "kc-sparseness --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/kc_sparseness.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/kc-sparseness/v1",
+      "source_commit": "b096b4a9c36e9985ee31c938b8b32cbc3ed000b0",
+      "verdict": "not_recurrence"
+    },
+    {
+      "command": "kc-sparseness --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/kc_sparseness.yaml",
+      "lock_version": 2,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/kc-sparseness/v2",
+      "source_commit": "374309ed33d54facc3a280b1408eefaa135e9ab3",
+      "verdict": "within: E, F"
+    },
+    {
+      "command": "kc-sparseness --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/kc_sparseness.yaml",
+      "lock_version": 3,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/kc-sparseness/v3",
+      "source_commit": "c1cf89671a1e532d6dee1487bd11d38f067acef6",
+      "verdict": "none"
+    },
+    {
+      "command": "kc-sparseness --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/kc_sparseness.yaml",
+      "lock_version": 4,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/kc-sparseness/v4",
+      "source_commit": "b1116afd21ec37381303bee40a6976ed211a37ef",
+      "verdict": "none"
+    },
+    {
+      "command": "kc-sparseness --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/kc_sparseness.yaml",
+      "lock_version": 5,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/kc-sparseness/v5",
+      "source_commit": "00aff9cb11573686ffcf0ea6dea90639c30093d7",
+      "verdict": "none"
+    },
+    {
+      "command": "kc-sparseness --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/kc_sparseness.yaml",
+      "lock_version": 7,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/kc-sparseness/v7.executions/f8549bf7414656b26cf37dcf99811142bb3b1b3a7743b79d5ebeda941457c3a5/output",
+      "source_commit": "45c064116ea62ba5a553152f344cb059a583feb4",
+      "verdict": "within: E/lLN2T+lLN1_bc, F/lLN2T+lLN1_bc, E/lLN2T+lLN1_bc+spike0.5ms, E/lLN2T+lLN1_bc+spike1ms, E/lLN2T+lLN1_bc+spike2ms, F/lLN2T+lLN1_bc+spike0ms, F/lLN2T+lLN1_bc+spike0.5ms, F/lLN2T+lLN1_bc+spike1ms, F/lLN2T+lLN1_bc+spike2ms"
+    },
+    {
+      "command": "kc-sparseness --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/kc_sparseness.yaml",
+      "lock_version": 8,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/kc-sparseness/v8.executions/c714d0a3035c6d0842295f3e8057367fe9adbebb6e12fee4ac09eed6b31aee24/output",
+      "source_commit": "ad7b71ec43389a86087c01b9b4780644f207363c",
+      "verdict": "within: F/lLN2T+lLN1_bc, E/lLN2T+lLN1_bc+spike0ms, E/lLN2T+lLN1_bc+spike0.5ms, E/lLN2T+lLN1_bc+spike2ms, F/lLN2T+lLN1_bc+spike0ms, F/lLN2T+lLN1_bc+spike0.5ms, F/lLN2T+lLN1_bc+spike1ms, F/lLN2T+lLN1_bc+spike2ms"
+    },
+    {
+      "command": "t4t5 --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/t4t5.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/t4t5/v1",
+      "source_commit": "0c574f5549380d36e8d97731b2742fb290763468",
+      "verdict": "neither"
+    },
+    {
+      "command": "t4t5 --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/t4t5.yaml",
+      "lock_version": 2,
+      "other_results": null,
+      "outputs_checked": 6,
+      "result": "results/t4t5/v2",
+      "source_commit": "17173c2cba50db104d8b4d3195d1307dd573e921",
+      "verdict": "robust: neither"
+    },
+    {
+      "command": "t4t5 --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/t4t5.yaml",
+      "lock_version": 3,
+      "other_results": null,
+      "outputs_checked": 8,
+      "result": "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output",
+      "source_commit": "406f622902c132973a1f8350ace709a03652337e",
+      "verdict": "robust: neither"
+    },
+    {
+      "command": "t4t5 --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/t4t5.yaml",
+      "lock_version": 4,
+      "other_results": null,
+      "outputs_checked": 8,
+      "result": "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output",
+      "source_commit": "111e3c500a2aaae8b15cd76d2f64042c8586604a",
+      "verdict": "robust: neither"
+    },
+    {
+      "command": "weight-rule --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/weight_rule.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/weight-rule/v1.executions/beb2fccf6b8094ee842de39deba87da17448ac37fab0626e1fa15db517762f4f/output",
+      "source_commit": "78f06737ebe4e6f520d018161182eaac33cef0ad",
+      "verdict": "undecided"
+    },
+    {
+      "command": "jump3d --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/jump3d.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/jump3d/v1",
+      "source_commit": "c05878d9e12331d0abf45477561abaa9c84ba1b6",
+      "verdict": "short"
+    },
+    {
+      "command": "partner-followup --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/partner_followup.yaml",
+      "lock_version": 1,
+      "other_results": {
+        "drive": "single_sufficient: DNp06_R",
+        "left": "replicates"
+      },
+      "outputs_checked": 4,
+      "result": "results/partner-followup/v1",
+      "source_commit": "39b53a530e0dbc65e8fdd664592aab445c9397cd",
+      "verdict": null
+    },
+    {
+      "command": "jump",
+      "errors": [],
+      "exceptions": [
+        "source_tree_not_reconstructible_from_commit",
+        "no_versioned_experiment_lock"
+      ],
+      "lock": null,
+      "lock_version": null,
+      "other_results": null,
+      "outputs_checked": 1,
+      "result": "results/jump/intact",
+      "source_commit": "3b30bcae77000a74159011078e374e13e9599f5e",
+      "verdict": null
+    },
+    {
+      "command": "jump",
+      "errors": [],
+      "exceptions": [
+        "source_tree_not_reconstructible_from_commit",
+        "no_versioned_experiment_lock"
+      ],
+      "lock": null,
+      "lock_version": null,
+      "other_results": null,
+      "outputs_checked": 1,
+      "result": "results/jump/dnp01",
+      "source_commit": "3b30bcae77000a74159011078e374e13e9599f5e",
+      "verdict": null
+    },
+    {
+      "command": "loop",
+      "errors": [],
+      "exceptions": [
+        "source_tree_not_reconstructible_from_commit",
+        "no_versioned_experiment_lock"
+      ],
+      "lock": null,
+      "lock_version": null,
+      "other_results": null,
+      "outputs_checked": 2,
+      "result": "results/loop",
+      "source_commit": "fe1a01821ee1e1e0f9cc3d5f2059ce3192637ec6",
+      "verdict": null
+    },
+    {
+      "command": "sensitivity --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/sensitivity.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 5,
+      "result": "results/sensitivity/v1",
+      "source_commit": "a7a15a9398d788513173fe0541bde120b9ed2262",
+      "verdict": null
+    },
+    {
+      "command": "convergence --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/convergence.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/convergence/v1.executions/be1ac2741e08d8f0432fd49fed5ebd74fab5062d79cb280a39637f49ae31997c/output",
+      "source_commit": "7c4d34d382018931e92021d41377aecd53557c73",
+      "verdict": "converged"
+    },
+    {
+      "command": "gf-looming --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/gf_looming.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/gf_looming/v1",
+      "source_commit": "0579ad8ddc5fd602234f7edb64fd22696c837ef6",
+      "verdict": "uninformative: no-go"
+    },
+    {
+      "command": "gf-looming --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/gf_looming.yaml",
+      "lock_version": 2,
+      "other_results": null,
+      "outputs_checked": 4,
+      "result": "results/gf_looming/v2",
+      "source_commit": "21ce9848587bbd05c4eabd9b505e0a9678071dae",
+      "verdict": "uninformative: the flies' slope does not separate the circuit from a stimulus-locked peak (onset)"
+    },
+    {
+      "command": "song --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/song.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/song/v1",
+      "source_commit": "2c86f7131a617ac7b1d54cf71a6c3bf2331bddff",
+      "verdict": "uninformative: no-go"
+    },
+    {
+      "command": "baselines --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/baselines.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/baselines/v1.executions/f89ed1c350b97a63cb5bfa7c483f1837ad81d585bcea19742800f809674bb7f4/output",
+      "source_commit": "894a77a509f71e852256f7e1286713030373dab8",
+      "verdict": "specific: looming escape/DNp01, looming escape/TTMn, giant fiber output/TTMn, P1 courtship drive/pIP10, P1 courtship drive/dPR1, pIP10 song pathway/dPR1, sugar feeding/MN9; not specific: bitter feeding/MN9"
+    },
+    {
+      "command": "apl-claws --run",
+      "errors": [],
+      "exceptions": [],
+      "lock": "validation/apl_claws.yaml",
+      "lock_version": 1,
+      "other_results": null,
+      "outputs_checked": 3,
+      "result": "results/apl-claws/v1.executions/b914035a1c1a364adec8e0a880373c104287b3e677f39521f76550e5dbadc0fd/output",
+      "source_commit": "fdef6431c59df3b50c79ccc3056b28bc277166c2",
+      "verdict": "uninformative"
+    }
+  ],
+  "schema": "flymsg.replication-audit/v1",
+  "scope": "local archive/source integrity; no simulation or held-out data access"
+}

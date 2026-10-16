@@ -1,0 +1,71 @@
+{
+  "adapter": "SraKmd_arden",
+  "cancel": {
+    "ok": true,
+    "seen_running": true,
+    "state": "cancelled",
+    "step": 39168
+  },
+  "date": "2026-10-16",
+  "fixture": {
+    "extension": "both",
+    "inputs": 2,
+    "neurons": 2048,
+    "seed": 40,
+    "steps": 1000000,
+    "synthetic": true
+  },
+  "oracle": "the CPU runtime on the same fixture, compared with scripts/native_acceptance.py check() after the last step",
+  "package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+  "package_lineage": {
+    "ci_head": "c03d88d9695e422923d28e1acb373f4c80a05b97",
+    "ci_url": "https://github.com/gianlucamazza/flymsg/actions/runs/38857488474",
+    "ci_worker_exe_sha256": "d36024ec7fe02023aa77f4f800ccb78a6ec0427a10ad42d85d48d5792fc8ced6",
+    "collector_base": "b5c6d3b75d9122e603d7bf0fc37502f72b1caddf",
+    "collector_dirty": true,
+    "installed_executable_independently_downloaded": false,
+    "msix_sha256": "ac83487482676a8a3093aa1186c8750dffcf9f2aa3ed1aa4194a630003109052",
+    "native_tree_matches_baseline": true,
+    "schema": "flymsg.console-qualification-lineage/v1",
+    "scope": "72 synthetic GPU parity cases; not performance, lifecycle, Membrane, continuous refractory clamps or biological validation",
+    "shader_sha256": "957a1202cb387b6ea29617c0865978e5fb1dbbbcaf93cf9f4a0e4e0478f41b14",
+    "worker_source_commit": "30ebc5369e16ee2b339b70ceb4ca341c0fb08cb0"
+  },
+  "passed": true,
+  "platform": "Xbox Series S, Dev Mode",
+  "schema": "flymsg.console_lifecycle/v1",
+  "scope": "one synthetic fixture; not full-connectome throughput or biological validation",
+  "script": "scripts/console_lifecycle.py",
+  "shader_sha256": "957a1202cb387b6ea29617c0865978e5fb1dbbbcaf93cf9f4a0e4e0478f41b14",
+  "stop_and_resume": {
+    "how": "Device Portal stop of the running app, restart, then a flymsg.worker_resume/v1",
+    "ok": true,
+    "parity": true,
+    "parked_as": "suspended",
+    "parked_at_step": 36032,
+    "resumed_advance_steps": 963968,
+    "seen_running": true,
+    "state": "completed"
+  },
+  "throughput": {
+    "app_memory_bytes": 153100288,
+    "app_memory_limit_bytes": 5368709120,
+    "error": "",
+    "neurons": 2048,
+    "parity": true,
+    "state": "completed",
+    "steps": 1000000,
+    "steps_per_s": 36897.456675180896
+  },
+  "raw_archive": "series-s-lifecycle-v2-2026-10-16.zip",
+  "raw_archive_sha256": "bc1bf927e778e1fa25b58ab026164cfb1fe578aee95778f32faf4dbc142a688b",
+  "download_checksums_independently_verified": true,
+  "completed_outputs_byte_identical": true,
+  "remaining": [
+    "other v2 lifecycle extensions",
+    "physical gamepad B",
+    "hard termination/device removal",
+    "sustained thermal and OS memory",
+    "representative full-connectome v2 performance"
+  ]
+}

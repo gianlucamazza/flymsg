@@ -16,7 +16,7 @@ import json
 import sys
 from pathlib import Path
 
-from flymsg import managed
+from flymsg import gf_looming, managed, song
 
 ROOT = Path(__file__).resolve().parents[1]
 _spec = importlib.util.spec_from_file_location(
@@ -28,6 +28,7 @@ DIRS, RESULTS = _archive.DIRS, _archive.RESULTS
 
 INDEX = ROOT / "docs" / "evidence" / "replication-index.json"
 SCHEMA = "flymsg.replication_index/v1"
+PROTOCOLS = {**managed.PROTOCOLS, "gf-looming": gf_looming, "song": song}
 
 
 def sha256(path: Path) -> str:
@@ -35,7 +36,7 @@ def sha256(path: Path) -> str:
 
 
 def lock_of(command: str) -> str | None:
-    module = managed.PROTOCOLS.get(command.split()[0])
+    module = PROTOCOLS.get(command.split()[0])
     path = getattr(module, "PATH", None)
     return str(path.relative_to(ROOT)) if path is not None else None
 

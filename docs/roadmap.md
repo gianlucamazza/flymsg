@@ -226,8 +226,7 @@ fixtures bit for bit, cancel, suspension with checkpoint and resume, and the def
 connectome bit for bit at about 2,320 steps/s once float32 arithmetic is exact (event-driven
 delivery alone was about 1,630). Version-2 fixtures (graded, coupled) run on the DX12 lane (#215) and
 match bit for bit on the Series S, 60 of 60. A GPU fault with hard
-termination is unmeasured. A headset for the WebXR
-observer (#177) is unmeasured; until then the observer stays experimental, and the native
+termination is unmeasured. The full-content Quest 2 partial WebXR trial (#177) failed its frame-time gate; the complete qualification matrix remains open, so the observer stays experimental, and the native
 executor refuses a fixture group it has not qualified.
 
 A Quest 2 is available and USB debugging is verified (2026-10-15); #177 stays open until

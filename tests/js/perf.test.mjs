@@ -6,13 +6,15 @@ import { Perf, percentile } from "../../src/flymsg/viz_static/perf.js";
 test("CPU wall time includes frame preparation before render submission", (t) => {
   let now = 0;
   t.mock.method(performance, "now", () => now);
-  const p = new Perf({info: {reset() {}, render: {calls: 1, triangles: 0, lines: 1}},
-    getContext: () => ({getExtension: () => null})});
+  const p = new Perf({
+    info: { reset() {}, render: { calls: 1, triangles: 0, lines: 1 } },
+    getContext: () => ({ getExtension: () => null }),
+  });
   const started = now;
   now = 75; // visibility/index work precedes the render scope and GPU query
   p.begin(started);
   now = 78;
-  assert.equal(p.end({continuous: true}).cpu_ms, 78);
+  assert.equal(p.end({ continuous: true }).cpu_ms, 78);
   assert.equal(p.summary().cpu_ms.p50, 78);
 });
 
@@ -60,4 +62,19 @@ test("slow continuous frames reach the adaptive fallback without a GPU timer", (
   for (let i = 1; i <= 12; i++) frame(30250 + i * 20, true);
   assert.equal(p.fps, 4);
   assert.equal(p.recentFrameMs(8), 20);
+});
+
+test("stage windows stay bounded and never survive a context reset", () => {
+  const p = new Perf({
+    info: {},
+    getContext: () => ({
+      getExtension: () => null,
+      isContextLost: () => false,
+    }),
+  });
+  for (let i = 0; i < 700; i++) p.stage("draw_submission", i);
+  assert.equal(p.stageReport().draw_submission.samples, 600);
+  assert.equal(p.stageReport().draw_submission.max_ms, 699);
+  p.resetContext();
+  assert.deepEqual(p.stageReport(), {});
 });

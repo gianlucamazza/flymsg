@@ -80,7 +80,7 @@ It never restarts the shared ADB server. An occupied reverse port refuses; use a
 `--port`. Normal exit removes only the mapping the script created. A forcibly killed
 collector may leave that mapping; inspect `adb -s QUEST_SERIAL reverse --list` before cleanup.
 
-Device/browser versions, source commit, battery, thermal status and browser memory are
+Device/browser versions, source commit, power/wakefulness, battery, thermal status and browser memory are
 captured before, every 30 seconds and after the trial. Browser reports are appended and
 fsynced in `runs/quest-xr/<timestamp>/sessions.jsonl`. The opt-in `xrcollect=1` flag posts
 measurements to this local collector; ordinary viewer pages make no such request. CPU/GPU
@@ -88,6 +88,12 @@ overrides, resolution overrides, disabled thermals and disabled headset safety s
 not part of the profile. Wireless ADB is unnecessary. Record charging state and keep it the
 same across comparisons. USB debugging authorization is persistent; reverse mappings are
 trial resources.
+
+Wireless ADB is also usable through an explicitly selected transport; see the
+[issue-resolution procedure](issue-resolution.md#physical-trial-procedure). A transport
+change starts a new trial. Record temporary user-requested keep-awake settings and restore
+their original values; such diagnostic runs must not silently inherit the original
+qualification profile. Page visibility alone does not prove that the headset is awake.
 
 Wait for scene loading before entering VR. The user activates the session and performs
 head motion/menu actions. Capture three two-minute active sessions per scene, `looming` and
@@ -126,7 +132,7 @@ completed trial. No report means no hardware verdict.
 | G3   | LC4/LPLC2 circuit-only controls; GF timing v1/v2 uninformative; T4/T5 v4 neither             | Measured optical → neural transfer and independent physiological qualification                                                       |
 | G4   | FlyGym adapter and TTM-only experiment, with named compensations                             | Supported muscle → actuator mapping; velocity-first jump protocol and qualified actuation                                            |
 | G5   | Synthetic pose-dependent loop, all arms, exact replay, interruption/resume and CLI           | Biological loop refuses until registration, transducer, motor map and body are measured                                              |
-| G6   | Existing locked song benchmark #36; an independent run is already active                     | Complete that run under its lock; looming behavior requires its own eligible dataset/lock                                            |
+| G6   | Song v1 #207 stopped as uninformative before opening held-out recordings                     | Measured auditory tuning and a new lock; looming behavior requires its own eligible dataset/lock                                     |
 | G7   | Source-bound outputs, cold-clone procedure and fixture performance instrumentation           | Record actual reproduction and Quest hardware evidence; fixture speed does not establish whole-CNS real time                         |
 
 G2's geometric implementation is not its complete qualification. This distinction also

@@ -1,0 +1,39 @@
+{
+  "schema": "flymsg.console-lifecycle-attempt/v1",
+  "date": "2026-10-16",
+  "extension": "both",
+  "force_stop_requested": true,
+  "state": "interrupted",
+  "passed": false,
+  "failure_phase": "resume_upload",
+  "error": "POST /api/filesystem/apps/file failed (curl 22); subsequent fresh-auth status download also failed",
+  "parked_state_verified": false,
+  "provenance": "Retrospective operational record from retained raw artifacts and the collector exception; not a successful recovery report",
+  "concurrent_context": "Another console artifact was signed during the attempt (CI 38862814877, source 93446aaa4e43b39a8a26672d4987735213c77c2c); deployment/context interference is not excluded. No worker recovery defect or GPU fault is established.",
+  "remaining": "Repeat from exclusively owned and source-verified worker/package context. Do not count this attempt as hard-termination or GPU-fault qualification.",
+  "retained_statuses": [
+    {
+      "job_id": "19740f0e-9d9b-4e0b-a1ca-7cca5171abb2",
+      "state": "running",
+      "step": 36032,
+      "source_commit": "30ebc5369e16ee2b339b70ceb4ca341c0fb08cb0",
+      "error": ""
+    },
+    {
+      "job_id": "85e9d3f3-bb77-495d-a56a-df7c2bc5ef7e",
+      "state": "cancelled",
+      "step": 38912,
+      "source_commit": "30ebc5369e16ee2b339b70ceb4ca341c0fb08cb0",
+      "error": ""
+    },
+    {
+      "job_id": "a3cb5800-ed21-493a-a4d6-3edc17e103fc",
+      "state": "completed",
+      "step": 1000000,
+      "source_commit": "30ebc5369e16ee2b339b70ceb4ca341c0fb08cb0",
+      "error": ""
+    }
+  ],
+  "raw_archive": "series-s-force-stop-attempt-2026-10-16.zip",
+  "raw_archive_sha256": "37d20666b43f4da5b0acfe22ce53bccad5994acc2932e056980d2465c6ce2699"
+}
