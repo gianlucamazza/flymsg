@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Architecture index and the completion list.** The experiments row names `path_metrics`, `identifiability`, `gf_looming`, `apl_claws` and `closedloop_experiment`. The roadmap's second completion step lists runs already read. A graded million-step publish on worker `90249e45` stays interrupted; the collector (#222) names the last state and step. Docs only.
+
 - **Lifecycle collector.** A throughput wait that expires names the worker's last state and step. A package-lineage mismatch stays a finished state whose commit differs from the declared one. No console trial was rerun.
 
 - **Weak-pathway timestep metrics v1** (#148, SF2): latency is not converged. On seeds 5000–5004 the sugar → MN9 first spike moves from 77.4 ms at 0.025 ms to 35.3 ms at 0.1 ms, past the finest seed range of 37.275 ms. Jitter at 0.1 ms stays within range except the silent bitter response, which is indeterminate. Recruitment and rate converge; sugar's recruited count still moves by 119 neurons inside a 274-neuron seed range. Convergence v1 is unchanged. `results/path-metrics/v1.executions/0c616b34…/output/`.

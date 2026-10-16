@@ -205,7 +205,7 @@ it is a plan, not a result.
 | [#19](https://github.com/gianlucamazza/flymsg/issues/19)   | Done (#142): the muscle is the type's; neuron-level matches recorded (140 of 623 disagree)                                                         | Muscle → body actuator (#19, #35) stays blocked on evidence                                     |
 | [#36](https://github.com/gianlucamazza/flymsg/issues/36)   | Done: `song.yaml` v1 uninformative, the no-go (14 of 32 neuropils resolve a sign; median \|index\| about 0.05). The Pacheco data were never opened | A version 2 needs a measured JO band-pass or carrier-tuned input; #36 stays blocked on evidence |
 
-**2. Next: the evidence exists and must be read and fixed in a lock.**
+**2. Already read: T4/T5 v4, KC and APL, looming v1 and v2, and jump3d v2.**
 
 | Issue                                                      | Work                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -229,8 +229,11 @@ loop refuses until G3 and G4 are measured.
 fixtures bit for bit, cancel, suspension with checkpoint and resume, and the default full
 connectome bit for bit at about 2,320 steps/s once float32 arithmetic is exact (event-driven
 delivery alone was about 1,630). Version-2 fixtures (graded, coupled) run on the DX12 lane (#215) and
-match bit for bit on the Series S, 60 of 60. A GPU fault with hard
-termination is unmeasured. The full-content Quest 2 partial WebXR trial (#177) failed its frame-time gate; the complete qualification matrix remains open, so the observer stays experimental, and the native
+match bit for bit on the Series S, 60 of 60. A graded million-step job on the
+installed worker `90249e45` reached step 1,000,000 and stayed in `checkpointing`
+with `checkpoint.bin.tmp` empty. That trial stays interrupted. The lifecycle
+collector (#222) names the worker's last state and step when a throughput wait
+expires. A GPU fault with hard termination is unmeasured. The full-content Quest 2 partial WebXR trial (#177) failed its frame-time gate; the complete qualification matrix remains open, so the observer stays experimental, and the native
 executor refuses a fixture group it has not qualified.
 
 A Quest 2 is available and USB debugging is verified (2026-10-15); #177 stays open until
