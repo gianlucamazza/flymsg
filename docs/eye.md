@@ -217,14 +217,16 @@ some of these configurations). Outputs: `results/t4t5/v4.executions/7a550844…/
 **Post-hoc audit of version 4 (2026-10-16, not a score).** Read from the archived
 `medulla.csv`, `metrics.csv` and `spikes.csv`; nothing was rerun and the verdict stands. The
 archive holds spike counts and per-type potential extremes, not time series, so latency and
-timing cannot be reconstructed from it. At gain 16 with LMC 200 Hz the medulla swings
-relative to its settled potential are Tm3 +10.2/−9.9, Mi1 +7.6/−6.8, C3 +6.6/−7.7, Mi9
-+5.1/−5.3 and Mi4 ±0.6 mV, against measured ranges of +21.9/−5.0, +23.9/−4.0, +19.9/−7.2,
-+7.6/−4.5 and +12.8/−1.6 mV: the depolarizations reach about a third to two thirds of the
-measured ones (Mi4 about 5%), while the hyperpolarizations match or exceed them except in Mi4. T5 fires no
-spike in any of the 12 configurations. Where T4 fires in thousands (7, 9, 11), OFF exceeds ON
-in every subtype, and the response vectors of all four subtypes lie between 265° and 345°
-whatever their measured direction (0°, 90°, 180°, 270°), with vertical motion driving 2–29% more
-spikes than horizontal motion in every subtype and polarity. So T4a and T4d pointing near the measured way
+timing cannot be reconstructed from it. At gain 16 with LMC 200 Hz (configurations 10 and
+11, medulla release 50 and 200 Hz), the largest medulla swings relative to the settled potential
+over both are Tm3 +10.2/−9.9, Mi1 +7.6/−6.8, C3 +6.6/−7.7, Mi9 +5.1/−5.3 and Mi4 ±0.6 mV
+(configuration 11 alone: Tm3 +8.7/−9.7, Mi1 +4.8/−6.8, C3 +6.0/−7.7), against measured ranges
+of +21.9/−5.0, +23.9/−4.0, +19.9/−7.2, +7.6/−4.5 and +12.8/−1.6 mV. The depolarizations reach
+about a fifth to two thirds of the measured ones (Mi4 about 5%), while the hyperpolarizations
+match or exceed them except in Mi4. T5 fires no spike in any of the 12 configurations. Where T4
+fires in thousands (7, 9, 11), OFF exceeds ON in every subtype, and the response vectors of all
+four subtypes lie between 265° and 345° whatever their measured direction (0°, 90°, 180°,
+270°), with vertical motion driving 1–31% more spikes than horizontal motion in every subtype
+and polarity. So T4a and T4d pointing near the measured way
 follows from a bias shared by all four subtypes, not from a tuning of their own. This audit
 describes v4; it selects no mechanism for a version 5, which waits on the release curve.
