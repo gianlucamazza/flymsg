@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import json
+import math
 import os
 import re
 import subprocess
@@ -63,6 +64,79 @@ def wifi_serial(value):
     except ValueError as exc:
         raise argparse.ArgumentTypeError("explicit Wi-Fi IP:port required") from exc
     return value
+
+
+def native_focus(serial):
+    raw = adb(serial, "shell", "dumpsys", "window")
+    components = re.findall(r"mCurrentFocus=Window\{[^}\n]*\s([\w.]+/[^\s}]+)\}", raw)
+    return {
+        "components": components,
+        "browser_focused": bool(components)
+        and all(value.startswith("com.oculus.browser/") for value in components),
+    }
+
+
+def bounded_xr_certificate(doc, expected=None):
+    """Independently check final per-frame geometric receipts, not timing or comfort."""
+    fields = [
+        "maximum_error_px",
+        "submitted_indices",
+        "source_indices",
+        "fallback_pages",
+        "coarse_pages",
+        "invalid",
+    ]
+    content, bounded = doc.get("content"), doc.get("bounded")
+    if not isinstance(content, dict) or not isinstance(bounded, dict):
+        return {"status": "fail", "reason": "missing bounded content certificate"}
+    if doc.get("status") != "ended":
+        return {"status": "pending", "reason": "final raw session required"}
+    identity = content.get("identity")
+    if (
+        not isinstance(identity, dict)
+        or identity.get("representation") != "skeleton-bounded"
+        or (expected is not None and identity != expected)
+    ):
+        return {"status": "fail", "reason": "content identity mismatch"}
+    frames, rows = doc.get("frames"), doc.get("raw_bounded_frames")
+    if (
+        type(frames) is not int
+        or frames < 1
+        or not isinstance(rows, list)
+        or len(rows) != frames
+        or bounded.get("fields") != fields
+    ):
+        return {"status": "fail", "reason": "incomplete bounded frame sequence"}
+    maximum, fallback = 0.0, 0
+    for row in rows:
+        if not isinstance(row, list) or len(row) != 6:
+            return {"status": "fail", "reason": "malformed bounded frame"}
+        error, submitted, source, fallback_pages, _coarse_pages, invalid = row
+        if (
+            type(error) not in (int, float)
+            or not math.isfinite(error)
+            or not 0 <= error <= 0.5
+            or any(type(value) is not int or value < 0 for value in row[1:])
+            or submitted > source
+            or invalid != 0
+        ):
+            return {"status": "fail", "reason": "uncertified bounded frame"}
+        maximum = max(maximum, error)
+        fallback += fallback_pages > 0
+    if (
+        content.get("checked_frames") != frames
+        or content.get("incomplete_frames") != 0
+        or bounded.get("checked_frames") != frames
+        or bounded.get("uncertified_frames") != 0
+    ):
+        return {"status": "fail", "reason": "frame summary mismatch"}
+    return {
+        "status": "pass",
+        "checked_frames": frames,
+        "maximum_error_px": maximum,
+        "fallback_frames": fallback,
+        "qualification": "geometry only; timing and human acceptance remain separate",
+    }
 
 
 def identity(serial, expected=None):
@@ -138,6 +212,10 @@ def preflight(serial, url, *, verify_sources=True):
         result["reasons"].append("headset-not-awake")
         return result
     try:
+        state["native_focus"] = native_focus(serial)
+        if not state["native_focus"]["browser_focused"]:
+            result["reasons"].append("native-browser-not-focused")
+            return result
         with browser_endpoint(serial) as endpoint:
             check = browser_preflight(endpoint, url, verify_sources=verify_sources)
             result.update(
@@ -193,7 +271,8 @@ class EvidenceHandler(SimpleHTTPRequestHandler):
             return self.send_error(403)
         try:
             length = int(self.headers.get("Content-Length", "0"))
-            if not 0 < length <= 8_000_000:
+            # Final bounded sessions include every geometric receipt and raw interval.
+            if not 0 < length <= 16_000_000:
                 return self.send_error(413)
             doc = json.loads(self.rfile.read(length))
             if not isinstance(doc, dict) or doc.get("schema") != "flymsg.xr-bench/v1":
@@ -207,6 +286,10 @@ class EvidenceHandler(SimpleHTTPRequestHandler):
                 and doc.get("observer_document_id") == self.server.ready_document_id
                 and not getattr(self.server, "unattended", False),
             }
+            if getattr(self.server, "representation", None) == "skeleton-bounded":
+                entry["bounded_geometry"] = bounded_xr_certificate(
+                    doc, getattr(self.server, "ready_content", None)
+                )
             with self.server.evidence_lock, self.evidence.open("ab") as stream:
                 stream.write(runstore.canonical(entry) + b"\n")
                 stream.flush()
@@ -457,6 +540,8 @@ class QuestSite:
             raise RuntimeError("unattended proximity lease lost")
         self.close_page()
         self.server.ready_document_id = None
+        self.server.ready_content = None
+        self.server.representation = representation
         self.url = f"http://localhost:{self.port}/live/{scene}/?" + urlencode(
             {
                 **({} if self.unattended else {"xr": 1, "xrcollect": 1}),
@@ -534,6 +619,14 @@ class QuestSite:
         path = evidence or self.out / "preflight.jsonl"
         while True:
             state = snapshot(self.serial, light=True)
+            try:
+                state["native_focus"] = native_focus(self.serial)
+            except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+                state["native_focus"] = {
+                    "components": [],
+                    "browser_focused": False,
+                    "error": str(exc),
+                }
             check = {"eligible": False, "reasons": ["headset-not-awake"]}
             if "mWakefulness=Awake" in str(state["power"]):
                 try:
@@ -572,7 +665,18 @@ class QuestSite:
                 stream.write(runstore.canonical(entry) + b"\n")
                 stream.flush()
                 os.fsync(stream.fileno())
+            if not readback_only and not state["native_focus"]["browser_focused"]:
+                check = {
+                    **check,
+                    "eligible": False,
+                    "reasons": [*check["reasons"], "native-browser-not-focused"],
+                }
             if check["eligible"]:
+                fidelity = check.get("state", {}).get("fidelity", {})
+                self.server.ready_content = {
+                    key: fidelity.get(key)
+                    for key in ("representation", "selected", "represented")
+                }
                 self.server.ready_document_id = (
                     None if readback_only else check["state"]["after"]["document_id"]
                 )

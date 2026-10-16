@@ -16,7 +16,10 @@ test("resource inventory runs only when sampled, never on every headset frame", 
   const inventory = () => ({ bytes: ++calls });
   for (let i = 0; i <= 10000; i += 10) m.frame(i, 1, [], inventory);
   assert.equal(calls, 2);
-  assert.deepEqual(m.report().resources.map((r) => r.bytes), [1, 2]);
+  assert.deepEqual(
+    m.report().resources.map((r) => r.bytes),
+    [1, 2],
+  );
 });
 
 test("XR budgets use actual refresh and retain long stalls beyond the desktop idle filter", () => {
@@ -94,4 +97,76 @@ test("initial runtime refresh selection before the first frame is a known budget
   m.frame(1000 / 90, 1, []);
   assert.equal(m.report().timing.refresh_hz, 90);
   assert.equal(m.report().timing.verdict, "pass");
+});
+
+test("every XR frame keeps the bounded certificate and catches violations between resource samples", () => {
+  const emitted = [],
+    m = new XrMetrics({}, (r) => emitted.push(r)),
+    ready = {
+      representation: "skeleton-bounded",
+      selected: 1128,
+      represented: 1128,
+      status: "ready",
+      gpu_ready: true,
+      bounded: {
+        maximum_error_px: 0.4,
+        submitted_indices: 20,
+        source_indices: 100,
+        fallback_pages: 0,
+        coarse_pages: 1,
+        error: null,
+      },
+    };
+  for (const damage of [
+    null,
+    { ...ready.bounded, maximum_error_px: 0.51 },
+    { ...ready.bounded, submitted_indices: 101 },
+    { ...ready.bounded, error: "upload failure" },
+  ]) {
+    m.start(session(), 0);
+    m.frame(0, 1, [], () => ({}), ready);
+    m.frame(1000 / 72, 1, [], null, { ...ready, bounded: damage });
+    m.frame(2000 / 72, 1, [], null, ready);
+    const r = m.finish("end", 100);
+    assert.equal(r.timing.verdict, "pass");
+    assert.equal(r.bounded.verdict, "fail");
+    assert.equal(r.content.incomplete_frames, 1);
+    assert.equal(r.raw_bounded_frames.length, 3);
+    assert.equal(r.raw_bounded_frames[1][5], 1);
+  }
+  m.start(session(), 0);
+  m.frame(0, 1, [], () => ({}), ready);
+  assert.equal(emitted.at(-1).raw_bounded_frames, undefined);
+  m.frame(1000 / 72, 1, [], null, {
+    ...ready,
+    bounded: {
+      ...ready.bounded,
+      maximum_error_px: 0,
+      submitted_indices: 100,
+      fallback_pages: 1,
+      coarse_pages: 0,
+    },
+  });
+  const r = m.finish("end", 100);
+  assert.equal(r.bounded.verdict, "pass");
+  assert.equal(r.raw_bounded_frames[1][3], 1);
+});
+test("ready content cannot conceal an anatomical selection change during XR", () => {
+  const m = new XrMetrics({}, () => {});
+  m.start(session(), 0);
+  m.frame(0, 1, [], null, {
+    status: "ready",
+    gpu_ready: true,
+    representation: "skeleton",
+    selected: 1128,
+    represented: 1128,
+  });
+  m.frame(14, 1, [], null, {
+    status: "ready",
+    gpu_ready: true,
+    representation: "skeleton",
+    selected: 2,
+    represented: 2,
+  });
+  assert.equal(m.report().content.verdict, "fail");
 });
