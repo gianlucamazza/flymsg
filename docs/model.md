@@ -477,7 +477,7 @@ the NumPy reference and `CpuRuntime` agree exactly (`tests/test_gap.py`), two co
 relax as the exact solution and reproduce c / (1 + c), the native C++ executor retains its explicitly named boundary-reset and all-free
 electrical paths; dynamic
 continuous clamps require a separately qualified native implementation and are refused.
-The GPU lane implements version-2 coupled groups (#215); a Series S measurement is not archived (#39).
+The GPU lane runs the boundary-reset and all-free paths too (#215), bit for bit on a Series S (#39); it refuses the dynamic continuous clamp, as the C++ executor does.
 Until 2026-10-13 (`b1116af`, Kenyon cell v4) the coupling was an explicit first-order step
 added to the membrane update.
 
@@ -502,8 +502,8 @@ Without graded neurons the engine is unchanged, bit for bit. With them, `sim.run
 reference (`tests/reference_sim.py`) and `CpuRuntime` (chunks, checkpoints) give identical
 spikes and potentials (`tests/test_graded.py`); `Result.graded_v` holds the mean potential of
 the graded neurons per bin. The native C++ executor runs them from fixture version 2 and
-matches the CPU runtime bit for bit; the GPU lane implements them (#215), and a Series S
-measurement is not archived (#39).
+matches the CPU runtime bit for bit; so does the GPU lane (#215) on a Series S
+(#39).
 
 ## Per-neuron membranes (optional, 2026-10-13)
 

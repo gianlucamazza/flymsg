@@ -137,11 +137,11 @@ three stay off unless a lock names them.
 
 ## Blocked on hardware
 
-| Issue                                                            | Blocked by                                                                                                      | Ready                                                                                                                         |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Version-2 GPU fixtures: 60/60 on Series S (2026-10-16); continuous refractory clamp and Membrane remain refused | Series S GPU parity, 12 of 12 version-1 fixtures bit for bit (2026-10-15)                                                     |
-| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | GPU fault and hard termination on the console                                                                   | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; full connectome bit for bit at about 2,320 steps/s |
-| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss                                             | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))                                   |
+| Issue                                                            | Blocked by                                                          | Ready                                                                                                                                           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Dynamic continuous clamp, refused on every native lane              | Series S GPU parity bit for bit, 12 version-1 fixtures (2026-10-15) and 60 version-2 fixtures (2026-10-16), including the 12 gap-all-free cases |
+| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | GPU fault and hard termination on the console                       | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; full connectome bit for bit at about 2,320 steps/s                   |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))                                                     |
 
 ## What an animal test could check
 
@@ -224,10 +224,9 @@ loop refuses until G3 and G4 are measured.
 **4. Hardware.** On a Series S in Dev Mode the version-1 lane is qualified (#39, #40): 12 of 12
 fixtures bit for bit, cancel, suspension with checkpoint and resume, and the default full
 connectome bit for bit at about 2,320 steps/s once float32 arithmetic is exact (event-driven
-delivery alone was about 1,630). Version-2 fixtures (graded, coupled) are implemented on the
-DX12 lane (#215); the 2026-10-16 Series S qualification passes all 60 supported v2 cases, plus the 12 v1 cases. A GPU fault with hard
-termination is unmeasured. A headset for the WebXR
-observer (#177) is unmeasured; until then the observer stays experimental, and the native
+delivery alone was about 1,630). Version-2 fixtures (graded, coupled) run on the DX12 lane (#215) and
+match bit for bit on the Series S, 60 of 60. A GPU fault with hard
+termination is unmeasured. The full-content Quest 2 partial WebXR trial (#177) failed its frame-time gate; the complete qualification matrix remains open, so the observer stays experimental, and the native
 executor refuses a fixture group it has not qualified.
 
 A Quest 2 is available and USB debugging is verified (2026-10-15); #177 stays open until
