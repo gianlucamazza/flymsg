@@ -35,6 +35,7 @@ from flymsg import sim
 from flymsg.console import (  # the scripts beside this one import them here
     ADAPTER,
     Portal,
+    PortalError,
 )
 from flymsg.native import NativeCapabilityError, export_fixture, read_output
 from flymsg.runtime import CpuRuntime
@@ -116,9 +117,13 @@ def run(
             time.sleep(5)
             try:
                 portal.get(package, rel, "status.json", folder / "status.json")
-            except RuntimeError:
+                status = json.loads((folder / "status.json").read_text())
+            except PortalError as exc:
+                if exc.http_status != 404:
+                    raise
                 continue
-            status = json.loads((folder / "status.json").read_text())
+            except json.JSONDecodeError:
+                continue  # caught during atomic status replacement
             if status.get("state") in ("completed", "failed", "cancelled"):
                 break
         case = {

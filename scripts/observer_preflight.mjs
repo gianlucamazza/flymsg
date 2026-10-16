@@ -4,13 +4,23 @@ import { readFileSync } from "node:fs";
 import { localObserver } from "./observer_cdp.mjs";
 
 export async function observerPreflight(browser, expectedUrl) {
-  const state = await browser.evaluate(`(() => ({url:location.href,
+  const state = await browser.evaluate(`(async() => {
+    const immersive=flymsg.renderer.xr.isPresenting;
+    const before=immersive?window.flymsgXrReport?.()?.frames:0;
+    let callbacks=0,frame;
+    const tick=()=>{callbacks++;frame=requestAnimationFrame(tick)};
+    if(!immersive)frame=requestAnimationFrame(tick);
+    await new Promise(resolve=>setTimeout(resolve,1200));
+    if(frame!==undefined)cancelAnimationFrame(frame);
+    if(immersive)callbacks=(window.flymsgXrReport?.()?.frames??before)-before;
+    return {url:location.href, frame_callbacks:callbacks,
     visibility:document.visibilityState, fidelity:flymsg.fidelity(),
     resources:flymsg.resources(), immersive:flymsg.renderer.xr.isPresenting,
-    stats:document.getElementById('stats').textContent}))()`);
+    stats:document.getElementById('stats').textContent};})()`);
   const reasons = [];
   if (state.url !== expectedUrl) reasons.push("unexpected-url");
   if (state.visibility !== "visible") reasons.push("hidden-page");
+  if (!(state.frame_callbacks > 1)) reasons.push("no-frame-callbacks");
   if (state.fidelity.status !== "ready") reasons.push("incomplete-anatomy");
   if (state.fidelity.gpu_ready === false) reasons.push("gpu-not-ready");
   if (!/(?:^| · )0 loading(?: · |$)/.test(state.stats)) reasons.push("loading");
