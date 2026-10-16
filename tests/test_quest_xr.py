@@ -148,3 +148,52 @@ def test_preflight_removes_only_owned_forward_after_bad_target(monkeypatch):
     assert not check["eligible"]
     assert "expected page URL" in check["reasons"][0]
     assert calls[-1] == ("forward", "--remove", "tcp:39261")
+
+
+@pytest.mark.parametrize("serial", ["192.168.1.146:5555", "[::1]:5555"])
+def test_wifi_transport_is_explicit(serial):
+    assert quest.wifi_serial(serial) == serial
+
+
+@pytest.mark.parametrize(
+    "serial", ["USB-serial", "192.168.1.1", "192.168.1.1:0", "192.168.1.1:65536"]
+)
+def test_wifi_profile_rejects_usb_or_invalid_endpoints(serial):
+    import argparse
+
+    with pytest.raises(argparse.ArgumentTypeError):
+        quest.wifi_serial(serial)
+
+
+def test_cleanup_attempts_remaining_resources_after_restore_failure(tmp_path):
+    calls = []
+
+    def fail():
+        calls.append("restore")
+        raise RuntimeError("disconnected")
+
+    report = quest.cleanup_resources(
+        "192.168.1.146:5555",
+        tmp_path,
+        [
+            ("keep-awake", fail),
+            ("remove-owned-forward", lambda: calls.append("forward")),
+            ("remove-owned-reverse", lambda: calls.append("reverse")),
+            ("snapshot", lambda: calls.append("snapshot")),
+        ],
+    )
+    assert calls == ["restore", "forward", "reverse", "snapshot"]
+    assert not report["ok"]
+    assert json.loads((tmp_path / "cleanup.json").read_text()) == report
+
+
+def test_identity_refuses_changed_hardware_without_other_actions(monkeypatch):
+    monkeypatch.setattr(
+        quest,
+        "adb",
+        lambda serial, *args: (
+            "Quest 2" if args[-1] == "ro.product.model" else "changed"
+        ),
+    )
+    with pytest.raises(ValueError, match="identity changed"):
+        quest.identity("192.168.1.146:5555", "expected")

@@ -61,3 +61,53 @@ def test_portal_error_retains_http_status_without_credentials(monkeypatch, tmp_p
         ),
     )
     assert portal.curl("GET", "/api/files") == '{"ok":true}'
+
+
+def test_portal_csrf_header_uses_stdin_not_process_arguments(monkeypatch, tmp_path):
+    import subprocess
+
+    portal = console.Portal.__new__(console.Portal)
+    portal.base = "https://private-address"
+    portal.config = 'user = "secret:password"\n'
+    portal.jar = str(tmp_path / "cookies")
+    portal.pin = None
+    portal.token = 'private-token"value'
+    calls = []
+
+    def run(args, **kwargs):
+        calls.append((args, kwargs))
+        return subprocess.CompletedProcess(args, 0, "\nFLYMSG_HTTP_STATUS:200", "")
+
+    monkeypatch.setattr(console.subprocess, "run", run)
+    portal.curl("POST", "/api/test")
+    args, kwargs = calls[0]
+    assert not any(
+        "private-token" in str(arg) or "password" in str(arg) for arg in args
+    )
+    assert 'header = "X-CSRF-Token:private-token\\"value"' in kwargs["input"]
+
+
+def test_mkdir_only_accepts_a_verified_existing_directory(tmp_path):
+    import pytest
+
+    for status in (400, 409, 401, 403, 0):
+        calls = []
+
+        def curl(method, path, calls=calls, status=status):
+            calls.append((method, path))
+            if method == "POST":
+                raise console.PortalError(method, path, 22, status)
+            return '{"Items":[]}'
+
+        portal = console.Portal.__new__(console.Portal)
+        portal.jar = str(tmp_path / "cookies")
+        portal.curl = curl
+        if status in (400, 409):
+            portal.mkdir("package", "inbox")
+            assert len(calls) == 2
+            assert calls[1][0] == "GET"
+            assert "path=%5CLocalState%5Cinbox" in calls[1][1]
+        else:
+            with pytest.raises(console.PortalError):
+                portal.mkdir("package", "inbox")
+            assert len(calls) == 1
