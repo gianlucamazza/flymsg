@@ -506,3 +506,59 @@ def test_remote_epoch_detects_replaced_app_context(monkeypatch, tmp_path):
     remote[epoch.name] = b"{}"
     with pytest.raises(RuntimeError, match="epoch changed"):
         epoch.check("after-restart")
+
+
+def test_sustained_windows_use_running_steps_only(monkeypatch):
+    module = load("console_sustained", monkeypatch)
+    samples = [{"t": 0.0, "state": "validating", "step": 0}]
+    samples += [
+        {"t": float(t), "state": "running", "step": 100 * t} for t in range(1, 131)
+    ]
+    samples.append({"t": 131.0, "state": "completed", "step": 13_100})
+    assert module.windows(samples, 60.0) == [100.0, 100.0]
+    assert module.summary([4.0, 2.0])["last_over_first"] == 0.5
+    assert module.summary([]) == {}
+
+
+@pytest.mark.parametrize("damage", ["none", "other_output", "failed", "oracle"])
+def test_sustained_case_fails_closed(monkeypatch, tmp_path, damage):
+    module = load("console_sustained", monkeypatch)
+    case = {
+        "name": "c",
+        "stimulus": "s",
+        "seed": 1,
+        "steps": 10,
+        "jobs": 3,
+        "per_bin": 1,
+    }
+
+    class FirstJob:
+        def parity(self):
+            return damage != "oracle"
+
+    def one_job(portal, args, sha, out, rt, case, index):
+        failed = damage == "failed" and index == 1
+        record = {
+            "index": index,
+            "final_state": "failed" if failed else "completed",
+            "reported_sha_matches": True,
+            "output_sha256": "b" if damage == "other_output" and index == 2 else "a",
+            "upload_s": 1.0,
+            "first_running_s": 1.0,
+            "samples": [{"app_memory_bytes": 1}],
+            "window_steps_per_s": [],
+        }
+        if not failed:
+            record["advance_steps_per_s"] = 2000.0
+        return record, FirstJob()
+
+    class Model:
+        def runtime(self, case):
+            return None
+
+    monkeypatch.setattr(module, "one_job", one_job)
+    args = type("A", (), {"out": tmp_path})()
+    result = module.run_case(None, args, "sha", Model(), case)
+    assert result["verdict"] == ("pass" if damage == "none" else "fail")
+    if damage == "failed":
+        assert len(result["jobs"]) == 2
