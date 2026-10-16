@@ -80,6 +80,13 @@ try {
   });
   let id = 0;
   const pending = new Map();
+  const disconnect = (reason) => {
+    if (!pending.size) return;
+    for (const callback of pending.values()) callback({ error: { message: reason } });
+    pending.clear();
+  };
+  ws.addEventListener("close", (event) => disconnect(`CDP disconnected (${event.code}): ${event.reason}`));
+  ws.addEventListener("error", () => disconnect("CDP connection failed"));
   let benchmark = null;
   let phase = "cold";
   const requestPhase = new Map();

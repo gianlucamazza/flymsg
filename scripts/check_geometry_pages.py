@@ -56,7 +56,7 @@ window.oracle=observerPipelineOracle().catch(error=>({status:'fail',error:String
 <script type="module">
 import * as THREE from "/vendor/three/build/three.module.min.js";
 import {pagedSceneOracle} from "/paged-scene-oracle.js";
-window.oracle=pagedSceneOracle(THREE);
+window.oracle=pagedSceneOracle(THREE).catch(error=>({status:'fail',error:String(error),stack:error.stack}));
 </script>"""
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
@@ -127,6 +127,11 @@ def main():
             "paged-scene.js",
             "paged-scene-oracle.js",
             "render-reference.js",
+            "geometry-worker.js",
+            "context-geometry.js",
+            "geometry.js",
+            "geometry-pages.js",
+            "precomputed.js",
             "vendor/three/build/three.module.min.js",
         )
     if args.oracle.startswith("viewer-"):
@@ -160,32 +165,33 @@ def main():
         thread = threading.Thread(target=server.serve_forever)
         thread.start()
         try:
-            result = subprocess.run(
-                [
-                    "node",
-                    str(ROOT / "scripts/shoot.mjs"),
-                    f"http://localhost:{server.server_port}/{page}",
-                    str(args.out / "browser.png"),
-                    "3",
-                    "400",
-                    "300",
-                ],
-                env={
-                    **os.environ,
-                    "GL": "swiftshader",
-                    "EVAL": "window.oracle",
-                    "EVAL_TIMEOUT_MS": "90000",
-                },
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                timeout=120,
-                check=False,
-            )
-            (args.out / "browser.log").write_text(result.stdout)
+            with (args.out / "browser.log").open("w") as log:
+                result = subprocess.run(
+                    [
+                        "node",
+                        str(ROOT / "scripts/shoot.mjs"),
+                        f"http://localhost:{server.server_port}/{page}",
+                        str(args.out / "browser.png"),
+                        "3",
+                        "400",
+                        "300",
+                    ],
+                    env={
+                        **os.environ,
+                        "GL": "swiftshader",
+                        "EVAL": "window.oracle",
+                        "EVAL_TIMEOUT_MS": "90000",
+                    },
+                    text=True,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                    timeout=120,
+                    check=False,
+                )
+            stdout = (args.out / "browser.log").read_text()
             values = [
                 json.loads(line[7:])
-                for line in result.stdout.splitlines()
+                for line in stdout.splitlines()
                 if line.startswith("[eval] ")
             ]
             if (

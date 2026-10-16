@@ -117,3 +117,18 @@ test("allocation/upload failure is unsupported, never ready, and remains releasa
   f.queue.release(record);
   assert.equal(f.queue.report().owned_gpu_bytes, 0);
 });
+
+test("a new source generation can recover after failed allocations are released", () => {
+  const f = fixture({ fail: true });
+  f.queue.enqueue([new Float32Array(5)]);
+  f.queue.tick();
+  assert.equal(f.queue.report().state, "unsupported");
+  f.queue.reset();
+  f.gl.getError = () => 0;
+  const next = f.queue.enqueue([new Float32Array(5)]);
+  f.queue.tick();
+  assert.equal(next.state, "ready");
+  assert.equal(f.deletions.length, 1);
+  f.queue.reset();
+  assert.equal(f.deletions.length, 2);
+});

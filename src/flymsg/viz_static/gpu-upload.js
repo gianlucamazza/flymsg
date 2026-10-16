@@ -82,7 +82,7 @@ export class GpuUploads {
         if (!record.buffers[record.slot]) {
           const buffer = gl.createBuffer();
           if (!buffer) throw new Error("GPU buffer allocation failed");
-          record.buffers[record.slot] = { buffer, bytes: array.byteLength };
+          record.buffers[record.slot] = { buffer, bytes: 0 };
           if (record.slot === record.indexSlot) {
             // Establish WebGL's element-buffer type on our own VAO before
             // COPY_WRITE, without touching the renderer's element binding.
@@ -107,6 +107,9 @@ export class GpuUploads {
               ),
             "allocation_ms",
           );
+          if (gl.getError() !== gl.NO_ERROR)
+            throw new Error("GPU buffer allocation failed");
+          record.buffers[record.slot].bytes = array.byteLength;
           // The budget cannot preempt a synchronous driver allocation.
           if (this.now() - start >= this.msPerTick) break;
         }
@@ -165,6 +168,10 @@ export class GpuUploads {
     record.settled();
     record.arrays = [];
     record.buffers = [];
+  }
+  reset() {
+    for (const record of [...this.records]) this.release(record);
+    this.error = null;
   }
   contextLost() {
     this.lost = true;

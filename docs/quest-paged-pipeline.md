@@ -44,6 +44,19 @@ work and publish no incomplete generation. Camera movement only changes page
 eligibility, without rebuilding or uploading indices. Bounds include both
 endpoints and conservative float32 roundoff; either eye can retain a page.
 Transparent pages retain their original object's sort centre and source order.
+Opaque anatomical pages share a conservative sort centre, preserving the single
+reference object's primitive order and neuron-ID ownership at equal depth. Bounds
+remain valid public geometry bounds; page-box culling remains independent.
+
+Catalog discovery, soma preparation and selected neuropil preparation participate
+in one context-readiness policy used by both VR admission and the GPU candidate.
+An optional absent local soma export is distinct from an explicitly requested
+missing layer. Context coordinate/colour conversion and full mesh concatenation
+and normals run in the existing geometry workers. Worker-owned legacy fragments
+use zero-copy input views; canonical source outputs remain retained on the CPU.
+Worker failures reject their pending jobs, and pending input bytes are reported
+separately from geometry/GPU totals. A changed selection can recover from a failed
+GPU allocation after the previous generation's resources have been released.
 
 The original global surface/skeleton arenas are constructed lazily for an
 explicit diagnostic capture, not during candidate startup. Source slot reuse is
@@ -66,6 +79,8 @@ colour, neuron ID and packed depth; the default is always the original oracle.
 `flymsg.gpuInventory()` reads actual native buffer contents outside timing runs,
 including checksums and primitive provenance. CPU originals are not replaced by
 candidate-generated expected arrays.
+`flymsg.desktopReference()` captures the actual desktop framebuffer at unchanged
+resolution, MSAA and bloom settings while the diagnostic owns the renderer.
 
 Direct/compositor probes use `flymsg.renderScene()`/`renderDesktop()` to select
 the same pipeline as the application loop, and record that pipeline explicitly.
@@ -86,9 +101,13 @@ node --test tests/js/*.test.mjs
 
 The paged oracle compares exact source/GPU primitive streams and colour/ID/depth,
 including depth ties, clipping, translucent context, cancellation, five release
-cycles and context restoration. The viewer oracles use **two explicitly declared
+cycles and context restoration. It also exercises actual context-worker messages,
+input ownership transfer and point primitives. The viewer oracles use **two explicitly declared
 real source neurons**, three replay timestamps and two camera positions, with
-the actual application materials and page culling. They require source network
+the actual application materials and page culling. They retain both raw RGBA
+images and view matrices. Direct colour/ID/depth comparisons are supplemented by
+three full desktop frame comparisons per representation with 4x MSAA and bloom.
+They require source network
 access. These reduced fixtures test correctness only; neither they nor
 SwiftShader establish full-scene, physical stereo or performance qualification.
 

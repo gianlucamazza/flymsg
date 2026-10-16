@@ -123,3 +123,43 @@ export function capturePasses(
   }
   return out;
 }
+
+/** Read the actual full-quality desktop framebuffer; do not resize or tune it. */
+export function captureDesktopPixels(THREE, renderer, draw) {
+  const gl = renderer.getContext();
+  if (renderer.xr.isPresenting || gl.isContextLost())
+    throw new Error("Desktop context required");
+  const width = renderer.domElement.width,
+    height = renderer.domElement.height;
+  const saved = {
+    target: renderer.getRenderTarget(),
+    viewport: renderer.getViewport(new THREE.Vector4()),
+    scissor: renderer.getScissor(new THREE.Vector4()),
+    scissorTest: renderer.getScissorTest(),
+    clear: renderer.getClearColor(new THREE.Color()),
+    alpha: renderer.getClearAlpha(),
+    shaderError: renderer.debug.onShaderError,
+  };
+  try {
+    renderer.debug.onShaderError = () => {
+      throw new Error("Desktop reference shader compilation failed");
+    };
+    renderer.setRenderTarget(null);
+    renderer.setViewport(0, 0, width, height);
+    renderer.setScissorTest(false);
+    draw();
+    renderer.setRenderTarget(null);
+    const pixels = new Uint8Array(4 * width * height);
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    if (gl.isContextLost() || gl.getError() !== gl.NO_ERROR)
+      throw new Error("Desktop reference readback failed");
+    return { width, height, pixels };
+  } finally {
+    renderer.debug.onShaderError = saved.shaderError;
+    renderer.setRenderTarget(saved.target);
+    renderer.setViewport(saved.viewport);
+    renderer.setScissor(saved.scissor);
+    renderer.setScissorTest(saved.scissorTest);
+    renderer.setClearColor(saved.clear, saved.alpha);
+  }
+}

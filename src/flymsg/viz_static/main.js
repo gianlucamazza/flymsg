@@ -20,9 +20,7 @@ import {
   fragmentBounds,
   fragmentTransform,
   mergeRanges,
-  parseLegacyMesh,
   parseMultilodManifest,
-  parseSkeleton,
 } from "./precomputed.js";
 import { priorityOf, select } from "./lod.js";
 import {
@@ -73,9 +71,11 @@ import { selectFidelity } from "./fidelity.js";
 import { bufferBytes, geometryArrays } from "./resource-bytes.js";
 import { PagedScene } from "./paged-scene.js";
 import { SourceSlots } from "./source-slots.js";
+import { contextReadiness } from "./context-readiness.js";
 import {
   base64,
   capturePasses,
+  captureDesktopPixels,
   geometryInventory,
   sha256,
 } from "./render-reference.js";
@@ -189,6 +189,7 @@ const workers = Array.from(
     }),
 );
 const jobs = new Map();
+const failedWorkers = new Map();
 let jobId = 0;
 for (const w of workers) {
   w.onmessage = ({ data }) => {
@@ -198,33 +199,55 @@ for (const w of workers) {
     else job.resolve(data);
     jobs.delete(data.id);
   };
+  w.onerror = (event) => {
+    const error = new Error(event.message || "Geometry worker failed");
+    failedWorkers.set(w, error);
+    for (const [id, job] of jobs)
+      if (job.worker === w) {
+        jobs.delete(id);
+        job.reject(error);
+      }
+  };
+}
+function geometryJob(payload, buffers, transfer = true) {
+  return new Promise((resolve, reject) => {
+    const id = ++jobId,
+      worker = workers[id % workers.length];
+    if (failedWorkers.has(worker)) {
+      reject(failedWorkers.get(worker));
+      return;
+    }
+    const unique = [...new Set(buffers)];
+    jobs.set(id, {
+      resolve,
+      reject,
+      worker,
+      inputBytes: unique.reduce((n, b) => n + b.byteLength, 0),
+    });
+    try {
+      worker.postMessage({ ...payload, id }, transfer ? unique : []);
+    } catch (error) {
+      jobs.delete(id);
+      reject(error);
+    }
+  });
 }
 /** Dequantize + normals in a worker; `q` and `index` are transferred (not usable afterwards). */
 function finish(q, index, scale, offset) {
   if (q.buffer === index.buffer) index = index.slice(); // both are transferred
-  return new Promise((resolve, reject) => {
-    const id = ++jobId;
-    jobs.set(id, { resolve, reject });
-    workers[id % workers.length].postMessage({ id, q, index, scale, offset }, [
-      q.buffer,
-      index.buffer,
-    ]);
-  });
+  return geometryJob({ q, index, scale, offset }, [q.buffer, index.buffer]);
 }
-/** Skeleton levels of detail in a worker (see skeletonLevels); `edges` stays usable here. */
-function skeletonLod(vertices, edges) {
-  return new Promise((resolve, reject) => {
-    const id = ++jobId;
-    jobs.set(id, { resolve, reject });
-    workers[id % workers.length].postMessage({
-      kind: "skeleton",
-      id,
-      vertices,
-      edges,
+/** Transfer raw skeleton input; the worker returns immutable source arrays and levels. */
+function skeletonSource(buffer) {
+  return geometryJob(
+    {
+      kind: "skeleton-source",
+      buffer,
       base: SKEL_EPS_NM,
       count: representation === "mixed" ? SKEL_LEVELS : 0,
-    });
-  });
+    },
+    [buffer],
+  );
 }
 function geometryFrom({ positions, normals, index }) {
   const g = new THREE.BufferGeometry();
@@ -924,14 +947,16 @@ async function loadSkeleton(n) {
   const buf = await fetchBytes(`${SKELETONS}/${n.bodyId}`);
   if (!buf) {
     n.skeletonState = "missing";
+    if (isShown(n)) pagedInputsDirty = true;
+    invalidate();
     return;
   }
   perf.count("skeletons", buf.byteLength);
   const { s, lod } = await skeletonPreparationQueue.push(
     priorityOf(n, eyeView()),
     async () => {
-      const s = parseSkeleton(buf);
-      const lod = await skeletonLod(s.vertices, s.edges);
+      const lod = await skeletonSource(buf);
+      const s = { vertices: lod.vertices, edges: lod.edges };
       return { s, lod };
     },
   );
@@ -946,7 +971,7 @@ async function loadSkeleton(n) {
   };
   setSkeletonLevel(n, eyeView());
   n.skeletonState = "ready";
-  pagedInputsDirty = true;
+  if (isShown(n)) pagedInputsDirty = true;
   skeletonsDirty = true;
 }
 
@@ -1186,6 +1211,11 @@ const shellMaterial = new THREE.ShaderMaterial({
   side: THREE.DoubleSide, // a see-through shell shows both sides on purpose
 });
 const shells = {}; // name -> {region, dir, id, mesh | null, visible, state}
+const neuropilCatalogs = Object.fromEntries(
+  Object.keys(ROIS).map((region) => [region, "loading"]),
+);
+const neuropilCatalogErrors = {};
+let allNeuropilsRequested = settings.neuropils;
 // a shell is downloaded the first time it becomes visible
 function ensureNeuropil(name) {
   const s = shells[name];
@@ -1196,7 +1226,7 @@ function ensureNeuropil(name) {
     .catch((error) => {
       s.state = "error";
       s.error = String(error);
-      pagedInputsDirty = true;
+      if (s.visible) pagedInputsDirty = true;
       invalidate();
       console.error(error);
     }); // after neurons
@@ -1210,24 +1240,13 @@ async function loadNeuropil(dir, id, name) {
     const buf = await fetchBytes(`${dir}/mesh/${frag}`);
     if (!buf) throw new Error(`Neuropil ${name}: source fragment unavailable`);
     if (buf) {
-      parts.push(parseLegacyMesh(buf));
+      parts.push(buf);
       perf.count("neuropils", buf.byteLength);
     }
   }
   if (!parts.length) throw new Error(`Neuropil ${name}: empty source mesh`);
-  const nv = parts.reduce((s, p) => s + p.vertices.length / 3, 0);
-  const pos = new Float32Array(3 * nv);
-  const idx = new Uint32Array(parts.reduce((s, p) => s + p.indices.length, 0));
-  let v0 = 0,
-    i0 = 0;
-  for (const p of parts) {
-    pos.set(p.vertices, 3 * v0);
-    for (let i = 0; i < p.indices.length; i++) idx[i0 + i] = p.indices[i] + v0;
-    v0 += p.vertices.length / 3;
-    i0 += p.indices.length;
-  }
   const mesh = new THREE.Mesh(
-    geometryFrom(await finish(pos, idx, [1, 1, 1], [0, 0, 0])),
+    geometryFrom(await geometryJob({ kind: "neuropil", parts }, parts)),
     shellMaterial,
   );
   mesh.renderOrder = 1;
@@ -1235,24 +1254,38 @@ async function loadNeuropil(dir, id, name) {
   shells[name].mesh = mesh;
   shells[name].state = "ready";
   data.add(mesh);
-  pagedInputsDirty = true;
+  if (mesh.visible) pagedInputsDirty = true;
   invalidate();
 }
 const neuropilsListed = (async () => {
   for (const [region, dir] of Object.entries(ROIS)) {
-    const props = (await fetchJson(`${dir}/segment_properties/info`)).inline;
-    props.ids.forEach((id, i) => {
-      const name = props.properties[0].values[i];
-      shells[name] = {
-        region,
-        dir,
-        id,
-        mesh: null,
-        visible: settings.neuropils,
-        state: "idle",
-      };
-      ensureNeuropil(name);
-    });
+    try {
+      const props = (await fetchJson(`${dir}/segment_properties/info`)).inline;
+      props.ids.forEach((id, i) => {
+        const name = props.properties[0].values[i];
+        shells[name] = {
+          region,
+          dir,
+          id,
+          mesh: null,
+          visible: settings.neuropils,
+          state: "idle",
+        };
+        ensureNeuropil(name);
+      });
+      neuropilCatalogs[region] = "ready";
+    } catch (error) {
+      neuropilCatalogs[region] = "error";
+      neuropilCatalogErrors[region] = String(error);
+      console.warn(error);
+    } finally {
+      if (
+        allNeuropilsRequested ||
+        Object.values(shells).some((s) => s.region === region && s.visible)
+      )
+        pagedInputsDirty = true;
+      invalidate();
+    }
   }
 })();
 
@@ -1263,6 +1296,9 @@ const neuropilsListed = (async () => {
 // neither picked nor coloured by activity.
 const somataQuery = query.get("somata");
 const somata = {
+  state: somataQuery === "0" ? "hidden" : "loading",
+  requested: !!somataQuery && somataQuery !== "0",
+  error: null,
   visible: somataQuery !== "0",
   opacity: 0.12, // context: the active neurons stay in front
   size: 1.5,
@@ -1284,36 +1320,50 @@ const somataLoaded = (async () => {
   let buf;
   try {
     const r = await fetch(url);
-    if (!r.ok) return;
+    if (r.status === 404 || r.status === 410) {
+      somata.state = "absent";
+      return;
+    }
+    if (!r.ok) throw new Error(`Soma context HTTP ${r.status}`);
     buf = await r.arrayBuffer();
-  } catch {
-    return; // no layer for this page
+  } catch (error) {
+    throw new Error(`Soma context unavailable: ${error}`);
   }
-  const n = buf.byteLength / 13;
-  if (!Number.isInteger(n)) return console.warn(`${url}: not a soma file`);
-  const vox = new Float32Array(buf, 0, 3 * n);
-  const codes = new Uint8Array(buf, 12 * n, n);
-  const pos = new Float32Array(3 * n);
-  const col = new Float32Array(3 * n);
-  const palette = Object.values(REGION_COLORS).map((c) => new THREE.Color(c));
-  for (let i = 0; i < n; i++) {
-    for (let a = 0; a < 3; a++)
-      pos[3 * i + a] = vox[3 * i + a] * scale0.resolution[a];
-    const c = palette[Math.min(codes[i], palette.length - 1)];
-    col.set([c.r, c.g, c.b], 3 * i);
-  }
+  const bytes = buf.byteLength;
+  const palette = Object.values(REGION_COLORS).map((value) => {
+    const c = new THREE.Color(value);
+    return [c.r, c.g, c.b];
+  });
+  const {
+    positions: pos,
+    colors: col,
+    count: n,
+  } = await geometryJob(
+    { kind: "somata", buffer: buf, resolution: scale0.resolution, palette },
+    [buf],
+  );
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
   g.setAttribute("color", new THREE.BufferAttribute(col, 3));
   somata.points = new THREE.Points(g, somataMaterial);
   somata.points.renderOrder = 2;
   somata.count = n;
-  perf.count("somata", buf.byteLength);
+  somata.state = "ready";
+  perf.count("somata", bytes);
   data.add(somata.points);
   pagedInputsDirty = true;
   renderLegend();
   invalidate();
-})();
+})()
+  .catch((error) => {
+    somata.state = "error";
+    somata.error = String(error);
+    console.warn(error);
+  })
+  .finally(() => {
+    pagedInputsDirty = true;
+    invalidate();
+  });
 
 // ---------- level-of-detail selection ----------
 // Recomputed once the camera settles (or at most every 250 ms while it keeps moving) and when
@@ -1419,6 +1469,7 @@ function updateSelection() {
         .push(priorityOf(n, v), () => showFragments(n, want, sig))
         .catch((error) => {
           n.surfaceError = String(error);
+          if (isShown(n)) pagedInputsDirty = true;
           n.loadingSig = "";
           console.error(error);
           invalidate();
@@ -1432,6 +1483,7 @@ function updateSelection() {
         .push(priorityOf(n, v), () => loadSkeleton(n))
         .catch((error) => {
           n.skeletonState = "missing";
+          if (isShown(n)) pagedInputsDirty = true;
           console.error(error);
           invalidate();
         });
@@ -1443,6 +1495,7 @@ setInterval(updateSelection, 50);
 
 // ---------- colours, legend, stats ----------
 function refreshColours() {
+  pagedInputsDirty = true;
   const c = new THREE.Color();
   const d = skelColour.image.data;
   for (const n of neurons) {
@@ -1507,6 +1560,15 @@ refreshColours();
 
 const statsEl = document.getElementById("stats");
 const perfEl = document.getElementById("perf");
+function contextStatus() {
+  return contextReadiness({
+    catalogs: neuropilCatalogs,
+    catalogErrors: neuropilCatalogErrors,
+    shells: Object.values(shells),
+    allNeuropils: allNeuropilsRequested,
+    somata,
+  });
+}
 function fidelityReport() {
   const selected = neurons.filter(isShown);
   const represented = selected.filter((n) =>
@@ -1542,9 +1604,7 @@ function fidelityReport() {
     reasons: fidelityState.reasons,
     page_culling: settings.pageCulling,
     renderer_qualified: false,
-    gpu_ready: pagedScene
-      ? pagedScene.state === "ready" && pagedScene.complete
-      : null,
+    gpu_ready: gpuResourcesReady(),
   };
 }
 function resourceReport() {
@@ -1571,6 +1631,11 @@ function resourceReport() {
     decoded_cache_bytes: lruBytes,
     decoded_cache_limit_bytes: DECODED_CACHE_BYTES,
     gpu_total_bytes: null,
+    contexts: contextStatus(),
+    geometry_preparation: {
+      jobs: jobs.size,
+      input_bytes: [...jobs.values()].reduce((n, job) => n + job.inputBytes, 0),
+    },
     gpu_resources: pagedScene?.report() ?? {
       state: "untracked",
       complete: false,
@@ -1827,9 +1892,14 @@ const pagedScene = pagedEnabled
 function originalObjects() {
   return data.children.filter((o) => o.geometry);
 }
+function gpuResourcesReady() {
+  return pagedScene
+    ? !pagedInputsDirty && pagedScene.state === "ready" && pagedScene.complete
+    : null;
+}
 function diagnosticRender(draw) {
   if (!pagedScene) return draw();
-  if (pagedScene.state !== "ready")
+  if (!gpuResourcesReady())
     throw new Error("Diagnostic requires ready GPU resources");
   return pagedScene.render(originalObjects(), draw);
 }
@@ -1959,13 +2029,11 @@ function syncPagedScene() {
   }
   const fidelity = fidelityReport();
   const anatomyReady = fidelity.status === "ready";
-  const contexts = Object.values(shells).filter((s) => s.visible);
-  const contextsReady = contexts.every((s) => s.state === "ready");
-  const contextError = contexts.find((s) => s.state === "error")?.error;
+  const contexts = contextStatus();
   pagedScene.sync(
     sources,
-    anatomyReady && contextsReady,
-    contextError ??
+    anatomyReady && contexts.ready,
+    contexts.error ??
       (fidelity.status === "unsupported"
         ? "Selected source anatomy exceeds admission capacity or is unavailable"
         : null),
@@ -2051,6 +2119,65 @@ if (query.has("check")) {
     renderScene: (c = camera) =>
       diagnosticRender(() => renderer.render(world, c)),
     renderDesktop: () => diagnosticRender(() => composer.render()),
+    async desktopReference({ time = clock.t, pipeline = "original" } = {}) {
+      if (!diagnosticSuspended || renderer.xr.isPresenting || document.hidden)
+        throw new Error(
+          "Desktop capture requires a suspended non-immersive diagnostic",
+        );
+      if (
+        !["original", "paged"].includes(pipeline) ||
+        (pipeline === "paged" && gpuResourcesReady() !== true)
+      )
+        throw new Error("Requested desktop pipeline is unavailable");
+      if (
+        !contextStatus().ready ||
+        fidelityReport().status !== "ready" ||
+        !Number.isFinite(time) ||
+        time < 0 ||
+        (replay && time >= A.bins * A.bin_ms)
+      )
+        throw new Error(
+          "Complete original anatomy and a valid timestamp required",
+        );
+      const saved = { playing: clock.playing, time: clock.t };
+      try {
+        clock.playing = false;
+        clock.t = time;
+        if (replay) updateActivity(time);
+        prepareOriginalOracle();
+        applySkeletonVisibility(null);
+        flushInstanceTextures();
+        const draw = () => composer.render();
+        const capture = captureDesktopPixels(
+          THREE,
+          renderer,
+          pipeline === "paged"
+            ? () => pagedScene.render(originalObjects(), draw)
+            : draw,
+        );
+        return {
+          pipeline,
+          time,
+          width: capture.width,
+          height: capture.height,
+          samples,
+          pixel_ratio: renderer.getPixelRatio(),
+          bloom: bloom.enabled,
+          projection: camera.projectionMatrix.toArray(),
+          camera_world: camera.matrixWorld.toArray(),
+          rgba: {
+            sha256: await sha256(capture.pixels),
+            base64: base64(capture.pixels),
+          },
+        };
+      } finally {
+        clock.playing = saved.playing;
+        clock.t = saved.time;
+        if (replay) updateActivity(saved.time);
+        skeletonsDirty = true;
+        invalidate();
+      }
+    },
     raster: () => rasterPainter.report(),
     scheduleLines: (eyes) => {
       prepareOriginalOracle();
@@ -2116,7 +2243,7 @@ if (query.has("check")) {
         throw new Error("Reference requires a visible non-immersive page");
       if (!["original", "paged"].includes(pipeline))
         throw new Error("Unknown capture pipeline");
-      if (pipeline === "paged" && pagedScene?.report().state !== "ready")
+      if (pipeline === "paged" && gpuResourcesReady() !== true)
         throw new Error("Paged GPU resources are not ready");
       if (
         manifestQueue.size +
@@ -2130,6 +2257,8 @@ if (query.has("check")) {
         fidelityReport().status !== "ready"
       )
         throw new Error("Reference requires complete selected anatomy");
+      if (!contextStatus().ready)
+        throw new Error("Reference requires completed selected context layers");
       if (
         !Number.isFinite(time) ||
         time < 0 ||
@@ -2576,6 +2705,7 @@ if (showChrome(location.search)) {
       );
       const boxes = {};
       const set = (name, v) => {
+        allNeuropilsRequested = false; // explicit selection supersedes the initial all-catalog request
         pagedInputsDirty = true;
         shells[name].visible = v;
         if (shells[name].mesh) shells[name].mesh.visible = v;
@@ -2922,9 +3052,12 @@ const xrOptions = {
   extentUm: extent,
   entryError: () => {
     if (diagnosticSuspended) return "A rendering diagnostic is in progress.";
+    const context = contextStatus();
+    if (!context.ready)
+      return context.error ?? "Selected context layers are loading.";
     const fidelity = fidelityReport();
-    if (pagedScene && pagedScene.report().state !== "ready")
-      return `GPU resources are ${pagedScene.report().state}. VR requires completed uploads.`;
+    if (pagedScene && fidelity.gpu_ready !== true)
+      return `GPU resources are ${pagedScene.state === "ready" ? "preparing" : pagedScene.state}. VR requires completed uploads.`;
     return fidelity.status === "ready" ||
       (settings.representation === "mixed" && query.has("check"))
       ? null

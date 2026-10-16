@@ -152,9 +152,24 @@ export class PagedScene {
       new T.Vector3(...page.bounds.min),
       new T.Vector3(...page.bounds.max),
     );
-    geometry.boundingSphere = geometry.boundingBox.getBoundingSphere(
-      new T.Sphere(),
+    // One anatomical reference object draws source-order primitives. All its
+    // pages need the same depth-sort key, including picking/depth passes.
+    // Transparent context retains its original object's centre instead.
+    // These are valid conservative public geometry bounds; culling uses boxes.
+    const centre = layer.sortCenter ?? [0, 0, 0];
+    const radius = Math.sqrt(
+      centre.reduce(
+        (sum, c, axis) =>
+          sum +
+          Math.max(
+            Math.abs(page.bounds.min[axis] - c),
+            Math.abs(page.bounds.max[axis] - c),
+          ) **
+            2,
+        0,
+      ),
     );
+    geometry.boundingSphere = new T.Sphere(new T.Vector3(...centre), radius);
     const ObjectType =
       layer.primitiveSize === 2
         ? T.LineSegments
@@ -162,12 +177,6 @@ export class PagedScene {
           ? T.Points
           : T.Mesh;
     const object = new ObjectType(geometry, layer.material);
-    // Preserve each original transparent object's depth-sort key across pages.
-    if (layer.sortCenter)
-      object.boundingSphere = new T.Sphere(
-        new T.Vector3(...layer.sortCenter),
-        0,
-      );
     object.frustumCulled = false; // union-of-eye culling is explicit below
     object.renderOrder = layer.renderOrder ?? 0;
     this.group.add(object);
@@ -317,8 +326,7 @@ export class PagedScene {
       object.geometry.dispose();
     }
     this.pages = [];
-    for (const record of [...this.uploads.records])
-      this.uploads.release(record);
+    this.uploads.reset();
     this.state = "preparing";
     this.error = null;
     this.complete = false;

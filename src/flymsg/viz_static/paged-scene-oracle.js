@@ -4,6 +4,83 @@ import { PagedScene } from "./paged-scene.js";
 import { capturePasses, sha256 } from "./render-reference.js";
 
 export async function pagedSceneOracle(T) {
+  const preparationWorker = new Worker(
+    new URL("./geometry-worker.js", import.meta.url),
+    { type: "module" },
+  );
+  const prepare = (payload, transfers) =>
+    new Promise((resolve, reject) => {
+      const timeout = setTimeout(
+        () => reject(new Error("Context worker timeout")),
+        5000,
+      );
+      preparationWorker.onmessage = ({ data }) => {
+        clearTimeout(timeout);
+        data.error ? reject(new Error(data.error)) : resolve(data);
+      };
+      preparationWorker.onerror = (event) => {
+        clearTimeout(timeout);
+        reject(new Error(event.message));
+      };
+      preparationWorker.postMessage(payload, transfers);
+    });
+  let workerContexts;
+  try {
+    const soma = new ArrayBuffer(13);
+    new Float32Array(soma, 0, 3).set([1, 2, 3]);
+    new Uint8Array(soma, 12, 1)[0] = 0;
+    const cloud = await prepare(
+      {
+        id: 1,
+        kind: "somata",
+        buffer: soma,
+        resolution: [8, 16, 32],
+        palette: [[0.25, 0.5, 0.75]],
+      },
+      [soma],
+    );
+    if (
+      soma.byteLength !== 0 ||
+      JSON.stringify([...cloud.positions]) !== "[8,32,96]" ||
+      JSON.stringify([...cloud.colors]) !== "[0.25,0.5,0.75]"
+    )
+      throw new Error("Context worker changed soma data or ownership");
+    const legacy = new ArrayBuffer(52);
+    new DataView(legacy).setUint32(0, 3, true);
+    new Float32Array(legacy, 4, 9).set([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    new Uint32Array(legacy, 40, 3).set([0, 1, 2]);
+    const mesh = await prepare({ id: 2, kind: "neuropil", parts: [legacy] }, [
+      legacy,
+    ]);
+    if (
+      legacy.byteLength !== 0 ||
+      JSON.stringify([...mesh.index]) !== "[0,1,2]" ||
+      JSON.stringify([...mesh.normals]) !== "[0,0,1,0,0,1,0,0,1]"
+    )
+      throw new Error("Context worker changed full mesh data or ownership");
+    const skeleton = new ArrayBuffer(40);
+    new Uint32Array(skeleton, 0, 2).set([2, 1]);
+    new Float32Array(skeleton, 8, 6).set([1, 2, 3, 4, 5, 6]);
+    new Uint32Array(skeleton, 32, 2).set([0, 1]);
+    const lines = await prepare(
+      { id: 3, kind: "skeleton-source", buffer: skeleton, base: 32, count: 0 },
+      [skeleton],
+    );
+    if (
+      skeleton.byteLength !== 0 ||
+      JSON.stringify([...lines.vertices]) !== "[1,2,3,4,5,6]" ||
+      JSON.stringify([...lines.edges]) !== "[0,1]"
+    )
+      throw new Error("Geometry worker changed skeleton data or ownership");
+    workerContexts = {
+      skeleton_exact: true,
+      somata_exact: true,
+      neuropil_exact: true,
+      transferred_inputs: true,
+    };
+  } finally {
+    preparationWorker.terminate();
+  }
   const renderer = new T.WebGLRenderer({ antialias: false });
   renderer.setSize(128, 128);
   const world = new T.Scene(),
@@ -16,7 +93,7 @@ export async function pagedSceneOracle(T) {
     const m = new T.ShaderMaterial({
       side,
       vertexShader: `attribute float aNeuron; flat varying float vId;
-        void main() { vId = aNeuron + 1.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        void main() { vId = aNeuron + 1.0; gl_PointSize = 3.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
       fragmentShader,
     });
     materials.push(m);
@@ -48,7 +125,7 @@ export async function pagedSceneOracle(T) {
   const assert = (condition, message) => {
     if (!condition) throw new Error(message);
   };
-  for (const primitiveSize of [2, 3]) {
+  for (const primitiveSize of [1, 2, 3]) {
     const layer = {
       primitiveSize,
       material: colour,
@@ -85,15 +162,61 @@ export async function pagedSceneOracle(T) {
     );
     contextMaterial.transparent = true;
     contextMaterial.depthWrite = false;
+    assert(
+      contextMaterial.forceSinglePass === true,
+      "Context shader pass policy changed",
+    );
     materials.push(contextMaterial);
     sources[2].layer = { ...layer, material: contextMaterial, context: true };
+    if (primitiveSize === 3) {
+      for (const [i, source] of sources.slice(0, 2).entries()) {
+        source.attributes.position.array = new Float32Array([
+          -0.8, -0.8, 0, 0.8, -0.8, 0, 0, 0.8, 0, 2000, 2000, -100, 2001, 2000,
+          -100, 2000, 2001, -100,
+        ]);
+        source.attributes.normal.array = Float32Array.from(
+          { length: 18 },
+          (_, j) => (j % 3 === 2 ? 1 : 0),
+        );
+        // Both original objects have the same bounds. Only the first source
+        // indexes its invisible far triangle; per-page depth sorting would
+        // change the winner of the coincident visible neuron-ID triangles.
+        source.index = Uint32Array.from({ length: 300 }, (_, j) =>
+          i === 0 && Math.floor(j / 3) % 5 === 0 ? 3 + (j % 3) : j % 3,
+        );
+      }
+      // Opposite winding and different colours on coincident faces exercise
+      // the actual single-pass context shader's primitive/blending order.
+      sources[2].attributes = {
+        position: {
+          itemSize: 3,
+          array: new Float32Array([
+            -0.8, -0.8, 0.1, 0.8, -0.8, 0.1, 0, 0.8, 0.1, -0.8, -0.8, 0.1, 0.8,
+            -0.8, 0.1, 0, 0.8, 0.1,
+          ]),
+        },
+        normal: {
+          itemSize: 3,
+          array: Float32Array.from({ length: 18 }, (_, i) =>
+            i % 3 === 2 ? 1 : 0,
+          ),
+        },
+        aNeuron: { itemSize: 1, array: new Float32Array([2, 2, 2, 3, 3, 3]) },
+      };
+      sources[2].index = Uint32Array.from({ length: 303 }, (_, i) =>
+        Math.floor(i / 3) % 2 === 0 ? i % 3 : [5, 4, 3][i % 3],
+      );
+    }
     const originals = sources.map((s) => {
       const g = new T.BufferGeometry();
       for (const [name, a] of Object.entries(s.attributes))
         g.setAttribute(
           name,
           new T.BufferAttribute(
-            a.array ?? new Float32Array(4).fill(a.constant),
+            a.array ??
+              new Float32Array(s.attributes.position.array.length / 3).fill(
+                a.constant,
+              ),
             a.itemSize,
           ),
         );
@@ -101,7 +224,9 @@ export async function pagedSceneOracle(T) {
       const o =
         primitiveSize === 2
           ? new T.LineSegments(g, s.layer.material)
-          : new T.Mesh(g, s.layer.material);
+          : primitiveSize === 1
+            ? new T.Points(g, s.layer.material)
+            : new T.Mesh(g, s.layer.material);
       o.frustumCulled = false;
       data.add(o);
       return o;
@@ -181,7 +306,7 @@ export async function pagedSceneOracle(T) {
         Array.from(s.index, (vertex) => [
           ...s.attributes.position.array.subarray(vertex * 3, vertex * 3 + 3),
           ...s.attributes.normal.array.subarray(vertex * 3, vertex * 3 + 3),
-          s.attributes.aNeuron.constant,
+          s.attributes.aNeuron.array?.[vertex] ?? s.attributes.aNeuron.constant,
         ]),
       );
       const uploaded = [];
@@ -313,7 +438,10 @@ export async function pagedSceneOracle(T) {
       );
       results.push({
         primitiveSize,
-        source_primitives: 303,
+        source_primitives: sources.reduce(
+          (sum, s) => sum + s.index.length / primitiveSize,
+          0,
+        ),
         passes: ["colour", "neuron_id", "packed_depth"],
         gpu_stream_exact: true,
         lifecycle_cycles: 5,
@@ -333,5 +461,10 @@ export async function pagedSceneOracle(T) {
   }
   materials.forEach((m) => m.dispose());
   renderer.dispose();
-  return { status: "pass", backend: "software correctness only", results };
+  return {
+    status: "pass",
+    backend: "software correctness only",
+    results,
+    worker_contexts: workerContexts,
+  };
 }

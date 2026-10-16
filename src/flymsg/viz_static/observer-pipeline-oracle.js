@@ -4,6 +4,13 @@ import { browserProbe } from "./browser-probe.js";
 import { serializedGpuProbe } from "./gpu-probe.js";
 
 export async function observerPipelineOracle() {
+  const started = performance.now();
+  const stage = (name) =>
+    console.info(
+      "PIPELINE_ORACLE",
+      JSON.stringify({ stage: name, elapsed_ms: performance.now() - started }),
+    );
+  stage("loading");
   const deadline = performance.now() + 60000;
   while (performance.now() < deadline) {
     const api = window.flymsg;
@@ -11,16 +18,18 @@ export async function observerPipelineOracle() {
       throw new Error(JSON.stringify(api.fidelity()));
     if (api?.resources().gpu_resources.state === "unsupported")
       throw new Error(JSON.stringify(api.resources()));
-    if (api?.resources().gpu_resources.state === "ready") break;
+    if (api?.fidelity().gpu_ready === true) break;
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   const api = window.flymsg;
-  if (api?.resources().gpu_resources.state !== "ready")
+  if (api?.fidelity().gpu_ready !== true)
     throw new Error("Viewer preparation timed out");
   const results = [];
+  stage("resources-ready");
   const beforeReferenceResources = api.resources();
   for (const time of [0, 20, 350])
     for (const eye of [-1, 1]) {
+      stage(`direct-${time}-${eye}`);
       const cameraWorld = api.camera.matrixWorld.toArray();
       cameraWorld[12] += eye * 0.015 * api.camera.position.length();
       const options = { width: 256, height: 256, time, cameraWorld };
@@ -110,10 +119,44 @@ export async function observerPipelineOracle() {
       qualification: "software fixture routing only; no performance claim",
     };
   }
+  const desktopCases = [],
+    originalState = api.diagnosticState();
+  try {
+    api.diagnostic({
+      ...originalState,
+      suspended: true,
+      playing: false,
+      continuous: false,
+    });
+    for (const time of [0, 20, 350]) {
+      stage(`desktop-original-${time}`);
+      const reference = await api.desktopReference({
+        time,
+        pipeline: "original",
+      });
+      stage(`desktop-paged-${time}`);
+      const candidate = await api.desktopReference({ time, pipeline: "paged" });
+      if (
+        reference.rgba.sha256 !== candidate.rgba.sha256 ||
+        reference.samples !== 4 ||
+        candidate.samples !== 4 ||
+        JSON.stringify(reference.projection) !==
+          JSON.stringify(candidate.projection) ||
+        JSON.stringify(reference.camera_world) !==
+          JSON.stringify(candidate.camera_world)
+      )
+        throw new Error(`Full-quality desktop mismatch at ${time} ms`);
+      desktopCases.push({ time, reference, candidate });
+    }
+  } finally {
+    api.diagnostic(originalState);
+  }
+  stage("complete");
   return {
     status: "pass",
     before_reference_resources: beforeReferenceResources,
     diagnostic_routing: diagnosticRouting,
+    desktop_cases: desktopCases,
     qualification:
       "correctness fixture only; not full-scene hardware performance",
     fidelity: api.fidelity(),

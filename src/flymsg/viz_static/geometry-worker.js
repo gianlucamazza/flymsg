@@ -2,18 +2,42 @@
 // fragment and computes its normals; "skeleton" builds a skeleton's levels of detail.
 import { finishFragment, skeletonLevels } from "./geometry.js";
 import { linePages } from "./geometry-pages.js";
+import { parseLegacyMesh, parseSkeleton } from "./precomputed.js";
+import { prepareNeuropil, prepareSomata } from "./context-geometry.js";
 
 function process(data) {
-  if (data.kind === "skeleton") {
+  if (data.kind === "somata") {
+    const result = prepareSomata(data.buffer, data.resolution, data.palette);
+    self.postMessage({ id: data.id, ...result }, [
+      result.positions.buffer,
+      result.colors.buffer,
+    ]);
+    return;
+  }
+  if (data.kind === "neuropil") {
+    const result = prepareNeuropil(
+      data.parts.map((buffer) => parseLegacyMesh(buffer, { copy: false })),
+    );
+    self.postMessage({ id: data.id, ...result }, [
+      result.positions.buffer,
+      result.normals.buffer,
+      result.index.buffer,
+    ]);
+    return;
+  }
+  if (data.kind === "skeleton" || data.kind === "skeleton-source") {
+    const source = data.kind === "skeleton-source";
+    const { vertices, edges } = source ? parseSkeleton(data.buffer) : data;
     const { eps, levels, bounds } = skeletonLevels(
-      data.vertices,
-      data.edges,
+      vertices,
+      edges,
       data.base,
       data.count,
     );
     const coarser = levels.slice(1); // the caller keeps level 0, its own edges
-    const pages = levels.map((edges) => linePages(data.vertices, edges));
-    self.postMessage({ id: data.id, eps, coarser, bounds, pages }, [
+    const pages = levels.map((edges) => linePages(vertices, edges));
+    const transfers = [
+      ...(source ? [vertices.buffer, edges.buffer] : []),
       ...coarser.map((l) => l.buffer),
       ...pages.flatMap((p) => [
         p.edgePage.buffer,
@@ -21,7 +45,18 @@ function process(data) {
         p.sizes.buffer,
         p.runs.buffer,
       ]),
-    ]);
+    ];
+    self.postMessage(
+      {
+        id: data.id,
+        eps,
+        coarser,
+        bounds,
+        pages,
+        ...(source ? { vertices, edges } : {}),
+      },
+      [...new Set(transfers)],
+    );
     return;
   }
   const { id, q, index, scale, offset } = data;
