@@ -3135,7 +3135,23 @@ renderer.setAnimationLoop((timestamp) => {
   const playing = replay && clock.playing;
   if (playing) clock.t = (clock.t + dt * clock.speed) % (A.bins * A.bin_ms);
   if (replay && clock.t !== shownT) updateActivity(clock.t);
-  const live = inXR || interacting || moved || playing || diagnosticContinuous;
+  // Upload backpressure and the warmup fence depend on this existing loop.
+  // Submit continuously until the complete GPU generation is ready; otherwise
+  // a static page can idle-throttle the very callbacks needed to finish startup.
+  const preparingGpu =
+    pagedScene?.complete &&
+    (["preparing", "warming"].includes(pagedScene.state) ||
+      (boundedEnabled &&
+        pagedScene.state === "ready" &&
+        !pagedScene.bounded.initialized &&
+        !pagedScene.bounded.error));
+  const live =
+    inXR ||
+    interacting ||
+    moved ||
+    playing ||
+    diagnosticContinuous ||
+    preparingGpu;
   if (!inXR) tuneQuality(live); // desktop adaptive compositor is not XR-qualified
   const now = performance.now();
   // the index rebuild walks every drawn segment: coalesce streaming updates
