@@ -61,9 +61,10 @@ test("a global branch split across tiny pages remains an anchor", () => {
     100,
   )) {
     const catalogue = compilePageLods(page);
-    for (const variant of catalogue.variants.values()) {
+    for (const level of catalogue.variants.keys()) {
+      const index = composePageLod(catalogue, { 0: level });
       const branch = page.boundedSource.origins.findIndex((n) => n === 1);
-      if (branch >= 0) assert(variant.index.includes(branch));
+      if (branch >= 0) assert(index.includes(branch));
     }
   }
 });
@@ -73,8 +74,11 @@ test("cycles and parallel edges retain their original topology", () => {
     [0, 1, 1, 2, 2, 0, 0, 1],
   )) {
     const catalogue = compilePageLods(page);
-    for (const variant of catalogue.variants.values())
-      assert.equal(variant.index.length, page.index.length);
+    for (const level of catalogue.variants.keys())
+      assert.equal(
+        composePageLod(catalogue, { 0: level }).length,
+        page.index.length,
+      );
   }
 });
 test("projection certificate bounds independent dense sample projections and rejects clip uncertainty", () => {
@@ -199,4 +203,47 @@ test("all six clip-plane intersections conservatively retain full source", () =>
     { min: [0, 0, -101], max: [0.1, 0.1, -99] },
   ])
     assert(!Number.isFinite(projectionErrorBound(box, eye).scale));
+});
+
+test("one packed index budget retains fine dyadic levels and decodes their independently certified paths", () => {
+  const vertices = [],
+    edges = [];
+  for (let i = 0; i < 180; i++) {
+    vertices.push(i * 100, 20 * Math.sin(i * 0.21), 0);
+    if (i) edges.push(i - 1, i);
+  }
+  const page = pages(vertices, edges, 20000)[0],
+    catalogue = compilePageLods(page);
+  assert(catalogue.variants.has(1));
+  assert(catalogue.variants.size >= 5);
+  assert(catalogue.packed.byteLength <= page.index.byteLength);
+  assert.equal(
+    catalogue.metadata.cpu_index_bytes,
+    page.index.byteLength + catalogue.packed.byteLength,
+  );
+  for (const [level, variant] of catalogue.variants) {
+    const indices = composePageLod(catalogue, { 0: level });
+    assert.equal(
+      indices.length,
+      variant.ranges.reduce((n, r) => n + r.count, 0),
+    );
+    let maximum = 0;
+    for (let k = 0; k < indices.length; k += 2) {
+      const a = indices[k],
+        b = indices[k + 1],
+        ax = vertices[3 * a],
+        ay = vertices[3 * a + 1],
+        dx = vertices[3 * b] - ax,
+        dy = vertices[3 * b + 1] - ay,
+        den = dx * dx + dy * dy;
+      for (let v = Math.min(a, b) + 1; v < Math.max(a, b); v++) {
+        const x = page.attributes.position.array[3 * v] - ax,
+          y = page.attributes.position.array[3 * v + 1] - ay,
+          t = Math.max(0, Math.min(1, (x * dx + y * dy) / den));
+        maximum = Math.max(maximum, Math.hypot(x - t * dx, y - t * dy));
+      }
+    }
+    assert(maximum <= variant.errors[0] + 1e-5);
+  }
+  assert.throws(() => composePageLod(catalogue, { 0: 999 }), /Unknown/);
 });

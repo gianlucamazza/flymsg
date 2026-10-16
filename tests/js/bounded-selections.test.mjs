@@ -51,6 +51,7 @@ function fixture() {
   };
   controller.add(page, {
     page: 7,
+    encoding: "anchored-path-u32/v1",
     boxes: { 0: { min: [-0.1, -0.1, -3], max: [0.1, 0.1, -2] } },
     cpu_index_bytes: 40,
     levels: [

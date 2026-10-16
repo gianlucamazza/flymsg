@@ -13,13 +13,14 @@ let nextPage = 0,
 self.onmessage = ({ data }) => {
   try {
     if (data.kind === "bounded-compose") {
+      const started = performance.now();
       const pages = data.pages.map(({ page, selection }) => {
         const catalogue = catalogues.get(page);
         if (!catalogue) throw Error("Unknown page generation");
         return { page, indices: composePageLod(catalogue, selection) };
       });
       self.postMessage(
-        { id: data.id, pages },
+        { id: data.id, pages, compose_ms: performance.now() - started },
         pages.map((p) => p.indices.buffer),
       );
       return;

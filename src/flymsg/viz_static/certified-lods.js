@@ -159,15 +159,59 @@ export function compilePageLods(page, { base = 1, count = 10 } = {}) {
     errors: Object.fromEntries(Object.keys(boxes).map((k) => [k, 0])),
   };
   preparation.boxes_ms = performance.now() - stage;
+  // One packed path catalogue represents every dyadic level. Each entry
+  // stores a page-local vertex, its coarsest retained level, and a path-end bit.
+  // A path with m edges has m+1 <= 2m entries, so the entire encoding fits
+  // within the same additional full-index byte budget, including fine levels.
+  if (
+    count > 15 ||
+    count < 1 ||
+    !Number.isInteger(count) ||
+    !(base > 0) ||
+    positions.length / 3 >= 2 ** 27
+  )
+    throw Error("Unencodable bounded catalogue");
+  const packed = new Uint32Array(
+      records.reduce((n, path) => n + path.vertices.length, 0),
+    ),
+    runs = [];
+  if (packed.byteLength > page.index.byteLength)
+    throw Error("Packed catalogue exceeds index budget");
+  let cursor = 0;
+  records.forEach((path, r) => {
+    let run = runs.at(-1);
+    if (run?.owner !== path.owner) {
+      run = { owner: path.owner, first: cursor, count: 0 };
+      runs.push(run);
+    }
+    for (let k = 0; k < path.vertices.length; k++) {
+      let through = 0;
+      for (let level = count; level >= 1; level--)
+        if (errors[r][k] > base * 2 ** (level - 1)) {
+          through = level;
+          break;
+        }
+      packed[cursor++] =
+        (path.vertices[k] |
+          (through << 27) |
+          (k === path.vertices.length - 1 ? 0x80000000 : 0)) >>>
+        0;
+      run.count++;
+    }
+  });
   const variants = new Map([[0, full]]);
-  let bytes = 0;
+  let previousLength = -1;
   for (let level = count; level >= 1; level--) {
     stage = performance.now();
     const tolerance = base * 2 ** (level - 1);
-    const cuts = records.map((p, r) =>
+    const cuts = records.map((path, r) =>
       Array.from(errors[r].keys()).filter((i) => errors[r][i] > tolerance),
     );
     preparation.cuts_ms += performance.now() - stage;
+    const length = cuts.reduce((sum, cut) => sum + 2 * (cut.length - 1), 0);
+    // Nested cut sets with equal lengths are identical. Exact full geometry
+    // already has an immutable source index; neither case needs a new level.
+    if (length >= page.index.length || length === previousLength) continue;
     stage = performance.now();
     const proof = verifySpatialPaths(
       positions,
@@ -178,12 +222,6 @@ export function compilePageLods(page, { base = 1, count = 10 } = {}) {
     );
     preparation.verification_ms += performance.now() - stage;
     stage = performance.now();
-    const length = cuts.reduce((sum, k) => sum + 2 * (k.length - 1), 0);
-    if (
-      length >= page.index.length ||
-      bytes + length * 4 > page.index.byteLength
-    )
-      continue;
     const index = new Uint32Array(length);
     let at = 0;
     records.forEach((path, r) => {
@@ -192,65 +230,85 @@ export function compilePageLods(page, { base = 1, count = 10 } = {}) {
         index[at++] = path.vertices[cuts[r][k]];
       }
     });
-    if (
-      [...variants.values()].some(
-        (v) =>
-          v.index.length === index.length &&
-          v.index.every((x, i) => x === index[i]),
-      )
-    )
-      continue;
-    const record = {
-      index,
+    variants.set(level, {
       ranges: ranges(index, owner),
       errors: Object.fromEntries(
-        [...proof].map(([k, error]) => [
-          k,
+        [...proof].map(([key, error]) => [
+          key,
           error === 0 ? 0 : error + 128 * Number.EPSILON * magnitude,
         ]),
       ),
-    };
-    variants.set(level, record);
-    bytes += index.byteLength;
+    });
+    previousLength = length;
     preparation.assembly_ms += performance.now() - stage;
   }
   return {
     variants,
+    packed,
+    runs,
     metadata: {
       boxes,
       preparation,
+      encoding: "anchored-path-u32/v1",
+      level_base_nm: base,
+      level_count: count,
       levels: [...variants].map(([id, v]) => ({
         id,
         ranges: v.ranges,
         errors: v.errors,
       })),
-      cpu_index_bytes: page.index.byteLength + bytes,
+      cpu_index_bytes: page.index.byteLength + packed.byteLength,
       source_indices: page.index.length,
     },
   };
 }
 export function composePageLod(catalogue, selection) {
   const full = catalogue.variants.get(0),
-    pieces = [];
+    chosen = [];
   let length = 0;
   for (const range of full.ranges) {
+    if (full.ranges.filter((r) => r.owner === range.owner).length !== 1)
+      throw Error("Noncontiguous neuron source run");
     const level = selection[range.owner] ?? 0,
       variant = catalogue.variants.get(level);
     if (!variant) throw Error("Unknown certified level");
-    const source = variant.ranges.filter((r) => r.owner === range.owner);
-    // Canonical pages contain each source neuron in one contiguous source-order run.
-    if (full.ranges.filter((r) => r.owner === range.owner).length !== 1)
-      throw Error("Noncontiguous neuron source run");
-    for (const span of source) {
-      pieces.push(variant.index.subarray(span.first, span.first + span.count));
-      length += span.count;
-    }
+    const size = variant.ranges
+      .filter((r) => r.owner === range.owner)
+      .reduce((n, r) => n + r.count, 0);
+    chosen.push({ range, level, size });
+    length += size;
   }
   const indices = new Uint32Array(length);
   let at = 0;
-  for (const piece of pieces) {
-    indices.set(piece, at);
-    at += piece.length;
+  for (const { range, level, size } of chosen) {
+    const begin = at;
+    if (level === 0) {
+      indices.set(
+        full.index.subarray(range.first, range.first + range.count),
+        at,
+      );
+      at += range.count;
+    } else {
+      const run = catalogue.runs.find((r) => r.owner === range.owner);
+      if (!run) throw Error("Missing packed neuron run");
+      let previous = -1;
+      for (let k = run.first; k < run.first + run.count; k++) {
+        const code = catalogue.packed[k],
+          vertex = code & 0x07ffffff,
+          through = (code >>> 27) & 15;
+        if (through >= level) {
+          if (previous >= 0) {
+            indices[at++] = previous;
+            indices[at++] = vertex;
+          }
+          previous = vertex;
+        }
+        if (code >>> 31) previous = -1;
+      }
+    }
+    if (at - begin !== size)
+      throw Error("Packed indices differ from certified level");
   }
+  if (at !== length) throw Error("Incomplete packed composition");
   return indices;
 }

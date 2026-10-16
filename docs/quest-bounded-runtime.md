@@ -8,10 +8,12 @@ Do not describe this mode as admitted or XR qualified without device evidence.
 
 The page worker prepares complete source-order pages and independently verified
 spatial levels. Global branches remain anchors across page boundaries. A neuron
-containing a cycle conservatively retains its complete original graph. Coarser
-indices consume at most one additional full-index byte budget. The current cache
-uses ten dyadic tolerances from 1 to 512 source nanometres, considered coarse
-first. A missing useful level causes full geometry, never a relaxed error bound.
+containing a cycle conservatively retains its complete original graph. One shared packed path index encodes all ten dyadic levels from 1 to 512 source
+nanometres, considered coarse first. Each entry stores a vertex, its last retained
+level and a path-end bit. A path with m edges needs m+1 <= 2m entries, so the
+entire encoding fits within one additional full-index byte budget. Temporary
+level indices are independently verified and discarded; the worker reconstructs
+requested levels from the shared encoding. A missing useful level causes full geometry, never a relaxed error bound.
 
 At each draw, a conservative certificate uses the actual float32 matrices and
 physical viewport of both eyes. Preferred selections target 0.4 pixels and are
@@ -29,7 +31,7 @@ all actual pinned bloom mips; its coverage is reported because this conservative
 mask can cover the complete image. A support check does not certify appearance,
 photometric equivalence or stereo comfort.
 
-Every measured bounded frame retains its upper bound and actual/full index counts.
+Every measured bounded desktop or XR frame retains its upper bound and actual/full index counts. Final XR receipts carry all raw certificates for an independent host check; summaries alone cannot pass that check. Ordinary device readiness also requires native Browser focus, separately from DOM visibility and wakefulness.
 The comparison rejects missing certificates, error above 0.5 pixels, resource
 errors or inconsistent counts. It explicitly requires original / bounded /
 bounded / original order; all other content and display invariants stay equal.

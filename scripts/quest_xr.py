@@ -263,6 +263,10 @@ class EvidenceHandler(SimpleHTTPRequestHandler):
         self.evidence = evidence
         super().__init__(*args, directory=directory, **kwargs)
 
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def do_POST(self):
         if self.path != "/__xr_evidence":
             return self.send_error(404)

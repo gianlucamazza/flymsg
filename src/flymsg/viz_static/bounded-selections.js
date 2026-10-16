@@ -20,6 +20,8 @@ export class BoundedSelections {
     this.discarded = 0;
   }
   add(page, metadata) {
+    if (metadata.encoding !== "anchored-path-u32/v1")
+      throw Error("Unknown bounded worker encoding");
     page.bounded = metadata;
     page.fullIndex = page.object.geometry.index;
     this.pages.push(page);
@@ -96,6 +98,7 @@ export class BoundedSelections {
     this.inflight = false;
     this.pages = [];
     this.preparation = {};
+    this.workerComposeMs = null;
     this.error = null;
     this.initialized = false;
     this.cachedEyeKey = null;
@@ -170,6 +173,7 @@ export class BoundedSelections {
       .then((response) => {
         if (epoch !== this.epoch) return;
         this.inflight = false;
+        this.workerComposeMs = response.compose_ms ?? null;
         if (this.desired?.key !== key) {
           this.discarded++;
           return;
@@ -284,6 +288,7 @@ export class BoundedSelections {
     return {
       initialized: this.initialized,
       worker_preparation_ms: this.preparation,
+      worker_compose_ms: this.workerComposeMs ?? null,
       state: this.error
         ? "fallback-full"
         : this.inflight || this.pending

@@ -60,6 +60,7 @@ export async function observerPreflight(
       "main.js",
       "perf.js",
       "observer-frames.js",
+      "xr-metrics.js",
       "paged-scene.js",
       "gpu-upload.js",
       "primitive-pages.js",

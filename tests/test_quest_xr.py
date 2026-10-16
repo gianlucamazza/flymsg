@@ -122,6 +122,14 @@ def test_preflight_rejects_sleeping_headset_before_browser_contact(monkeypatch):
 def test_preflight_removes_only_owned_forward_after_bad_target(monkeypatch):
     calls = []
     monkeypatch.setattr(
+        quest,
+        "native_focus",
+        lambda *args: {
+            "browser_focused": True,
+            "components": ["com.oculus.browser/.BrowserActivity"],
+        },
+    )
+    monkeypatch.setattr(
         quest, "snapshot", lambda serial: {"power": "mWakefulness=Awake"}
     )
 
