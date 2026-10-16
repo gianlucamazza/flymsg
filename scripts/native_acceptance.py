@@ -79,8 +79,6 @@ def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
             for silent in (False, True)
             for ext in EXTENSIONS
         ):
-            if shader and ext != "none":
-                continue  # the GPU lane runs version 1 fixtures only
             p = sim.Params(th_jump=adapt, delay=0.3 if seed == 3 else 1.8)
             rng = np.random.default_rng(seed)
             W = sparse.csc_matrix(rng.integers(-20, 80, (8, 8)).astype(np.float32))

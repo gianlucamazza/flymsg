@@ -73,6 +73,23 @@ std::vector<uint32_t> outgoing_synapses(const Runtime &runtime) {
     out[i] += n + 1; // offsets into the same array
   return out;
 }
+// Graded release, version 2: for each neuron, the incoming-CSR positions q
+// whose source is graded, ascending, appended to `out` (n + 1 offsets into the
+// same array, then the positions); returns where the offsets start.
+uint32_t graded_synapses(const Runtime &runtime, std::vector<uint32_t> &out) {
+  const auto &in = runtime.input;
+  const uint32_t n = in[2], ptr = in[16], pre = in[17];
+  const auto base = uint32_t(out.size());
+  out.resize(out.size() + n + 1);
+  for (uint32_t i = 0; i < n; ++i) {
+    out[base + i] = uint32_t(out.size());
+    for (uint32_t q = in [ptr + i]; q < in[ptr + i + 1]; ++q)
+      if (int32_t(in[runtime.x_gcol + in[pre + q]]) >= 0)
+        out.push_back(q);
+  }
+  out[base + n] = uint32_t(out.size());
+  return base;
+}
 // The delivery bitset of the current delay ring (fixture or checkpoint): one
 // slot per ring slot, a bit per incoming synapse whose source spiked there.
 std::vector<uint32_t> bitset(const Runtime &runtime,
@@ -117,10 +134,12 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
                  const std::string &expected_adapter) {
   require(target >= runtime.step && target <= runtime.input[3],
           "invalid GPU target");
-  // The shader implements version 1 only: graded neurons and coupled groups
-  // would need hardware qualification of their float64 paths first (#39).
-  require(runtime.input[1] == 1,
-          "BLOCKED: graded and electrical synapses are not in the GPU lane");
+  // Version 2: the shader divides by a graded neuron's span through a float32
+  // reciprocal, so a span must be a normal float32
+  for (uint64_t k = 0; k < runtime.ng; ++k)
+    require(std::bit_cast<float>(runtime.input[runtime.x_span + k]) >=
+                std::numeric_limits<float>::min(),
+            "BLOCKED: a graded span below the normal float32 range");
   if (target == runtime.step)
     return;
   const uint32_t n = runtime.input[2];
@@ -159,7 +178,8 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   Event event;
   D3D12_ROOT_PARAMETER parameters[5]{};
   parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-  parameters[0].Constants = {0, 0, 3};
+  constexpr UINT constant_words = 23;
+  parameters[0].Constants = {0, 0, constant_words};
   parameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
   parameters[1].Descriptor = {0, 0};
   parameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
@@ -200,8 +220,13 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   const auto words = (uint64_t(runtime.input[runtime.input[16] + n]) + 31) / 32;
   require(uint64_t(runtime.input[5]) * words * 4 <= max_bytes,
           "delivery bitset exceeds the native buffer budget");
-  const auto outgoing = outgoing_synapses(runtime);
+  auto outgoing = outgoing_synapses(runtime);
   const auto active_words = bitset(runtime, outgoing, words);
+  const uint32_t gbase = runtime.ng ? graded_synapses(runtime, outgoing) : 0;
+  require(outgoing.size() * 4 <= max_bytes,
+          "synapse lists exceed the native buffer budget");
+  const uint64_t coupled_groups = (runtime.nc + 63) / 64;
+  require(coupled_groups <= 65535, "GPU coupled rows exceed dispatch limit");
   // Inputs live in a default heap: an upload heap is read uncached every tick.
   auto inputs_upload =
       buffer(device.Get(), runtime.input.size() * 4, D3D12_HEAP_TYPE_UPLOAD,
@@ -278,10 +303,37 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
       list->SetComputeRootUnorderedAccessView(4,
                                               active->GetGPUVirtualAddress());
       for (; tick < end; ++tick)
-        for (uint32_t phase = 0; phase < 4; ++phase) {
-          const uint32_t constants[] = {tick, phase, uint32_t(words)};
-          list->SetComputeRoot32BitConstants(0, 3, constants, 0);
-          list->Dispatch(UINT(groups), 1, 1);
+        // phase 4, the coupled groups' step, comes first and only when there
+        // are groups
+        for (uint32_t phase : {4u, 0u, 1u, 2u, 3u}) {
+          if (phase == 4 && !runtime.nc)
+            continue;
+          const uint32_t constants[constant_words] = {
+              tick,
+              phase,
+              uint32_t(words),
+              uint32_t(runtime.ng),
+              uint32_t(runtime.nc),
+              uint32_t(runtime.ncomp),
+              uint32_t(runtime.width),
+              gbase,
+              uint32_t(runtime.x_gcol),
+              uint32_t(runtime.x_lo),
+              uint32_t(runtime.x_span),
+              uint32_t(runtime.x_scale),
+              uint32_t(runtime.x_gpos),
+              uint32_t(runtime.x_nodes),
+              uint32_t(runtime.x_off),
+              uint32_t(runtime.x_moff),
+              uint32_t(runtime.x_mat),
+              uint32_t(runtime.x_amp),
+              uint32_t(runtime.s_ring),
+              uint32_t(runtime.s_new),
+              uint32_t(runtime.s_vsum),
+              uint32_t(runtime.s_buf),
+              uint32_t(runtime.s_pulse)};
+          list->SetComputeRoot32BitConstants(0, constant_words, constants, 0);
+          list->Dispatch(UINT(phase == 4 ? coupled_groups : groups), 1, 1);
           D3D12_RESOURCE_BARRIER barrier{};
           barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
           barrier.UAV.pResource = nullptr; // state and the delivery bitset
