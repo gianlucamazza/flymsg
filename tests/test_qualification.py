@@ -242,6 +242,74 @@ def test_parity_rejects_opposite_signed_zero(monkeypatch):
         module.check(Oracle(), actual)
 
 
+def test_wait_timeout_keeps_the_last_status(monkeypatch, tmp_path):
+    module = load("console_lifecycle", monkeypatch)
+    job = object.__new__(module.Job)
+    seen = {"state": "checkpointing", "step": 1_000_000, "source_commit": "90249e45"}
+    job.status = lambda: dict(seen)
+    now = {"t": 0.0}
+
+    def clock():
+        now["t"] += 500.0
+        return now["t"]
+
+    monkeypatch.setattr(module.time, "time", clock)
+    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+    got = job.wait({"completed", "failed", "cancelled"})
+    assert got["state"] == "timeout"
+    assert got["last_state"] == "checkpointing"
+    assert got["step"] == 1_000_000
+    assert got["source_commit"] == "90249e45"
+
+
+def test_throughput_timeout_is_not_a_lineage_mismatch(monkeypatch, tmp_path):
+    module = load("console_lifecycle", monkeypatch)
+
+    class Job:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def submit(self):
+            pass
+
+        def wait(self, states, timeout_s=900.0):
+            return {
+                "state": "timeout",
+                "last_state": "checkpointing",
+                "step": 1_000_000,
+            }
+
+    monkeypatch.setattr(module, "Portal", lambda: object())
+    monkeypatch.setattr(
+        module,
+        "TrialEpoch",
+        lambda *a: type("Epoch", (), {"check": lambda *a: None})(),
+    )
+    monkeypatch.setattr(module, "Job", Job)
+    shader = tmp_path / "lif.cso"
+    shader.write_bytes(b"shader")
+    out = tmp_path / "trial"
+    with pytest.raises(RuntimeError, match="timed out during throughput") as caught:
+        module.run(
+            "package",
+            "app",
+            shader,
+            out,
+            {"worker_source_commit": "90249e45"},
+            "graded",
+        )
+    assert "lineage" not in str(caught.value)
+    record = module.failure_record(caught.value)
+    assert record == {
+        "schema": "flymsg.console_lifecycle/v1",
+        "state": "interrupted",
+        "passed": False,
+        "error_type": "RuntimeError",
+        "error": str(caught.value),
+    }
+    assert not (out / "report.json").exists()
+
+
 def test_lifecycle_rejects_download_corruption_before_advancing_oracle(
     monkeypatch, tmp_path
 ):

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Lifecycle collector.** A throughput wait that expires names the worker's last state and step. A package-lineage mismatch stays a finished state whose commit differs from the declared one. No console trial was rerun.
+
 - **Weak-pathway timestep metrics v1** (#148, SF2): latency is not converged. On seeds 5000–5004 the sugar → MN9 first spike moves from 77.4 ms at 0.025 ms to 35.3 ms at 0.1 ms, past the finest seed range of 37.275 ms. Jitter at 0.1 ms stays within range except the silent bitter response, which is indeterminate. Recruitment and rate converge; sugar's recruited count still moves by 119 neurons inside a 274-neuron seed range. Convergence v1 is unchanged. `results/path-metrics/v1.executions/0c616b34…/output/`.
 
 - **Identifiability re-read v1** (#148, SF2): a post-hoc reading of the sensitivity grid, not a new experiment and not a score. Equivalence classes use the default cell's seed range. Looming → DNp01's default cell is alone in its class. pIP10 → dPR1 is undecidable: the seed range covers the grid. All five parameters (`w_syn`, `th_jump`, `sensory_gains`, `membrane`, `release`) stay blocked, with no interval. The ±20% weight factors remain an engineering envelope.
