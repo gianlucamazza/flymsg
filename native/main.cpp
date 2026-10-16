@@ -5,16 +5,20 @@
 #endif
 int main(int argc, char **argv) {
   try {
-    std::string fixture, output, resume, checkpoint, shader, batch, counts;
+    std::string fixture, output, resume, checkpoint, shader, batch, counts,
+        publish;
     uint32_t run = 0;
     uint32_t target = 0;
     bool target_set = false;
+    uint64_t publish_nbytes = 0;
+    bool publish_nbytes_set = false;
     for (int i = 1; i < argc; ++i) {
       const std::string key = argv[i];
       if (key == "--help") {
         std::cout << "--fixture FILE --output FILE [--advance STEP] [--resume "
                      "FILE] [--checkpoint FILE] [--gpu SHADER] [--batch FILE "
-                     "--run K] [--counts FILE]\n";
+                     "--run K] [--counts FILE] [--publish FILE --publish-bytes "
+                     "N]\n";
         return 0;
       }
       flymsg::require(i + 1 < argc, "missing argument value");
@@ -33,7 +37,16 @@ int main(int argc, char **argv) {
         batch = value;
       else if (key == "--counts")
         counts = value;
-      else if (key == "--run") {
+      else if (key == "--publish")
+        publish = value;
+      else if (key == "--publish-bytes") {
+        size_t consumed = 0;
+        const auto parsed = std::stoull(value, &consumed);
+        flymsg::require(consumed == value.size() && value[0] != '-',
+                        "invalid publish size");
+        publish_nbytes = parsed;
+        publish_nbytes_set = true;
+      } else if (key == "--run") {
         size_t consumed = 0;
         const auto parsed = std::stoull(value, &consumed);
         flymsg::require(consumed == value.size() && parsed <= UINT32_MAX &&
@@ -50,6 +63,17 @@ int main(int argc, char **argv) {
         target_set = true;
       } else
         throw std::runtime_error("unknown argument: " + key);
+    }
+    if (!publish.empty() || publish_nbytes_set) {
+      flymsg::require(!publish.empty() && publish_nbytes_set,
+                      "publish path and byte count are both required");
+      flymsg::require(publish_nbytes <= flymsg::max_bytes,
+                      "invalid publish size");
+      std::vector<char> payload(static_cast<size_t>(publish_nbytes));
+      const auto decision =
+          flymsg::publish_bytes(publish, payload.data(), publish_nbytes);
+      std::cout << decision << "\n";
+      return 0;
     }
     flymsg::require(!fixture.empty() && !output.empty(),
                     "fixture and output required");
@@ -74,8 +98,13 @@ int main(int argc, char **argv) {
     runtime.snapshot(output);
     if (!counts.empty())
       runtime.counts(counts);
-    if (!checkpoint.empty())
-      runtime.checkpoint(checkpoint);
+    if (!checkpoint.empty()) {
+      const auto decision = runtime.checkpoint(checkpoint);
+      if (decision != "completed") {
+        std::cout << decision << "\n";
+        return 1;
+      }
+    }
     std::cout << "completed step " << runtime.step << " backend "
               << (shader.empty() ? "cpu" : "dx12") << "\n";
   } catch (const std::exception &error) {

@@ -3,6 +3,8 @@
 import hashlib
 import importlib.util
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -260,6 +262,79 @@ def test_wait_timeout_keeps_the_last_status(monkeypatch, tmp_path):
     assert got["last_state"] == "checkpointing"
     assert got["step"] == 1_000_000
     assert got["source_commit"] == "90249e45"
+
+
+@pytest.fixture(scope="module")
+def publish_exe(tmp_path_factory):
+    compiler = shutil.which("g++")
+    if compiler is None:
+        pytest.fail("native publish tests require g++")
+    exe = tmp_path_factory.mktemp("publish") / "flymsg_native"
+    subprocess.run(
+        [
+            compiler,
+            "-std=c++20",
+            "-O2",
+            "-ffp-contract=off",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            str(SCRIPTS.parent / "native/main.cpp"),
+            "-o",
+            str(exe),
+        ],
+        check=True,
+    )
+    return exe
+
+
+def test_publish_records_failed_or_completed_from_the_temporary_size(
+    publish_exe, tmp_path
+):
+    # Real start: the temporary file is absent. The byte count is an input to
+    # the shipped publish, not a size reconstructed after the fact.
+    idle = tmp_path / "idle"
+    idle.mkdir()
+    destination = idle / "checkpoint.bin"
+    temporary = Path(str(destination) + ".tmp")
+    assert not destination.exists()
+    assert not temporary.exists()
+    stalled = subprocess.run(
+        [str(publish_exe), "--publish", str(destination), "--publish-bytes", "0"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert stalled.returncode == 0, stalled.stderr
+    assert stalled.stdout.strip() == "failed"
+    assert not destination.exists()
+    assert temporary.is_file()
+    assert temporary.stat().st_size == 0
+
+    grown = tmp_path / "grown"
+    grown.mkdir()
+    replaced = grown / "checkpoint.bin"
+    replaced_tmp = Path(str(replaced) + ".tmp")
+    assert not replaced.exists()
+    assert not replaced_tmp.exists()
+    nbytes = "32"
+    finished = subprocess.run(
+        [
+            str(publish_exe),
+            "--publish",
+            str(replaced),
+            "--publish-bytes",
+            nbytes,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert finished.returncode == 0, finished.stderr
+    assert finished.stdout.strip() == "completed"
+    assert replaced.is_file()
+    assert replaced.stat().st_size == int(nbytes)
+    assert not replaced_tmp.exists()
 
 
 def test_throughput_timeout_is_not_a_lineage_mismatch(monkeypatch, tmp_path):

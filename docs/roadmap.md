@@ -237,7 +237,10 @@ connectome bit for bit at about 2,320 steps/s once float32 arithmetic is exact (
 delivery alone was about 1,630). Version-2 fixtures (graded, coupled) run on the DX12 lane (#215) and
 match bit for bit on the Series S, 60 of 60. A graded million-step job on the
 installed worker `90249e45` reached step 1,000,000 and stayed in `checkpointing`
-with `checkpoint.bin.tmp` empty. That trial stays interrupted. The lifecycle
+with `checkpoint.bin.tmp` empty. That trial stays interrupted. A native publish
+that does not grow its temporary file is recorded as `failed` and is not
+replaced; one that grows is replaced and recorded as `completed`. The
+interrupted trial was not rerun. The lifecycle
 collector (#222) names the worker's last state and step when a throughput wait
 expires. A GPU fault with hard termination is unmeasured. The full-content Quest 2 partial WebXR trial (#177) failed its frame-time gate; the complete qualification matrix remains open, so the observer stays experimental, and the native
 executor refuses a fixture group it has not qualified.
