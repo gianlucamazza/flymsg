@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from dataclasses import fields
 
+import numpy as np
+
 from flymsg import sim
 
 TIME = "time"
@@ -95,12 +97,37 @@ def per_step_release(rate_hz: float, dt_ms: float) -> float:
     return float(rate_hz) * float(dt_ms) / 1000.0
 
 
-def check_params(params: sim.Params | None = None) -> list[str]:
-    """Homogeneous combinations of the live LIF defaults.
+def _step_combination(params: sim.Params) -> tuple:
+    """Float32 terms the LIF update multiplies, in ``sim._constants`` order.
 
-    Time ratios are dimensionless. A weight and a threshold jump share the
-    voltage dimension of rest and threshold. ``poisson_scale`` is dimensionless,
-    so ``poisson_scale * w_syn`` stays a voltage.
+    Decays are ``exp(-dt/tau)``. ``gv`` is the dimensionless factor in ``g*gv``.
+    The last term is the kick ``poisson_scale * w_syn`` added to ``v``.
+    """
+    em = np.exp(-params.dt / params.tau_m)
+    es = np.exp(-params.dt / params.tau_syn)
+    gv = params.tau_syn / (params.tau_syn - params.tau_m) * (es - em)
+    return tuple(
+        np.float32(item)
+        for item in (
+            em,
+            es,
+            gv,
+            np.exp(-params.dt / params.tau_th),
+            params.v_rest,
+            params.v_th,
+            params.poisson_scale * params.w_syn,
+        )
+    )
+
+
+def check_params(params: sim.Params | None = None) -> list[str]:
+    """Read the live LIF constants and report those combinations.
+
+    ``v_rest``, ``v_th``, ``w_syn`` and ``th_jump`` must each be a voltage.
+    Time fields must be times, so the decays and ``gv`` stay dimensionless.
+    ``poisson_scale`` must be dimensionless. The sentences quote ``sim._constants``
+    and a 1000 Hz ``sim.graded_arrays`` probe at this ``dt``. A live return that
+    is not the combination the step uses is an error.
     """
     params = sim.Params() if params is None else params
     names = {item.name for item in fields(params)}
@@ -112,19 +139,53 @@ def check_params(params: sim.Params | None = None) -> list[str]:
     if any(PARAM_DIM[name] != TIME for name in times):
         raise UnitError("a time ratio stopped being dimensionless")
     voltages = ("v_rest", "v_th", "w_syn", "th_jump")
-    if len({PARAM_DIM[name] for name in voltages}) != 1:
-        raise UnitError("voltage terms disagree")
+    if any(PARAM_DIM[name] != VOLTAGE for name in voltages):
+        raise UnitError("v_rest, v_th, w_syn and th_jump must be a voltage")
     if PARAM_DIM["poisson_scale"] != DIMENSIONLESS:
         raise UnitError("poisson_scale * w_syn would leave voltage")
     for name in times:
         value = getattr(params, name)
         if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
             raise UnitError(f"{name} must be a positive time")
+    live = sim._constants(params)
+    expected = _step_combination(params)
+    if len(live) != len(expected) or any(
+        np.float32(got) != np.float32(want)
+        for got, want in zip(live, expected, strict=True)
+    ):
+        raise UnitError("live LIF constants disagree with the step")
+    em, es, gv, decay, rest, threshold, kick = live
+    span = float(params.v_th) - float(params.v_rest)
+    if not (span > 0):
+        raise UnitError("graded span must be a positive voltage")
+    graded = sim.Graded(
+        idx=np.array([0], dtype=np.int64),
+        v_lo=np.array([params.v_rest], dtype=np.float64),
+        span=np.array([span], dtype=np.float64),
+        rate_hz=np.array([1000.0], dtype=np.float64),
+    )
+    _idx, _lo, _span, scale, _mask = sim.graded_arrays(graded, 1, float(params.dt))
+    want_scale = np.float32(per_step_release(1000.0, params.dt))
+    if scale.shape != (1,) or np.float32(scale[0]) != want_scale:
+        raise UnitError("graded release disagrees with the kernel count")
     return [
-        "dt/tau_m, dt/tau_syn, dt/tau_th, dt/t_ref and dt/delay are dimensionless",
-        "w_syn and th_jump are voltages, the same dimension as v_rest and v_th",
-        "poisson_scale is dimensionless, so poisson_scale * w_syn is a voltage",
-        "graded release per step is a count: hertz times milliseconds over 1000",
+        (
+            "dt/tau decays from _constants are dimensionless: "
+            f"em={float(em)} es={float(es)} decay={float(decay)}"
+        ),
+        (
+            "gv from _constants is dimensionless, so g*gv stays a voltage: "
+            f"gv={float(gv)}"
+        ),
+        (
+            "kick from _constants is poisson_scale*w_syn, a voltage added to v: "
+            f"kick={float(kick)}"
+        ),
+        (
+            "rest and threshold from _constants are voltages: "
+            f"v_rest={float(rest)} v_th={float(threshold)}"
+        ),
+        f"graded_arrays scale is a count: scale={float(scale[0])}",
     ]
 
 

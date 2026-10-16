@@ -7,19 +7,78 @@ from flymsg import evidence, sim, units
 from flymsg.units import UnitError
 
 
-def test_the_live_step_and_the_registry_agree():
+def test_the_live_step_and_the_registry_agree(monkeypatch):
     records = evidence.load()
-    text = units.report(records)
-    assert "dimensionless" in text
+    params = sim.Params()
+    seen = {}
+    real_constants = sim._constants
+    real_graded = sim.graded_arrays
+
+    def watch_constants(p):
+        seen["constants"] = real_constants(p)
+        return seen["constants"]
+
+    def watch_graded(*args, **kwargs):
+        seen["graded"] = real_graded(*args, **kwargs)
+        return seen["graded"]
+
+    monkeypatch.setattr(sim, "_constants", watch_constants)
+    monkeypatch.setattr(sim, "graded_arrays", watch_graded)
+    text = units.report(records, params)
+    em, es, gv, decay, rest, th, kick = seen["constants"]
+    scale = seen["graded"][3]
+    for piece in (
+        f"em={float(em)}",
+        f"es={float(es)}",
+        f"gv={float(gv)}",
+        f"decay={float(decay)}",
+        f"kick={float(kick)}",
+        f"v_rest={float(rest)}",
+        f"v_th={float(th)}",
+        f"scale={float(scale[0])}",
+    ):
+        assert piece in text
     assert "uncertainty propagation: blocked, no distribution" in text
     parsed = dict(units.registry(records))
     assert set(parsed) == set(records)
     assert parsed["eln_spike_amplitude"] == units.VOLTAGE
     assert parsed["eln_pn_coupling"] == units.DIMENSIONLESS
-    lines = units.check_params(sim.Params())
-    assert any("dimensionless" in line for line in lines)
     assert units.PARAM_DIM["w_syn"] == units.PARAM_DIM["v_rest"] == units.VOLTAGE
     assert units.PARAM_DIM["dt"] == units.PARAM_DIM["tau_m"] == units.TIME
+
+
+def test_shared_time_labels_are_not_a_voltage(monkeypatch):
+    for name in ("v_rest", "v_th", "w_syn", "th_jump"):
+        monkeypatch.setitem(units.PARAM_DIM, name, units.TIME)
+    with pytest.raises(UnitError, match="voltage"):
+        units.check_params(sim.Params())
+
+
+def test_a_live_kick_that_disagrees_is_refused(monkeypatch):
+    real = sim._constants
+
+    def wrong(p):
+        values = list(real(p))
+        values[6] = np.float32(np.float64(values[6]) + 1.0)
+        return tuple(values)
+
+    monkeypatch.setattr(sim, "_constants", wrong)
+    with pytest.raises(UnitError, match="disagree"):
+        units.check_params(sim.Params())
+
+
+def test_a_live_graded_scale_that_disagrees_is_refused(monkeypatch):
+    real = sim.graded_arrays
+
+    def wrong(*args, **kwargs):
+        idx, lo, span, scale, mask = real(*args, **kwargs)
+        scale = scale.copy()
+        scale[0] = np.float32(np.float64(scale[0]) + 1.0)
+        return idx, lo, span, scale, mask
+
+    monkeypatch.setattr(sim, "graded_arrays", wrong)
+    with pytest.raises(UnitError, match="disagree"):
+        units.check_params(sim.Params())
 
 
 def test_graded_release_matches_the_kernel_count():
