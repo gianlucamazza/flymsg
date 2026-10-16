@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Entry protocols.** `docs/issue-resolution.md` states, per blocked front (eye, junctions and modulation, looming, head, muscles, completion), the stimulus, readout, only admissible input and control. No new version is written before its input exists. Docs only.
+
+- **Entry protocol checks.** The frozen v1 benchmark partition has no unused confirmatory case, so M4 needs a new manifest version. The v4 medulla reaches the order of the measured amplitudes, not their shape (roadmap, eye and ledger wording corrected). A post-hoc audit of the archived v4 counts finds a direction bias shared by all four T4 subtypes and no T5 spike; timing is not in the archive. Looming v3 and the APL readout get written prerequisites; both TTMn agree at neuron level; Whitehead et al. 2015 is listed as excluded for G2. Docs only. No lock, seed, or model default changed.
+
+- **Eye-path status.** Embodiment, approximations and the WebXR ADR name G2 geometric projection as implemented coverage. The micro-CT → NeuroMechFly registration has no source, and the projection is not a photoreceptor response. T4/T5 v1 is neither and v2–v4 are robust neither. Docs only. No lock, seed, or model default changed.
+
 - **Exact observer qualification.** Original skeleton/surface preflights and raw ABBA scoring reject missing source-geometry evidence or a changed representation. Desktop and XR frame identities retain source fidelity; transient changes invalidate the observation. Approximate experiments remain diagnostic. No performance gain or headset qualification is claimed.
 
 - **Checkpoint publish record.** `docs/runtime.md`, `docs/milestones.md`, `docs/issue-resolution.md` and `native/README.md` record that a non-growing checkpoint publish is `failed` and is not replaced. The interrupted million-step trial was not rerun and does not meet the exit of #224. Docs only.

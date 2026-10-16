@@ -220,6 +220,14 @@ the expansion and can shift α; this is a named limit.
 
 `results/gf_looming/v2`.
 
+**What a version 3 needs (entry protocol 3, 2026-10-16; not a lock).** The onset slope above
+is computed analytically (`gf_looming.stimulus_locked`); the drive offers only the angular
+velocity and size forms (`gf_looming.rates`), so no arm feeds the model an input that follows
+only the onset. A version 3 needs that arm as an input next to the transducer, a measured
+LC4 or LPLC2 spike rate with trial variability on MaleCNS bodyIds in place of the engineered
+forms, and a holdout partition written before any data. The ten control flies were opened
+by versions 1 and 2, so they cannot be that holdout.
+
 ## Inventory
 
 Counts are bodies with that cell type in MaleCNS v1.0 (165,122 traced neurons,

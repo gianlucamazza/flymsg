@@ -273,8 +273,10 @@ advances, the new TTMn spikes join the twitch trains from their own time on, and
 integrates the same interval; at the first block boundary after takeoff the remaining
 stimulus input is replaced by zeros, the behavior v1 one-bit loop with takeoff as the bit.
 A test checks that the spikes before the cut equal an open-loop run with the same input and
-that none follow the cut. No vision path (body pose → eye → photoreceptors) is built; T4/T5
-v1–v3 found no direction selectivity through the eye ([eye](eye.md)).
+that none follow the cut. The stimulus is the supplied kicks. Geometric projection from a
+pose onto the columns is `flymsg.optics` (G2): coverage, not a photoreceptor response, and
+the micro-CT → NeuroMechFly registration has no source. T4/T5 v1 is neither and v2–v4 are
+robust neither ([eye](eye.md)).
 
 ### M1 jump body (v0.8.34, #33)
 
@@ -356,7 +358,8 @@ depressor` against `Acc. ti flexor`). The rule (2026-10-13, #19): the muscle is 
 since `mancType` is curated per type and individual pairings in serially repeated leg types
 can land on a neighbouring type; `muscles.parquet` records each neuron's `manc_neuron_type`
 and `neuron_match_agrees` (empty when unresolvable), so the disagreements stay visible and
-no per-neuron muscle is used.
+no per-neuron muscle is used. `TTMn_R` (800146) and `TTMn_L` (804642) both agree at neuron
+level (checked 2026-10-16); that maps no muscle to an actuator.
 
 ### Evidence each step needs
 
@@ -393,8 +396,10 @@ From the research plan of PR #47. A step that lacks its evidence keeps the synth
 ### Existing evidence and blockers
 
 - M0 records synthetic sensory events. M2 and `jump3d.closed_loop` feed a stated stimulus
-  back into `CpuRuntime`. The path from body pose through the eye is not built: T4/T5 v1–v3
-  found no direction selectivity through the eye (robust neither, [eye](eye.md)).
+  back into `CpuRuntime`. Geometric projection from a pose onto the columns is implemented
+  (`flymsg.optics`, G2): coverage, not a photoreceptor response. The micro-CT → NeuroMechFly
+  head registration has no source, so the real eye stays unqualified. T4/T5 v1 is neither
+  and v2–v4 are robust neither ([eye](eye.md)).
 - `validation/motor_map.yaml`: every real actuator is `unmapped`. 406 of 708 motor neurons
   have a MANC muscle (`flymsg muscles`), but no source maps a muscle to an actuator.
   NeuroMechFly jump v1 ran and was short. FlyBody stays unselected.
