@@ -117,11 +117,13 @@ def run(
             time.sleep(5)
             try:
                 portal.get(package, rel, "status.json", folder / "status.json")
+                status = json.loads((folder / "status.json").read_text())
             except PortalError as exc:
                 if exc.http_status != 404:
                     raise
                 continue
-            status = json.loads((folder / "status.json").read_text())
+            except json.JSONDecodeError:
+                continue  # caught during atomic status replacement
             if status.get("state") in ("completed", "failed", "cancelled"):
                 break
         case = {

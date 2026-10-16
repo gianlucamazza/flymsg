@@ -1,0 +1,181 @@
+{
+  "schema": "flymsg.device-trials-followup/v1",
+  "date": "2026-10-16",
+  "quest": {
+    "qualification": "not-qualified",
+    "excluded_after_invalid_preflights": 3,
+    "reasons": [
+      "browser diagnostic socket unavailable",
+      "headset asleep"
+    ],
+    "timing_samples": 0,
+    "page_mib": 4,
+    "representation": "skeleton",
+    "keep_awake_restored": 0,
+    "proximity_override": false,
+    "remaining": [
+      "valid original vs 4/16/64 MiB trials",
+      "XR timing, stereo and lifecycle matrix"
+    ]
+  },
+  "console_normal": {
+    "adapter": "SraKmd_arden",
+    "cancel": {
+      "ok": true,
+      "seen_running": true,
+      "state": "cancelled",
+      "step": 37440
+    },
+    "date": "2026-10-16",
+    "fixture": {
+      "extension": "both",
+      "inputs": 2,
+      "neurons": 2048,
+      "seed": 40,
+      "steps": 1000000,
+      "synthetic": true
+    },
+    "oracle": "the CPU runtime on the same fixture, compared with scripts/native_acceptance.py check() after the last step",
+    "package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+    "package_lineage": {
+      "cached_msix_sha256": "416c44de66fe3d791166f2786701acc2b6ab1fde1109060f075536490427a8dd",
+      "ci_head_commit": "93446aaa4e43b39a8a26672d4987735213c77c2c",
+      "ci_run": 38862814877,
+      "installed_binary_independently_downloaded": false,
+      "shader_sha256": "957a1202cb387b6ea29617c0865978e5fb1dbbbcaf93cf9f4a0e4e0478f41b14",
+      "worker_source_commit": "90249e45b2ecbccc126c4b0bee0a9ed5624c0026"
+    },
+    "passed": true,
+    "platform": "Xbox Series S, Dev Mode",
+    "schema": "flymsg.console_lifecycle/v1",
+    "scope": "one synthetic fixture; not full-connectome throughput or biological validation",
+    "script": "scripts/console_lifecycle.py",
+    "shader_sha256": "957a1202cb387b6ea29617c0865978e5fb1dbbbcaf93cf9f4a0e4e0478f41b14",
+    "stop_and_resume": {
+      "force_stop_requested": false,
+      "how": "Device Portal stop of the running app, restart, then a flymsg.worker_resume/v1",
+      "ok": true,
+      "parity": true,
+      "parked_as": "suspended",
+      "parked_at_step": 49152,
+      "resumed_advance_steps": 950848,
+      "seen_running": true,
+      "state": "completed"
+    },
+    "throughput": {
+      "app_memory_bytes": 152039424,
+      "app_memory_limit_bytes": 5368709120,
+      "error": "",
+      "neurons": 2048,
+      "parity": true,
+      "state": "completed",
+      "steps": 1000000,
+      "steps_per_s": 37173.01189849969
+    }
+  },
+  "console_requested_force_stop": {
+    "adapter": "SraKmd_arden",
+    "cancel": {
+      "ok": true,
+      "seen_running": true,
+      "state": "cancelled",
+      "step": 39296
+    },
+    "date": "2026-10-16",
+    "fixture": {
+      "extension": "both",
+      "inputs": 2,
+      "neurons": 2048,
+      "seed": 40,
+      "steps": 1000000,
+      "synthetic": true
+    },
+    "oracle": "the CPU runtime on the same fixture, compared with scripts/native_acceptance.py check() after the last step",
+    "package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+    "package_lineage": {
+      "cached_msix_sha256": "416c44de66fe3d791166f2786701acc2b6ab1fde1109060f075536490427a8dd",
+      "ci_head_commit": "93446aaa4e43b39a8a26672d4987735213c77c2c",
+      "ci_run": 38862814877,
+      "installed_binary_independently_downloaded": false,
+      "shader_sha256": "957a1202cb387b6ea29617c0865978e5fb1dbbbcaf93cf9f4a0e4e0478f41b14",
+      "worker_source_commit": "90249e45b2ecbccc126c4b0bee0a9ed5624c0026"
+    },
+    "passed": false,
+    "platform": "Xbox Series S, Dev Mode",
+    "schema": "flymsg.console_lifecycle/v1",
+    "scope": "one synthetic fixture; not full-connectome throughput or biological validation",
+    "script": "scripts/console_lifecycle.py",
+    "shader_sha256": "957a1202cb387b6ea29617c0865978e5fb1dbbbcaf93cf9f4a0e4e0478f41b14",
+    "stop_and_resume": {
+      "force_stop_requested": true,
+      "how": "Device Portal stop of the running app, restart, then a flymsg.worker_resume/v1",
+      "ok": false,
+      "parity": true,
+      "parked_as": "suspended",
+      "parked_at_step": 43456,
+      "resumed_advance_steps": 956544,
+      "seen_running": true,
+      "state": "completed"
+    },
+    "throughput": {
+      "app_memory_bytes": 152514560,
+      "app_memory_limit_bytes": 5368709120,
+      "error": "",
+      "neurons": 2048,
+      "parity": true,
+      "state": "completed",
+      "steps": 1000000,
+      "steps_per_s": 37167.71770417807
+    }
+  },
+  "console_interrupted_diagnostic": {
+    "qualification": "not-scored",
+    "observed": "checkpointing at 1000000; zero-byte checkpoint.bin.tmp",
+    "activation_error": {
+      "phase": "POST /api/taskmanager/app",
+      "http_status": 0,
+      "curl_code": 28
+    },
+    "remote_epoch_preserved": true,
+    "recovery_state": "awaiting_recovery",
+    "cpu_parity_after_explicit_resume": true,
+    "attribution": "root cause undetermined; not established as a worker defect"
+  },
+  "software_oracles": {
+    "paged": {
+      "status": "pass",
+      "source": {
+        "commit": "b4bb56f0db4f90207a731c951c00e6eb4049ad63",
+        "dirty": false
+      }
+    },
+    "skeleton": {
+      "status": "pass",
+      "source": {
+        "commit": "b4bb56f0db4f90207a731c951c00e6eb4049ad63",
+        "dirty": false
+      }
+    },
+    "surface": {
+      "status": "pass",
+      "source": {
+        "commit": "60a8e23da0c10cff95a165a5199be6e5843a331f",
+        "dirty": false
+      }
+    }
+  },
+  "software_timeout_attempts": {
+    "outcome": "not-pass",
+    "baseline": "b5c6d3b also timed out preparing surfaces under concurrent load",
+    "final": "surface oracle passed on frozen 60a8e23 with 600-second outer timeout; original 60-second preparation gate unchanged"
+  },
+  "remaining": [
+    "Quest performance and physical XR qualification",
+    "mid-run noncooperative termination (forcestop=yes yielded suspended)",
+    "GPU fault injection",
+    "sustained/full-connectome v2 qualification"
+  ],
+  "raw_archive": "device-trials-followup-2026-10-16.zip",
+  "raw_archive_sha256": "6443320546ed4eac967af20b7d682a911cb192e2f34f54bea23b6ba1d4005b01",
+  "verify": "Extract ZIP, run python verify.py; add --cpu PATH_TO_REPO to compare completed outputs with the CPU oracle again."
+}

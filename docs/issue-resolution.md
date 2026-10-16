@@ -135,3 +135,39 @@ and the requirement for `awaiting_recovery` after a hard stop remain in force.
 
 These changes instrument the pending trials. They do not establish a performance
 improvement, a completed XR matrix, hard-termination recovery or a GPU-fault pass.
+
+### Follow-up trials — 2026-10-16
+
+The [follow-up evidence](evidence/device-trials-followup-2026-10-16.json)
+archives raw preflights, lifecycle jobs, epoch readbacks, software oracles and a
+checksum verifier. No scientific result or historical lock changed.
+
+- Quest: three invalid preflights (Browser diagnostics unavailable, then headset
+  asleep); zero eligible timing samples. Keep-awake restored to `0`, presence
+  sensor unchanged. The original/4/16/64 MiB comparison and physical XR matrix
+  remain open; no performance improvement or unsupported-workload verdict follows
+  from this attempt.
+- Series S, `both`: the controlled ordinary lifecycle passes at about 37,173
+  steps/s on the 2,048-neuron synthetic fixture. Cancel occurs at step 37,440;
+  suspension at 49,152 resumes the remaining 950,848 steps with exact CPU parity.
+  All remote epoch checks match.
+- The separate `forcestop=yes` attempt parks as `suspended` at step 43,456 and
+  completes the remaining 956,544 steps with exact parity. Its hard-termination
+  gate correctly fails: graceful suspension cannot qualify noncooperative death.
+  GPU-fault injection is still separate and unmeasured.
+- An earlier attempt stalled at checkpoint publication. Activation timed out
+  (`HTTP 0`, curl 28). A diagnostic forced stop preserved the epoch and produced
+  `awaiting_recovery`; explicit resume completed with CPU-identical output. Its
+  interventions keep it unscored, and its root cause remains undetermined.
+- Independent software WebGL oracles pass for pages, real skeletons and real
+  surfaces, including stereo color/depth/ID and full-quality desktop comparisons.
+  Surface timeouts also reproduced on the old baseline under concurrent load;
+  the frozen candidate passed with a larger outer timeout. These are correctness
+  checks, with no hardware-performance claim.
+
+The combined tree passed 764 ordinary Python tests plus both slow checks; the
+callback/transport follow-up passes 141 JavaScript tests (optional network test
+also covered by the slow run) and 40 targeted Python tests. Authentication and
+transport failures propagate in all three status readers; a missing file or a
+partial status JSON remains pending. Callback-free desktop or XR observations
+are excluded even when the document reports itself visible.

@@ -108,7 +108,15 @@ def test_incomplete_or_changed_matrix_fails(monkeypatch, damage):
 
 
 @pytest.mark.parametrize(
-    "damage", ["none", "v1-only", "unexpected-refusal", "bad-hash"]
+    "damage",
+    [
+        "none",
+        "v1-only",
+        "unexpected-refusal",
+        "bad-hash",
+        "status-auth",
+        "status-transport",
+    ],
 )
 def test_console_report_checks_coverage_and_download(monkeypatch, tmp_path, damage):
     module = load("console_gpu_parity", monkeypatch)
@@ -131,6 +139,13 @@ def test_console_report_checks_coverage_and_download(monkeypatch, tmp_path, dama
 
         def get(self, package, rel, name, path):
             if name == "status.json":
+                if damage in ("status-auth", "status-transport"):
+                    raise module.PortalError(
+                        "GET",
+                        "/api/files?private=query",
+                        22 if damage == "status-auth" else 7,
+                        401 if damage == "status-auth" else 0,
+                    )
                 path.write_text(json.dumps({"state": "completed"}))
             elif name == "result.json":
                 path.write_text(
@@ -169,6 +184,11 @@ def test_console_report_checks_coverage_and_download(monkeypatch, tmp_path, dama
     monkeypatch.setattr(module, "check", lambda *a: None)
     shader = tmp_path / "lif.cso"
     shader.write_bytes(b"shader")
+    if damage in ("status-auth", "status-transport"):
+        with pytest.raises(module.PortalError):
+            module.run("mock-package", shader, tmp_path, v2=True)
+        assert not (tmp_path / "report.json").exists()
+        return
     report = module.run("mock-package", shader, tmp_path, v2=True)
     assert report["qualification"]["qualified"] is (damage == "none")
     assert json.loads((tmp_path / "report.json").read_text()) == report
