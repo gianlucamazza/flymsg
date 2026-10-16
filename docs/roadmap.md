@@ -243,8 +243,10 @@ expires. A GPU fault with hard termination is unmeasured. The full-content Quest
 executor refuses a fixture group it has not qualified.
 
 A Quest 2 is available and USB debugging is verified (2026-10-15); #177 stays open until
-its hardware matrix passes. The [qualification runbook](vee-qualification.md) provides the
-collector, predeclared timing budget, synthetic closed-loop CLI and G0–G7 ledger.
+its hardware matrix passes. Merged #227 and #230 add the diagnostic bounded skeleton
+renderer. The 16 MiB motion campaign is a veto, not a pass of the #177 matrix. The
+[qualification runbook](vee-qualification.md) provides the collector, predeclared timing
+budget, synthetic closed-loop CLI and G0–G7 ledger.
 
 Sources for each step are in [leads](leads.md); the simplifications they would lift are in
 [approximations](approximations.md).

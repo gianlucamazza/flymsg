@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Milestone baseline.** `docs/milestones.md` records `main` at `f5e3709`. Merged #227 and #230 keep the bounded skeleton renderer diagnostic. The 16 MiB motion campaign is a veto and does not meet the exit of #177 or #24. The unit check still does not meet the #148 exit. Docs only.
+
 - **Milestone baseline.** `docs/milestones.md` records `main` at `1123a63`. Draft #227 is not an accepted result. The unit check in #226 and #228 does not meet the #148 exit. Docs only.
 
 - **SF2 unit check** (#148). `flymsg.units` parses every evidence-registry unit and reads `sim._constants` and `sim.graded_arrays`: time-ratio decays are dimensionless, `gv` keeps `g*gv` a voltage, and the kick `poisson_scale*w_syn` is a voltage. Graded release per step is the count `graded_arrays` returns. No record carries a distribution, so uncertainty is not propagated. No lock, seed, or model default changed.
