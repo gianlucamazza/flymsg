@@ -97,11 +97,19 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument(
+        "--timeout-seconds",
+        type=int,
+        default=120,
+        help="Total software-oracle time limit, including full-quality readbacks",
+    )
+    parser.add_argument(
         "--oracle",
         choices=("geometry", "raster", "paged", "viewer-surface", "viewer-skeleton"),
         default="geometry",
     )
     args = parser.parse_args()
+    if args.timeout_seconds < 30:
+        parser.error("--timeout-seconds must be at least 30")
     args.out.mkdir(parents=True, exist_ok=False)
     source = manifest.git_info()
     files = (
@@ -180,12 +188,12 @@ def main():
                         **os.environ,
                         "GL": "swiftshader",
                         "EVAL": "window.oracle",
-                        "EVAL_TIMEOUT_MS": "90000",
+                        "EVAL_TIMEOUT_MS": str((args.timeout_seconds - 15) * 1000),
                     },
                     text=True,
                     stdout=log,
                     stderr=subprocess.STDOUT,
-                    timeout=120,
+                    timeout=args.timeout_seconds,
                     check=False,
                 )
             stdout = (args.out / "browser.log").read_text()
@@ -215,6 +223,7 @@ def main():
                     "source": source,
                     "source_sha256": hashes,
                     "backend": "SwiftShader; correctness only",
+                    "timeout_seconds": args.timeout_seconds,
                 },
             )
         finally:

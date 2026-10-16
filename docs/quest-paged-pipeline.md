@@ -52,7 +52,9 @@ Catalog discovery, soma preparation and selected neuropil preparation participat
 in one context-readiness policy used by both VR admission and the GPU candidate.
 An optional absent local soma export is distinct from an explicitly requested
 missing layer. Context coordinate/colour conversion and full mesh concatenation
-and normals run in the existing geometry workers. Worker-owned legacy fragments
+and normals run in the existing geometry workers. Raw skeleton parsing and levels
+also run there, transferring the input instead of cloning it on the main thread.
+Worker-owned legacy fragments
 use zero-copy input views; canonical source outputs remain retained on the CPU.
 Worker failures reject their pending jobs, and pending input bytes are reported
 separately from geometry/GPU totals. A changed selection can recover from a failed
@@ -95,7 +97,7 @@ timing the hidden reference. Context recovery also waits for the active pipeline
 node --test tests/js/*.test.mjs
 .venv/bin/pytest -q tests
 .venv/bin/python scripts/check_geometry_pages.py --oracle paged --out NEW_DIRECTORY
-.venv/bin/python scripts/check_geometry_pages.py --oracle viewer-surface --out NEW_DIRECTORY
+.venv/bin/python scripts/check_geometry_pages.py --oracle viewer-surface --timeout-seconds 240 --out NEW_DIRECTORY
 .venv/bin/python scripts/check_geometry_pages.py --oracle viewer-skeleton --out NEW_DIRECTORY
 ```
 
@@ -110,6 +112,8 @@ three full desktop frame comparisons per representation with 4x MSAA and bloom.
 They require source network
 access. These reduced fixtures test correctness only; neither they nor
 SwiftShader establish full-scene, physical stereo or performance qualification.
+`--timeout-seconds` bounds the complete software test, including readbacks and
+raw-image transport. It does not alter any physical frame-time acceptance gate.
 
 The pinned Three.js baseline emits stale-context deletion warnings when ordinary
 geometry/materials are disposed after context restoration. A control with only
