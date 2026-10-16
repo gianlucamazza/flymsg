@@ -1,9 +1,10 @@
 // Full selected anatomy, original renderer oracle. Never used as a cadence trial.
 import { verifyRasterFootprint } from "../src/flymsg/viz_static/bounded-raster-oracle.js";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { localObserver } from "./observer_cdp.mjs";
 import { observerPreflight } from "./observer_preflight.mjs";
+import { frozenCameraProfile } from "./observer-camera.mjs";
 
 export function verifyCoverage(expected, pages) {
   const covered = new Map(Object.keys(expected).map((k) => [k, 0]));
@@ -23,10 +24,27 @@ export function verifyCoverage(expected, pages) {
       throw Error(`Incomplete original primitive coverage: ${key}`);
 }
 
+export function oracleFlags(flags) {
+  const options = { readbackOnly: false, cameraFile: null };
+  for (let i = 0; i < flags.length; i++) {
+    if (flags[i] === "--readback-only" && !options.readbackOnly)
+      options.readbackOnly = true;
+    else if (
+      flags[i] === "--camera-file" &&
+      !options.cameraFile &&
+      flags[i + 1] &&
+      !flags[i + 1].startsWith("--")
+    )
+      options.cameraFile = flags[++i];
+    else throw Error("Unknown, duplicate or incomplete oracle flag");
+  }
+  return options;
+}
+
 export async function observerOracle(
   browser,
   out,
-  { readbackOnly = false } = {},
+  { readbackOnly = false, cameraProfile = null } = {},
 ) {
   mkdirSync(out, { recursive: false });
   const write = (n, x) =>
@@ -53,10 +71,19 @@ export async function observerOracle(
     await browser.evaluate(
       "flymsg.diagnostic({suspended:true,playing:false,time:20,pageCulling:false})",
     );
-    const camera = await browser.evaluate(
+    const observed = await browser.evaluate(
       "({camera_world:flymsg.camera.matrixWorld.toArray(),projection:flymsg.camera.projectionMatrix.toArray()})",
     );
+    const camera = frozenCameraProfile(
+      observed,
+      cameraProfile,
+      pre.state.after.identity,
+    );
+    write("camera-observed.json", { ...observed, viewport: camera.viewport });
     write("camera.json", camera);
+    report.camera_source = cameraProfile
+      ? "frozen-profile"
+      : "observed-default";
     let first;
     for (const time of [0, 20, 350])
       for (const eye of [-1, 1]) {
@@ -79,8 +106,8 @@ export async function observerOracle(
           );
           geometryProof = await browser.evaluate(`(async()=>{
             const {auditBoundedRuntime}=await import('./bounded-runtime-oracle.js');
-            const modelView=new flymsg.THREE.Matrix4().fromArray(${JSON.stringify(world)}).invert().multiply(flymsg.data.matrixWorld).toArray();
-            return auditBoundedRuntime(flymsg,[{modelView,projection:${JSON.stringify(camera.projection)},width:256,height:256}]);})()`);
+            const modelView=new flymsg.THREE.Matrix4().fromArray(${JSON.stringify(reference.camera_world)}).invert().multiply(flymsg.data.matrixWorld).toArray();
+            return auditBoundedRuntime(flymsg,[{modelView,projection:${JSON.stringify(reference.projection)},width:256,height:256}]);})()`);
         }
         const candidate = await browser.evaluate(
           `flymsg.reference(${JSON.stringify({ ...options, pipeline: "paged", culling: true })})`,
@@ -213,11 +240,16 @@ if (
   const [endpoint, target, out, ...flags] = process.argv.slice(2);
   let browser;
   try {
+    const options = oracleFlags(flags);
+    const cameraProfile = options.cameraFile
+      ? JSON.parse(readFileSync(options.cameraFile, "utf8"))
+      : null;
     browser = await localObserver(endpoint, target);
     console.log(
       JSON.stringify(
         await observerOracle(browser, out, {
-          readbackOnly: flags.includes("--readback-only"),
+          readbackOnly: options.readbackOnly,
+          cameraProfile,
         }),
       ),
     );

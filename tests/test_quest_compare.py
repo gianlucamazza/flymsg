@@ -156,3 +156,81 @@ def test_bounded_comparison_requires_explicit_order_and_every_frame_certificate(
             )
         with pytest.raises(ValueError, match="certificate|uncertified"):
             compare.block_summary(changed, candidate_representation="skeleton-bounded")
+
+
+@pytest.mark.parametrize("ignore_frozen", [False, True])
+def test_run_supplies_frozen_camera_before_later_correctness_captures(
+    tmp_path, monkeypatch, ignore_frozen
+):
+    import json
+    from types import SimpleNamespace
+
+    camera = {
+        "camera_world": [1 if i % 5 == 0 else 0 for i in range(16)],
+        "projection": [1 if i % 5 == 0 else 0 for i in range(16)],
+        "viewport": {"width": 1280, "height": 670, "pixel_ratio": 1, "samples": 4},
+    }
+    calls = []
+    session = SimpleNamespace(
+        out=tmp_path,
+        endpoint="endpoint",
+        target="target",
+        serial="192.168.1.146:5555",
+        source={},
+        device={"hardware_serial": "fake"},
+        unattended=True,
+    )
+    session.record = lambda name, data: compare.runstore.atomic_json(
+        tmp_path / name, data
+    )
+    session.open = lambda *args, **kwargs: None
+    session.wait_ready = lambda **kwargs: {
+        "eligible": kwargs.get("readback_only", False),
+        "reasons": []
+        if kwargs.get("readback_only", False)
+        else ["operator unavailable"],
+    }
+    monkeypatch.setattr(compare, "identity", lambda *args: None)
+
+    def node(*args, **kwargs):
+        assert args[0] == "observer_oracle.mjs" and "--readback-only" in args
+        directory = Path(args[3])
+        directory.mkdir()
+        selected = copy.deepcopy(camera)
+        if calls:
+            assert "--camera-file" in args
+            profile = Path(args[args.index("--camera-file") + 1])
+            assert json.loads(profile.read_text()) == camera
+            if ignore_frozen:
+                selected["camera_world"][0] += 1e-13
+        else:
+            assert "--camera-file" not in args
+        calls.append(args)
+        compare.runstore.atomic_json(directory / "camera.json", selected)
+        return {"status": "pass"}, 0
+
+    monkeypatch.setattr(compare, "node_json", node)
+    decision = compare.run(
+        session, representation="skeleton-bounded", page_sizes=(4, 16)
+    )
+    assert len(calls) == 2 and decision["winner_mib"] is None
+    results = json.loads((tmp_path / "comparison.json").read_text())["results"]
+    errors = [row for row in results if row.get("phase") == "oracle"]
+    assert bool(errors) == ignore_frozen
+    if ignore_frozen:
+        assert "base camera changed" in errors[0]["error"]
+
+
+def test_camera_declared_viewport_must_match_actual_receipts():
+    records = [arm(value) for value in (100, 80, 80, 100)]
+    for row in records:
+        row["camera_profile"]["viewport"] = {
+            key: row["identity"][key]
+            for key in ("width", "height", "pixel_ratio", "samples")
+        }
+    assert compare.block_summary(records)["ratio"] == 0.8
+    # Even if every arm drifts together, it must not differ from its frozen declaration.
+    for row in records:
+        row["identity"]["width"] *= 2
+    with pytest.raises(ValueError, match="Frozen camera viewport"):
+        compare.block_summary(records)

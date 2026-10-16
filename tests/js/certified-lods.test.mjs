@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import * as T from "../../src/flymsg/viz_static/vendor/three/build/three.module.min.js";
 import { PrimitivePages } from "../../src/flymsg/viz_static/primitive-pages.js";
@@ -9,6 +10,7 @@ import {
 } from "../../src/flymsg/viz_static/certified-lods.js";
 import {
   projectionErrorBound,
+  projectionErrorProjector,
   certifiedPixelError,
 } from "../../src/flymsg/viz_static/projection-error-bound.js";
 function pages(vertices, index, maxBytes = 4096) {
@@ -246,4 +248,95 @@ test("one packed index budget retains fine dyadic levels and decodes their indep
     assert(maximum <= variant.errors[0] + 1e-5);
   }
   assert.throws(() => composePageLod(catalogue, { 0: 999 }), /Unknown/);
+});
+
+test("unproved projection bounds stay infinite even for a zero spatial error", () => {
+  for (const bounds of [
+    undefined,
+    null,
+    { scale: Infinity, rounding: Infinity },
+    { scale: NaN, rounding: 0 },
+    { scale: 1, rounding: NaN },
+    { scale: -1, rounding: 0 },
+    { scale: 1, rounding: -1 },
+  ])
+    assert.equal(certifiedPixelError(0, bounds), Infinity);
+});
+
+test("prepared certificates snapshot matrices, viewport and precision together", () => {
+  const camera = new T.PerspectiveCamera(55, 1.5, 0.1, 100);
+  const eye = {
+    modelView: new T.Matrix4().toArray(),
+    projection: camera.projectionMatrix.toArray(),
+    width: 1200,
+    height: 800,
+  };
+  const precision = { float: 23, subpixel: 4 },
+    box = { min: [-0.1, -0.1, -3], max: [0.1, 0.1, -2] };
+  const expected = projectionErrorBound(box, eye, precision),
+    prepared = projectionErrorProjector(eye, precision);
+  assert(Number.isFinite(expected.scale));
+  eye.modelView[12] = 1000;
+  eye.projection[0] = NaN;
+  eye.width = 1;
+  precision.subpixel = 3;
+  assert.deepEqual(prepared(box), expected);
+  assert.equal(projectionErrorBound(box, eye, precision).scale, Infinity);
+});
+test("an invalid box or other eye cannot poison a prepared eye certificate", () => {
+  const camera = new T.PerspectiveCamera(55, 1.5, 0.1, 100);
+  const eye = {
+    modelView: new T.Matrix4().toArray(),
+    projection: camera.projectionMatrix.toArray(),
+    width: 1200,
+    height: 800,
+  };
+  const box = { min: [-0.1, -0.1, -3], max: [0.1, 0.1, -2] },
+    prepared = projectionErrorProjector(eye);
+  const expected = prepared(box);
+  for (const bad of [
+    null,
+    { min: [NaN, 0, -3], max: [1, 1, -2] },
+    { min: [2, 0, -3], max: [1, 1, -2] },
+  ])
+    assert.equal(prepared(bad).scale, Infinity);
+  const other = projectionErrorProjector({
+    ...eye,
+    modelView: new T.Matrix4().makeTranslation(0, 0, 4).toArray(),
+  });
+  assert.equal(other(box).scale, Infinity);
+  assert.equal(
+    projectionErrorProjector(eye, { float: 16, subpixel: 4 })(box).scale,
+    Infinity,
+  );
+  assert.deepEqual(prepared(box), expected);
+});
+
+test("prepared certificates match frozen independent full-scene reference vectors bit for bit", () => {
+  const corpus = JSON.parse(
+    readFileSync(
+      new URL("../fixtures/projection-bound-b4427da.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.equal(
+    corpus.reference_commit,
+    "b4427daa400fbe3ea723b7ec0eb569265c7539c3",
+  );
+  assert.equal(corpus.cases.length, 80);
+  let compared = 0;
+  for (const sample of corpus.cases) {
+    const project = projectionErrorProjector(sample.eye, corpus.precision);
+    for (const { box, bound, unproved } of sample.boxes) {
+      const result = project(box);
+      if (unproved)
+        assert.deepEqual(result, { scale: Infinity, rounding: Infinity });
+      else {
+        assert(Object.is(result.scale, bound.scale));
+        assert(Object.is(result.rounding, bound.rounding));
+      }
+      compared++;
+    }
+  }
+  assert.equal(compared, 1120);
 });

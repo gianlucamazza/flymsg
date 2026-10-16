@@ -1,5 +1,5 @@
 import {
-  projectionErrorBound,
+  projectionErrorProjector,
   certifiedPixelError,
 } from "./projection-error-bound.js";
 
@@ -18,6 +18,8 @@ export class BoundedSelections {
     this.fallbackFrames = 0;
     this.coarseFrames = 0;
     this.discarded = 0;
+    this.composedPages = this.reusedPages = this.installedSelections = 0;
+    this.projectionViews = this.projectionBoxes = 0;
   }
   add(page, metadata) {
     if (metadata.encoding !== "anchored-path-u32/v1")
@@ -31,18 +33,21 @@ export class BoundedSelections {
     this.cachedEyeKey = null;
   }
   bounds(eyes) {
+    const projectors = eyes?.length
+      ? eyes.map((eye) => projectionErrorProjector(eye, this.precision))
+      : [];
+    this.projectionViews += projectors.length;
     return this.pages.map((page) =>
       Object.fromEntries(
         Object.entries(page.bounded.boxes).map(([owner, box]) => {
-          const values = eyes?.length
-            ? eyes.map((eye) => projectionErrorBound(box, eye, this.precision))
-            : [];
+          this.projectionBoxes += projectors.length;
+          const values = projectors.map((project) => project(box));
           return [owner, values];
         }),
       ),
     );
   }
-  errorFor(page, owner, level, bounds) {
+  errorFor(page, owner, level, bounds = []) {
     if (level === 0) return 0;
     const variant = page.bounded.levels.find((v) => v.id === level),
       error = variant?.errors[owner];
@@ -51,10 +56,13 @@ export class BoundedSelections {
   }
   valid(selection, bounds) {
     return this.pages.every((page, i) =>
-      Object.entries(selection[page.bounded.page] ?? {}).every(
-        ([owner, level]) =>
-          this.errorFor(page, owner, level, bounds[i][owner]) <= 0.5,
-      ),
+      Object.keys(page.bounded.boxes).every((owner) => {
+        const level = selection[page.bounded.page]?.[owner];
+        return (
+          Number.isInteger(level) &&
+          this.errorFor(page, owner, level, bounds[i][owner]) <= 0.5
+        );
+      }),
     );
   }
   choose(bounds) {
@@ -80,19 +88,35 @@ export class BoundedSelections {
             count = size;
           }
         }
+        // Prefer fewer indices, but do not refine a still-certified current
+        // path merely because it crossed the 0.4-pixel preparation threshold.
+        const retained = this.current?.records.has(page.bounded.page)
+          ? this.current.selection[page.bounded.page]?.[owner]
+          : undefined;
+        if (
+          Number.isInteger(retained) &&
+          this.errorFor(page, owner, retained, bounds[i][owner]) <= 0.5
+        ) {
+          const retainedCount = page.bounded.levels
+            .find((v) => v.id === retained)
+            .ranges.filter((r) => r.owner === Number(owner))
+            .reduce((n, r) => n + r.count, 0);
+          if (retainedCount <= count) best = retained;
+        }
         owners[owner] = best;
       }
     });
     return selection;
   }
-  release(candidate) {
+  release(candidate, retained = null) {
+    const shared = new Set(retained?.records.values());
     if (candidate)
       for (const record of candidate.records.values())
-        this.uploads.release(record);
+        if (!shared.has(record)) this.uploads.release(record);
   }
   reset() {
     this.epoch++;
-    this.release(this.current);
+    this.release(this.current, this.pending);
     this.release(this.pending);
     this.current = this.pending = this.desired = null;
     this.inflight = false;
@@ -112,6 +136,26 @@ export class BoundedSelections {
       eyeKey === this.cachedEyeKey ? this.cachedBounds : this.bounds(eyes);
     this.cachedEyeKey = eyeKey;
     this.cachedBounds = bounds;
+    if (this.uploads.error) this.error = this.uploads.error;
+    if (this.pending) {
+      // A changed preference is not a failed proof. Keep uploading while the
+      // actual pose still certifies the complete pending selection.
+      if (this.uploads.error || !this.valid(this.pending.selection, bounds)) {
+        this.release(this.pending, this.current);
+        this.pending = null;
+        this.discarded++;
+      } else if (
+        [...this.pending.records.values()].every((r) => r.state === "ready")
+      ) {
+        for (const record of this.pending.records.values()) record.arrays = [];
+        this.release(this.current, this.pending);
+        this.current = this.pending;
+        this.pending = null;
+        this.installedSelections++;
+        this.initialized = true;
+        this.selectionEyeKey = null;
+      }
+    }
     const selection =
         eyeKey === this.selectionEyeKey
           ? this.cachedSelection
@@ -119,35 +163,13 @@ export class BoundedSelections {
       key = JSON.stringify(selection);
     this.selectionEyeKey = eyeKey;
     this.cachedSelection = selection;
-    if (this.uploads.error) this.error = this.uploads.error;
     this.desired = { key, selection };
-    if (this.pending) {
-      if (this.pending.key !== key || this.uploads.error) {
-        this.release(this.pending);
-        this.pending = null;
-        this.discarded++;
-      } else if (
-        [...this.pending.records.values()].every((r) => r.state === "ready")
-      ) {
-        if (this.valid(this.pending.selection, bounds)) {
-          for (const record of this.pending.records.values())
-            record.arrays = [];
-          this.release(this.current);
-          this.current = this.pending;
-          this.pending = null;
-          this.initialized = true;
-        } else {
-          this.release(this.pending);
-          this.pending = null;
-          this.discarded++;
-        }
-      }
-    }
     const coarse = Object.values(selection).some((owners) =>
       Object.values(owners).some((level) => level !== 0),
     );
     if (!coarse) {
-      this.release(this.current);
+      this.release(this.current, this.pending);
+      if (this.current) this.selectionEyeKey = null;
       this.current = null;
       this.initialized = true;
       return;
@@ -174,7 +196,7 @@ export class BoundedSelections {
         if (epoch !== this.epoch) return;
         this.inflight = false;
         this.workerComposeMs = response.compose_ms ?? null;
-        if (this.desired?.key !== key) {
+        if (!this.valid(selection, this.cachedBounds)) {
           this.discarded++;
           return;
         }
@@ -185,6 +207,7 @@ export class BoundedSelections {
             new Set(response.pages.map((p) => p.page)).size !== pages.length
           )
             throw Error("Incomplete bounded composition");
+          this.composedPages += response.pages.length;
           for (const page of response.pages) {
             const source = this.pages.find((p) => p.bounded.page === page.page);
             if (
@@ -209,14 +232,25 @@ export class BoundedSelections {
               );
             if (!page.indices.length)
               throw Error("Empty bounded source composition");
+            // Reuse only ready indices for the identical certified page
+            // selection. Re-evaluate ownership after the asynchronous reply;
+            // no current GPU record is captured across worker execution.
+            const current = this.current?.records.get(page.page),
+              reused =
+                current?.state === "ready" &&
+                JSON.stringify(this.current.selection[page.page]) ===
+                  JSON.stringify(selection[page.page]);
+            if (reused) this.reusedPages++;
             records.set(
               page.page,
-              this.uploads.enqueue([page.indices], { indexSlot: 0 }),
+              reused
+                ? current
+                : this.uploads.enqueue([page.indices], { indexSlot: 0 }),
             );
           }
           this.pending = { key, selection, records };
         } catch (error) {
-          this.release({ records });
+          this.release({ records }, this.current);
           this.error = String(error);
         }
       })
@@ -245,7 +279,7 @@ export class BoundedSelections {
         for (const [owner, level] of Object.entries(selection)) {
           const bound = this.errorFor(page, owner, level, bounds[i][owner]);
           error = Math.max(error, bound);
-          if (bound > 0.5) valid = false;
+          if (!(bound <= 0.5)) valid = false;
         }
       if (valid) {
         record.attribute ??= new this.THREE.GLBufferAttribute(
@@ -301,6 +335,11 @@ export class BoundedSelections {
       coarse_frames: this.coarseFrames,
       fallback_frames: this.fallbackFrames,
       discarded_requests: this.discarded,
+      composed_pages: this.composedPages,
+      reused_pages: this.reusedPages,
+      installed_selections: this.installedSelections,
+      projection_views: this.projectionViews,
+      projection_boxes: this.projectionBoxes,
       source_provenance_cpu_bytes: this.pages.reduce(
         (n, p) =>
           n +
