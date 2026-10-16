@@ -20,14 +20,6 @@ jobs:
       - run: uv sync --locked
       - run: uv run ruff check
       - run: uv run ruff format --check src tests scripts
-      # TEMPORARY formatter diagnostic; will be reverted before merge.
-      - name: Diagnostic Prettier output
-        run: |
-          npx --yes prettier@3.8.1 --write docs/milestones.md
-          echo '---FMT_BEGIN_225---'
-          cat docs/milestones.md
-          echo '---FMT_END_225---'
-          exit 1
       - run: npx --yes prettier@3.8.1 --check "**/*.md"  # docs formatting
       # unit tests on synthetic networks plus the browser-module tests (node --test);
       # the full validation battery needs the ~1.1 GB connectome and is marked slow
