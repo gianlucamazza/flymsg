@@ -247,3 +247,16 @@ test("one packed index budget retains fine dyadic levels and decodes their indep
   }
   assert.throws(() => composePageLod(catalogue, { 0: 999 }), /Unknown/);
 });
+
+test("unproved projection bounds stay infinite even for a zero spatial error", () => {
+  for (const bounds of [
+    undefined,
+    null,
+    { scale: Infinity, rounding: Infinity },
+    { scale: NaN, rounding: 0 },
+    { scale: 1, rounding: NaN },
+    { scale: -1, rounding: 0 },
+    { scale: 1, rounding: -1 },
+  ])
+    assert.equal(certifiedPixelError(0, bounds), Infinity);
+});

@@ -119,6 +119,14 @@ export function projectionErrorBound(
     : { scale: Infinity, rounding: Infinity };
 }
 export function certifiedPixelError(error, bounds) {
-  if (error === null || !Number.isFinite(error) || error < 0) return Infinity;
+  if (
+    !Number.isFinite(error) ||
+    error < 0 ||
+    !Number.isFinite(bounds?.scale) ||
+    bounds.scale < 0 ||
+    !Number.isFinite(bounds?.rounding) ||
+    bounds.rounding < 0
+  )
+    return Infinity;
   return bounds.scale * error + bounds.rounding;
 }

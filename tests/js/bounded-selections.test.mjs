@@ -285,3 +285,23 @@ test("context reset releases current and pending shared buffers once", async () 
   assert.equal(f.controller.current, null);
   assert.equal(f.controller.pending, null);
 });
+
+test("zero spatial error does not admit an unproved clipped pose on the same draw", async () => {
+  const f = fixture();
+  f.page.bounded.levels[1].errors[0] = 0;
+  f.controller.update(eyes);
+  await resolve(f);
+  f.owned[0].state = "ready";
+  f.controller.update(eyes);
+  f.controller.apply(eyes);
+  assert.equal(f.page.object.geometry.index.count, 4);
+  f.controller.restore();
+  f.controller.apply([
+    {
+      ...eyes[0],
+      modelView: new T.Matrix4().makeTranslation(0, 0, 4).toArray(),
+    },
+  ]);
+  assert.equal(f.page.object.geometry.index.count, 6);
+  assert.equal(f.controller.report().maximum_error_px, 0);
+});

@@ -42,6 +42,12 @@ current and at most one pending selection retain the existing ownership bound.
 The worker still composes complete CPU replies; this change only avoids redundant
 native uploads. Do not claim reduced worker composition from buffer reuse.
 
+A separate zero-error regression exposed `Infinity * 0` producing `NaN` when
+projection certification fails. The certificate boundary now maps nonfinite or
+negative projection bounds to explicit infinity even for zero spatial error.
+The draw path accepts only a bound <=0.5, matching selection/publication policy;
+unproved clip-plane poses force full source indices on the same draw.
+
 Resource reports add cumulative document counters `composed_pages`,
 `reused_pages` and `installed_selections`, alongside discarded requests, fallback
 frames, actual submitted indices, upload bytes and CPU/GPU ownership.
@@ -50,7 +56,7 @@ frames, actual submitted indices, upload bytes and CPU/GPU ownership.
 
 Unit regressions exercise the 0.4/0.5 interval with actual projection bounds,
 pose changes during worker execution/upload, atomic multi-page publication,
-shared-buffer cancellation and context reset. Existing stale-generation,
+shared-buffer cancellation, context reset and zero-error unproved projections. Existing stale-generation,
 allocation failure and strict stereo/missing-pose cases remain mandatory.
 
 Run the complete JavaScript suite and the real viewer bounded software oracle

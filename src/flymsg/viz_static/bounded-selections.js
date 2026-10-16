@@ -275,7 +275,7 @@ export class BoundedSelections {
         for (const [owner, level] of Object.entries(selection)) {
           const bound = this.errorFor(page, owner, level, bounds[i][owner]);
           error = Math.max(error, bound);
-          if (bound > 0.5) valid = false;
+          if (!(bound <= 0.5)) valid = false;
         }
       if (valid) {
         record.attribute ??= new this.THREE.GLBufferAttribute(
