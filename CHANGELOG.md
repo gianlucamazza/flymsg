@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
+
 - **Entry protocols.** `docs/issue-resolution.md` states, per blocked front (eye, junctions and modulation, looming, head, muscles, completion), the stimulus, readout, only admissible input and control. No new version is written before its input exists. Docs only.
 
 - **Entry protocol checks.** The frozen v1 benchmark partition has no unused confirmatory case, so M4 needs a new manifest version. The v4 medulla reaches the order of the measured amplitudes, not their shape (roadmap, eye and ledger wording corrected). A post-hoc audit of the archived v4 counts finds a direction bias shared by all four T4 subtypes and no T5 spike; timing is not in the archive. Looming v3 and the APL readout get written prerequisites; both TTMn agree at neuron level; Whitehead et al. 2015 is listed as excluded for G2. Docs only. No lock, seed, or model default changed.
