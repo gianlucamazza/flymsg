@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
+
 - **Exact observer qualification.** Original skeleton/surface preflights and raw ABBA scoring reject missing source-geometry evidence or a changed representation. Desktop and XR frame identities retain source fidelity; transient changes invalidate the observation. Approximate experiments remain diagnostic. No performance gain or headset qualification is claimed.
 
 - **Checkpoint publish record.** `docs/runtime.md`, `docs/milestones.md`, `docs/issue-resolution.md` and `native/README.md` record that a non-growing checkpoint publish is `failed` and is not replaced. The interrupted million-step trial was not rerun and does not meet the exit of #224. Docs only.
