@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Sustained console workload (#224).** `scripts/console_sustained.py` records [Series S v1 full-connectome evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-sustained-2026-10-16.json): two 20,000-step cold/warm setup jobs and four back-to-back 500,000-step jobs each for looming and bitter pass bit for bit against the CPU oracle, with identical outputs per case. Median sustained advance is 2,649 and 3,693 steps/s without throughput decline; transfer, submit latency, peak app memory and GPU engine-0 utilisation are recorded. Attempt 1 failed with HTTP 500 after job files accumulated; protocol revision 2 cleans up verified outputs and records Portal errors. Full-connectome v2, noncooperative termination, GPU fault, gamepad and GPU temperature remain unmeasured; #224 stays open. No lock, seed or model default changed.
+
 - **Exact observer qualification.** Original skeleton/surface preflights and raw ABBA scoring reject missing source-geometry evidence or a changed representation. Desktop and XR frame identities retain source fidelity; transient changes invalidate the observation. Approximate experiments remain diagnostic. No performance gain or headset qualification is claimed.
 
 - **Checkpoint publish record.** `docs/runtime.md`, `docs/milestones.md`, `docs/issue-resolution.md` and `native/README.md` record that a non-growing checkpoint publish is `failed` and is not replaced. The interrupted million-step trial was not rerun and does not meet the exit of #224. Docs only.
