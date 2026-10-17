@@ -63,6 +63,12 @@ PAGES = (
     ("benchmarks", "docs/benchmarks.md", "Benchmarks"),
     ("m4-v2-proposal", "docs/m4-v2-proposal.md", "M4 v2 proposal"),
     ("baker-crossmatch", "docs/baker-crossmatch.md", "Baker correspondence"),
+    (
+        "jo-measured-input-design",
+        "docs/jo-measured-input-design.md",
+        "Measured JO input",
+    ),
+    ("adr-measured-jo-input", "docs/adr-measured-jo-input.md", "Measured JO ADR"),
     ("behavior", "docs/behavior.md", "Behavior"),
     ("nulls", "docs/nulls.md", "Nulls"),
     ("provenance", "docs/provenance.md", "Provenance"),
