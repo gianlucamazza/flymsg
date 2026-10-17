@@ -87,6 +87,11 @@ Until that input exists no new version is written and no recorded result is reru
    before its data, from a source that did not select the model. The Pacheco data are not
    opened to choose the mechanism; a fitted filter and mosquito tuning do not enter. Only a positive outcome
    against unused animal observations closes the project; a documented no-go does not.
+   The [2026-10-17 Baker audit](baker-crossmatch.md) completes named MaleCNS routes
+   for 12 of 28 classes (AVLP_pr36 still excluded for dimorphism); 14 remain partial
+   and two absent. Root-ID access/updating is verified. The [v2 proposal](m4-v2-proposal.md)
+   records the noncommercial licence scope; remaining sex/input/readout evidence
+   and the prospective partition/lock still block scoring. No responses were opened.
 
 ## Physical trial procedure
 

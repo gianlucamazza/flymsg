@@ -115,8 +115,8 @@ contains exactly 404 uint64 roots (3,232 bytes).
 
 ## Evidence and reproduction
 
-- [Summary and input SHA-256 hashes](evidence/baker-crossmatch-2026-10-17.json).
-- [Captured API responses, row-level identity results and offline replay](evidence/baker-crossmatch-2026-10-17.zip).
+- [Summary and input SHA-256 hashes](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/baker-crossmatch-2026-10-17.json).
+- [Captured API responses, row-level identity results and offline replay](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/baker-crossmatch-2026-10-17.zip).
 
 The archive contains identity metadata and analysis code, no response traces,
 credentials, source workbooks, full annotation tables or segmentation volumes.

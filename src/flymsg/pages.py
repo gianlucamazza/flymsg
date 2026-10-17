@@ -61,6 +61,8 @@ PAGES = (
     ("runtime", "docs/runtime.md", "Runtime"),
     ("validation", "docs/validation.md", "Validation"),
     ("benchmarks", "docs/benchmarks.md", "Benchmarks"),
+    ("m4-v2-proposal", "docs/m4-v2-proposal.md", "M4 v2 proposal"),
+    ("baker-crossmatch", "docs/baker-crossmatch.md", "Baker correspondence"),
     ("behavior", "docs/behavior.md", "Behavior"),
     ("nulls", "docs/nulls.md", "Nulls"),
     ("provenance", "docs/provenance.md", "Provenance"),

@@ -57,6 +57,14 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 
 **Exit:** publish an independently scored preregistered test with a reproducible pass/fail/indeterminate/no-go and all controls. **Only a pass against untouched animal observations** satisfies the project's stated behavioral-completion claim. A properly documented failed or blocked run is valuable research but does not close that claim.
 
+**Dated progress (2026-10-17):** the [Baker audit](baker-crossmatch.md) completes
+anatomical routes for 12 of 28 classes, including the still-excluded dimorphic
+AVLP_pr36; 14 remain partial and two absent. The [M4 v2 proposal](m4-v2-proposal.md)
+records a scoped basis for noncommercial local analysis and publication review.
+This advances candidate identification, not S3 qualification: sex compatibility,
+measured JO input, observable qualification and the prospective partition/lock
+remain required. No response data were opened or benchmark scored.
+
 ### S4 — External reproduction and claim audit (P1; mandatory for research release)
 
 **Owner issue:** [#151](https://github.com/gianlucamazza/flymsg/issues/151).
