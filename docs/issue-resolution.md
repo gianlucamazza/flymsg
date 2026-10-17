@@ -45,6 +45,49 @@ the ±20% `w_syn` factors stay an engineering envelope. Uncertainty propagation 
 retains correlations and mapping uncertainty; absent distributions block a biological
 interval. This ledger is not a lock and changes no existing score.
 
+### Entry protocols — 2026-10-16
+
+Each front names its stimulus, its readout, the only admissible input and its control.
+Until that input exists no new version is written and no recorded result is rerun or retuned.
+
+1. **Eye (#84, #97, #140).** Stimulus: Gruntman et al.'s bars and directions, already held
+   out from T4/T5 v4. Readout: T4 and T5 direction selectivity, not medulla amplitude.
+   Admissible input: a Drosophila voltage → release curve or a measured lamina → medulla
+   gain. Control: gain 16 with LMCs at 200 Hz, where the medulla swings reach the order of the
+   measured ones (about ±5–10 mV around the settled dark potential, where the recordings depolarize
+   12.8–23.9 mV and hyperpolarize 1.6–7.2 mV; Mi4 at most 0.6 mV) and T4 stays unselective. v4 stays robust neither; no v5 is
+   written until the curve exists.
+2. **Junctions and modulation (#85).** Three separate protocols. Electrical: conductance in
+   nS and input resistance on the same cells, mapped to MaleCNS bodyIds; an EM synapse count
+   is not a conductance. Modulatory: an effect per type, not a global factor on `w_syn`.
+   APL/KC: a readout with dynamic range in both the APL-on and the APL-off arm. v1 stays
+   uninformative and is not retuned.
+3. **Looming (#34, G3).** Stimulus: approaching discs at the r/v values already deposited
+   for the giant fiber. Transducer readout: LC4 or LPLC2 spike rate with trial-to-trial
+   variability, mapped to MaleCNS bodyIds. The DNp01 peak time is a downstream readout,
+   already used and not sufficient. Control: an input that follows only the stimulus onset.
+   v1 and v2 stay uninformative; no v3 without that source and a holdout partition written
+   beforehand.
+4. **Head (#179, G2).** Measurement: the resting head-to-thorax angle in _D. melanogaster_,
+   with dispersion and n, to register Zhao et al.'s micro-CT frame onto the NeuroMechFly
+   body. Hengstenberg 1991's flight pitch, Whitehead et al. 2015's in-flight pitch correction
+   and the 20° chosen by the NeuroMechFly authors do not count. Until then G2 is unqualified
+   geometry on the real eye.
+5. **Muscles (#19, #35, G4).** Chain: `TTMn_L` and `TTMn_R` → muscle → real joint →
+   actuator, with force and time course. The body is female and the connectome male. The
+   MANC type/neuron disagreement (140 of 623) is resolved before any per-neuron use. Without
+   a published muscle → actuator pairing `motor_map.command` keeps refusing; NeuroMechFly's
+   short jump does not become the missing force.
+6. **Completion (#36, M4).** First, a Johnston's organ input with a measured band-pass, or
+   tuned to the carrier, on exactly MaleCNS JO-A, JO-B and JO-D. Then a case still eligible
+   in the frozen partition, other than song v1. Checked on 2026-10-16: the v1 manifest has
+   none left. Its only scored held-out case, ORN_DM1 → DM1_lPN, ran and failed; ORN_V is
+   reported and does not decide; no exploratory row is promoted
+   ([benchmarks](benchmarks.md)). A case therefore needs a new manifest version written
+   before its data, from a source that did not select the model. The Pacheco data are not
+   opened to choose the mechanism; a fitted filter and mosquito tuning do not enter. Only a positive outcome
+   against unused animal observations closes the project; a documented no-go does not.
+
 ## Physical trial procedure
 
 Use exact source, package, shader and input hashes and a new output directory for each

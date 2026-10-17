@@ -516,6 +516,14 @@ Outputs: `results/baselines/v1.executions/f89ed1c3…/output/`.
 
 So the model's APL inhibits KCs more strongly than claw imaging suggests, and without APL every KC fires. A claw-level test needs a readout that neither averages over hyperpolarized cells nor saturates: a new version.
 
+**Readout prevalidation (entry protocol 2, 2026-10-16; design only, not a lock).** Before any
+version 2 the readout is shown to have range in both arms, without the OCT/MCH contrast and
+without a change to `w_syn` or to APL. Candidates are the summed excitatory input current
+onto each KC before threshold, which neither reset nor threshold clips, and the share of KCs
+above rest. A candidate qualifies only if, in both the APL-on and the APL-off arm, it moves
+with odor intensity and stays off its floor and ceiling. `apl_claws.respond` keeps only the
+window sums of the KC potential, so this needs its own instrumentation, not `apl-claws --run`.
+
 Outputs: `results/apl-claws/v1.executions/b914035a…/output/`.
 
 ## Findings log
