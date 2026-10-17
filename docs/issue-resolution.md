@@ -244,3 +244,37 @@ Static readback readiness cannot qualify cadence or XR receipts; their callback
 checks remain unchanged. The final archive includes independent checksum/raw
 statistics verification and explicit limits. Keep #24 and #177 open; neither a
 hardware qualification nor a complete performance resolution is claimed.
+
+### Sustained full-connectome workload — 2026-10-16
+
+The [Series S sustained workload](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-sustained-2026-10-16.json)
+records the three cases declared in `scripts/console_sustained.py`, protocol
+revision 2: MaleCNS v1.0 default model, version-1 fixtures, looming escape and
+bitter feeding at 100 Hz. All ten jobs pass: each case's first job matches the
+CPU oracle bit for bit and every repeated output is identical. Looming drives
+DNp01 and TTMn; the bitter negative stays silent at MN9.
+
+| Case                                | Jobs × steps | Advance steps/s, median (min–max) | 60 s windows steps/s, median (min–max; n) | Upload s  | Download s | Submit-to-running s | Peak app memory, bytes | GPU engine-0 %, median / max |
+| ----------------------------------- | ------------ | --------------------------------- | ----------------------------------------- | --------- | ---------- | ------------------- | ---------------------- | ---------------------------- |
+| setup-looming (cold/warm, seed 600) | 2 × 20,000   | 2,366 (2,318–2,415)               | none                                      | 9.5–10.5  | 8.0–8.2    | 11.7–12.8           | 1,708,285,952          | 66.7 / 73.0                  |
+| sustained-looming (seed 601)        | 4 × 500,000  | 2,649 (2,646–2,653)               | 2,660 (2,644–2,675; 12)                   | 16.5–20.1 | 2.9–4.9    | 19.8–23.4           | 1,946,570,752          | 98.2 / 99.1                  |
+| sustained-bitter (seed 602)         | 4 × 500,000  | 3,693 (3,689–3,694)               | 3,709 (3,701–3,724; 8)                    | 10.8–13.2 | 2.7–3.2    | 14.0–16.5           | 1,512,374,272          | 97.9 / 98.6                  |
+
+Neither sustained case shows throughput decline over four back-to-back jobs:
+last/first advance ratios are 1.001 (looming) and 1.000 (bitter); 60 s window
+ratios are 1.000 and 1.002. Revision 2 records zero Device Portal errors.
+Attempt 1 (`1d1fde5`) passed setup but failed uploading sustained-looming job 3
+with HTTP 500, with about 1 GB of fixture, checkpoint and output files left on
+the console; the script stopped without a record. Revision 2 (`01bdb0f`) deletes
+each job's large files after downloading and hashing its output, and records a
+Device Portal error as the job's final state.
+
+This is one console and about 23 minutes of sustained load. Host load averages
+of 2–25 affect upload, export and oracle times, not console advance timing.
+[#224](https://github.com/gianlucamazza/flymsg/issues/224) stays open:
+noncooperative termination, GPU/device fault and gamepad input remain unmeasured.
+Full-connectome v2 is not measurable through this exporter because
+`flymsg.native` refuses per-neuron membranes; synthetic v2 lifecycle evidence
+remains separate. There is no full-CNS real-time claim beyond the measured
+steps/s. GPU temperature is unobserved (Device Portal does not expose it);
+throttling is inferred from throughput only.

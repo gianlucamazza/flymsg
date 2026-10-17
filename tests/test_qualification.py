@@ -506,3 +506,122 @@ def test_remote_epoch_detects_replaced_app_context(monkeypatch, tmp_path):
     remote[epoch.name] = b"{}"
     with pytest.raises(RuntimeError, match="epoch changed"):
         epoch.check("after-restart")
+
+
+def test_sustained_windows_use_running_steps_only(monkeypatch):
+    module = load("console_sustained", monkeypatch)
+    samples = [{"t": 0.0, "state": "validating", "step": 0}]
+    samples += [
+        {"t": float(t), "state": "running", "step": 100 * t} for t in range(1, 131)
+    ]
+    samples.append({"t": 131.0, "state": "completed", "step": 13_100})
+    assert module.windows(samples, 60.0) == [100.0, 100.0]
+    assert module.summary([4.0, 2.0])["last_over_first"] == 0.5
+    assert module.summary([]) == {}
+    assert module.summary([0.0, 5.0])["last_over_first"] is None
+
+
+@pytest.mark.parametrize(
+    "damage", ["none", "other_output", "failed", "oracle", "upload", "cleanup"]
+)
+def test_sustained_case_fails_closed(monkeypatch, tmp_path, damage):
+    module = load("console_sustained", monkeypatch)
+    case = {
+        "name": "c",
+        "stimulus": "s",
+        "seed": 1,
+        "steps": 10,
+        "jobs": 3,
+        "per_bin": 1,
+    }
+
+    class FirstJob:
+        pass
+
+    def one_job(portal, args, sha, out, rt, case, index):
+        failed = damage in ("failed", "upload") and index == 1
+        record = {
+            "index": index,
+            "final_state": (
+                {"failed": "failed", "upload": "upload_failed"}[damage]
+                if failed
+                else "completed"
+            ),
+            "reported_sha_matches": True,
+            "output_sha256": "b" if damage == "other_output" and index == 2 else "a",
+            "upload_s": 1.0,
+            "first_running_s": 1.0,
+            "samples": [{"app_memory_bytes": 1}],
+            "window_steps_per_s": [],
+        }
+        if not failed:
+            record["advance_steps_per_s"] = 2000.0
+        if damage == "cleanup" and index == 2:
+            record["cleanup_errors"] = ["DELETE failed"]
+        return record, FirstJob()
+
+    class Model:
+        def runtime(self, case):
+            return None
+
+    monkeypatch.setattr(module, "one_job", one_job)
+    monkeypatch.setattr(module, "parity", lambda job: damage != "oracle")
+    args = type("A", (), {"out": tmp_path})()
+    result = module.run_case(None, args, "sha", Model(), case)
+    assert result["verdict"] == ("pass" if damage == "none" else "fail")
+    if damage in ("failed", "upload"):
+        assert len(result["jobs"]) == 2
+
+
+@pytest.mark.parametrize("fault", ["result", "download", "hash"])
+def test_sustained_readback_fault_is_recorded(monkeypatch, tmp_path, fault):
+    module = load("console_sustained", monkeypatch)
+    deleted = []
+
+    class Portal:
+        def curl(self, method, path):
+            return json.dumps(
+                {
+                    "GPUData": {"AvailableAdapters": [{}]},
+                    "CpuLoad": 1,
+                    "AvailablePages": 1,
+                    "PageSize": 4096,
+                }
+            )
+
+        def get(self, package, rel, name, local):
+            if fault == "download":
+                raise module.PortalError("GET", "/x", 22, 500)
+            local.write_bytes(b"output")
+
+        def delete(self, package, rel, name):
+            deleted.append(name)
+
+    class Job:
+        def __init__(self, portal, package, sha, out, rt, **kw):
+            self.id, self.rel, self.folder = "j", "inbox\\j", tmp_path
+            self.fixture = tmp_path / "fixture.bin"
+            self.fixture.write_bytes(b"f")
+
+        def submit(self):
+            pass
+
+        def status(self):
+            return {"state": "completed", "step": 10, "app_memory_bytes": 1}
+
+        def result(self):
+            if fault == "result":
+                raise module.PortalError("GET", "/r", 22, 404)
+            sha = "0" * 64 if fault == "hash" else hashlib.sha256(b"output").hexdigest()
+            return {"advance_steps": 10, "advance_ms": 5.0, "output_sha256": sha}
+
+    monkeypatch.setattr(module, "Job", Job)
+    args = type("A", (), {"package": "p"})()
+    case = {"steps": 10, "seed": 1}
+    record, _ = module.one_job(Portal(), args, "sha", tmp_path, None, case, 0)
+    if fault == "hash":
+        assert record["final_state"] == "completed"
+        assert record["reported_sha_matches"] is False
+    else:
+        assert record["final_state"] == "readback_failed"
+    assert deleted == []

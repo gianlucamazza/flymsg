@@ -1,0 +1,254 @@
+{
+  "adapter": "SraKmd_arden",
+  "archive": {
+    "contents": "report.json, job/status/result JSON of every job of both attempts, run logs, lineage, SHA256SUMS of the fixtures and outputs kept off-repository, SHA256SUMS of the archive files",
+    "file": "docs/evidence/series-s-sustained-2026-10-16.zip",
+    "sha256": "ea4cc7909ff942f639165d8a81c665aa20ca2afe828d4846e5cf16b6f4ad0ec8"
+  },
+  "attempts": [
+    {
+      "commit": "1d1fde5",
+      "detail": "setup-looming passed; sustained-looming job 3 upload got HTTP 500 with each job's fixture, checkpoint and output still on the console (about 1 GB); the script raised without a record (protocol revision 2 fixes both)",
+      "outcome": "failed"
+    },
+    {
+      "commit": "01bdb0f",
+      "outcome": "all three cases pass"
+    }
+  ],
+  "cases": [
+    {
+      "advance_steps_per_s": {
+        "last_over_first": 1.042,
+        "max": 2414.714,
+        "median": 2366.147,
+        "min": 2317.58,
+        "n": 2
+      },
+      "download_s": [
+        8.0,
+        8.2
+      ],
+      "fixture_bytes": 209080724,
+      "gpu": {
+        "engine0_max_percent": 73.0,
+        "engine0_median_percent": 66.7,
+        "samples": 6
+      },
+      "host_load_average_at_end": [
+        2.0,
+        4.2,
+        9.6
+      ],
+      "identical_outputs": true,
+      "jobs": 2,
+      "name": "setup-looming",
+      "oracle_host_s": 12.3,
+      "oracle_parity_first_job": true,
+      "output_bytes": 147949324,
+      "output_sha256": "c4d47074420dd9e87cba16645857c45eebcfb500c37b78c3914974c65222b536",
+      "peak_app_memory_bytes": 1708285952,
+      "portal_errors": 0,
+      "seed": 600,
+      "steps_per_job": 20000,
+      "stimulus": "looming escape",
+      "submit_to_running_s": [
+        11.7,
+        12.8
+      ],
+      "upload_s": [
+        9.5,
+        10.5
+      ],
+      "verdict": "pass",
+      "window_60s_steps_per_s": {}
+    },
+    {
+      "advance_steps_per_s": {
+        "last_over_first": 1.001,
+        "max": 2653.046,
+        "median": 2649.364,
+        "min": 2645.971,
+        "n": 4
+      },
+      "download_s": [
+        4.9,
+        2.9,
+        3.0,
+        3.2
+      ],
+      "fixture_bytes": 420280724,
+      "gpu": {
+        "engine0_max_percent": 99.1,
+        "engine0_median_percent": 98.2,
+        "samples": 143
+      },
+      "host_load_average_at_end": [
+        14.3,
+        15.6,
+        11.2
+      ],
+      "identical_outputs": true,
+      "jobs": 4,
+      "name": "sustained-looming",
+      "oracle_host_s": 958.8,
+      "oracle_parity_first_job": true,
+      "output_bytes": 48876124,
+      "output_sha256": "2ee348b0dbc424a4a1c40756a767f4a68fdab8b164909af0f283396bc348009c",
+      "peak_app_memory_bytes": 1946570752,
+      "portal_errors": 0,
+      "seed": 601,
+      "steps_per_job": 500000,
+      "stimulus": "looming escape",
+      "submit_to_running_s": [
+        21.8,
+        19.8,
+        23.4,
+        21.7
+      ],
+      "upload_s": [
+        18.4,
+        16.5,
+        20.1,
+        18.4
+      ],
+      "verdict": "pass",
+      "window_60s_steps_per_s": {
+        "last_over_first": 1.0,
+        "max": 2674.957,
+        "median": 2659.691,
+        "min": 2644.254,
+        "n": 12
+      }
+    },
+    {
+      "advance_steps_per_s": {
+        "last_over_first": 1.0,
+        "max": 3694.334,
+        "median": 3692.862,
+        "min": 3688.979,
+        "n": 4
+      },
+      "download_s": [
+        3.2,
+        2.9,
+        2.7,
+        2.9
+      ],
+      "fixture_bytes": 276280724,
+      "gpu": {
+        "engine0_max_percent": 98.6,
+        "engine0_median_percent": 97.9,
+        "samples": 103
+      },
+      "host_load_average_at_end": [
+        25.0,
+        20.7,
+        15.6
+      ],
+      "identical_outputs": true,
+      "jobs": 4,
+      "name": "sustained-bitter",
+      "oracle_host_s": 1206.4,
+      "oracle_parity_first_job": true,
+      "output_bytes": 48876124,
+      "output_sha256": "b18ef77dcc9d636e60f98e75b1fc149d45aa98db2ccfb5c29e44dcfc4947a729",
+      "peak_app_memory_bytes": 1512374272,
+      "portal_errors": 0,
+      "seed": 602,
+      "steps_per_job": 500000,
+      "stimulus": "bitter feeding",
+      "submit_to_running_s": [
+        14.4,
+        14.6,
+        14.0,
+        16.5
+      ],
+      "upload_s": [
+        11.1,
+        11.3,
+        10.8,
+        13.2
+      ],
+      "verdict": "pass",
+      "window_60s_steps_per_s": {
+        "last_over_first": 1.002,
+        "max": 3724.067,
+        "median": 3708.85,
+        "min": 3700.503,
+        "n": 8
+      }
+    }
+  ],
+  "date": "2026-10-16",
+  "finished_utc": "2026-10-16T22:27:04+00:00",
+  "issue": 224,
+  "limits": "a few million steps per case over about 23 minutes of sustained load; one console; host load 2-25 during setup and the host oracle, which affects upload, export and oracle times but not the console advance timing",
+  "not_measured": [
+    "full-connectome version 2 (per-neuron membranes are refused by flymsg.native)",
+    "noncooperative termination, GPU/device fault and gamepad input (#224, separate gates)",
+    "GPU temperature (not exposed by Device Portal); throttling is inferred from throughput only"
+  ],
+  "package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+  "package_lineage": {
+    "ci_head_commit": "22bef37236295da2eac3af989364babd342e8a17",
+    "ci_msix_sha256": "aa53a576a53c7ef03bafafa215d7a372721a6683d4c521a9a969656817fdb183",
+    "ci_run": 38938431535,
+    "installed_binary_independently_downloaded": true,
+    "shader_sha256": "957a1202cb387b6ea29617c0865978e5fb1dbbbcaf93cf9f4a0e4e0478f41b14",
+    "signed_msix_sha256": "ca34b7701cc1cd638ed9380d4a37fb1b2788a373aa39ea197ae8e52bf3f40994",
+    "signing": "repacked and signed with the development certificate; unpacked payloads of the CI and signed packages are identical"
+  },
+  "passed": true,
+  "platform": "Xbox Series S, Dev Mode",
+  "protocol": {
+    "activity": "looming escape drives DNp01 and TTMn (battery positive); bitter feeding is the battery negative that stays silent at MN9",
+    "cases": [
+      {
+        "jobs": 2,
+        "name": "setup-looming",
+        "per_bin": 100,
+        "seed": 600,
+        "steps": 20000,
+        "stimulus": "looming escape"
+      },
+      {
+        "jobs": 4,
+        "name": "sustained-looming",
+        "per_bin": 10000,
+        "seed": 601,
+        "steps": 500000,
+        "stimulus": "looming escape"
+      },
+      {
+        "jobs": 4,
+        "name": "sustained-bitter",
+        "per_bin": 10000,
+        "seed": 602,
+        "steps": 500000,
+        "stimulus": "bitter feeding"
+      }
+    ],
+    "console_cleanup": [
+      "fixture.bin",
+      "checkpoint.bin",
+      "output.bin"
+    ],
+    "declared": "2026-10-16, before any sustained measurement",
+    "job_timeout_factor": 4.0,
+    "model": "MaleCNS v1.0 default model, version-1 fixture (no graded or coupled neurons)",
+    "perf_period_s": 5.0,
+    "rate_hz": 100.0,
+    "revision": 2,
+    "revision_reason": "attempt 1 (1d1fde5) kept each job's fixture, checkpoint and output on the console; the third 500k-step upload got HTTP 500 and the script stopped without a record. Revision 2 deletes a job's large files from the console once its output is downloaded and hashed, and records a Device Portal error as the job's final state",
+    "schema": "flymsg.console_sustained_protocol/v1",
+    "status_period_s": 1.0,
+    "v2_full_connectome": "not measured: no full-connectome version-2 configuration is exportable (per-neuron membranes are refused by flymsg.native), so only the synthetic graded lifecycle (scripts/console_lifecycle.py --extension graded) covers v2",
+    "verdicts": "per case: pass when every job completes with the oracle's output; fail on any other final state or output; throttling is reported, not judged",
+    "window_s": 60.0
+  },
+  "protocol_commit": "01bdb0f (revision 2), declared in scripts/console_sustained.py before the run",
+  "schema": "flymsg.console_sustained_evidence/v1",
+  "shader_sha256": "957a1202cb387b6ea29617c0865978e5fb1dbbbcaf93cf9f4a0e4e0478f41b14",
+  "started_utc": "2026-10-16T21:23:39+00:00"
+}
