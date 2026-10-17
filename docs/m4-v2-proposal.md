@@ -53,12 +53,14 @@ Baker's route is Table S3 root IDs → `flywire_annotations` v3.2.0,
 materialization 783 → exact MaleCNS `flywireType` tokens. Annotation sources:
 [Schlegel et al. 2024](https://doi.org/10.1038/s41586-024-07686-5) and
 [Berg et al. 2026](https://doi.org/10.1016/j.cell.2026.08.015).
-Two of 28 classes have complete cited routes: AVLP_pr35 → AVLP091 and
-IPS_pr02 → FlyWire CB0033 → WED208. Twenty-four are partial: Table S3 uses
-synapse-table v11/v274 root IDs, requiring a CAVE root-ID update and resolution of
-remaining unmatched tokens. Two, AVLP_pr18 and AVLP_pr24, are absent from Table S3.
-The older name/synonym search does not override this route. AVLP_pr36 includes
-sexually dimorphic matches and is excluded; unannotated matches remain unresolved.
+The [CAVE coordinate/lineage audit](baker-crossmatch.md) extends complete named-type
+coverage from 2 to 12 of 28 classes: 11 retain unresolved sex compatibility and
+AVLP_pr36 remains excluded for dimorphism. Fourteen classes are partial and two
+(AVLP_pr18 and AVLP_pr24) are absent from Table S3. All 404 coordinate anchors
+agree with both source root-ID lineages at materialization 783; 332 reconstructions
+have named MaleCNS routes. Complete coverage may be one-to-many, not a single
+modern type. The older name/synonym search does not override the cited route.
+No physiological response data were opened and no class is benchmark eligible.
 
 ## Baker licence basis and publication scope
 
@@ -112,7 +114,9 @@ before the prospective lock.
 ## Blockers and owner decisions
 
 - Obtain protocol 6's JO input. No auditory case can be scored until then.
-- Supply a CAVE token for root-ID updates; audit unresolved identities afterward.
+- Resolve the remaining missing FlyWire labels and MaleCNS identities listed in
+  the [completed CAVE audit](baker-crossmatch.md). Token access and the root-ID
+  update are verified; partial classes remain partial.
 - Apply the documented noncommercial licence scope above; verify source notices
   at acquisition and review actual outputs before publication. Obtain separate
   permission or document another legal basis for uses outside that scope.
