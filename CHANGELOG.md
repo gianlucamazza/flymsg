@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Measured JO input design (proposed).** `docs/jo-measured-input-design.md` and `docs/adr-measured-jo-input.md` define protocol 6 source, identity, calibration, causal replay and experimental gates; ADR acceptance remains pending. Six mathematical controls pass 19 assertions. This does not qualify measured input; no runtime or frozen lock changed.
+
 - **Baker anatomical correspondence.** A coordinate-anchored CAVE v783 audit extends complete named MaleCNS type coverage from 2 to 12 of 28 Baker classes, including the still-excluded dimorphic AVLP_pr36. Fourteen remain partial and two absent. All 404 anchors agree with both historical ID lineages and independent annotation supervoxels; 332 have named MaleCNS routes. No response data opened, no benchmark scored, no scientific eligibility claimed. See `docs/baker-crossmatch.md` and the captured evidence.
 
 - **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
