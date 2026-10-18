@@ -39,10 +39,13 @@ def export_fixture(
     runtime: CpuRuntime,
     path: Path,
     edges: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
+    *,
+    input_encoding: str = "dense",
 ) -> dict:
     """Export a fresh initialized CPU runtime; scientific authority stays Python.
-    See `fixture_bytes`."""
-    raw, meta = fixture_bytes(runtime, edges)
+    `input_encoding="sparse"` opts into ordered nonzero kicks; dense is the
+    byte-compatible default. See `fixture_bytes`."""
+    raw, meta = fixture_bytes(runtime, edges, input_encoding=input_encoding)
     Path(path).write_bytes(raw)
     return meta
 
@@ -50,6 +53,8 @@ def export_fixture(
 def fixture_bytes(
     runtime: CpuRuntime,
     edges: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
+    *,
+    input_encoding: str = "dense",
 ) -> tuple[bytes, dict]:
     """A fresh initialized CPU runtime's fixture, in memory, and its description.
 
@@ -72,21 +77,28 @@ def fixture_bytes(
         raise NativeCapabilityError(
             "native continuous-clamp electrical coupling with refractory cells is unqualified"
         )
-    if runtime._membrane is not None:
-        # the fixture header carries one set of membrane constants
-        raise NativeCapabilityError(
-            "native per-neuron membrane parameters are unqualified"
-        )
-    if np.any(runtime._kicks > 2**53):
+    if input_encoding not in {"dense", "sparse"}:
+        raise ValueError("input_encoding must be dense or sparse")
+    sparse_input = input_encoding == "sparse"
+    arrays = tuple(runtime._kernel_constants[k] for k in (0, 1, 2, 4, 5))
+    uniform = all(np.all(a == a[0]) for a in arrays)
+    membrane = not uniform
+    version = 4 if membrane else 3 if sparse_input else 1
+    if any(
+        np.any(runtime._kicks[start : start + 4096] > 2**53)
+        for start in range(0, runtime._steps, 4096)
+    ):
         raise ValueError("native double-count fixtures require counts <= 2**53")
     n, steps, d = runtime._n, runtime._steps, runtime._d
     header = np.zeros(HEADER_WORDS, dtype="<u4")
     g_idx, g_lo, g_span, g_scale, _ = runtime._graded
     gap_nodes, gap_off, gap_mat, gap_moff, _, gap_width, gap_amp = runtime._gap
     extended = bool(g_idx.size or gap_nodes.size)
+    version = max(version, 2 if extended else 1)
+    modern = version >= 3
     header[:9] = [
         MAGIC,
-        2 if extended else 1,
+        version,
         n,
         steps,
         runtime._per_bin,
@@ -96,6 +108,10 @@ def fixture_bytes(
         runtime._trace.size,
     ]
     header[9:16] = np.asarray(runtime._constants, dtype="<f4").view("<u4")
+    if uniform and runtime._membrane is not None:
+        header[[9, 10, 11, 13, 14]] = np.array(
+            [a[0] for a in arrays], dtype="<f4"
+        ).view("<u4")
     chunks = []
     cursor = HEADER_WORDS
 
@@ -118,7 +134,10 @@ def fixture_bytes(
     stimulus_col = np.full(n, -1, dtype=np.int32)
     stimulus_col[runtime._stim] = np.arange(runtime._stim.size)
     add(23, stimulus_col, "<i4")
-    add(24, runtime._kicks, "<f8")
+    if not sparse_input and (cursor * 4 + steps * runtime._stim.size * 8 > MAX_BYTES):
+        raise ValueError("fixture exceeds native qualification memory cap")
+    if not modern:
+        add(24, runtime._kicks, "<f8")
     state_cursor = 0
     sizes = [
         n,
@@ -164,15 +183,50 @@ def fixture_bytes(
         # graded release ring, release of this step, voltage sums (f64), gap buffer, steps
         # left of each coupled neuron's spike term
         state_cursor += d * ng + ng + 2 * bins * ng + nc + nc
+    if modern:
+        header[39] = cursor
+        # descriptor: sparse flag, event count, optional membrane block offset.
+        nnz = int(np.count_nonzero(runtime._kicks)) if sparse_input else 0
+        chunks.append(
+            np.array(
+                [int(sparse_input), nnz, cursor + 3 if membrane else 0], dtype="<u4"
+            ).tobytes()
+        )
+        cursor += 3
+        if membrane:
+            for array in arrays:
+                raw = np.asarray(array, dtype="<f4").tobytes()
+                chunks.append(raw)
+                cursor += n
+        if sparse_input:
+            header[24] = cursor
+            # Sorted (step, input column, double count). Scan bounded row chunks;
+            # never materialize a dense float64 copy of a long sparse input.
+            for start in range(0, steps, 4096):
+                rows, cols = np.nonzero(runtime._kicks[start : start + 4096])
+                events = np.empty((rows.size, 4), dtype="<u4")
+                events[:, 0], events[:, 1] = rows + start, cols
+                events[:, 2:] = (
+                    np.asarray(runtime._kicks[start + rows, cols], dtype="<f8")
+                    .view("<u4")
+                    .reshape(-1, 2)
+                )
+                chunks.append(events.tobytes())
+                cursor += events.size
+        else:
+            add(24, runtime._kicks, "<f8")
     header[34:37] = [cursor, state_cursor, len(sources)]
-    if (cursor + state_cursor) * 4 > MAX_BYTES:
+    resident = int(header[24]) if sparse_input else cursor
+    if (resident + state_cursor) * 4 > MAX_BYTES or cursor > 0x3FFFFFFF:
         raise ValueError("fixture exceeds native qualification memory cap")
     return header.tobytes() + b"".join(chunks), {
-        "schema": f"flymsg.native_fixture/v{2 if extended else 1}",
+        "schema": f"flymsg.native_fixture/v{version}",
         "input_bytes": cursor * 4,
         "state_bytes": state_cursor * 4,
         "precision": "ordered-f32-double-kicks",
         "steps": steps,
+        "semantics": f"flymsg.lif/ordered-f32-v{3 if version == 4 else 2 if modern else 1}",
+        "input_encoding": input_encoding,
     }
 
 
@@ -274,6 +328,9 @@ def input_ms(fixture: Path, dt_ms: float) -> float:
     words = np.frombuffer(Path(fixture).read_bytes(), dtype="<u4")
     steps, stim = int(words[3]), int(words[7])
     at = int(words[24])
+    if int(words[1]) >= 3 and words[int(words[39])]:
+        events = words[at:].reshape(-1, 4)
+        return (int(events[-1, 0]) + 1) * dt_ms if events.size else 0.0
     kicks = words[at : at + 2 * steps * stim].view("<f8").reshape(steps, stim)
     driven = np.flatnonzero(kicks.any(axis=1))
     return (int(driven[-1]) + 1) * dt_ms if driven.size else 0.0
@@ -359,7 +416,7 @@ def read_output(path: Path, fixture: Path) -> dict[str, np.ndarray | int]:
         "first": take(31, n, "<i4"),
         "traced": take(32, steps * ntrace).reshape(steps, ntrace),
     }
-    if int(h[1]) == 2:
+    if int(h[37]):
         words = np.frombuffer(Path(fixture).read_bytes(), dtype="<u4")
         ng = int(words[int(h[37])])
         base, bins = int(h[38]), steps // per_bin

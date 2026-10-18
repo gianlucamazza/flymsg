@@ -58,10 +58,10 @@ def test_native_full_acceptance(native_exe, tmp_path):
         capture_output=True,
     )
     report = json.loads((tmp_path / "report.json").read_text())
-    assert report["passed"] == 72
+    assert report["passed"] == 120
     assert report["qualification"] == {
         "qualified": True,
-        "expected_cases": 72,
+        "expected_cases": 120,
         "expected_refusals": 12,
         "errors": [],
     }
@@ -171,18 +171,26 @@ def test_the_console_parity_script_builds_version_one_and_two_fixtures(tmp_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)  # puts scripts/ on the path for its siblings
     assert len(list(module.fixtures())) == 12
-    versions = {1: 0, 2: 0}
+    versions = {1: 0, 2: 0, 3: 0, 4: 0}
     for (seed, _, _, ext), oracle in module.fixtures(tuple(module.EXTENSIONS)):
         fixture = tmp_path / f"{seed}.bin"
         try:
-            export_fixture(oracle, fixture)
+            export_fixture(oracle, fixture, input_encoding=module.encoding(ext))
         except NativeCapabilityError:
             continue  # the dynamic clamp, refused on every native lane
         header = np.frombuffer(fixture.read_bytes(), dtype="<u4")
-        assert int(header[1]) == (1 if ext == "none" else 2)
+        assert int(header[1]) == (
+            4
+            if "membrane" in ext
+            else 3
+            if ext.startswith("sparse")
+            else 1
+            if ext == "none"
+            else 2
+        )
         versions[int(header[1])] += 1
     # the acceptance's 60 version-2 cases, as the CPU executor runs them
-    assert versions == {1: 12, 2: 60}
+    assert versions == {1: 12, 2: 60, 3: 24, 4: 24}
 
 
 def test_the_console_lifecycle_fixture_is_version_one_and_long(tmp_path):
@@ -588,3 +596,291 @@ def test_console_batches_need_a_worker_that_lists_their_output(
             "console_s",
             "download_s",
         }
+
+
+@pytest.mark.parametrize(
+    "extension", ["none", "graded", "both", "membrane", "membrane-mixed"]
+)
+def test_sparse_inputs_match_dense_bytes_and_resume(
+    native_exe, tmp_path, monkeypatch, extension
+):
+    monkeypatch.syspath_prepend(str(ROOT / "scripts"))
+    from native_acceptance import EXTENSIONS, check
+
+    from flymsg import native, sim
+
+    options = EXTENSIONS.get(extension, {})
+    if extension == "membrane-mixed":
+        options = {
+            "graded": sim.Graded(
+                idx=np.array([7]), v_lo=-62.0, span=20.0, rate_hz=200.0
+            ),
+            "gap": EXTENSIONS["both"]["gap"],
+            "membrane": sim.Membrane(np.array([0, 1, 7]), 13.0, 4.0, -58.0, -43.0),
+        }
+    rng = np.random.default_rng(5)
+    kicks = np.zeros((1000, 2), dtype=np.int64)
+    kicks[[0, 1, 63, 64, 216, 217, 900], :] = [
+        [1, 2],
+        [3, 0],
+        [0, 4],
+        [5, 6],
+        [2, 1],
+        [0, 8],
+        [2**53, 1],
+    ]
+    W = sparse.csc_matrix(rng.integers(-20, 80, (8, 8)).astype(np.float32))
+    rt = CpuRuntime(
+        W,
+        np.array([0, 1]),
+        steps=1000,
+        kicks=kicks,
+        per_bin=100,
+        trace=np.arange(8),
+        **options,
+    )
+    outputs = []
+    for encoding in ("dense", "sparse"):
+        fixture = tmp_path / f"{encoding}.bin"
+        output = tmp_path / f"{encoding}.out"
+        checkpoint = tmp_path / f"{encoding}.checkpoint"
+        meta = export_fixture(rt, fixture, input_encoding=encoding)
+        if encoding == "sparse":
+            w = np.frombuffer(fixture.read_bytes(), dtype="<u4")
+            events = w[int(w[24]) :].reshape(-1, 4)
+            restored = np.zeros_like(kicks)
+            restored[events[:, 0], events[:, 1]] = (
+                events[:, 2:].copy().reshape(-1).view("<f8").astype(np.int64)
+            )
+            np.testing.assert_array_equal(restored, kicks)
+            assert meta["input_encoding"] == "sparse"
+            assert native.input_ms(fixture, 0.1) == 901 * 0.1
+        base = [str(native_exe), "--fixture", str(fixture), "--output", str(output)]
+        subprocess.run(
+            [*base, "--advance", "217", "--checkpoint", str(checkpoint)],
+            check=True,
+            capture_output=True,
+        )
+        partial = output.read_bytes()
+        subprocess.run(
+            [*base, "--resume", str(checkpoint)], check=True, capture_output=True
+        )
+        outputs.append((partial, output.read_bytes()))
+        rt.advance_to(1000)
+        check(rt, read_output(output, fixture))
+        # Restore a fresh Python oracle for the next export.
+        rt = CpuRuntime(
+            W,
+            np.array([0, 1]),
+            steps=1000,
+            kicks=kicks,
+            per_bin=100,
+            trace=np.arange(8),
+            **options,
+        )
+    assert outputs[0] == outputs[1]
+
+
+def test_sparse_export_over_dense_gpu_budget(tmp_path):
+    from flymsg.native import MAX_BYTES
+
+    n, steps = 1024, 70_000
+    rt = CpuRuntime(
+        sparse.csc_matrix((n, n), dtype=np.float32),
+        np.arange(n),
+        steps=1,
+        kicks=np.zeros((1, n), dtype=np.int64),
+        per_bin=1,
+    )
+    # Exercise export sizing without allocating the hypothetical 547 MiB dense
+    # input. A broadcast zero view represents exactly those input counts.
+    rt._steps, rt._per_bin = steps, steps
+    rt._kicks = np.broadcast_to(np.zeros((1, n), dtype=np.int64), (steps, n))
+    assert steps * n * 8 > MAX_BYTES
+    path = tmp_path / "long.bin"
+    meta = export_fixture(rt, path, input_encoding="sparse")
+    assert path.stat().st_size == meta["input_bytes"] < 64 * 1024
+    assert meta["input_bytes"] + meta["state_bytes"] < MAX_BYTES
+    with pytest.raises(ValueError, match="cap"):
+        # Size rejection should precede dense serialization.
+        export_fixture(rt, tmp_path / "dense.bin")
+
+
+def test_uniform_membrane_keeps_legacy_fixture_bytes(tmp_path):
+    from flymsg import sim
+
+    p = sim.Params()
+    kwargs = {"steps": 100, "kicks": np.ones((100, 1), dtype=np.int64), "per_bin": 100}
+    W = sparse.eye(4, format="csc", dtype=np.float32)
+    membrane = sim.Membrane(np.arange(4), p.tau_m, p.tau_syn, p.v_rest, p.v_th)
+    paths = [tmp_path / "plain", tmp_path / "uniform"]
+    for path, m in zip(paths, (None, membrane), strict=True):
+        meta = export_fixture(CpuRuntime(W, np.array([0]), membrane=m, **kwargs), path)
+        assert meta["schema"] == "flymsg.native_fixture/v1"
+    assert paths[0].read_bytes() == paths[1].read_bytes()
+
+
+@pytest.mark.parametrize(
+    "field", ["descriptor", "flag", "count", "order", "column", "zero", "membrane"]
+)
+def test_native_rejects_corrupt_sparse_membrane(native_exe, tmp_path, field):
+    from flymsg import sim
+
+    rt = CpuRuntime(
+        sparse.eye(3, format="csc"),
+        np.array([0]),
+        steps=10,
+        per_bin=10,
+        kicks=np.ones((10, 1), dtype=np.int64),
+        membrane=sim.Membrane(np.array([1]), 10.0, 3.0, -60.0, -45.0),
+    )
+    fixture, output = tmp_path / "fixture", tmp_path / "output"
+    export_fixture(rt, fixture, input_encoding="sparse")
+    w = np.frombuffer(fixture.read_bytes(), dtype="<u4").copy()
+    desc, events = int(w[39]), int(w[24])
+    at, value = {
+        "descriptor": (39, 1),
+        "flag": (desc, 2),
+        "count": (desc + 1, 100),
+        "order": (events + 4, 0),
+        "column": (events + 1, 1),
+        "zero": (events + 3, 0),
+        "membrane": (desc + 3, 0x7F800000),
+    }[field]
+    w[at] = value
+    fixture.write_bytes(w.tobytes())
+    run = subprocess.run(
+        [str(native_exe), "--fixture", str(fixture), "--output", str(output)],
+        capture_output=True,
+        check=False,
+    )
+    assert run.returncode != 0 and not output.exists()
+
+
+@pytest.mark.parametrize("count", [1, 6, 8])
+@pytest.mark.parametrize("encoding", ["dense", "sparse"])
+def test_nonuniform_membrane_matches_sim_run(native_exe, tmp_path, count, encoding):
+    from flymsg import sim
+
+    n, steps = 8, 1000
+    rng = np.random.default_rng(17)
+    W = sparse.csc_matrix(rng.integers(-20, 80, (n, n)).astype(np.float32))
+    membrane = sim.Membrane(
+        np.arange(count),
+        np.linspace(9.0, 23.0, count),
+        np.linspace(2.0, 5.0, count),
+        np.linspace(-66.0, -55.0, count),
+        np.linspace(-49.0, -41.0, count),
+    )
+    kicks = sim.poisson_kicks(7, 700.0, 0.1, steps, 2)
+    p = sim.Params(th_jump=2.0)
+    rt = CpuRuntime(
+        W,
+        np.array([0, 1]),
+        steps=steps,
+        kicks=kicks,
+        p=p,
+        per_bin=100,
+        membrane=membrane,
+    )
+    fixture, output = tmp_path / "fixture", tmp_path / "output"
+    export_fixture(rt, fixture, input_encoding=encoding)
+    subprocess.run(
+        [str(native_exe), "--fixture", str(fixture), "--output", str(output)],
+        check=True,
+        capture_output=True,
+    )
+    actual = read_output(output, fixture)
+    expected = sim.run(
+        W,
+        np.array([0, 1]),
+        700.0,
+        steps * p.dt,
+        p=p,
+        kicks=kicks,
+        membrane=membrane,
+        bin_ms=10.0,
+    )
+    np.testing.assert_array_equal(actual["counts"], expected.counts)
+    first = np.where(actual["first"] >= 0, actual["first"] * p.dt, np.nan)
+    np.testing.assert_array_equal(first, expected.first_spike_ms)
+
+
+def test_sparse_block_planning_preserves_steps_and_resume(native_exe, tmp_path):
+    """Force tiny blocks through the same planner DX12 uses, including empty
+    steps, a multi-column step, and a resumed cursor inside the input."""
+    from flymsg import sim
+
+    kicks = np.zeros((100, 2), dtype=np.int64)
+    kicks[[0, 10, 30, 99]] = [[1, 2], [3, 0], [4, 5], [0, 6]]
+    rt = CpuRuntime(
+        sparse.eye(2, format="csc"),
+        np.array([0, 1]),
+        steps=100,
+        kicks=kicks,
+        per_bin=100,
+        p=sim.Params(),
+    )
+    fixture, expected, actual = (
+        tmp_path / "fixture",
+        tmp_path / "expected",
+        tmp_path / "actual",
+    )
+    export_fixture(rt, fixture, input_encoding="sparse")
+    subprocess.run(
+        [str(native_exe), "--fixture", str(fixture), "--output", str(expected)],
+        check=True,
+        capture_output=True,
+    )
+    source, exe = tmp_path / "blocks.cpp", tmp_path / "blocks"
+    source.write_text("""#include "lif.h"
+int main(int argc, char **argv) {
+  if (argc != 4) return 1;
+  flymsg::Runtime r(flymsg::read_words(argv[1]));
+  // A step with two events must never be split to satisfy capacity one.
+  bool refused = false;
+  try { r.input_block(0, r.input[3], 1); }
+  catch (const std::runtime_error &) { refused = true; }
+  flymsg::require(refused, "split input step accepted");
+  r.advance_to(17);
+  r.checkpoint(argv[3]);
+  flymsg::Runtime resumed(r.input);
+  resumed.restore(argv[3]);
+  uint64_t consumed = resumed.event_lower_bound(resumed.step);
+  unsigned blocks = 0;
+  while (resumed.step < resumed.input[3]) {
+    auto b = resumed.input_block(resumed.step, resumed.input[3], 2);
+    flymsg::require(b.first == consumed && b.last - b.first <= 2, "bad block");
+    for (auto k = b.first; k < b.last; ++k) {
+      auto tick = resumed.input[resumed.input[24] + 4 * k];
+      flymsg::require(tick >= resumed.step && tick < b.end, "bad event boundary");
+    }
+    consumed = b.last;
+    resumed.advance_to(b.end);
+    ++blocks;
+  }
+  flymsg::require(blocks > 1 && consumed == resumed.events, "missing events");
+  resumed.snapshot(argv[2]);
+}
+""")
+    subprocess.run(
+        [
+            shutil.which("g++"),
+            "-std=c++20",
+            "-O2",
+            "-ffp-contract=off",
+            "-I",
+            str(ROOT / "native"),
+            str(source),
+            "-o",
+            str(exe),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        [str(exe), str(fixture), str(actual), str(tmp_path / "checkpoint")],
+        check=True,
+        capture_output=True,
+    )
+    assert actual.read_bytes() == expected.read_bytes()

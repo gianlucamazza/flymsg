@@ -1,0 +1,5109 @@
+{
+  "adapter": "SraKmd_arden",
+  "cases": [
+    {
+      "advance_steps_per_s": {
+        "last_over_first": 1.0,
+        "max": 2632.0321733946917,
+        "median": 2632.0321733946917,
+        "min": 2632.0321733946917,
+        "n": 1
+      },
+      "case": {
+        "input_encoding": "sparse",
+        "jobs": 1,
+        "name": "long-looming-sparse",
+        "per_bin": 10000,
+        "seed": 603,
+        "steps": 1500000,
+        "stimulus": "looming escape"
+      },
+      "first_running_s": [
+        10.298641204833984
+      ],
+      "host_load_average": [
+        2.70947265625,
+        3.14990234375,
+        3.42041015625
+      ],
+      "jobs": [
+        {
+          "advance_steps_per_s": 2632.0321733946917,
+          "download_s": 7.1663641929626465,
+          "error": "",
+          "final_state": "completed",
+          "first_running_s": 10.298641204833984,
+          "fixture_bytes": 213428560,
+          "index": 0,
+          "job_id": "dd59a594-c002-4092-b0c0-1b3ab784ae41",
+          "oracle_parity": true,
+          "oracle_s": 1599.8726267814636,
+          "output_bytes": 114924924,
+          "output_sha256": "3aa5ebd8ba47ea43eecec255c5d9b954c55a4580e01ad752993fbe2f6ca62cc9",
+          "perf": [
+            {
+              "available_pages": 55160,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 112640000,
+              "gpu_engines_utilization": [
+                0.095906,
+                0.0,
+                0.0,
+                0.000157,
+                0.0,
+                2.126471,
+                0.0
+              ],
+              "gpu_system_used": 40833024,
+              "page_size": 4096,
+              "t": 8.12086796760559
+            },
+            {
+              "available_pages": 59059,
+              "cpu_load": 6,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                68.366593,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.870658,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 13.526796579360962
+            },
+            {
+              "available_pages": 58674,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.844884,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 18.97790265083313
+            },
+            {
+              "available_pages": 58257,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.441331,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 24.580528020858765
+            },
+            {
+              "available_pages": 58122,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.746313,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.94469,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 30.123368501663208
+            },
+            {
+              "available_pages": 57658,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.668869,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.72467,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 35.56639075279236
+            },
+            {
+              "available_pages": 57485,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.856511,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 40.99091553688049
+            },
+            {
+              "available_pages": 57332,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.671861,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 46.43106436729431
+            },
+            {
+              "available_pages": 57055,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.74144,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.722376,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 51.82078528404236
+            },
+            {
+              "available_pages": 56898,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.440178,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 57.244038581848145
+            },
+            {
+              "available_pages": 56952,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.729282,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.834254,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 62.67700910568237
+            },
+            {
+              "available_pages": 56757,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                96.621136,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.838246,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 68.23929381370544
+            },
+            {
+              "available_pages": 56635,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.751809,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 73.62390232086182
+            },
+            {
+              "available_pages": 56308,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.826764,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.981668,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 79.2273781299591
+            },
+            {
+              "available_pages": 56096,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.850362,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.907287,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 84.61864471435547
+            },
+            {
+              "available_pages": 55424,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.066298,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 90.04767608642578
+            },
+            {
+              "available_pages": 55272,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.761324,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 95.4385735988617
+            },
+            {
+              "available_pages": 55019,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.242647,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.889706,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 100.8880352973938
+            },
+            {
+              "available_pages": 54687,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.896062,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 106.33288788795471
+            },
+            {
+              "available_pages": 54826,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.628884,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.784444,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 111.97311162948608
+            },
+            {
+              "available_pages": 54719,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.030439,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 117.56075692176819
+            },
+            {
+              "available_pages": 55041,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.603198,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.871347,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 123.04234433174133
+            },
+            {
+              "available_pages": 55124,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.120234,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.982266,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 128.67232990264893
+            },
+            {
+              "available_pages": 54581,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.613843,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.981785,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 134.1661524772644
+            },
+            {
+              "available_pages": 53679,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.862385,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 139.62104988098145
+            },
+            {
+              "available_pages": 53538,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.701361,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 145.06422519683838
+            },
+            {
+              "available_pages": 53582,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.657595,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 150.50464868545532
+            },
+            {
+              "available_pages": 53396,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.642113,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 155.97080445289612
+            },
+            {
+              "available_pages": 52537,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.495702,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 161.39801406860352
+            },
+            {
+              "available_pages": 52277,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.62963,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.777778,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 166.9782054424286
+            },
+            {
+              "available_pages": 51943,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.699669,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 172.3752088546753
+            },
+            {
+              "available_pages": 52157,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.876818,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 177.79931640625
+            },
+            {
+              "available_pages": 52057,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                96.885428,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.888765,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 183.23606038093567
+            },
+            {
+              "available_pages": 52345,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.803387,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 188.65634417533875
+            },
+            {
+              "available_pages": 52186,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.685272,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.962666,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 194.02442145347595
+            },
+            {
+              "available_pages": 51665,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.129283,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.796259,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 199.42191171646118
+            },
+            {
+              "available_pages": 51833,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.371455,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 204.87134313583374
+            },
+            {
+              "available_pages": 51676,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.824394,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.963262,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 210.31844329833984
+            },
+            {
+              "available_pages": 51760,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                96.879589,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 215.76142692565918
+            },
+            {
+              "available_pages": 51300,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.792315,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.743824,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 221.23268938064575
+            },
+            {
+              "available_pages": 51082,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.674419,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 226.69554781913757
+            },
+            {
+              "available_pages": 50979,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.56528,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.928264,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 232.27049827575684
+            },
+            {
+              "available_pages": 51160,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.452012,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.742002,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 237.81840872764587
+            },
+            {
+              "available_pages": 50863,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.613409,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 243.57449412345886
+            },
+            {
+              "available_pages": 50799,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.751377,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.926552,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 249.02065777778625
+            },
+            {
+              "available_pages": 50479,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.056995,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.944486,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 254.4225516319275
+            },
+            {
+              "available_pages": 50326,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.887673,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 259.9090373516083
+            },
+            {
+              "available_pages": 49768,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.771769,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 265.3515591621399
+            },
+            {
+              "available_pages": 49956,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.556528,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.690007,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 270.8454260826111
+            },
+            {
+              "available_pages": 49979,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.920927,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 276.47951459884644
+            },
+            {
+              "available_pages": 49761,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.030424,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.981782,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 282.01152873039246
+            },
+            {
+              "available_pages": 49416,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.819188,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.723247,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 287.4277787208557
+            },
+            {
+              "available_pages": 49603,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.481481,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 292.81434965133667
+            },
+            {
+              "available_pages": 49417,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.89645,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.944823,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 298.2506537437439
+            },
+            {
+              "available_pages": 49538,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.337381,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 303.6186978816986
+            },
+            {
+              "available_pages": 49584,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.813901,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 308.9671230316162
+            },
+            {
+              "available_pages": 49685,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.785425,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.981597,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 314.3465449810028
+            },
+            {
+              "available_pages": 49034,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.587921,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.907936,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 319.8406014442444
+            },
+            {
+              "available_pages": 48819,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.682357,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 325.40846824645996
+            },
+            {
+              "available_pages": 48173,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.548328,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 330.83427262306213
+            },
+            {
+              "available_pages": 48092,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.120781,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 336.29975414276123
+            },
+            {
+              "available_pages": 48239,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.525023,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.872611,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 341.79820823669434
+            },
+            {
+              "available_pages": 48068,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.951175,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.909584,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 347.3227548599243
+            },
+            {
+              "available_pages": 48217,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.698011,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 352.8353681564331
+            },
+            {
+              "available_pages": 47359,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.997519,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.911395,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 358.45253014564514
+            },
+            {
+              "available_pages": 47484,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.847518,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 364.00789880752563
+            },
+            {
+              "available_pages": 47734,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.139115,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 369.68697595596313
+            },
+            {
+              "available_pages": 47537,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.590776,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 375.1497983932495
+            },
+            {
+              "available_pages": 47675,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.640819,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.762253,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 380.62370800971985
+            },
+            {
+              "available_pages": 47563,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.711577,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 386.059912443161
+            },
+            {
+              "available_pages": 46353,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.893725,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 391.57529759407043
+            },
+            {
+              "available_pages": 46515,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.541735,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.779857,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 397.0211172103882
+            },
+            {
+              "available_pages": 46445,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                93.814081,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.982912,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 402.87451338768005
+            },
+            {
+              "available_pages": 46496,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.889095,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 408.2889666557312
+            },
+            {
+              "available_pages": 46279,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.386824,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.779168,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 413.711630821228
+            },
+            {
+              "available_pages": 46201,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.375912,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 419.1644082069397
+            },
+            {
+              "available_pages": 46322,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.186813,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 424.6355764865875
+            },
+            {
+              "available_pages": 46107,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                96.271777,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.686411,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 430.2695782184601
+            },
+            {
+              "available_pages": 46255,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.627881,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 435.85209131240845
+            },
+            {
+              "available_pages": 46123,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.808219,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 441.32047939300537
+            },
+            {
+              "available_pages": 45510,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.811917,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.926887,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 446.8008029460907
+            },
+            {
+              "available_pages": 44786,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.058252,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 452.2599263191223
+            },
+            {
+              "available_pages": 44829,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.085339,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.854121,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 457.7411057949066
+            },
+            {
+              "available_pages": 44963,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.635868,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.981812,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 463.2469835281372
+            },
+            {
+              "available_pages": 44958,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.632109,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 468.76072883605957
+            },
+            {
+              "available_pages": 44930,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.623835,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.945165,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 474.27392292022705
+            },
+            {
+              "available_pages": 45535,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.435431,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 479.77001905441284
+            },
+            {
+              "available_pages": 45020,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.764749,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.963127,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 485.2351152896881
+            },
+            {
+              "available_pages": 45045,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.750137,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.780501,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 490.6616494655609
+            },
+            {
+              "available_pages": 44979,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.360357,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 496.16616559028625
+            },
+            {
+              "available_pages": 44655,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.611111,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.777778,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 501.61291456222534
+            },
+            {
+              "available_pages": 44488,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.807996,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.944984,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 506.9544017314911
+            },
+            {
+              "available_pages": 44442,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.67036,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.889197,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 512.437891960144
+            },
+            {
+              "available_pages": 44400,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.185816,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 517.8880298137665
+            },
+            {
+              "available_pages": 43968,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.804855,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 523.2925488948822
+            },
+            {
+              "available_pages": 43819,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.804927,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.981614,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 528.6275734901428
+            },
+            {
+              "available_pages": 43463,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                96.091145,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.814746,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 534.0593068599701
+            },
+            {
+              "available_pages": 43846,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.652639,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 539.5045745372772
+            },
+            {
+              "available_pages": 43827,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.49059,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 545.0885500907898
+            },
+            {
+              "available_pages": 43880,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.461253,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.888765,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 550.5086462497711
+            },
+            {
+              "available_pages": 43742,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.435775,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097863168,
+              "page_size": 4096,
+              "t": 555.9090299606323
+            },
+            {
+              "available_pages": 43836,
+              "cpu_load": 1,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.954671,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.907868,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 561.3439221382141
+            },
+            {
+              "available_pages": 43759,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.890122,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                100.0,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 566.7477922439575
+            },
+            {
+              "available_pages": 43860,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                98.360656,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.981371,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 572.1596188545227
+            },
+            {
+              "available_pages": 43636,
+              "cpu_load": 2,
+              "gpu_dedicated_used": 114704384,
+              "gpu_engines_utilization": [
+                97.247024,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.758185,
+                0.0
+              ],
+              "gpu_system_used": 1097334784,
+              "page_size": 4096,
+              "t": 577.4935791492462
+            },
+            {
+              "available_pages": 46136,
+              "cpu_load": 4,
+              "gpu_dedicated_used": 112640000,
+              "gpu_engines_utilization": [
+                24.34767,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.964009,
+                0.0
+              ],
+              "gpu_system_used": 40833024,
+              "page_size": 4096,
+              "t": 582.9204249382019
+            }
+          ],
+          "portal_errors": [],
+          "reported_sha_matches": true,
+          "samples": [
+            {
+              "app_memory_bytes": 19324928,
+              "state": "validating",
+              "step": 0,
+              "t": 9.222018003463745
+            },
+            {
+              "app_memory_bytes": 1865113600,
+              "state": "running",
+              "step": 768,
+              "t": 10.298641204833984
+            },
+            {
+              "app_memory_bytes": 1864224768,
+              "state": "running",
+              "step": 3584,
+              "t": 11.372367858886719
+            },
+            {
+              "app_memory_bytes": 1864224768,
+              "state": "running",
+              "step": 6400,
+              "t": 12.44870400428772
+            },
+            {
+              "app_memory_bytes": 1864294400,
+              "state": "running",
+              "step": 9152,
+              "t": 13.526796579360962
+            },
+            {
+              "app_memory_bytes": 1864343552,
+              "state": "running",
+              "step": 12544,
+              "t": 14.635282039642334
+            },
+            {
+              "app_memory_bytes": 1864343552,
+              "state": "running",
+              "step": 15360,
+              "t": 15.712799072265625
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 18176,
+              "t": 16.790489435195923
+            },
+            {
+              "app_memory_bytes": 1864347648,
+              "state": "running",
+              "step": 20992,
+              "t": 17.901265859603882
+            },
+            {
+              "app_memory_bytes": 1864331264,
+              "state": "running",
+              "step": 23808,
+              "t": 18.97790265083313
+            },
+            {
+              "app_memory_bytes": 1864331264,
+              "state": "running",
+              "step": 26624,
+              "t": 20.089564085006714
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 29440,
+              "t": 21.12586259841919
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 32256,
+              "t": 22.20102834701538
+            },
+            {
+              "app_memory_bytes": 1864298496,
+              "state": "running",
+              "step": 35712,
+              "t": 23.305814504623413
+            },
+            {
+              "app_memory_bytes": 1864278016,
+              "state": "running",
+              "step": 38528,
+              "t": 24.580528020858765
+            },
+            {
+              "app_memory_bytes": 1864347648,
+              "state": "running",
+              "step": 42048,
+              "t": 25.80136728286743
+            },
+            {
+              "app_memory_bytes": 1864318976,
+              "state": "running",
+              "step": 44864,
+              "t": 26.875620126724243
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 47680,
+              "t": 27.96875286102295
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 50496,
+              "t": 29.041961908340454
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 53312,
+              "t": 30.123368501663208
+            },
+            {
+              "app_memory_bytes": 1864347648,
+              "state": "running",
+              "step": 56128,
+              "t": 31.225626707077026
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 58944,
+              "t": 32.299739599227905
+            },
+            {
+              "app_memory_bytes": 1864220672,
+              "state": "running",
+              "step": 61696,
+              "t": 33.41334056854248
+            },
+            {
+              "app_memory_bytes": 1864331264,
+              "state": "running",
+              "step": 65088,
+              "t": 34.492074966430664
+            },
+            {
+              "app_memory_bytes": 1864347648,
+              "state": "running",
+              "step": 67904,
+              "t": 35.56639075279236
+            },
+            {
+              "app_memory_bytes": 1864294400,
+              "state": "running",
+              "step": 70720,
+              "t": 36.67440056800842
+            },
+            {
+              "app_memory_bytes": 1864290304,
+              "state": "running",
+              "step": 73536,
+              "t": 37.76559805870056
+            },
+            {
+              "app_memory_bytes": 1864335360,
+              "state": "running",
+              "step": 76352,
+              "t": 38.83983564376831
+            },
+            {
+              "app_memory_bytes": 1864339456,
+              "state": "running",
+              "step": 79168,
+              "t": 39.91285848617554
+            },
+            {
+              "app_memory_bytes": 1864331264,
+              "state": "running",
+              "step": 81984,
+              "t": 40.99091553688049
+            },
+            {
+              "app_memory_bytes": 1864347648,
+              "state": "running",
+              "step": 84800,
+              "t": 42.096489667892456
+            },
+            {
+              "app_memory_bytes": 1864208384,
+              "state": "running",
+              "step": 88128,
+              "t": 43.198387145996094
+            },
+            {
+              "app_memory_bytes": 1864228864,
+              "state": "running",
+              "step": 90880,
+              "t": 44.27171039581299
+            },
+            {
+              "app_memory_bytes": 1864196096,
+              "state": "running",
+              "step": 93696,
+              "t": 45.34616470336914
+            },
+            {
+              "app_memory_bytes": 1864216576,
+              "state": "running",
+              "step": 96512,
+              "t": 46.43106436729431
+            },
+            {
+              "app_memory_bytes": 1864273920,
+              "state": "running",
+              "step": 99328,
+              "t": 47.554678201675415
+            },
+            {
+              "app_memory_bytes": 1864302592,
+              "state": "running",
+              "step": 102144,
+              "t": 48.64299154281616
+            },
+            {
+              "app_memory_bytes": 1864314880,
+              "state": "running",
+              "step": 104960,
+              "t": 49.71715950965881
+            },
+            {
+              "app_memory_bytes": 1864314880,
+              "state": "running",
+              "step": 107776,
+              "t": 50.74887275695801
+            },
+            {
+              "app_memory_bytes": 1864327168,
+              "state": "running",
+              "step": 110592,
+              "t": 51.82078528404236
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 113408,
+              "t": 52.95535349845886
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 116800,
+              "t": 54.02678322792053
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 119616,
+              "t": 55.100038290023804
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 122349,
+              "t": 56.17210102081299
+            },
+            {
+              "app_memory_bytes": 1864228864,
+              "state": "running",
+              "step": 125165,
+              "t": 57.244038581848145
+            },
+            {
+              "app_memory_bytes": 1864224768,
+              "state": "running",
+              "step": 127917,
+              "t": 58.37670397758484
+            },
+            {
+              "app_memory_bytes": 1864220672,
+              "state": "running",
+              "step": 130733,
+              "t": 59.45567083358765
+            },
+            {
+              "app_memory_bytes": 1864278016,
+              "state": "running",
+              "step": 133549,
+              "t": 60.52816152572632
+            },
+            {
+              "app_memory_bytes": 1864314880,
+              "state": "running",
+              "step": 136365,
+              "t": 61.6031768321991
+            },
+            {
+              "app_memory_bytes": 1864286208,
+              "state": "running",
+              "step": 139181,
+              "t": 62.67700910568237
+            },
+            {
+              "app_memory_bytes": 1864323072,
+              "state": "running",
+              "step": 141997,
+              "t": 63.77686285972595
+            },
+            {
+              "app_memory_bytes": 1864327168,
+              "state": "running",
+              "step": 144685,
+              "t": 64.84696936607361
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 148013,
+              "t": 65.91954016685486
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 150829,
+              "t": 67.0891695022583
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 153645,
+              "t": 68.23929381370544
+            },
+            {
+              "app_memory_bytes": 1864224768,
+              "state": "running",
+              "step": 157101,
+              "t": 69.34162211418152
+            },
+            {
+              "app_memory_bytes": 1864253440,
+              "state": "running",
+              "step": 159917,
+              "t": 70.41017413139343
+            },
+            {
+              "app_memory_bytes": 1864286208,
+              "state": "running",
+              "step": 162733,
+              "t": 71.48171925544739
+            },
+            {
+              "app_memory_bytes": 1864314880,
+              "state": "running",
+              "step": 165549,
+              "t": 72.5537679195404
+            },
+            {
+              "app_memory_bytes": 1864323072,
+              "state": "running",
+              "step": 168365,
+              "t": 73.62390232086182
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 171885,
+              "t": 74.86993145942688
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 174701,
+              "t": 76.01566457748413
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 177517,
+              "t": 77.08672571182251
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 180333,
+              "t": 78.1579372882843
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 183149,
+              "t": 79.2273781299591
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 185965,
+              "t": 80.32614493370056
+            },
+            {
+              "app_memory_bytes": 1864290304,
+              "state": "running",
+              "step": 188781,
+              "t": 81.39974975585938
+            },
+            {
+              "app_memory_bytes": 1864257536,
+              "state": "running",
+              "step": 191597,
+              "t": 82.47217893600464
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 194349,
+              "t": 83.54407334327698
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 197165,
+              "t": 84.61864471435547
+            },
+            {
+              "app_memory_bytes": 1864343552,
+              "state": "running",
+              "step": 199981,
+              "t": 85.72013926506042
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 202797,
+              "t": 86.79274153709412
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 206189,
+              "t": 87.89831233024597
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 209005,
+              "t": 88.97198343276978
+            },
+            {
+              "app_memory_bytes": 1864417280,
+              "state": "running",
+              "step": 211821,
+              "t": 90.04767608642578
+            },
+            {
+              "app_memory_bytes": 1864437760,
+              "state": "running",
+              "step": 214637,
+              "t": 91.15009236335754
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 217453,
+              "t": 92.22586441040039
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 220269,
+              "t": 93.28257346153259
+            },
+            {
+              "app_memory_bytes": 1864282112,
+              "state": "running",
+              "step": 223085,
+              "t": 94.35566282272339
+            },
+            {
+              "app_memory_bytes": 1864282112,
+              "state": "running",
+              "step": 225901,
+              "t": 95.4385735988617
+            },
+            {
+              "app_memory_bytes": 1864278016,
+              "state": "running",
+              "step": 228717,
+              "t": 96.56156945228577
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 231533,
+              "t": 97.64101815223694
+            },
+            {
+              "app_memory_bytes": 1864970240,
+              "state": "running",
+              "step": 234349,
+              "t": 98.72551202774048
+            },
+            {
+              "app_memory_bytes": 1864970240,
+              "state": "running",
+              "step": 237101,
+              "t": 99.80587959289551
+            },
+            {
+              "app_memory_bytes": 1865035776,
+              "state": "running",
+              "step": 240428,
+              "t": 100.8880352973938
+            },
+            {
+              "app_memory_bytes": 1865003008,
+              "state": "running",
+              "step": 243244,
+              "t": 102.00069832801819
+            },
+            {
+              "app_memory_bytes": 1865027584,
+              "state": "running",
+              "step": 246060,
+              "t": 103.08540034294128
+            },
+            {
+              "app_memory_bytes": 1865035776,
+              "state": "running",
+              "step": 248876,
+              "t": 104.16834378242493
+            },
+            {
+              "app_memory_bytes": 1865043968,
+              "state": "running",
+              "step": 251692,
+              "t": 105.24615001678467
+            },
+            {
+              "app_memory_bytes": 1865035776,
+              "state": "running",
+              "step": 254508,
+              "t": 106.33288788795471
+            },
+            {
+              "app_memory_bytes": 1864966144,
+              "state": "running",
+              "step": 257836,
+              "t": 107.56067085266113
+            },
+            {
+              "app_memory_bytes": 1864974336,
+              "state": "running",
+              "step": 260652,
+              "t": 108.73026609420776
+            },
+            {
+              "app_memory_bytes": 1864978432,
+              "state": "running",
+              "step": 263468,
+              "t": 109.81274461746216
+            },
+            {
+              "app_memory_bytes": 1864974336,
+              "state": "running",
+              "step": 266284,
+              "t": 110.8935194015503
+            },
+            {
+              "app_memory_bytes": 1864953856,
+              "state": "running",
+              "step": 269036,
+              "t": 111.97311162948608
+            },
+            {
+              "app_memory_bytes": 1865023488,
+              "state": "running",
+              "step": 272428,
+              "t": 113.13143253326416
+            },
+            {
+              "app_memory_bytes": 1865011200,
+              "state": "running",
+              "step": 275244,
+              "t": 114.21194815635681
+            },
+            {
+              "app_memory_bytes": 1865023488,
+              "state": "running",
+              "step": 278060,
+              "t": 115.38511490821838
+            },
+            {
+              "app_memory_bytes": 1864957952,
+              "state": "running",
+              "step": 281452,
+              "t": 116.47363042831421
+            },
+            {
+              "app_memory_bytes": 1864974336,
+              "state": "running",
+              "step": 284268,
+              "t": 117.56075692176819
+            },
+            {
+              "app_memory_bytes": 1864957952,
+              "state": "running",
+              "step": 287084,
+              "t": 118.71736764907837
+            },
+            {
+              "app_memory_bytes": 1864454144,
+              "state": "running",
+              "step": 289900,
+              "t": 119.80004239082336
+            },
+            {
+              "app_memory_bytes": 1864466432,
+              "state": "running",
+              "step": 292716,
+              "t": 120.88352799415588
+            },
+            {
+              "app_memory_bytes": 1864470528,
+              "state": "running",
+              "step": 295532,
+              "t": 121.97314620018005
+            },
+            {
+              "app_memory_bytes": 1864474624,
+              "state": "running",
+              "step": 298348,
+              "t": 123.04234433174133
+            },
+            {
+              "app_memory_bytes": 1864531968,
+              "state": "running",
+              "step": 301804,
+              "t": 124.15878510475159
+            },
+            {
+              "app_memory_bytes": 1864519680,
+              "state": "running",
+              "step": 304620,
+              "t": 125.24020957946777
+            },
+            {
+              "app_memory_bytes": 1864511488,
+              "state": "running",
+              "step": 307436,
+              "t": 126.32441759109497
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 310252,
+              "t": 127.44016623497009
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 313580,
+              "t": 128.67232990264893
+            },
+            {
+              "app_memory_bytes": 1864466432,
+              "state": "running",
+              "step": 316396,
+              "t": 129.8003444671631
+            },
+            {
+              "app_memory_bytes": 1864450048,
+              "state": "running",
+              "step": 319212,
+              "t": 130.88458847999573
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 322028,
+              "t": 131.96979928016663
+            },
+            {
+              "app_memory_bytes": 1864458240,
+              "state": "running",
+              "step": 324844,
+              "t": 133.08428525924683
+            },
+            {
+              "app_memory_bytes": 1864470528,
+              "state": "running",
+              "step": 327596,
+              "t": 134.1661524772644
+            },
+            {
+              "app_memory_bytes": 1864536064,
+              "state": "running",
+              "step": 330988,
+              "t": 135.28919124603271
+            },
+            {
+              "app_memory_bytes": 1864331264,
+              "state": "running",
+              "step": 333804,
+              "t": 136.37340092658997
+            },
+            {
+              "app_memory_bytes": 1864351744,
+              "state": "running",
+              "step": 336620,
+              "t": 137.45819067955017
+            },
+            {
+              "app_memory_bytes": 1864450048,
+              "state": "running",
+              "step": 339436,
+              "t": 138.5405080318451
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 342252,
+              "t": 139.62104988098145
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 345068,
+              "t": 140.74005699157715
+            },
+            {
+              "app_memory_bytes": 1864417280,
+              "state": "running",
+              "step": 347884,
+              "t": 141.8194568157196
+            },
+            {
+              "app_memory_bytes": 1864466432,
+              "state": "running",
+              "step": 350700,
+              "t": 142.90140748023987
+            },
+            {
+              "app_memory_bytes": 1864458240,
+              "state": "running",
+              "step": 353452,
+              "t": 143.98489546775818
+            },
+            {
+              "app_memory_bytes": 1864482816,
+              "state": "running",
+              "step": 356844,
+              "t": 145.06422519683838
+            },
+            {
+              "app_memory_bytes": 1864486912,
+              "state": "running",
+              "step": 359592,
+              "t": 146.17803478240967
+            },
+            {
+              "app_memory_bytes": 1864495104,
+              "state": "running",
+              "step": 362408,
+              "t": 147.25884079933167
+            },
+            {
+              "app_memory_bytes": 1864507392,
+              "state": "running",
+              "step": 365224,
+              "t": 148.34381341934204
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 368040,
+              "t": 149.4239146709442
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 370856,
+              "t": 150.50464868545532
+            },
+            {
+              "app_memory_bytes": 1864347648,
+              "state": "running",
+              "step": 373672,
+              "t": 151.61665678024292
+            },
+            {
+              "app_memory_bytes": 1864351744,
+              "state": "running",
+              "step": 376488,
+              "t": 152.69821166992188
+            },
+            {
+              "app_memory_bytes": 1864417280,
+              "state": "running",
+              "step": 379240,
+              "t": 153.8082537651062
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 382632,
+              "t": 154.88918471336365
+            },
+            {
+              "app_memory_bytes": 1864458240,
+              "state": "running",
+              "step": 385448,
+              "t": 155.97080445289612
+            },
+            {
+              "app_memory_bytes": 1864499200,
+              "state": "running",
+              "step": 388264,
+              "t": 157.08775925636292
+            },
+            {
+              "app_memory_bytes": 1864495104,
+              "state": "running",
+              "step": 391080,
+              "t": 158.18464970588684
+            },
+            {
+              "app_memory_bytes": 1864478720,
+              "state": "running",
+              "step": 393896,
+              "t": 159.25861191749573
+            },
+            {
+              "app_memory_bytes": 1864511488,
+              "state": "running",
+              "step": 396712,
+              "t": 160.32964444160461
+            },
+            {
+              "app_memory_bytes": 1864511488,
+              "state": "running",
+              "step": 399528,
+              "t": 161.39801406860352
+            },
+            {
+              "app_memory_bytes": 1864404992,
+              "state": "running",
+              "step": 402984,
+              "t": 162.6725115776062
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 405800,
+              "t": 163.7543487548828
+            },
+            {
+              "app_memory_bytes": 1864450048,
+              "state": "running",
+              "step": 408616,
+              "t": 164.83257675170898
+            },
+            {
+              "app_memory_bytes": 1864454144,
+              "state": "running",
+              "step": 411432,
+              "t": 165.90561246871948
+            },
+            {
+              "app_memory_bytes": 1864466432,
+              "state": "running",
+              "step": 414184,
+              "t": 166.9782054424286
+            },
+            {
+              "app_memory_bytes": 1864466432,
+              "state": "running",
+              "step": 417000,
+              "t": 168.07307600975037
+            },
+            {
+              "app_memory_bytes": 1864486912,
+              "state": "running",
+              "step": 419752,
+              "t": 169.14977884292603
+            },
+            {
+              "app_memory_bytes": 1864478720,
+              "state": "running",
+              "step": 423144,
+              "t": 170.2241837978363
+            },
+            {
+              "app_memory_bytes": 1864499200,
+              "state": "running",
+              "step": 425960,
+              "t": 171.296288728714
+            },
+            {
+              "app_memory_bytes": 1864376320,
+              "state": "running",
+              "step": 428776,
+              "t": 172.3752088546753
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 431592,
+              "t": 173.50673699378967
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 434408,
+              "t": 174.57805562019348
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 437224,
+              "t": 175.65294885635376
+            },
+            {
+              "app_memory_bytes": 1864343552,
+              "state": "running",
+              "step": 440040,
+              "t": 176.72601103782654
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 442856,
+              "t": 177.79931640625
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 445672,
+              "t": 178.93973875045776
+            },
+            {
+              "app_memory_bytes": 1864454144,
+              "state": "running",
+              "step": 448360,
+              "t": 180.01236081123352
+            },
+            {
+              "app_memory_bytes": 1864486912,
+              "state": "running",
+              "step": 451688,
+              "t": 181.08525848388672
+            },
+            {
+              "app_memory_bytes": 1864486912,
+              "state": "running",
+              "step": 454504,
+              "t": 182.1587688922882
+            },
+            {
+              "app_memory_bytes": 1864454144,
+              "state": "running",
+              "step": 457320,
+              "t": 183.23606038093567
+            },
+            {
+              "app_memory_bytes": 1864450048,
+              "state": "running",
+              "step": 460136,
+              "t": 184.33343243598938
+            },
+            {
+              "app_memory_bytes": 1864458240,
+              "state": "running",
+              "step": 462952,
+              "t": 185.40519952774048
+            },
+            {
+              "app_memory_bytes": 1864310784,
+              "state": "running",
+              "step": 465768,
+              "t": 186.4766914844513
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 468584,
+              "t": 187.55069494247437
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 471400,
+              "t": 188.65634417533875
+            },
+            {
+              "app_memory_bytes": 1864298496,
+              "state": "running",
+              "step": 474216,
+              "t": 189.76638841629028
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 477032,
+              "t": 190.83818006515503
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 479761,
+              "t": 191.90991878509521
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 482513,
+              "t": 192.99100375175476
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 485329,
+              "t": 194.02442145347595
+            },
+            {
+              "app_memory_bytes": 1864396800,
+              "state": "running",
+              "step": 488145,
+              "t": 195.12378597259521
+            },
+            {
+              "app_memory_bytes": 1864437760,
+              "state": "running",
+              "step": 491537,
+              "t": 196.1930844783783
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 494353,
+              "t": 197.28639268875122
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 497169,
+              "t": 198.34677648544312
+            },
+            {
+              "app_memory_bytes": 1864458240,
+              "state": "running",
+              "step": 499985,
+              "t": 199.42191171646118
+            },
+            {
+              "app_memory_bytes": 1864298496,
+              "state": "running",
+              "step": 502801,
+              "t": 200.52311420440674
+            },
+            {
+              "app_memory_bytes": 1864310784,
+              "state": "running",
+              "step": 505617,
+              "t": 201.59595441818237
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 508433,
+              "t": 202.67937111854553
+            },
+            {
+              "app_memory_bytes": 1864376320,
+              "state": "running",
+              "step": 511249,
+              "t": 203.78862714767456
+            },
+            {
+              "app_memory_bytes": 1864376320,
+              "state": "running",
+              "step": 514001,
+              "t": 204.87134313583374
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 517457,
+              "t": 205.98987770080566
+            },
+            {
+              "app_memory_bytes": 1864445952,
+              "state": "running",
+              "step": 520273,
+              "t": 207.07236623764038
+            },
+            {
+              "app_memory_bytes": 1864437760,
+              "state": "running",
+              "step": 523089,
+              "t": 208.15220975875854
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 525905,
+              "t": 209.23581266403198
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 528721,
+              "t": 210.31844329833984
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 531537,
+              "t": 211.43423128128052
+            },
+            {
+              "app_memory_bytes": 1864454144,
+              "state": "running",
+              "step": 534353,
+              "t": 212.51847100257874
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 537105,
+              "t": 213.60045266151428
+            },
+            {
+              "app_memory_bytes": 1864323072,
+              "state": "running",
+              "step": 539857,
+              "t": 214.68070006370544
+            },
+            {
+              "app_memory_bytes": 1864396800,
+              "state": "running",
+              "step": 543185,
+              "t": 215.76142692565918
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 546001,
+              "t": 216.88380646705627
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 548817,
+              "t": 217.96694803237915
+            },
+            {
+              "app_memory_bytes": 1864417280,
+              "state": "running",
+              "step": 551633,
+              "t": 219.07439756393433
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 554449,
+              "t": 220.14968633651733
+            },
+            {
+              "app_memory_bytes": 1864409088,
+              "state": "running",
+              "step": 557265,
+              "t": 221.23268938064575
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 560081,
+              "t": 222.34754371643066
+            },
+            {
+              "app_memory_bytes": 1864294400,
+              "state": "running",
+              "step": 563409,
+              "t": 223.44727611541748
+            },
+            {
+              "app_memory_bytes": 1864310784,
+              "state": "running",
+              "step": 566225,
+              "t": 224.52874422073364
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 569041,
+              "t": 225.61026430130005
+            },
+            {
+              "app_memory_bytes": 1864392704,
+              "state": "running",
+              "step": 571857,
+              "t": 226.69554781913757
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 574673,
+              "t": 227.8098075389862
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 577489,
+              "t": 228.89140439033508
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 580305,
+              "t": 229.99716877937317
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 583825,
+              "t": 231.0770390033722
+            },
+            {
+              "app_memory_bytes": 1864445952,
+              "state": "running",
+              "step": 586641,
+              "t": 232.27049827575684
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 589457,
+              "t": 233.38471484184265
+            },
+            {
+              "app_memory_bytes": 1864445952,
+              "state": "running",
+              "step": 592273,
+              "t": 234.46877574920654
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 595089,
+              "t": 235.54838252067566
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 598574,
+              "t": 236.62953281402588
+            },
+            {
+              "app_memory_bytes": 1864396800,
+              "state": "running",
+              "step": 601390,
+              "t": 237.81840872764587
+            },
+            {
+              "app_memory_bytes": 1864454144,
+              "state": "running",
+              "step": 604846,
+              "t": 239.20144271850586
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 607662,
+              "t": 240.2843255996704
+            },
+            {
+              "app_memory_bytes": 1864437760,
+              "state": "running",
+              "step": 610478,
+              "t": 241.36773467063904
+            },
+            {
+              "app_memory_bytes": 1864445952,
+              "state": "running",
+              "step": 613294,
+              "t": 242.44744205474854
+            },
+            {
+              "app_memory_bytes": 1864478720,
+              "state": "running",
+              "step": 616046,
+              "t": 243.57449412345886
+            },
+            {
+              "app_memory_bytes": 1864376320,
+              "state": "running",
+              "step": 619438,
+              "t": 244.6900007724762
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 622254,
+              "t": 245.7698769569397
+            },
+            {
+              "app_memory_bytes": 1864937472,
+              "state": "running",
+              "step": 625070,
+              "t": 246.8502278327942
+            },
+            {
+              "app_memory_bytes": 1864925184,
+              "state": "running",
+              "step": 627886,
+              "t": 247.93473839759827
+            },
+            {
+              "app_memory_bytes": 1864892416,
+              "state": "running",
+              "step": 630702,
+              "t": 249.02065777778625
+            },
+            {
+              "app_memory_bytes": 1864904704,
+              "state": "running",
+              "step": 633454,
+              "t": 250.13730239868164
+            },
+            {
+              "app_memory_bytes": 1864921088,
+              "state": "running",
+              "step": 636270,
+              "t": 251.17626523971558
+            },
+            {
+              "app_memory_bytes": 1864925184,
+              "state": "running",
+              "step": 639086,
+              "t": 252.25792121887207
+            },
+            {
+              "app_memory_bytes": 1864945664,
+              "state": "running",
+              "step": 641902,
+              "t": 253.3403820991516
+            },
+            {
+              "app_memory_bytes": 1864994816,
+              "state": "running",
+              "step": 645294,
+              "t": 254.4225516319275
+            },
+            {
+              "app_memory_bytes": 1864835072,
+              "state": "running",
+              "step": 648110,
+              "t": 255.5406413078308
+            },
+            {
+              "app_memory_bytes": 1864908800,
+              "state": "running",
+              "step": 650926,
+              "t": 256.62899565696716
+            },
+            {
+              "app_memory_bytes": 1864900608,
+              "state": "running",
+              "step": 653678,
+              "t": 257.7127079963684
+            },
+            {
+              "app_memory_bytes": 1864847360,
+              "state": "running",
+              "step": 656494,
+              "t": 258.82536339759827
+            },
+            {
+              "app_memory_bytes": 1864904704,
+              "state": "running",
+              "step": 659310,
+              "t": 259.9090373516083
+            },
+            {
+              "app_memory_bytes": 1864941568,
+              "state": "running",
+              "step": 662830,
+              "t": 261.0255994796753
+            },
+            {
+              "app_memory_bytes": 1864953856,
+              "state": "running",
+              "step": 665646,
+              "t": 262.106365442276
+            },
+            {
+              "app_memory_bytes": 1864921088,
+              "state": "running",
+              "step": 668462,
+              "t": 263.1871588230133
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 671278,
+              "t": 264.27085733413696
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 674094,
+              "t": 265.3515591621399
+            },
+            {
+              "app_memory_bytes": 1864396800,
+              "state": "running",
+              "step": 676910,
+              "t": 266.482390165329
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 679726,
+              "t": 267.5681517124176
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 682478,
+              "t": 268.6804344654083
+            },
+            {
+              "app_memory_bytes": 1864310784,
+              "state": "running",
+              "step": 685870,
+              "t": 269.76233649253845
+            },
+            {
+              "app_memory_bytes": 1864335360,
+              "state": "running",
+              "step": 688686,
+              "t": 270.8454260826111
+            },
+            {
+              "app_memory_bytes": 1864343552,
+              "state": "running",
+              "step": 691502,
+              "t": 271.96545004844666
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 695022,
+              "t": 273.1029748916626
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 697838,
+              "t": 274.31405687332153
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 700654,
+              "t": 275.39899611473083
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 703470,
+              "t": 276.47951459884644
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 706286,
+              "t": 277.620064496994
+            },
+            {
+              "app_memory_bytes": 1864212480,
+              "state": "running",
+              "step": 709102,
+              "t": 278.7295925617218
+            },
+            {
+              "app_memory_bytes": 1864228864,
+              "state": "running",
+              "step": 711854,
+              "t": 279.8132653236389
+            },
+            {
+              "app_memory_bytes": 1864298496,
+              "state": "running",
+              "step": 715182,
+              "t": 280.89866876602173
+            },
+            {
+              "app_memory_bytes": 1864318976,
+              "state": "running",
+              "step": 717955,
+              "t": 282.01152873039246
+            },
+            {
+              "app_memory_bytes": 1864343552,
+              "state": "running",
+              "step": 720771,
+              "t": 283.1079638004303
+            },
+            {
+              "app_memory_bytes": 1864331264,
+              "state": "running",
+              "step": 723587,
+              "t": 284.20990562438965
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 726403,
+              "t": 285.284955739975
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 729219,
+              "t": 286.3560485839844
+            },
+            {
+              "app_memory_bytes": 1864392704,
+              "state": "running",
+              "step": 732035,
+              "t": 287.4277787208557
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 734851,
+              "t": 288.5279812812805
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 737667,
+              "t": 289.59954738616943
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 740419,
+              "t": 290.6715807914734
+            },
+            {
+              "app_memory_bytes": 1864314880,
+              "state": "running",
+              "step": 743811,
+              "t": 291.742959022522
+            },
+            {
+              "app_memory_bytes": 1864323072,
+              "state": "running",
+              "step": 746627,
+              "t": 292.81434965133667
+            },
+            {
+              "app_memory_bytes": 1864294400,
+              "state": "running",
+              "step": 749443,
+              "t": 293.96270537376404
+            },
+            {
+              "app_memory_bytes": 1864323072,
+              "state": "running",
+              "step": 752195,
+              "t": 295.0354731082916
+            },
+            {
+              "app_memory_bytes": 1864339456,
+              "state": "running",
+              "step": 755011,
+              "t": 296.1070067882538
+            },
+            {
+              "app_memory_bytes": 1864347648,
+              "state": "running",
+              "step": 757827,
+              "t": 297.17921805381775
+            },
+            {
+              "app_memory_bytes": 1864351744,
+              "state": "running",
+              "step": 760643,
+              "t": 298.2506537437439
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 763459,
+              "t": 299.3679292201996
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 766275,
+              "t": 300.43967175483704
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 769091,
+              "t": 301.4717173576355
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 771907,
+              "t": 302.54400658607483
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 774723,
+              "t": 303.6186978816986
+            },
+            {
+              "app_memory_bytes": 1864302592,
+              "state": "running",
+              "step": 778179,
+              "t": 304.72031569480896
+            },
+            {
+              "app_memory_bytes": 1864290304,
+              "state": "running",
+              "step": 780995,
+              "t": 305.79231095314026
+            },
+            {
+              "app_memory_bytes": 1864224768,
+              "state": "running",
+              "step": 783107,
+              "t": 306.82433009147644
+            },
+            {
+              "app_memory_bytes": 1864318976,
+              "state": "running",
+              "step": 786435,
+              "t": 307.89529967308044
+            },
+            {
+              "app_memory_bytes": 1864298496,
+              "state": "running",
+              "step": 789251,
+              "t": 308.9671230316162
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 792067,
+              "t": 310.07357263565063
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 794883,
+              "t": 311.10678791999817
+            },
+            {
+              "app_memory_bytes": 1864404992,
+              "state": "running",
+              "step": 797699,
+              "t": 312.18065309524536
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 800515,
+              "t": 313.25025367736816
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 803331,
+              "t": 314.3465449810028
+            },
+            {
+              "app_memory_bytes": 1864417280,
+              "state": "running",
+              "step": 806147,
+              "t": 315.54840064048767
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 808963,
+              "t": 316.62032532691956
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 811779,
+              "t": 317.6929085254669
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 814531,
+              "t": 318.76514172554016
+            },
+            {
+              "app_memory_bytes": 1864396800,
+              "state": "running",
+              "step": 817923,
+              "t": 319.8406014442444
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 820739,
+              "t": 320.9389879703522
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 823555,
+              "t": 322.01287961006165
+            },
+            {
+              "app_memory_bytes": 1864376320,
+              "state": "running",
+              "step": 826371,
+              "t": 323.1023368835449
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 829187,
+              "t": 324.2642366886139
+            },
+            {
+              "app_memory_bytes": 1864417280,
+              "state": "running",
+              "step": 832515,
+              "t": 325.40846824645996
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 835331,
+              "t": 326.5058169364929
+            },
+            {
+              "app_memory_bytes": 1864445952,
+              "state": "running",
+              "step": 838086,
+              "t": 327.5875518321991
+            },
+            {
+              "app_memory_bytes": 1864253440,
+              "state": "running",
+              "step": 840902,
+              "t": 328.6686327457428
+            },
+            {
+              "app_memory_bytes": 1864294400,
+              "state": "running",
+              "step": 843718,
+              "t": 329.75250244140625
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 846534,
+              "t": 330.83427262306213
+            },
+            {
+              "app_memory_bytes": 1864265728,
+              "state": "running",
+              "step": 849350,
+              "t": 331.9496896266937
+            },
+            {
+              "app_memory_bytes": 1864351744,
+              "state": "running",
+              "step": 852166,
+              "t": 333.03124928474426
+            },
+            {
+              "app_memory_bytes": 1864392704,
+              "state": "running",
+              "step": 855558,
+              "t": 334.1262972354889
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 858374,
+              "t": 335.2101767063141
+            },
+            {
+              "app_memory_bytes": 1864404992,
+              "state": "running",
+              "step": 861190,
+              "t": 336.29975414276123
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 864006,
+              "t": 337.4319303035736
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 866822,
+              "t": 338.5227117538452
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 869638,
+              "t": 339.61191868782043
+            },
+            {
+              "app_memory_bytes": 1864417280,
+              "state": "running",
+              "step": 872454,
+              "t": 340.7077987194061
+            },
+            {
+              "app_memory_bytes": 1864437760,
+              "state": "running",
+              "step": 875206,
+              "t": 341.79820823669434
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 878598,
+              "t": 342.92781233787537
+            },
+            {
+              "app_memory_bytes": 1864347648,
+              "state": "running",
+              "step": 881414,
+              "t": 344.04641008377075
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 884230,
+              "t": 345.1355834007263
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 887046,
+              "t": 346.23228764533997
+            },
+            {
+              "app_memory_bytes": 1864396800,
+              "state": "running",
+              "step": 889862,
+              "t": 347.3227548599243
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 893382,
+              "t": 348.4588804244995
+            },
+            {
+              "app_memory_bytes": 1864445952,
+              "state": "running",
+              "step": 896198,
+              "t": 349.55105781555176
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 899014,
+              "t": 350.643536567688
+            },
+            {
+              "app_memory_bytes": 1864286208,
+              "state": "running",
+              "step": 901830,
+              "t": 351.73564434051514
+            },
+            {
+              "app_memory_bytes": 1864298496,
+              "state": "running",
+              "step": 904646,
+              "t": 352.8353681564331
+            },
+            {
+              "app_memory_bytes": 1864245248,
+              "state": "running",
+              "step": 907462,
+              "t": 353.99451780319214
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 910854,
+              "t": 355.08865427970886
+            },
+            {
+              "app_memory_bytes": 1864404992,
+              "state": "running",
+              "step": 913670,
+              "t": 356.1874649524689
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 916486,
+              "t": 357.3438057899475
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 919302,
+              "t": 358.45253014564514
+            },
+            {
+              "app_memory_bytes": 1864269824,
+              "state": "running",
+              "step": 922822,
+              "t": 359.63375997543335
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 925638,
+              "t": 360.72534680366516
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 928454,
+              "t": 361.81860399246216
+            },
+            {
+              "app_memory_bytes": 1864269824,
+              "state": "running",
+              "step": 931270,
+              "t": 362.9329745769501
+            },
+            {
+              "app_memory_bytes": 1864392704,
+              "state": "running",
+              "step": 934790,
+              "t": 364.00789880752563
+            },
+            {
+              "app_memory_bytes": 1864376320,
+              "state": "running",
+              "step": 937606,
+              "t": 365.30215334892273
+            },
+            {
+              "app_memory_bytes": 1864417280,
+              "state": "running",
+              "step": 940422,
+              "t": 366.43425154685974
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 943238,
+              "t": 367.51627373695374
+            },
+            {
+              "app_memory_bytes": 1864417280,
+              "state": "running",
+              "step": 946054,
+              "t": 368.59723949432373
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 949446,
+              "t": 369.68697595596313
+            },
+            {
+              "app_memory_bytes": 1864339456,
+              "state": "running",
+              "step": 952262,
+              "t": 370.80720925331116
+            },
+            {
+              "app_memory_bytes": 1864314880,
+              "state": "running",
+              "step": 955078,
+              "t": 371.89041781425476
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 957819,
+              "t": 372.9722521305084
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 960635,
+              "t": 374.06213450431824
+            },
+            {
+              "app_memory_bytes": 1864343552,
+              "state": "running",
+              "step": 963451,
+              "t": 375.1497983932495
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 966267,
+              "t": 376.271231174469
+            },
+            {
+              "app_memory_bytes": 1864396800,
+              "state": "running",
+              "step": 969019,
+              "t": 377.35022473335266
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 972411,
+              "t": 378.43160009384155
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 975227,
+              "t": 379.5435881614685
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 978043,
+              "t": 380.62370800971985
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 980859,
+              "t": 381.7397127151489
+            },
+            {
+              "app_memory_bytes": 1864294400,
+              "state": "running",
+              "step": 983675,
+              "t": 382.81865787506104
+            },
+            {
+              "app_memory_bytes": 1864216576,
+              "state": "running",
+              "step": 986491,
+              "t": 383.90181183815
+            },
+            {
+              "app_memory_bytes": 1864302592,
+              "state": "running",
+              "step": 989307,
+              "t": 384.97964239120483
+            },
+            {
+              "app_memory_bytes": 1864318976,
+              "state": "running",
+              "step": 992123,
+              "t": 386.059912443161
+            },
+            {
+              "app_memory_bytes": 1864335360,
+              "state": "running",
+              "step": 995643,
+              "t": 387.2178044319153
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 998459,
+              "t": 388.29720735549927
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 1001275,
+              "t": 389.4105386734009
+            },
+            {
+              "app_memory_bytes": 1864372224,
+              "state": "running",
+              "step": 1004091,
+              "t": 390.49265813827515
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 1006907,
+              "t": 391.57529759407043
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 1009723,
+              "t": 392.6869833469391
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 1012539,
+              "t": 393.7756361961365
+            },
+            {
+              "app_memory_bytes": 1864376320,
+              "state": "running",
+              "step": 1015355,
+              "t": 394.8588833808899
+            },
+            {
+              "app_memory_bytes": 1864237056,
+              "state": "running",
+              "step": 1018171,
+              "t": 395.9394783973694
+            },
+            {
+              "app_memory_bytes": 1864822784,
+              "state": "running",
+              "step": 1020923,
+              "t": 397.0211172103882
+            },
+            {
+              "app_memory_bytes": 1864925184,
+              "state": "running",
+              "step": 1024379,
+              "t": 398.1398067474365
+            },
+            {
+              "app_memory_bytes": 1864970240,
+              "state": "running",
+              "step": 1027259,
+              "t": 399.6208109855652
+            },
+            {
+              "app_memory_bytes": 1864970240,
+              "state": "running",
+              "step": 1030075,
+              "t": 400.70206785202026
+            },
+            {
+              "app_memory_bytes": 1864974336,
+              "state": "running",
+              "step": 1032827,
+              "t": 401.7938873767853
+            },
+            {
+              "app_memory_bytes": 1864876032,
+              "state": "running",
+              "step": 1036219,
+              "t": 402.87451338768005
+            },
+            {
+              "app_memory_bytes": 1864912896,
+              "state": "running",
+              "step": 1039035,
+              "t": 403.9924488067627
+            },
+            {
+              "app_memory_bytes": 1864908800,
+              "state": "running",
+              "step": 1041851,
+              "t": 405.07662057876587
+            },
+            {
+              "app_memory_bytes": 1864908800,
+              "state": "running",
+              "step": 1044667,
+              "t": 406.1441104412079
+            },
+            {
+              "app_memory_bytes": 1864880128,
+              "state": "running",
+              "step": 1047483,
+              "t": 407.21147537231445
+            },
+            {
+              "app_memory_bytes": 1864925184,
+              "state": "running",
+              "step": 1050299,
+              "t": 408.2889666557312
+            },
+            {
+              "app_memory_bytes": 1864929280,
+              "state": "running",
+              "step": 1053115,
+              "t": 409.425354719162
+            },
+            {
+              "app_memory_bytes": 1864929280,
+              "state": "running",
+              "step": 1055931,
+              "t": 410.4980833530426
+            },
+            {
+              "app_memory_bytes": 1864933376,
+              "state": "running",
+              "step": 1058747,
+              "t": 411.56886768341064
+            },
+            {
+              "app_memory_bytes": 1864953856,
+              "state": "running",
+              "step": 1061563,
+              "t": 412.6408884525299
+            },
+            {
+              "app_memory_bytes": 1864970240,
+              "state": "running",
+              "step": 1064315,
+              "t": 413.711630821228
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 1067643,
+              "t": 414.8273320198059
+            },
+            {
+              "app_memory_bytes": 1864278016,
+              "state": "running",
+              "step": 1070459,
+              "t": 415.89871644973755
+            },
+            {
+              "app_memory_bytes": 1864306688,
+              "state": "running",
+              "step": 1073275,
+              "t": 416.9843866825104
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 1076091,
+              "t": 418.0718746185303
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 1078848,
+              "t": 419.1644082069397
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 1081664,
+              "t": 420.31094121932983
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 1084480,
+              "t": 421.3970036506653
+            },
+            {
+              "app_memory_bytes": 1864409088,
+              "state": "running",
+              "step": 1087872,
+              "t": 422.49126720428467
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 1090688,
+              "t": 423.5817060470581
+            },
+            {
+              "app_memory_bytes": 1864470528,
+              "state": "running",
+              "step": 1093504,
+              "t": 424.6355764865875
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 1096320,
+              "t": 425.77001786231995
+            },
+            {
+              "app_memory_bytes": 1864302592,
+              "state": "running",
+              "step": 1099136,
+              "t": 426.863073348999
+            },
+            {
+              "app_memory_bytes": 1864290304,
+              "state": "running",
+              "step": 1101952,
+              "t": 427.95225262641907
+            },
+            {
+              "app_memory_bytes": 1864294400,
+              "state": "running",
+              "step": 1104768,
+              "t": 429.0354676246643
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 1107904,
+              "t": 430.2695782184601
+            },
+            {
+              "app_memory_bytes": 1864445952,
+              "state": "running",
+              "step": 1111424,
+              "t": 431.51098799705505
+            },
+            {
+              "app_memory_bytes": 1864450048,
+              "state": "running",
+              "step": 1114240,
+              "t": 432.59477829933167
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 1117056,
+              "t": 433.6776738166809
+            },
+            {
+              "app_memory_bytes": 1864450048,
+              "state": "running",
+              "step": 1119872,
+              "t": 434.7655100822449
+            },
+            {
+              "app_memory_bytes": 1864290304,
+              "state": "running",
+              "step": 1122688,
+              "t": 435.85209131240845
+            },
+            {
+              "app_memory_bytes": 1864302592,
+              "state": "running",
+              "step": 1125504,
+              "t": 436.9793770313263
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 1128320,
+              "t": 438.0638041496277
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 1131136,
+              "t": 439.1480493545532
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 1133888,
+              "t": 440.2323224544525
+            },
+            {
+              "app_memory_bytes": 1864404992,
+              "state": "running",
+              "step": 1137280,
+              "t": 441.32047939300537
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 1140096,
+              "t": 442.45338249206543
+            },
+            {
+              "app_memory_bytes": 1864445952,
+              "state": "running",
+              "step": 1142912,
+              "t": 443.5367398262024
+            },
+            {
+              "app_memory_bytes": 1864437760,
+              "state": "running",
+              "step": 1145728,
+              "t": 444.63086009025574
+            },
+            {
+              "app_memory_bytes": 1864437760,
+              "state": "running",
+              "step": 1148544,
+              "t": 445.7158856391907
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 1151360,
+              "t": 446.8008029460907
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 1154176,
+              "t": 447.9239253997803
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 1157568,
+              "t": 449.008665561676
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 1160384,
+              "t": 450.09299063682556
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 1163200,
+              "t": 451.17661690711975
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 1166016,
+              "t": 452.2599263191223
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 1168832,
+              "t": 453.38593220710754
+            },
+            {
+              "app_memory_bytes": 1864437760,
+              "state": "running",
+              "step": 1171648,
+              "t": 454.4885964393616
+            },
+            {
+              "app_memory_bytes": 1864404992,
+              "state": "running",
+              "step": 1174464,
+              "t": 455.57288813591003
+            },
+            {
+              "app_memory_bytes": 1864404992,
+              "state": "running",
+              "step": 1177280,
+              "t": 456.6568810939789
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 1180032,
+              "t": 457.7411057949066
+            },
+            {
+              "app_memory_bytes": 1864294400,
+              "state": "running",
+              "step": 1183488,
+              "t": 458.8682601451874
+            },
+            {
+              "app_memory_bytes": 1864355840,
+              "state": "running",
+              "step": 1186304,
+              "t": 459.9834702014923
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 1189120,
+              "t": 461.06581568717957
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 1191936,
+              "t": 462.16284012794495
+            },
+            {
+              "app_memory_bytes": 1864380416,
+              "state": "running",
+              "step": 1194752,
+              "t": 463.2469835281372
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 1198201,
+              "t": 464.36822867393494
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 1201017,
+              "t": 465.4729497432709
+            },
+            {
+              "app_memory_bytes": 1864413184,
+              "state": "running",
+              "step": 1203833,
+              "t": 466.5929548740387
+            },
+            {
+              "app_memory_bytes": 1864413184,
+              "state": "running",
+              "step": 1206649,
+              "t": 467.676394701004
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 1209465,
+              "t": 468.76072883605957
+            },
+            {
+              "app_memory_bytes": 1864437760,
+              "state": "running",
+              "step": 1212281,
+              "t": 469.92581725120544
+            },
+            {
+              "app_memory_bytes": 1864450048,
+              "state": "running",
+              "step": 1215033,
+              "t": 471.0113081932068
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 1218425,
+              "t": 472.0958869457245
+            },
+            {
+              "app_memory_bytes": 1864376320,
+              "state": "running",
+              "step": 1221241,
+              "t": 473.18923449516296
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 1224057,
+              "t": 474.27392292022705
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 1226873,
+              "t": 475.3955805301666
+            },
+            {
+              "app_memory_bytes": 1864392704,
+              "state": "running",
+              "step": 1229689,
+              "t": 476.4799659252167
+            },
+            {
+              "app_memory_bytes": 1864409088,
+              "state": "running",
+              "step": 1232505,
+              "t": 477.5662531852722
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 1235321,
+              "t": 478.65310192108154
+            },
+            {
+              "app_memory_bytes": 1864413184,
+              "state": "running",
+              "step": 1238073,
+              "t": 479.77001905441284
+            },
+            {
+              "app_memory_bytes": 1864298496,
+              "state": "running",
+              "step": 1241337,
+              "t": 480.89615845680237
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 1244153,
+              "t": 481.98005175590515
+            },
+            {
+              "app_memory_bytes": 1864339456,
+              "state": "running",
+              "step": 1246969,
+              "t": 483.06398725509644
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 1249785,
+              "t": 484.1497027873993
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 1252601,
+              "t": 485.2351152896881
+            },
+            {
+              "app_memory_bytes": 1864450048,
+              "state": "running",
+              "step": 1255417,
+              "t": 486.32009196281433
+            },
+            {
+              "app_memory_bytes": 1864409088,
+              "state": "running",
+              "step": 1258233,
+              "t": 487.4052290916443
+            },
+            {
+              "app_memory_bytes": 1864470528,
+              "state": "running",
+              "step": 1260985,
+              "t": 488.491507768631
+            },
+            {
+              "app_memory_bytes": 1864486912,
+              "state": "running",
+              "step": 1264377,
+              "t": 489.5782959461212
+            },
+            {
+              "app_memory_bytes": 1864478720,
+              "state": "running",
+              "step": 1267193,
+              "t": 490.6616494655609
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 1269945,
+              "t": 491.7857484817505
+            },
+            {
+              "app_memory_bytes": 1864495104,
+              "state": "running",
+              "step": 1272761,
+              "t": 492.8710331916809
+            },
+            {
+              "app_memory_bytes": 1864359936,
+              "state": "running",
+              "step": 1275577,
+              "t": 493.95678091049194
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 1278393,
+              "t": 495.07275104522705
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 1281209,
+              "t": 496.16616559028625
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 1284665,
+              "t": 497.27632904052734
+            },
+            {
+              "app_memory_bytes": 1864474624,
+              "state": "running",
+              "step": 1287481,
+              "t": 498.3524954319
+            },
+            {
+              "app_memory_bytes": 1864474624,
+              "state": "running",
+              "step": 1290297,
+              "t": 499.490079164505
+            },
+            {
+              "app_memory_bytes": 1864499200,
+              "state": "running",
+              "step": 1293113,
+              "t": 500.5366096496582
+            },
+            {
+              "app_memory_bytes": 1864474624,
+              "state": "running",
+              "step": 1295929,
+              "t": 501.61291456222534
+            },
+            {
+              "app_memory_bytes": 1864454144,
+              "state": "running",
+              "step": 1298745,
+              "t": 502.67475938796997
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 1301561,
+              "t": 503.70826601982117
+            },
+            {
+              "app_memory_bytes": 1864486912,
+              "state": "running",
+              "step": 1304377,
+              "t": 504.8088843822479
+            },
+            {
+              "app_memory_bytes": 1864486912,
+              "state": "running",
+              "step": 1307193,
+              "t": 505.8831453323364
+            },
+            {
+              "app_memory_bytes": 1864491008,
+              "state": "running",
+              "step": 1310009,
+              "t": 506.9544017314911
+            },
+            {
+              "app_memory_bytes": 1864404992,
+              "state": "running",
+              "step": 1313529,
+              "t": 508.1698262691498
+            },
+            {
+              "app_memory_bytes": 1864458240,
+              "state": "running",
+              "step": 1316303,
+              "t": 509.20319056510925
+            },
+            {
+              "app_memory_bytes": 1864478720,
+              "state": "running",
+              "step": 1319055,
+              "t": 510.2776572704315
+            },
+            {
+              "app_memory_bytes": 1864470528,
+              "state": "running",
+              "step": 1321807,
+              "t": 511.3603312969208
+            },
+            {
+              "app_memory_bytes": 1864499200,
+              "state": "running",
+              "step": 1324623,
+              "t": 512.437891960144
+            },
+            {
+              "app_memory_bytes": 1864478720,
+              "state": "running",
+              "step": 1327439,
+              "t": 513.5455338954926
+            },
+            {
+              "app_memory_bytes": 1864454144,
+              "state": "running",
+              "step": 1330255,
+              "t": 514.6542553901672
+            },
+            {
+              "app_memory_bytes": 1864466432,
+              "state": "running",
+              "step": 1333071,
+              "t": 515.732373714447
+            },
+            {
+              "app_memory_bytes": 1864507392,
+              "state": "running",
+              "step": 1335887,
+              "t": 516.8120005130768
+            },
+            {
+              "app_memory_bytes": 1864486912,
+              "state": "running",
+              "step": 1338703,
+              "t": 517.8880298137665
+            },
+            {
+              "app_memory_bytes": 1864376320,
+              "state": "running",
+              "step": 1342031,
+              "t": 519.0018332004547
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 1344847,
+              "t": 520.1071453094482
+            },
+            {
+              "app_memory_bytes": 1864433664,
+              "state": "running",
+              "step": 1347663,
+              "t": 521.1428716182709
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 1350479,
+              "t": 522.2179200649261
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 1353295,
+              "t": 523.2925488948822
+            },
+            {
+              "app_memory_bytes": 1864466432,
+              "state": "running",
+              "step": 1356111,
+              "t": 524.357714176178
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 1358927,
+              "t": 525.3946876525879
+            },
+            {
+              "app_memory_bytes": 1864425472,
+              "state": "running",
+              "step": 1361743,
+              "t": 526.4745802879333
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 1364495,
+              "t": 527.5487515926361
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 1367311,
+              "t": 528.6275734901428
+            },
+            {
+              "app_memory_bytes": 1864470528,
+              "state": "running",
+              "step": 1370127,
+              "t": 529.7978761196136
+            },
+            {
+              "app_memory_bytes": 1864470528,
+              "state": "running",
+              "step": 1372879,
+              "t": 530.8757021427155
+            },
+            {
+              "app_memory_bytes": 1864384512,
+              "state": "running",
+              "step": 1376271,
+              "t": 531.9486882686615
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 1379087,
+              "t": 533.0259931087494
+            },
+            {
+              "app_memory_bytes": 1864486912,
+              "state": "running",
+              "step": 1381199,
+              "t": 534.0593068599701
+            },
+            {
+              "app_memory_bytes": 1864421376,
+              "state": "running",
+              "step": 1384463,
+              "t": 535.195708990097
+            },
+            {
+              "app_memory_bytes": 1864466432,
+              "state": "running",
+              "step": 1387279,
+              "t": 536.2751622200012
+            },
+            {
+              "app_memory_bytes": 1864441856,
+              "state": "running",
+              "step": 1390095,
+              "t": 537.351628780365
+            },
+            {
+              "app_memory_bytes": 1864413184,
+              "state": "running",
+              "step": 1392911,
+              "t": 538.4258692264557
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 1395727,
+              "t": 539.5045745372772
+            },
+            {
+              "app_memory_bytes": 1864466432,
+              "state": "running",
+              "step": 1398543,
+              "t": 540.6145796775818
+            },
+            {
+              "app_memory_bytes": 1864474624,
+              "state": "running",
+              "step": 1401807,
+              "t": 541.7656502723694
+            },
+            {
+              "app_memory_bytes": 1864462336,
+              "state": "running",
+              "step": 1404623,
+              "t": 542.9100575447083
+            },
+            {
+              "app_memory_bytes": 1864511488,
+              "state": "running",
+              "step": 1407439,
+              "t": 543.9861166477203
+            },
+            {
+              "app_memory_bytes": 1864335360,
+              "state": "running",
+              "step": 1410255,
+              "t": 545.0885500907898
+            },
+            {
+              "app_memory_bytes": 1864921088,
+              "state": "running",
+              "step": 1413071,
+              "t": 546.1928827762604
+            },
+            {
+              "app_memory_bytes": 1864990720,
+              "state": "running",
+              "step": 1416527,
+              "t": 547.2701277732849
+            },
+            {
+              "app_memory_bytes": 1864962048,
+              "state": "running",
+              "step": 1419343,
+              "t": 548.3437151908875
+            },
+            {
+              "app_memory_bytes": 1864970240,
+              "state": "running",
+              "step": 1422159,
+              "t": 549.4188256263733
+            },
+            {
+              "app_memory_bytes": 1864974336,
+              "state": "running",
+              "step": 1424975,
+              "t": 550.5086462497711
+            },
+            {
+              "app_memory_bytes": 1864957952,
+              "state": "running",
+              "step": 1427791,
+              "t": 551.5894720554352
+            },
+            {
+              "app_memory_bytes": 1865007104,
+              "state": "running",
+              "step": 1430607,
+              "t": 552.6682779788971
+            },
+            {
+              "app_memory_bytes": 1864990720,
+              "state": "running",
+              "step": 1433423,
+              "t": 553.7426958084106
+            },
+            {
+              "app_memory_bytes": 1864998912,
+              "state": "running",
+              "step": 1436188,
+              "t": 554.831787109375
+            },
+            {
+              "app_memory_bytes": 1865015296,
+              "state": "running",
+              "step": 1439004,
+              "t": 555.9090299606323
+            },
+            {
+              "app_memory_bytes": 1865023488,
+              "state": "running",
+              "step": 1441820,
+              "t": 557.0224530696869
+            },
+            {
+              "app_memory_bytes": 1864851456,
+              "state": "running",
+              "step": 1444636,
+              "t": 558.0953350067139
+            },
+            {
+              "app_memory_bytes": 1864945664,
+              "state": "running",
+              "step": 1447452,
+              "t": 559.1735525131226
+            },
+            {
+              "app_memory_bytes": 1864990720,
+              "state": "running",
+              "step": 1450844,
+              "t": 560.2669765949249
+            },
+            {
+              "app_memory_bytes": 1864982528,
+              "state": "running",
+              "step": 1453660,
+              "t": 561.3439221382141
+            },
+            {
+              "app_memory_bytes": 1864966144,
+              "state": "running",
+              "step": 1456476,
+              "t": 562.4499192237854
+            },
+            {
+              "app_memory_bytes": 1864990720,
+              "state": "running",
+              "step": 1459292,
+              "t": 563.5268127918243
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 1462108,
+              "t": 564.6007995605469
+            },
+            {
+              "app_memory_bytes": 1864388608,
+              "state": "running",
+              "step": 1464924,
+              "t": 565.6736471652985
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 1467676,
+              "t": 566.7477922439575
+            },
+            {
+              "app_memory_bytes": 1864413184,
+              "state": "running",
+              "step": 1470492,
+              "t": 567.8565671443939
+            },
+            {
+              "app_memory_bytes": 1864429568,
+              "state": "running",
+              "step": 1473308,
+              "t": 568.9316878318787
+            },
+            {
+              "app_memory_bytes": 1864404992,
+              "state": "running",
+              "step": 1476124,
+              "t": 570.010897397995
+            },
+            {
+              "app_memory_bytes": 1864413184,
+              "state": "running",
+              "step": 1478940,
+              "t": 571.0845839977264
+            },
+            {
+              "app_memory_bytes": 1864282112,
+              "state": "running",
+              "step": 1481692,
+              "t": 572.1596188545227
+            },
+            {
+              "app_memory_bytes": 1864331264,
+              "state": "running",
+              "step": 1484508,
+              "t": 573.2254109382629
+            },
+            {
+              "app_memory_bytes": 1864368128,
+              "state": "running",
+              "step": 1487900,
+              "t": 574.3018107414246
+            },
+            {
+              "app_memory_bytes": 1864364032,
+              "state": "running",
+              "step": 1490012,
+              "t": 575.349193572998
+            },
+            {
+              "app_memory_bytes": 1864396800,
+              "state": "running",
+              "step": 1493404,
+              "t": 576.422233581543
+            },
+            {
+              "app_memory_bytes": 1864396800,
+              "state": "running",
+              "step": 1496220,
+              "t": 577.4935791492462
+            },
+            {
+              "app_memory_bytes": 1864400896,
+              "state": "running",
+              "step": 1499036,
+              "t": 578.6014919281006
+            },
+            {
+              "app_memory_bytes": 349011968,
+              "state": "checkpointing",
+              "step": 1500000,
+              "t": 579.6779856681824
+            },
+            {
+              "app_memory_bytes": 349011968,
+              "state": "checkpointing",
+              "step": 1500000,
+              "t": 580.7558810710907
+            },
+            {
+              "app_memory_bytes": 349011968,
+              "state": "checkpointing",
+              "step": 1500000,
+              "t": 581.8391523361206
+            },
+            {
+              "app_memory_bytes": 350093312,
+              "state": "completed",
+              "step": 1500000,
+              "t": 582.9204249382019
+            }
+          ],
+          "source_commit": "8752178b126b2d386b6d0eeb80631588893cf425",
+          "upload_s": 8.120859622955322,
+          "window_steps_per_s": [
+            2647.5618280179015,
+            2634.0891716908654,
+            2630.8583533645206,
+            2640.103956627827,
+            2646.7097337169193,
+            2633.0381139772185,
+            2623.1984380437457,
+            2628.5566619985725,
+            2640.052989160211
+          ]
+        }
+      ],
+      "peak_app_memory_bytes": 1865113600,
+      "upload_s": {
+        "last_over_first": 1.0,
+        "max": 8.120859622955322,
+        "median": 8.120859622955322,
+        "min": 8.120859622955322,
+        "n": 1
+      },
+      "verdict": "pass",
+      "window_steps_per_s": {
+        "last_over_first": 0.9971638664758541,
+        "max": 2647.5618280179015,
+        "median": 2634.0891716908654,
+        "min": 2623.1984380437457,
+        "n": 9
+      }
+    }
+  ],
+  "finished_utc": "2026-10-18T10:44:36+00:00",
+  "package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+  "package_lineage": {
+    "ci_head_commit": "8be9af06fda5d61146797f973c9f19165b63d50d",
+    "ci_msix_sha256": "e97079dbaa97571934cc090f48e896173a95a2854f155a85f3d67db99752c20c",
+    "ci_run": 39116571890,
+    "installed_binary_independently_downloaded": true,
+    "shader_sha256": "6517ea7fd6ad4a01bef3a997d7f485da714c965a66eee4f6debd6b42c0253eef",
+    "signed_msix_sha256": "18d0adf601a317f02a1024f829adc69e7aa7fe8f2e564793cfc21f33a7cb7b2a",
+    "signing": "repacked and signed with the development certificate; unpacked payloads of the CI and signed packages are identical",
+    "worker_source_commit": "8752178b126b2d386b6d0eeb80631588893cf425",
+    "worker_source_note": "PR #249 merge commit embedded as FLYMSG_COMMIT"
+  },
+  "platform": "Xbox Series S, Dev Mode",
+  "protocol": {
+    "activity": "looming escape drives DNp01 and TTMn (battery positive); bitter feeding is the battery negative that stays silent at MN9",
+    "cases": [
+      {
+        "jobs": 2,
+        "name": "setup-looming",
+        "per_bin": 100,
+        "seed": 600,
+        "steps": 20000,
+        "stimulus": "looming escape"
+      },
+      {
+        "jobs": 4,
+        "name": "sustained-looming",
+        "per_bin": 10000,
+        "seed": 601,
+        "steps": 500000,
+        "stimulus": "looming escape"
+      },
+      {
+        "jobs": 4,
+        "name": "sustained-bitter",
+        "per_bin": 10000,
+        "seed": 602,
+        "steps": 500000,
+        "stimulus": "bitter feeding"
+      },
+      {
+        "input_encoding": "sparse",
+        "jobs": 1,
+        "name": "long-looming-sparse",
+        "per_bin": 10000,
+        "seed": 603,
+        "steps": 1500000,
+        "stimulus": "looming escape"
+      }
+    ],
+    "console_cleanup": [
+      "fixture.bin",
+      "checkpoint.bin",
+      "output.bin"
+    ],
+    "declared": "2026-10-16, before any sustained measurement",
+    "job_timeout_factor": 4.0,
+    "model": "MaleCNS v1.0 default model, version-1 fixture (no graded or coupled neurons)",
+    "perf_period_s": 5.0,
+    "rate_hz": 100.0,
+    "revision": 4,
+    "revision_3": "cross-vendor review fixes, no change to cases or measures: a failed result or output read-back is recorded as `readback_failed`; the console copy is deleted only when the downloaded bytes match the worker's reported hash; a zero first window gives no last/first ratio instead of an exception",
+    "revision_4": "2026-10-18, before measuring it: adds `long-looming-sparse`, one 1,500,000-step looming job in the sparse kick encoding (fixture v3), beyond the ~760k-step cap that dense kicks hit within the 512 MiB GPU input budget; existing cases unchanged and not rerun",
+    "revision_reason": "attempt 1 (1d1fde5) kept each job's fixture, checkpoint and output on the console; the third 500k-step upload got HTTP 500 and the script stopped without a record. Revision 2 deletes a job's large files from the console once its output is downloaded and hashed, and records a Device Portal error as the job's final state",
+    "schema": "flymsg.console_sustained_protocol/v1",
+    "status_period_s": 1.0,
+    "v2_full_connectome": "not measured: no full-connectome version-2 configuration is exportable (per-neuron membranes are refused by flymsg.native), so only the synthetic graded lifecycle (scripts/console_lifecycle.py --extension graded) covers v2",
+    "verdicts": "per case: pass when every job completes with the oracle's output; fail on any other final state or output; throttling is reported, not judged",
+    "window_s": 60.0
+  },
+  "schema": "flymsg.console_sustained/v1",
+  "script": "scripts/console_sustained.py",
+  "shader_sha256": "6517ea7fd6ad4a01bef3a997d7f485da714c965a66eee4f6debd6b42c0253eef",
+  "started_utc": "2026-10-18T10:07:47+00:00"
+}

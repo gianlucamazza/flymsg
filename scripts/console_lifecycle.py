@@ -104,6 +104,7 @@ class Job:
         seed: int = SEED,
         scope: str = "lifecycle qualification fixture, not biological validation",
         extension: str = "none",
+        input_encoding: str = "dense",
     ):
         self.portal, self.package = portal, package
         self.id = str(uuid.uuid4())
@@ -112,13 +113,13 @@ class Job:
         self.rel = f"inbox\\{self.id}"
         self.rt = oracle(extension) if rt is None else rt
         fixture = self.folder / "fixture.bin"
-        meta = export_fixture(self.rt, fixture)
+        meta = export_fixture(self.rt, fixture, input_encoding=input_encoding)
         self.steps = int(meta["steps"])
         self.fixture = fixture
         self.job = {
             "schema": "flymsg.neural_job/v1",
             "job_id": self.id,
-            "semantics": "flymsg.lif/ordered-f32-v1",
+            "semantics": meta["semantics"],
             "backend": "dx12",
             "fixture_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
             "shader_sha256": shader_sha,
@@ -130,17 +131,21 @@ class Job:
             "scope": scope,
         }
 
-    def control(self, name: str, schema: str) -> None:
+    def control(self, name: str, schema: str, **fields) -> None:
         path = self.folder / name
-        path.write_text(json.dumps({"schema": schema, "job_id": self.id}) + "\n")
+        path.write_text(
+            json.dumps({**fields, "schema": schema, "job_id": self.id}) + "\n"
+        )
         self.portal.put(self.package, self.rel, path)
 
-    def submit(self) -> float:
+    def submit(self, *, fault_step: int | None = None) -> float:
         (self.folder / "job.json").write_text(
             json.dumps(self.job, sort_keys=True, indent=2) + "\n"
         )
         self.portal.mkdir(self.package, self.rel)
         self.portal.put(self.package, self.rel, self.fixture)
+        if fault_step is not None:
+            self.control("fault.json", "flymsg.worker_fault/v1", step=fault_step)
         self.portal.put(self.package, self.rel, self.folder / "job.json")
         return time.time()
 

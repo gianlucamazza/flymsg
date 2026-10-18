@@ -37,6 +37,12 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 
 **Exit:** at least one independently defensible sensory/neural input/output comparison is _eligible for prospective scoring_ with a frozen protocol. If source/registration/observation semantics remain absent, mark S1 blocked; an engineered Poisson encoder does not pass.
 
+**JO progress (2026-10-17):** protocol 6 now has a [source/identity/input design](jo-measured-input-design.md)
+and [accepted ADR](adr-measured-jo-input.md). The 146 selected MaleCNS bodies
+are an anatomical population, not 146 measured transfer functions. Absolute
+source calibration and sex transfer remain blocked; runtime implementation awaits
+ADR acceptance. This advances S1 design, not its scientific exit.
+
 ### S2 — Evidenced body coupling and causal geometry (P0)
 
 **Owner issues:** [#19](https://github.com/gianlucamazza/flymsg/issues/19), [#31](https://github.com/gianlucamazza/flymsg/issues/31), [#35](https://github.com/gianlucamazza/flymsg/issues/35), [#176](https://github.com/gianlucamazza/flymsg/issues/176), [#179](https://github.com/gianlucamazza/flymsg/issues/179), [#180](https://github.com/gianlucamazza/flymsg/issues/180).
@@ -57,6 +63,14 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 
 **Exit:** publish an independently scored preregistered test with a reproducible pass/fail/indeterminate/no-go and all controls. **Only a pass against untouched animal observations** satisfies the project's stated behavioral-completion claim. A properly documented failed or blocked run is valuable research but does not close that claim.
 
+**Dated progress (2026-10-17):** the [Baker audit](baker-crossmatch.md) completes
+anatomical routes for 12 of 28 classes, including the still-excluded dimorphic
+AVLP_pr36; 14 remain partial and two absent. The [M4 v2 proposal](m4-v2-proposal.md)
+records a scoped basis for noncommercial local analysis and publication review.
+This advances candidate identification, not S3 qualification: sex compatibility,
+[qualified measured JO input](jo-measured-input-design.md), observable qualification and the prospective partition/lock
+remain required. No response data were opened or benchmark scored.
+
 ### S4 — External reproduction and claim audit (P1; mandatory for research release)
 
 **Owner issue:** [#151](https://github.com/gianlucamazza/flymsg/issues/151).
@@ -71,7 +85,7 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 
 **Owner issues:** [#39](https://github.com/gianlucamazza/flymsg/issues/39) and [#224](https://github.com/gianlucamazza/flymsg/issues/224). Closed [#40](https://github.com/gianlucamazza/flymsg/issues/40) retains the worker baseline.
 
-**Available:** full-connectome GPU/CPU bit parity in measured runs; 12 version-1 plus 60 supported version-2 fixture cases bit-identical on physical Series S, with 12 declared dynamic-clamp refusals. The 2,048-neuron ordinary `both` lifecycle qualifies cancel, suspend and resume, not hard death or GPU fault. A native publish whose temporary file does not grow is recorded as `failed` and is not replaced. The graded million-step publish that stayed in `checkpointing` with an empty temporary file was not rerun and does not meet the exit of [#224](https://github.com/gianlucamazza/flymsg/issues/224). The [sustained v1 full-connectome workload](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-sustained-2026-10-16.json) passes cold/warm setup and four back-to-back 500,000-step jobs per stimulus bit for bit, at median advance rates of 2,649 steps/s looming and 3,693 steps/s bitter without throughput decline.
+**Available:** full-connectome GPU/CPU bit parity in measured runs; 12 version-1 plus 60 supported version-2 fixture cases bit-identical on physical Series S, with 12 declared dynamic-clamp refusals. The 2,048-neuron ordinary `both` lifecycle qualifies cancel, suspend and resume; a [noncooperative process kill](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-hardstop-2026-10-18.json) recovers bit for bit with and without a checkpoint. An [API-induced device removal](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-gpufault-2026-10-18.json) is handled and recovered bit for bit; a hardware GPU fault is not qualified. A native publish whose temporary file does not grow is recorded as `failed` and is not replaced. The graded million-step publish that stayed in `checkpointing` with an empty temporary file was not rerun and does not meet the exit of [#224](https://github.com/gianlucamazza/flymsg/issues/224). The [sustained v1 full-connectome workload](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-sustained-2026-10-16.json) passes cold/warm setup and four back-to-back 500,000-step jobs per stimulus bit for bit, at median advance rates of 2,649 steps/s looming and 3,693 steps/s bitter without throughput decline.
 
 **Exit:** adversarial numeric and resource boundaries; independently verified noncooperative termination and GPU/device-fault recovery; sustained representative load, transfer/OS/GPU memory and physical input evidence. If device fault cannot safely be injected, document a separate unqualified gate. No conflation of synthetic throughput with full-CNS real-time or neuromechanical parity.
 

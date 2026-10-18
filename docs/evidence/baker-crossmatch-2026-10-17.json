@@ -1,0 +1,655 @@
+{
+  "date": "2026-10-17",
+  "kind": "anatomical_identity_audit",
+  "physiological_responses_opened": false,
+  "benchmark_scored": false,
+  "materialization": {
+    "datastack": "flywire_fafb_public",
+    "version": 783,
+    "timestamp_utc": "2023-09-30T05:10:01.441140+00:00"
+  },
+  "sources": {
+    "table_s3": {
+      "url": "https://ars.els-cdn.com/content/image/1-s2.0-S0960982222009782-mmc2.xlsx",
+      "doi": "10.1016/j.cub.2022.06.019",
+      "sha256": "dfa65fe1f87fa5fd7c63d09388039e3fb04e0f888e03742dcba192519c5fc0ad"
+    },
+    "flywire_annotations_v3.2.0": {
+      "url": "https://raw.githubusercontent.com/flyconnectome/flywire_annotations/v3.2.0/supplemental_files/Supplemental_file1_neuron_annotations.tsv",
+      "sha256": "b214970b55d2fbe0853bba536fdcb9e28730f4eb7ab06f600491df795da683cd"
+    },
+    "male_neurons": {
+      "path": "data/neurons.parquet",
+      "sha256": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+    },
+    "male_raw_annotations": {
+      "path": "data/raw/body-annotations-male-cns-v1.0-minconf-0.5.feather",
+      "sha256": "2177e246113e4cfbf1e7772ec37c6da1955ff22e8063d0b1f833101f99a9a3b2"
+    }
+  },
+  "counts": {
+    "classes": 28,
+    "source_reconstructions": 404,
+    "historical_roots": 556,
+    "root_783_changed_from_v11": 243,
+    "root_783_changed_from_v274": 156,
+    "root_783_different_from_both_source_ids": 156,
+    "anchor_lineage_mismatches": 0,
+    "root_validity_checks": 404,
+    "annotation_supervoxel_checks": 404,
+    "annotation_supervoxel_mismatches": 0,
+    "male_raw_field_differences": 0,
+    "row_status": {
+      "complete": 332,
+      "male_token_missing": 63,
+      "annotation_missing": 2,
+      "male_type_missing": 7
+    },
+    "class_status": {
+      "complete": 12,
+      "partial": 14,
+      "absent": 2
+    }
+  },
+  "rules": {
+    "root": "Sample the Table S3 point at resolution [4,4,40] nm; map the supervoxel to its root at materialization 783. Require that root to be a descendant of BOTH source root IDs at the same cutoff; never select a lineage leaf by size or first position.",
+    "type": "Exact case-sensitive FlyWire cell_type token in MaleCNS flywireType, split only on comma or semicolon. Preserve one-to-many mappings and every male body ID; require at least one nonempty male type per source reconstruction for complete named-type coverage.",
+    "class_complete": "Every listed reconstruction of that Baker class has a complete named-type route. This is coverage, not a one-to-one class equivalence or an eligible physiological benchmark.",
+    "sex": "Empty dimorphism is not isomorphism; AVLP_pr36 remains excluded. No class is benchmark eligible."
+  },
+  "classes": [
+    {
+      "baker_type": "A2",
+      "source_neurons": 2,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 2
+      },
+      "candidate_flywire_types": ["CB1817b"],
+      "candidate_male_types": ["SAD097"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "B1",
+      "source_neurons": 117,
+      "status": "partial",
+      "row_status_counts": {
+        "complete": 110,
+        "male_token_missing": 6,
+        "annotation_missing": 1
+      },
+      "candidate_flywire_types": [
+        "CB1076",
+        "CB1078",
+        "CB1280",
+        "CB1425",
+        "CB1542",
+        "CB1702",
+        "CB2153",
+        "CB2475",
+        "CB2521",
+        "CB2556",
+        "CB2558",
+        "CB2664",
+        "CB2789",
+        "CB3437",
+        "CB3533",
+        "CB3581",
+        "CB3588",
+        "CB3631",
+        "CB3646",
+        "CB3673a",
+        "CB3673b",
+        "CB3692",
+        "CB3710",
+        "SAD052",
+        "SAD053",
+        "SAD064"
+      ],
+      "candidate_male_types": [
+        "AMMC034_a",
+        "AMMC034_b",
+        "CB1076",
+        "CB1078",
+        "CB1280",
+        "CB1542",
+        "CB1702",
+        "CB2153",
+        "CB2475",
+        "CB2521",
+        "CB2558",
+        "CB2664",
+        "CB2789",
+        "CB3437",
+        "CB3581",
+        "CB3588",
+        "CB3631",
+        "CB3646",
+        "CB3673a",
+        "CB3673b",
+        "CB3692",
+        "CB3710",
+        "SAD051_a",
+        "SAD051_b",
+        "SAD052",
+        "SAD053",
+        "SAD055",
+        "SAD057",
+        "SAD064"
+      ],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "B2",
+      "source_neurons": 6,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 6
+      },
+      "candidate_flywire_types": ["CB0090", "CB0758"],
+      "candidate_male_types": ["CB0090", "CB0758"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "WED-VLP",
+      "source_neurons": 28,
+      "status": "partial",
+      "row_status_counts": {
+        "complete": 24,
+        "male_type_missing": 4
+      },
+      "candidate_flywire_types": ["CB1206", "CB2108", "CB2449", "CB3234"],
+      "candidate_male_types": [
+        "CB1206",
+        "CB2108",
+        "WED063_a",
+        "WED063_b",
+        "WED065",
+        "WED066"
+      ],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr01",
+      "source_neurons": 19,
+      "status": "partial",
+      "row_status_counts": {
+        "complete": 16,
+        "male_token_missing": 3
+      },
+      "candidate_flywire_types": [
+        "AVLP006a",
+        "AVLP006b",
+        "CB1614",
+        "CB2114",
+        "CB2253",
+        "CB2364",
+        "LHAV4d1"
+      ],
+      "candidate_male_types": ["AVLP005", "LHAV4d1", "WED001"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr02",
+      "source_neurons": 6,
+      "status": "partial",
+      "row_status_counts": {
+        "male_token_missing": 6
+      },
+      "candidate_flywire_types": ["AVLP009"],
+      "candidate_male_types": [],
+      "male_dimorphism": [],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr04",
+      "source_neurons": 4,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 4
+      },
+      "candidate_flywire_types": ["AVLP535", "AVLP537", "AVLP538"],
+      "candidate_male_types": ["AVLP535", "AVLP537", "AVLP538"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr05",
+      "source_neurons": 25,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 25
+      },
+      "candidate_flywire_types": [
+        "AVLP486",
+        "AVLP560",
+        "CB1107",
+        "CB1380",
+        "CB1447",
+        "CB1660",
+        "CB2260",
+        "CL252",
+        "CL253",
+        "PLP160"
+      ],
+      "candidate_male_types": [
+        "AVLP481",
+        "AVLP483",
+        "AVLP484",
+        "AVLP485",
+        "AVLP486",
+        "AVLP560",
+        "CB1447",
+        "CL252",
+        "CL253",
+        "PLP160"
+      ],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr11",
+      "source_neurons": 15,
+      "status": "partial",
+      "row_status_counts": {
+        "complete": 14,
+        "male_type_missing": 1
+      },
+      "candidate_flywire_types": [
+        "CB2057",
+        "CB2281",
+        "CB2289",
+        "CB2428",
+        "CB2458",
+        "CB2659",
+        "CB2660",
+        "CB2777"
+      ],
+      "candidate_male_types": [
+        "AVLP166",
+        "AVLP168",
+        "AVLP175",
+        "AVLP179",
+        "AVLP188",
+        "CB2281",
+        "CB2458",
+        "CB2659",
+        "CB2660"
+      ],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr12",
+      "source_neurons": 13,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 13
+      },
+      "candidate_flywire_types": ["CL062_a", "CL062_b"],
+      "candidate_male_types": [
+        "CL062_a1",
+        "CL062_a2",
+        "CL062_b1",
+        "CL062_b2",
+        "CL062_b3"
+      ],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr18",
+      "source_neurons": 0,
+      "status": "absent",
+      "row_status_counts": {},
+      "candidate_flywire_types": [],
+      "candidate_male_types": [],
+      "male_dimorphism": [],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr22",
+      "source_neurons": 26,
+      "status": "partial",
+      "row_status_counts": {
+        "complete": 18,
+        "male_token_missing": 7,
+        "male_type_missing": 1
+      },
+      "candidate_flywire_types": [
+        "AVLP234a",
+        "AVLP235",
+        "CB1069",
+        "CB1187",
+        "CB1377",
+        "CB1917",
+        "CB2006",
+        "CB2041",
+        "CB2433",
+        "CB2574",
+        "CB2623",
+        "CB3287",
+        "CB3337"
+      ],
+      "candidate_male_types": [
+        "AVLP225_b1",
+        "AVLP225_b2",
+        "AVLP231",
+        "AVLP235",
+        "CB1187",
+        "CB2006",
+        "CB2041",
+        "CB2433",
+        "CB2623"
+      ],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr23",
+      "source_neurons": 2,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 2
+      },
+      "candidate_flywire_types": ["CB0148", "CB0264"],
+      "candidate_male_types": ["AVLP598", "WED193"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr24",
+      "source_neurons": 0,
+      "status": "absent",
+      "row_status_counts": {},
+      "candidate_flywire_types": [],
+      "candidate_male_types": [],
+      "male_dimorphism": [],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr31",
+      "source_neurons": 14,
+      "status": "partial",
+      "row_status_counts": {
+        "male_token_missing": 13,
+        "male_type_missing": 1
+      },
+      "candidate_flywire_types": [
+        "CB1762",
+        "CB1904",
+        "CB2510",
+        "CB2593",
+        "CB2930",
+        "CB3002",
+        "CB3006"
+      ],
+      "candidate_male_types": [],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr32",
+      "source_neurons": 3,
+      "status": "partial",
+      "row_status_counts": {
+        "male_token_missing": 3
+      },
+      "candidate_flywire_types": ["CB1730", "CB2510"],
+      "candidate_male_types": [],
+      "male_dimorphism": [],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr35",
+      "source_neurons": 2,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 2
+      },
+      "candidate_flywire_types": ["AVLP091"],
+      "candidate_male_types": ["AVLP091"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "AVLP_pr36",
+      "source_neurons": 16,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 16
+      },
+      "candidate_flywire_types": ["CB1090", "CB1783", "CB3269", "CB3313"],
+      "candidate_male_types": ["CB3269", "aSP10A_a", "aSP10A_b"],
+      "male_dimorphism": [
+        "potentially sexually dimorphic",
+        "sexually dimorphic",
+        "unannotated"
+      ],
+      "benchmark_eligible": false,
+      "sex_status": "excluded_dimorphic"
+    },
+    {
+      "baker_type": "AVLP/PVLP_pr01",
+      "source_neurons": 9,
+      "status": "partial",
+      "row_status_counts": {
+        "annotation_missing": 1,
+        "complete": 8
+      },
+      "candidate_flywire_types": [
+        "AVLP451a",
+        "AVLP451b",
+        "AVLP451c",
+        "AVLP457",
+        "AVLP459",
+        "CB1498",
+        "CB2624"
+      ],
+      "candidate_male_types": [
+        "AVLP451",
+        "AVLP452",
+        "AVLP457",
+        "AVLP459",
+        "CB1498",
+        "CB2624"
+      ],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "GNG_pr01",
+      "source_neurons": 9,
+      "status": "partial",
+      "row_status_counts": {
+        "complete": 8,
+        "male_token_missing": 1
+      },
+      "candidate_flywire_types": ["SAD017", "cM19"],
+      "candidate_male_types": ["PVLP046"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "IPS_pr01",
+      "source_neurons": 9,
+      "status": "partial",
+      "row_status_counts": {
+        "complete": 8,
+        "male_token_missing": 1
+      },
+      "candidate_flywire_types": ["WED025", "WED026", "WEDPN1A"],
+      "candidate_male_types": ["WED025", "WEDPN1A"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "IPS_pr02",
+      "source_neurons": 2,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 2
+      },
+      "candidate_flywire_types": ["CB0033"],
+      "candidate_male_types": ["WED208"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "IPS/WED_pr01",
+      "source_neurons": 13,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 13
+      },
+      "candidate_flywire_types": ["WED057"],
+      "candidate_male_types": ["WED057"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "PVLP_pr03",
+      "source_neurons": 18,
+      "status": "partial",
+      "row_status_counts": {
+        "male_token_missing": 8,
+        "complete": 10
+      },
+      "candidate_flywire_types": [
+        "CB0352",
+        "CB1507",
+        "CB2261",
+        "CB2278",
+        "CB2676",
+        "CB2853",
+        "CB3513a",
+        "CB3549",
+        "CB3582",
+        "CB3685"
+      ],
+      "candidate_male_types": ["AVLP204", "CB2676", "PVLP034", "PVLP047"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "SAD_pr01",
+      "source_neurons": 2,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 2
+      },
+      "candidate_flywire_types": ["CB0104"],
+      "candidate_male_types": ["SAD107"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "SAD_pr02",
+      "source_neurons": 14,
+      "status": "partial",
+      "row_status_counts": {
+        "complete": 7,
+        "male_token_missing": 7
+      },
+      "candidate_flywire_types": [
+        "CB1065",
+        "CB1198",
+        "CB1942",
+        "CB1969",
+        "CB3024",
+        "CB3105"
+      ],
+      "candidate_male_types": ["CB1065", "CB1942", "CB3024", "SAD104"],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "WED_pr01",
+      "source_neurons": 11,
+      "status": "complete",
+      "row_status_counts": {
+        "complete": 11
+      },
+      "candidate_flywire_types": [
+        "CB1533",
+        "CB1675",
+        "CB1818",
+        "WED089",
+        "WED091",
+        "WEDPN12"
+      ],
+      "candidate_male_types": [
+        "CB1533",
+        "CB1818",
+        "WED089",
+        "WED091",
+        "WED093",
+        "WEDPN12"
+      ],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    },
+    {
+      "baker_type": "WED_pr02",
+      "source_neurons": 19,
+      "status": "partial",
+      "row_status_counts": {
+        "complete": 11,
+        "male_token_missing": 8
+      },
+      "candidate_flywire_types": [
+        "CB1383",
+        "CB1760",
+        "CB1948",
+        "CB2228",
+        "CB3245",
+        "CB3491",
+        "SAD021_a",
+        "SAD021_c"
+      ],
+      "candidate_male_types": [
+        "CB1948",
+        "CB2228",
+        "CB3245",
+        "SAD021_a",
+        "SAD021_b",
+        "SAD021_c",
+        "WED055_b"
+      ],
+      "male_dimorphism": ["unannotated"],
+      "benchmark_eligible": false,
+      "sex_status": "not_established"
+    }
+  ]
+}
