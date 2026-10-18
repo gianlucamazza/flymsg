@@ -287,17 +287,51 @@ struct Worker {
     return doc && field(*doc, L"schema") == "flymsg.worker_cancel/v1" &&
            field(*doc, L"job_id") == id;
   }
+  std::optional<uint32_t> fault_request(const fs::path &folder,
+                                        const std::string &id) {
+    if (!fs::exists(folder / L"fault.json"))
+      return {};
+    const auto doc = try_read(folder / L"fault.json");
+    if (doc && field(*doc, L"schema") == "flymsg.worker_fault/v1" &&
+        field(*doc, L"job_id") == id && doc->HasKey(L"step") &&
+        doc->Lookup(L"step").ValueType() == JsonValueType::Number) {
+      const double step = doc->GetNamedNumber(L"step");
+      if (step > 0 && step <= UINT32_MAX && step == uint32_t(step))
+        return uint32_t(step);
+    }
+    JsonObject ignored;
+    ignored.Insert(L"error",
+                   JsonValue::CreateStringValue(
+                       L"fault.json ignored: invalid schema, identity "
+                       L"or step"));
+    write_json(folder / L"fault-observation.json", ignored);
+    return {};
+  }
   void execute(const fs::path &folder) {
     const auto doc = read_json(folder / L"job.json");
     const auto id = field(doc, L"job_id");
     flymsg::require(id == folder.filename().string(),
                     "job directory identity mismatch");
     status(folder, id, "validating", 0);
+    const auto semantics = field(doc, L"semantics");
     flymsg::require(field(doc, L"schema") == "flymsg.neural_job/v1" &&
-                        field(doc, L"semantics") == "flymsg.lif/ordered-f32-v1",
+                        (semantics == "flymsg.lif/ordered-f32-v1" ||
+                         semantics == "flymsg.lif/ordered-f32-v2" ||
+                         semantics == "flymsg.lif/ordered-f32-v3"),
                     "incompatible job contract");
     const auto fixture = folder / L"fixture.bin";
     const auto backend = field(doc, L"backend");
+    const auto fault = backend == "dx12" ? fault_request(folder, id)
+                                         : std::optional<uint32_t>{};
+    bool injected = false;
+    const std::function<bool(uint32_t)> inject =
+        fault ? std::function<bool(uint32_t)>([&](uint32_t cursor) {
+          if (injected || cursor < *fault)
+            return false;
+          injected = true;
+          return true;
+        })
+              : std::function<bool(uint32_t)>{};
     const auto hash = sha256(fixture);
     flymsg::require(hash == field(doc, L"fixture_sha256"),
                     "fixture hash mismatch");
@@ -311,10 +345,18 @@ struct Worker {
       flymsg::require(sha256(shader) == field(doc, L"shader_sha256"),
                       "shader hash mismatch");
     if (doc.HasKey(L"batch")) {
-      execute_batch(folder, doc, id, hash, backend, shader);
+      flymsg::require(semantics == "flymsg.lif/ordered-f32-v1",
+                      "incompatible batch semantics");
+      execute_batch(folder, doc, id, hash, backend, shader, inject);
       return;
     }
     flymsg::Runtime runtime(flymsg::read_words(fixture));
+    const auto expected_semantics =
+        runtime.input[1] == 4   ? "flymsg.lif/ordered-f32-v3"
+        : runtime.input[1] == 3 ? "flymsg.lif/ordered-f32-v2"
+                                : "flymsg.lif/ordered-f32-v1";
+    flymsg::require(semantics == expected_semantics,
+                    "fixture semantics mismatch");
     {
       std::lock_guard guard(telemetry_mutex);
       telemetry.total = runtime.input[3];
@@ -341,6 +383,8 @@ struct Worker {
                         "checkpoint shader mismatch");
       runtime.restore(folder / L"checkpoint.bin");
     }
+    flymsg::require(!fault || *fault > runtime.step,
+                    "fault step must exceed current step");
     auto reported = std::chrono::steady_clock::now() - std::chrono::seconds(1);
     const auto stop = [&](uint32_t cursor) {
       // progress at most four times a second: each update is a file replacement
@@ -358,7 +402,7 @@ struct Worker {
       const auto adapter = field(doc, L"expected_adapter");
       flymsg::require(!adapter.empty(), "GPU job requires adapter identity");
       flymsg::advance_gpu(runtime, runtime.input[3], shader.string(), stop,
-                          adapter);
+                          inject, adapter);
     } else
       while (runtime.step < runtime.input[3]) {
         runtime.advance_to(std::min(runtime.input[3], runtime.step + 64));
@@ -429,7 +473,8 @@ struct Worker {
   // the whole batch.
   void execute_batch(const fs::path &folder, const JsonObject &doc,
                      const std::string &id, const std::string &hash,
-                     const std::string &backend, const fs::path &shader) {
+                     const std::string &backend, const fs::path &shader,
+                     const std::function<bool(uint32_t)> &inject) {
     const auto spec = doc.GetNamedObject(L"batch");
     const auto batch_path = folder / L"batch.bin";
     flymsg::require(sha256(batch_path) == field(spec, L"sha256"),
@@ -461,6 +506,10 @@ struct Worker {
         continue; // done before an interruption
       const auto prepared = std::chrono::steady_clock::now();
       flymsg::Runtime runtime(flymsg::batch_fixture(base, batch, k));
+      // the job's semantics string is checked before this point; the rebuilt
+      // fixture must also be version 1, as export_batch guarantees
+      flymsg::require(runtime.input[1] == 1,
+                      "batches cover version-1 fixtures only");
       flymsg::require(runtime.input[3] == steps, "batch runs differ in length");
       const auto estimated = (base.size() + batch.size()) * 4ull +
                              runtime.input.size() * 8ull +
@@ -484,7 +533,7 @@ struct Worker {
         const auto adapter = field(doc, L"expected_adapter");
         flymsg::require(!adapter.empty(), "GPU job requires adapter identity");
         flymsg::advance_gpu(runtime, runtime.input[3], shader.string(), stop,
-                            adapter);
+                            inject, adapter);
       } else
         while (runtime.step < runtime.input[3]) {
           runtime.advance_to(std::min(runtime.input[3], runtime.step + 64));

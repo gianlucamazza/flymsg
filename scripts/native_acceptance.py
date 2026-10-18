@@ -70,9 +70,42 @@ EXTENSIONS["gap-all-free"] = {
 }
 
 
+# New cases leave every legacy fixture's construction and bytes unchanged.
+MEMBRANE = sim.Membrane(
+    idx=np.array([0, 2, 5, 7]),
+    tau_m=np.array([9.0, 13.0, 21.0, 17.0]),
+    tau_syn=np.array([2.0, 4.0, 6.0, 3.0]),
+    v_rest=np.array([-59.0, -63.0, -55.0, -66.0]),
+    v_th=np.array([-43.0, -48.0, -40.0, -51.0]),
+)
+EXTENSIONS.update(
+    {
+        "sparse": {},
+        "membrane": {"membrane": MEMBRANE},
+        "sparse-membrane": {"membrane": MEMBRANE},
+        "sparse-both": EXTENSIONS["both"],
+    }
+)
+
+
+def encoding(extension):
+    return "sparse" if extension.startswith("sparse") else "dense"
+
+
 # The qualification contract is intentionally independent of EXTENSIONS: deleting a
 # fixture must fail coverage, not silently shrink the set required for a pass.
-SUPPORTED = ("none", "graded", "gap", "spikelets", "both", "gap-all-free")
+SUPPORTED = (
+    "none",
+    "graded",
+    "gap",
+    "spikelets",
+    "both",
+    "gap-all-free",
+    "sparse",
+    "membrane",
+    "sparse-membrane",
+    "sparse-both",
+)
 REFUSED = "gap-continuous-refractory"
 REFUSAL_REASON = (
     "native continuous-clamp electrical coupling with refractory cells is unqualified"
@@ -156,7 +189,7 @@ def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
                 root / "checkpoint.bin",
             )
             try:
-                export_fixture(oracle, fixture)
+                export_fixture(oracle, fixture, input_encoding=encoding(ext))
             except NativeCapabilityError as exc:
                 unsupported.append(
                     {
