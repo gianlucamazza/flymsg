@@ -78,7 +78,10 @@ Until that input exists no new version is written and no recorded result is reru
    MANC type/neuron disagreement (140 of 623) is resolved before any per-neuron use. Without
    a published muscle → actuator pairing `motor_map.command` keeps refusing; NeuroMechFly's
    short jump does not become the missing force.
-6. **Completion (#36, M4).** First, a Johnston's organ input with a measured band-pass, or
+6. **Completion (#36, M4).** Follow the [measured JO input design](jo-measured-input-design.md)
+   and [accepted source-boundary ADR](adr-measured-jo-input.md).
+   Source acquisition/calibration and sex compatibility remain blocked; a calcium
+   band-pass alone is diagnostic. First, a Johnston's organ input with a measured band-pass, or
    tuned to the carrier, on exactly MaleCNS JO-A, JO-B and JO-D. Then a case still eligible
    in the frozen partition, other than song v1. Checked on 2026-10-16: the v1 manifest has
    none left. Its only scored held-out case, ORN_DM1 → DM1_lPN, ran and failed; ORN_V is

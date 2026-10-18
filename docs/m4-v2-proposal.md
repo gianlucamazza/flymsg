@@ -113,7 +113,10 @@ before the prospective lock.
 
 ## Blockers and owner decisions
 
-- Obtain protocol 6's JO input. No auditory case can be scored until then.
+- Obtain protocol 6's JO input under the [measured-input design](jo-measured-input-design.md)
+  and [accepted ADR](adr-measured-jo-input.md). The audited
+  calcium/population sources do not yet supply an eligible absolute JO-A/B/D input.
+  No auditory case can be scored until source, identity/sex and numerical gates pass.
 - Resolve the remaining missing FlyWire labels and MaleCNS identities listed in
   the [completed CAVE audit](baker-crossmatch.md). Token access and the root-ID
   update are verified; partial classes remain partial.
