@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **SF5 local replication protocol (#151).** Added a source-pinned clean-clone harness with isolated installation caches, compact-input hashes, a held-out read guard and exact archive comparisons. Registered three local reproduction candidates before execution; the harness has not been run. Added synthetic resume parity and checkpoint refusal coverage. Independent-operator replication remains open.
+
 - **Stimulus primitive.** `song.dead_time` moves verbatim to `flymsg.stimulus` (same object re-exported by `song`); giant-fiber looming no longer imports the song experiment. Behaviour, locks and outputs unchanged.
 
 - **Lock codec.** The YAML-subset parser and canonical content hash move from `prereg` to `flymsg.lock_codec`, so `locks` and `manifest` no longer depend on battery policy. Old names stay importable as the same objects; every lock hashes byte-identically.

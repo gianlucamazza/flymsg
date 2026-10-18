@@ -55,7 +55,9 @@ def test_chunked_and_checkpoint_resume_match_existing_kernel(tmp_path, p, silenc
         np.testing.assert_array_equal(actual.first_spike_ms, expected.first_spike_ms)
         np.testing.assert_array_equal(actual.traced, expected.traced)
     for name, value in runtime.snapshot().items():
-        np.testing.assert_array_equal(value, resumed.snapshot()[name])
+        restored = resumed.snapshot()[name]
+        assert restored.dtype == value.dtype and restored.shape == value.shape
+        assert restored.tobytes() == value.tobytes()
 
 
 def test_snapshot_is_detached_and_zero_step_is_noop():
@@ -180,3 +182,50 @@ def test_feedback_can_change_toy_body_and_neural_outputs():
     opened, opened_x = experiment(False)
     assert closed.counts.sum() > opened.counts.sum() == 0
     assert closed_x > opened_x == 0.001
+
+
+@pytest.mark.parametrize("damage", ["bytes", "missing", "field", "semantics"])
+def test_checkpoint_storage_and_numerical_mode_fail_closed(tmp_path, damage):
+    W, _, kwargs = fixture()
+    runtime = CpuRuntime(W, np.array([0]), **kwargs)
+    runtime.advance_to(217)
+    before = runtime.snapshot()
+    path = tmp_path / "state.npz"
+    runtime.checkpoint(path)
+    if damage == "bytes":
+        path.write_bytes(b"corrupted checkpoint")
+    elif damage == "missing":
+        path.unlink()
+    else:
+        with np.load(path, allow_pickle=False) as archive:
+            saved = {name: archive[name] for name in archive.files}
+        if damage == "field":
+            del saved["v"]
+        else:
+            meta = json.loads(str(saved["metadata"]))
+            meta["semantics"] = "different-backend-or-numerical-mode"
+            saved["metadata"] = np.array(json.dumps(meta))
+        np.savez(path, **saved)
+    with pytest.raises((ValueError, FileNotFoundError)):
+        runtime.restore(path)
+    assert runtime.step == 217
+    for name, value in before.items():
+        assert runtime.snapshot()[name].tobytes() == value.tobytes()
+
+
+def test_changed_runtime_numerical_mode_refuses_old_checkpoint(tmp_path, monkeypatch):
+    from flymsg import runtime as module
+
+    W, _, kwargs = fixture()
+    old = CpuRuntime(W, np.array([0]), **kwargs)
+    old.advance_to(217)
+    path = tmp_path / "state.npz"
+    old.checkpoint(path)
+    monkeypatch.setattr(module, "SEMANTICS", "flymsg.lif/other-numerical-mode")
+    changed = CpuRuntime(W, np.array([0]), **kwargs)
+    before = changed.snapshot()
+    with pytest.raises(ValueError, match="incompatible"):
+        changed.restore(path)
+    assert changed.step == 0
+    for name, value in before.items():
+        assert changed.snapshot()[name].tobytes() == value.tobytes()

@@ -175,3 +175,65 @@ def test_dirty_source_is_refused(tmp_path, monkeypatch):
     )
     with pytest.raises(ValueError, match="clean committed"):
         runstore.execution("fixture", {}, {}, {})
+
+
+def test_managed_steps_neural_workload_matches_uninterrupted_bytes(tmp_path):
+    """Real Steps persistence of small synthetic neural arms, through managed.execute."""
+    from argparse import Namespace
+
+    import numpy as np
+    from scipy import sparse
+
+    from flymsg import managed
+    from flymsg.runtime import CpuRuntime
+
+    identity = {
+        **IDENTITY,
+        "params": {"seed": 5},
+        "backend": "cpu",
+        "numerical_mode": "ordered-f32",
+    }
+    graph = sparse.csc_matrix(np.array([[0, 0], [50, 0]], dtype=np.float32))
+    calls = []
+
+    def command(a, neurons, edges):
+        steps = progress.Steps(a._run.root / "steps", identity)
+        tables = []
+        for arm in range(3):
+
+            def compute(arm=arm):
+                calls.append(arm)
+                if a.interrupt and arm == 1:
+                    raise KeyboardInterrupt
+                runtime = CpuRuntime(
+                    graph,
+                    np.array([0]),
+                    steps=100,
+                    per_bin=10,
+                    kicks=np.random.default_rng(5 + arm).poisson(0.3, (100, 1)),
+                )
+                runtime.advance_to(100)
+                return {"counts": pd.DataFrame(runtime.result().counts)}
+
+            table, _ = steps.get(f"arm-{arm}", compute)
+            tables.append(table["counts"])
+        pd.concat(tables).to_csv(a._run.output / "counts.csv", index=False)
+        (a._run.output / "manifest.json").write_text("{}")
+
+    def execute(base, interrupt):
+        a = Namespace(cmd="fixture", out=base, interrupt=interrupt, dataset="synthetic")
+        managed.execute(a, [], [], command, (identity, {}, {}))
+        return runstore.Run(base, identity).root / "output" / "counts.csv"
+
+    # verify_execution normally binds real source/data/environment; fixture has none.
+    from unittest.mock import patch
+
+    with patch.object(runstore, "verify_execution"):
+        expected = execute(tmp_path / "continuous", False).read_bytes()
+        calls.clear()
+        with pytest.raises(KeyboardInterrupt):
+            execute(tmp_path / "resumed", True)
+        calls.clear()
+        actual = execute(tmp_path / "resumed", False).read_bytes()
+    assert calls == [1, 2]  # completed arm zero was loaded from disk
+    assert actual == expected

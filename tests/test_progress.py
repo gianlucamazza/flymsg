@@ -95,3 +95,33 @@ def test_typed_table_roundtrips_strings_missing_values_and_index(tmp_path):
     loaded, fresh = steps.get("s1", lambda: pytest.fail("recomputed"))
     assert not fresh
     pd.testing.assert_frame_equal(loaded["typed"], table, check_exact=True)
+
+
+@pytest.mark.parametrize("damage", ["missing-table", "missing-record", "extra"])
+def test_missing_or_extra_step_artifacts_are_refused(tmp_path, damage):
+    steps = progress.Steps(tmp_path, {"source": "abc"})
+    steps.get("s1", lambda: {"t": pd.DataFrame({"value": [1 / 7]})})
+    if damage == "extra":
+        (tmp_path / "s1" / "unexpected").write_text("extra")
+    else:
+        (
+            tmp_path
+            / "s1"
+            / ("t.parquet" if damage == "missing-table" else "step.json")
+        ).unlink()
+    with pytest.raises(ValueError):
+        steps.get("s1", lambda: pytest.fail("corrupt completed step recomputed"))
+
+
+@pytest.mark.parametrize("field", ["params", "backend", "numerical_mode"])
+def test_changed_execution_policy_cannot_reuse_steps(tmp_path, field):
+    identity = {
+        "params": {"w_syn": 1},
+        "backend": "cpu",
+        "numerical_mode": "ordered-f32",
+    }
+    progress.Steps(tmp_path, identity).get(
+        "s1", lambda: {"t": pd.DataFrame({"value": [1 / 7]})}
+    )
+    with pytest.raises(ValueError, match="another execution"):
+        progress.Steps(tmp_path, {**identity, field: "changed"})

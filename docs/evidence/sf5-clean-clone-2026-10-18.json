@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-18",
+  "results": {
+    "negative": {
+      "command": "jump3d --run",
+      "config_matches": true,
+      "hashes_match": true,
+      "outputs_sha256": {
+        "report.txt": "ff03c24c7025a2d759be18eb7032f121f4de4cf2167f0472a857e5c4f252c82f",
+        "seeds.json": "81cca66cb01227014c571eef29be4158ce8b0bebce70f5aeb7c1952bdaecbda9"
+      },
+      "passed": true,
+      "result": "results/jump3d/v1",
+      "seeds_match": true,
+      "source_commit": "c05878d9e12331d0abf45477561abaa9c84ba1b6",
+      "source_matches": true,
+      "verdict": "short",
+      "verdict_matches": true
+    },
+    "no-go": {
+      "command": "gf-looming --run",
+      "config_matches": true,
+      "hashes_match": true,
+      "outputs_sha256": {
+        "model.csv": "265915aea55e05ed943a4472718337710d7ecfd5d91c3454d152eb371f34aeb5",
+        "report.txt": "7935ef3b5e0226ea7488c3c2900b87b162e7ccc4d86fe838d9e0bab3bcd2da3a",
+        "runs.csv": "c8d815259474e7ef7a823c617ae723d154646a45e3c239f3ea9a1f69e39cadd7"
+      },
+      "passed": true,
+      "result": "results/gf_looming/v1",
+      "seeds_match": true,
+      "source_commit": "0579ad8ddc5fd602234f7edb64fd22696c837ef6",
+      "source_matches": true,
+      "verdict": "uninformative: no-go",
+      "verdict_matches": true
+    },
+    "positive": {
+      "command": "convergence --run",
+      "config_matches": true,
+      "hashes_match": true,
+      "outputs_sha256": {
+        "cells.csv": "ea9fc10956feda99d08fbf575ebd5ca9245d4ce5eae362d1470f6244d71fb15f",
+        "judged.csv": "7afda8567a0397140143ab43da3e87b767bfeb212e4db600e7681bd0307937ef",
+        "report.txt": "57a226ffd2a24cdaeacda79e6f083f6e6019d81d3f0b293bd71fb8e35697df11"
+      },
+      "passed": true,
+      "result": "results/convergence/v1.executions/be1ac2741e08d8f0432fd49fed5ebd74fab5062d79cb280a39637f49ae31997c/output",
+      "seeds_match": true,
+      "source_commit": "7c4d34d382018931e92021d41377aecd53557c73",
+      "source_matches": true,
+      "verdict": "converged",
+      "verdict_matches": true
+    }
+  },
+  "schema": "flymsg.clean-clone-replication-summary/v1",
+  "scope": "same-machine, same-operator; no independent sign-off"
+}
