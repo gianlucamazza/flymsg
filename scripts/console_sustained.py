@@ -34,7 +34,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from console_gpu_parity import ADAPTER, Portal
-from console_lifecycle import Job
+from console_lifecycle import Job, app_call
 from native_acceptance import check
 
 from flymsg import data, sensitivity, sim, validate
@@ -362,13 +362,22 @@ if __name__ == "__main__":
         "shader_sha256": sha,
         "cases": [],
     }
-    for case in PROTOCOL["cases"]:
-        if a.case and case["name"] not in a.case:
-            continue
-        report["cases"].append(run_case(portal, a, sha, model, case))
-        (a.out / "report.json").write_text(
-            json.dumps(report, indent=2, sort_keys=True) + "\n"
-        )
+    try:
+        for case in PROTOCOL["cases"]:
+            if a.case and case["name"] not in a.case:
+                continue
+            report["cases"].append(run_case(portal, a, sha, model, case))
+            (a.out / "report.json").write_text(
+                json.dumps(report, indent=2, sort_keys=True) + "\n"
+            )
+    finally:
+        # leave the console idle on Home whatever happened
+        try:
+            app_call(portal, "DELETE", a.package, "")
+            report["worker_stopped"] = True
+        except PortalError as exc:
+            report["worker_stopped"] = False
+            report["worker_stop_error"] = str(exc)
     report["finished_utc"] = datetime.now(UTC).isoformat(timespec="seconds")
     (a.out / "report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n"
