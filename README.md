@@ -291,7 +291,7 @@ under its date.
 | [integrity audit](docs/integrity-audit-2026-10-13.md)                                 | engineering audit of 2026-10-13 and its resolution ledger                                                       |
 | [ADR: gap refractory](docs/adr-gap-refractory.md)                                     | electrical coupling with refractory clamps; dense and Taylor solvers                                            |
 | [ADR: run integrity](docs/adr-run-integrity.md)                                       | immutable run identity, resumable steps, finalization                                                           |
-| [ADR: module boundaries](docs/adr-module-boundaries.md)                               | proposed logical layers, compatibility invariants and staged PR gates                                           |
+| [ADR: module boundaries](docs/adr-module-boundaries.md)                               | logical layers, compatibility invariants and staged PR gates (accepted)                                         |
 | [documentation catalog](docs/catalog.md)                                              | document categories, authority and purpose                                                                      |
 | [ADR: virtual experimental environment](docs/adr-virtual-experimental-environment.md) | the optional WebXR observer, kept apart from the experimental environment                                       |
 | [ADR: body wiring](docs/adr-body-wiring.md)                                           | one clock and causal order for a 3D body through B6 v2; unmeasured components refuse                            |

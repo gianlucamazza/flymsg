@@ -1,7 +1,7 @@
 # ADR: logical module boundaries and staged organization
 
-Status: proposed, 2026-10-18. Pending owner acceptance. No implementation
-beyond documentation and Pages registration is authorized by this proposal.
+Status: accepted by the owner through the merge instruction, 2026-10-18 (proposed the
+same day). Each implementation step remains its own reviewed PR with the gates below.
 The accepted [architecture](architecture.md) remains unchanged.
 
 ## Context

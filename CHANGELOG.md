@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Module boundaries (proposal).** Added a proposed ADR with logical layers, compatibility invariants and eight staged PR gates, plus a documentation authority catalog. Pending owner acceptance; no modules or scientific artifacts moved.
+- **Module boundaries (ADR accepted 2026-10-18).** Added an ADR with logical layers, compatibility invariants and eight staged PR gates, plus a documentation authority catalog. No modules or scientific artifacts moved.
 
 - **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
 
