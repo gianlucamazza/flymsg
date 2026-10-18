@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Stimulus primitive.** `song.dead_time` moves verbatim to `flymsg.stimulus` (same object re-exported by `song`); giant-fiber looming no longer imports the song experiment. Behaviour, locks and outputs unchanged.
+
 - **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
 
 - **Entry protocols.** `docs/issue-resolution.md` states, per blocked front (eye, junctions and modulation, looming, head, muscles, completion), the stimulus, readout, only admissible input and control. No new version is written before its input exists. Docs only.
