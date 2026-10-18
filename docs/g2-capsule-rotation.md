@@ -1,6 +1,6 @@
 # G2: eyemap → head-capsule rotation (feasibility, 2026-10-18)
 
-Status: **feasible, not measured, protocol not locked.** This is half of the head
+Status: **feasible, not measured, protocol not locked; landmarks algorithmic, measurement deferred.** This is half of the head
 registration: the rotation from the Zhao et al. 2025 eyemap frame to a head-capsule frame
 built from the landmarks the Ispizua, Abe et al. 2026 pipeline tracks (`Antenna_Base`,
 `EyeL`, `EyeR`). It composes later with a measured head-to-thorax angle, which is still
@@ -26,10 +26,19 @@ Feasibility by an agent, with key facts re-checked; no angle has been computed.
   equator is the authors' labels; flymsg's left eye is a mirror, so yaw, roll or a lateral
   shift cannot enter `Registration` without a contract change.
 
-**Open decision before locking: who places the landmarks.** The draft below asks for two
-raters with two blind passes each. That needs human raters with a 3D viewer, or a
-landmark definition written as an algorithm before any volume is processed. A language
-model reading 2D renders is not counted as a rater.
+**Decision (2026-10-18): the landmarks are placed by an algorithm, not by raters.** No
+human raters with a 3D viewer are available, and a language model reading 2D renders is not
+counted as a rater. The landmark definitions below become code, committed with tests on
+synthetic volumes before any of the three volumes is processed by it; the code is then part
+of the locked protocol. The "Raters" section is replaced by a sensitivity check: each
+landmark is recomputed with `t` moved by ±1 voxel per axis and the cuticle threshold moved
+by ±10 %, and the head is discarded if any landmark moves by more than the same **25 µm**.
+That spread is reported in micrometres and degrees, separate from the between-fly SD.
+
+**Priority: deferred.** This rotation is only the eyemap → capsule half. It cannot enter
+`Registration` until a measured head-to-thorax angle exists, and the only candidate source
+is the undeposited Ispizua landmark set ([leads](https://github.com/gianlucamazza/flymsg/blob/main/docs/leads.md), G2). The algorithm is written when
+that request has an answer, so the measurement is not left unused.
 
 ## Protocol draft (not locked)
 
@@ -54,7 +63,7 @@ The following is the text to freeze. Changing a number after the first angle has
 - `EyeL`, `EyeR`: the dorso-posterior cuticle tip of each compound eye, dorsal as given by `vn` (the UP side), posterior as the side toward the thoracic fragment. The point is the cuticle corner beyond the last lenses. Left and right are assigned by `ind_left_lens`, so `EyeL` is the fly's left.
 - Length gate, from the head-scout protocol: reject the head if `|Antenna_Base − E| < 0.05` mm or `> 0.80` mm, or if the posterior eye margin of either eye is cut by the reconstruction field.
 
-**Raters.** Two raters. Each clicks each of the three points twice, on separate passes, with the previous click hidden. All twelve numbers (2 × 2 × 3) are stored before any frame is built. If the two raters' means for any point differ by more than **25 µm**, that head is discarded or both raters repeat the whole head. The 25 µm figure is the Ispizua tracking-error scale used by the head scout. It is not refit after seeing a pitch. Within-rater SD and between-rater SD are reported in micrometres and in degrees, separate from the between-fly SD.
+**Raters (superseded by the 2026-10-18 decision above; kept as drafted).** Two raters. Each clicks each of the three points twice, on separate passes, with the previous click hidden. All twelve numbers (2 × 2 × 3) are stored before any frame is built. If the two raters' means for any point differ by more than **25 µm**, that head is discarded or both raters repeat the whole head. The 25 µm figure is the Ispizua tracking-error scale used by the head scout. It is not refit after seeing a pitch. Within-rater SD and between-rater SD are reported in micrometres and in degrees, separate from the between-fly SD.
 
 **Angle.** Positive pitch is nose-down: `Ry(θ)` with rows `[cos θ, 0, sin θ]`, `[0, 1, 0]`, `[−sin θ, 0, cos θ]`, acting on eyemap vectors to produce capsule vectors. Publish, per head, pitch, yaw, roll, and the eyemap-frame y coordinate of `E`. Across heads, publish the mean pitch and the sample SD with divisor n − 1. n = 3. If a head is discarded, n drops and the discard is named. There is no replacement head in this dataset.
 
