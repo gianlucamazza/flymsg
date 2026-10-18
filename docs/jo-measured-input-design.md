@@ -69,8 +69,8 @@ unilaterality. Do not invent right D cells or mirror their spike trains.
 | JO-DA, JO-DP                   |         5, 3 | 5/0, 3/0            |
 
 The **37 `-unclear` bodies remain subgroup-only**. Body `308087` lacks a
-`flywireType`; `138093763` has MaleCNS `JO-B-unclear` but FlyWire `JO-B1_a`:
-retain the discrepancy rather than silently upgrading it. All selected male
+`flywireType`; `138093763` is MaleCNS `JO-B-unclear` with `flywireType`
+`JO-B`, so neither names a subtype and neither is upgraded. All selected male
 `dimorphism` fields are absent. Female raw annotations have 412 selected rows,
 all annotated `isomorphic`; processed female parquet has 411, including no
 root `720575940616042508`, and includes JO-A5 absent from the male selection.
