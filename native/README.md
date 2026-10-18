@@ -92,7 +92,7 @@ The native lane now supports two opt-in fixture extensions. These implement the
 requested input/membrane contract; the original scientific update order and all
 version-1/version-2 fixture bytes stay unchanged. Earlier per-neuron native
 refusals in this document describe the implementation before this update.
-Physical GPU qualification of these new formats remains pending.
+On 2026-10-18 the Series S passed all 120 parity cases and one 1.5M-step full-connectome sparse looming job ([issue resolution](../docs/issue-resolution.md)).
 
 ```python
 export_fixture(runtime, path, input_encoding="sparse")
@@ -152,5 +152,22 @@ their bytes. `console_gpu_parity.py --v2` includes the new cases along with the
 older extensions; a current worker and shader are required. CPU checks cover
 byte-identical dense/sparse outputs, resume, exporter reconstruction, an input
 whose hypothetical dense encoding exceeds 512 MiB, and non-uniform membrane
-parity with `CpuRuntime` and `sim.run`. These software checks do not establish
-console parity, sustained performance or biological qualification.
+parity with `CpuRuntime` and `sim.run`. These software checks are not biological qualification.
+
+`fault.json` is a **test-hardware-only** control for API-induced, process-local GPU
+removal (documented `RemoveDevice`, not a hardware fault): `{"schema":"flymsg.worker_fault/v1","job_id":"<folder-id>","step":200000}`.
+Publish it before `job.json`, or before explicit resume while stopped. Only DX12
+jobs read it, once at execution start. The step must be an unsigned integer
+strictly beyond the restored cursor; invalid schema/identity/step is ignored and
+recorded in `fault-observation.json` (a step at/before restoration fails validation).
+The file is never consumed or deleted. No control means no injection, with the
+same binary and no build flag. Both single and batch GPU advances accept the
+control; batch steps refer to the per-run cursor and injection occurs once per
+job execution. `ID3D12Device5` is queried before dispatch; its absence on a requested
+test fails with `fault injection unavailable`. Otherwise RemoveDevice is called
+once after submission and Signal, and the existing polling/quarantine path raises
+`GpuFault` with GetDeviceRemovedReason in hex. The worker records failed and exits
+before writing a completed result/output for that advance. Earlier batch outputs
+remain evidence. Restart the process to restore; no persistent device setting is
+changed. Use the prospective [GPU fault protocol](../docs/issue-resolution.md#gpu-device-removal--protocol-2026-10-18)
+and `scripts/console_gpufault.py`; hardware results remain unmeasured.

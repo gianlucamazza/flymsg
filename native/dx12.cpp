@@ -3,7 +3,9 @@
 #include <cstring>
 #include <d3d12.h>
 #include <dxgi1_4.h>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <wrl/client.h>
 
 namespace flymsg {
@@ -131,6 +133,7 @@ std::wstring hardware_adapter() {
 }
 void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
                  const std::function<bool(uint32_t)> &stop,
+                 const std::function<bool(uint32_t)> &inject,
                  const std::string &expected_adapter) {
   require(target >= runtime.step && target <= runtime.input[3],
           "invalid GPU target");
@@ -154,6 +157,9 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
     require(std::wstring(description.Description) ==
                 std::wstring(expected_adapter.begin(), expected_adapter.end()),
             "BLOCKED: unexpected GPU adapter identity");
+  ComPtr<ID3D12Device5> removal;
+  device.As(&removal); // Optional test capability, queried before any dispatch.
+  require(!inject || removal.Get() != nullptr, "fault injection unavailable");
   D3D12_FEATURE_DATA_D3D12_OPTIONS options{};
   check(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options,
                                     sizeof(options)),
@@ -270,12 +276,17 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   upload(initial.Get(), runtime.state);
   uint64_t serial = 0;
   bool in_flight = false;
-  auto submit = [&]() {
+  bool injected = false;
+  auto submit = [&](uint32_t cursor) {
     check(list->Close(), "close list");
     ID3D12CommandList *lists[] = {list.Get()};
     in_flight = true;
     queue->ExecuteCommandLists(1, lists);
     check(queue->Signal(fence.Get(), ++serial), "signal");
+    if (inject && !injected && inject(cursor)) {
+      injected = true;
+      removal->RemoveDevice();
+    }
     check(fence->SetEventOnCompletion(serial, event.value), "arm completion");
     const auto begin = GetTickCount64();
     while (fence->GetCompletedValue() < serial) {
@@ -314,7 +325,7 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
         block_end = plan.end;
         block_count = plan.last - plan.first;
         // Complete the previous copy before mapping its upload heap again.
-        submit();
+        submit(tick);
         block.resize(prefix);
         block.insert(block.end(),
                      runtime.input.begin() + prefix + 4 * plan.first,
@@ -377,7 +388,7 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
           barrier.UAV.pResource = nullptr; // state and the delivery bitset
           list->ResourceBarrier(1, &barrier);
         }
-      submit();
+      submit(tick);
       completed = tick;
       if (stop && stop(completed))
         break;
@@ -385,7 +396,7 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
     transition(list.Get(), state.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
                D3D12_RESOURCE_STATE_COPY_SOURCE);
     list->CopyBufferRegion(readback.Get(), 0, state.Get(), 0, bytes);
-    submit();
+    submit(completed);
     void *memory = nullptr;
     D3D12_RANGE range{0, bytes};
     check(readback->Map(0, &range, &memory), "readback map");
@@ -398,6 +409,12 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
     // host must exit/restart after this fault; releasing them can block
     // forever.
     if (in_flight) {
+      const auto reason = device->GetDeviceRemovedReason();
+      std::ostringstream message;
+      message << "GPU runtime quarantined (device removed HRESULT 0x"
+              << std::hex << std::uppercase << std::setfill('0') << std::setw(8)
+              << uint32_t(reason) << "); restart the worker process";
+      removal.Detach();
       inputs.Detach();
       inputs_upload.Detach();
       outs.Detach();
@@ -414,7 +431,7 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
       allocator.Detach();
       queue.Detach();
       device.Detach();
-      throw GpuFault("GPU runtime quarantined; restart the worker process");
+      throw GpuFault(message.str());
     }
     throw;
   }

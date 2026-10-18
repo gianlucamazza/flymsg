@@ -131,17 +131,21 @@ class Job:
             "scope": scope,
         }
 
-    def control(self, name: str, schema: str) -> None:
+    def control(self, name: str, schema: str, **fields) -> None:
         path = self.folder / name
-        path.write_text(json.dumps({"schema": schema, "job_id": self.id}) + "\n")
+        path.write_text(
+            json.dumps({**fields, "schema": schema, "job_id": self.id}) + "\n"
+        )
         self.portal.put(self.package, self.rel, path)
 
-    def submit(self) -> float:
+    def submit(self, *, fault_step: int | None = None) -> float:
         (self.folder / "job.json").write_text(
             json.dumps(self.job, sort_keys=True, indent=2) + "\n"
         )
         self.portal.mkdir(self.package, self.rel)
         self.portal.put(self.package, self.rel, self.fixture)
+        if fault_step is not None:
+            self.control("fault.json", "flymsg.worker_fault/v1", step=fault_step)
         self.portal.put(self.package, self.rel, self.folder / "job.json")
         return time.time()
 
