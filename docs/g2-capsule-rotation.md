@@ -51,7 +51,7 @@ The following is the text to freeze. Changing a number after the first angle has
 - Export µm: recovered as `center + scores @ rotation.T` from `eye_pca`, sorted as R `order(x,y,z)`.
 - Eyemap: `p_eyemap = (p_µm − center) @ mrot`, with `mrot` from `proc_uCT.R` lines 36–79 using `ind_Up` and `ind_Down`. Saved `vn`, `vf`, `vleft` are ignored.
 - TIFF voxel `v` → export µm by `p_µm = (v − t) * s`, where `s` is the `Info.JPG` pixel size of that zip and `t` is the translation below.
-- Capsule: origin `E = (EyeL + EyeR) / 2`, `+x` along `Antenna_Base − E`, `+y` the fly's left along `EyeL − EyeR`, `+z` dorsal = `y × x`, right-handed. Built from points already in the eyemap frame.
+- Capsule: origin `E = (EyeL + EyeR) / 2`, `+y` the fly's left, the unit vector along `EyeL − EyeR`; `+x` anterior, `Antenna_Base − E` with its `+y` component removed, normalised; `+z` dorsal = `x × y`, right-handed. Built from points already in the eyemap frame.
 
 **Zip check, per head, before clicks.** A slab of the lens cloud must follow both corneal rims under `(identity permutation, no flip, s from Info.JPG)`. If it does not, that zip is not that `RData`, and the head is not measured. Expected, and confirmed only for the first: `20240701` ↔ `20240710_PTA.zip` at `s = 1.0065` µm. `20240530` ↔ `20240530_PTA.zip` and `20231107` ↔ `2023110_PTA7.zip` are name hypotheses.
 
