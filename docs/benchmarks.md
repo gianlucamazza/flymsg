@@ -270,6 +270,12 @@ choose the test after the olfactory failure and the silence failure. A later cas
 still needs a new version and a source that did not select the model. This note does
 not add that source.
 
+The [M4 v2 proposal](m4-v2-proposal.md) is the prospective path for a new source.
+Its [Baker identity audit](baker-crossmatch.md) extends anatomical coverage without
+opening responses or creating a new partition. Remaining scientific eligibility
+and publication conditions are recorded there. Neither document changes this
+frozen v1 manifest, promotes an exploratory row, or supplies a scored result.
+
 ## Confirmatory test
 
 One case: stimulate **ORN_DM1** and score **DM1_lPN**. Couto, Alenius and Dickson

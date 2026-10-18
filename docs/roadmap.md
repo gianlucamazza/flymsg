@@ -143,7 +143,7 @@ three stay off unless a lock names them.
 | [#84](https://github.com/gianlucamazza/flymsg/issues/84) eye                                                          | No measured Drosophila release curve. The column → direction table exists. T4/T5 v2, v3 and v4: robust neither; in v4 a 16-fold lamina → medulla gain at an LMC rate of 200 Hz brings the medulla to the order of the measured swings (symmetric, where the recordings are not) and T4 stays unselective | A measured lamina → medulla gain or LMC release curve, judged against Maisak et al. 2013                                                                                                                                                                                                     | [eye](eye.md): geometry, `eye.edge_coverage`, `sim.Graded`, `validation/t4t5.yaml` v4 (run: robust neither)                                |
 | [#85](https://github.com/gianlucamazza/flymsg/issues/85) electrical, modulation                                       | No junctional conductance; no gap-junction list; no per-type modulatory effect                                                                                                                                                                                                                           | Paired recordings with conductance and input resistance; a ShakB puncta map on MaleCNS bodyIds; receptor maps with measured effects                                                                                                                                                          | `sim.Gap` (off by default; a spike crosses when the lock sets `spike_mv` and `spike_ms`) and the sign table with its documented exclusions |
 | [#19](https://github.com/gianlucamazza/flymsg/issues/19), [#35](https://github.com/gianlucamazza/flymsg/issues/35) M3 | Neuron → muscle is cited from MANC for 406 of 708 motor neurons (`flymsg muscles`); no published assignment of a muscle to a FlyBody actuator; FlyBody has no tergotrochanter joint (FlyGym's NeuroMechFly has the coxa-trochanter joint, #90)                                                           | A muscle-level map for `TTMn_L` and `TTMn_R` with force and timing, and a body that has the joint                                                                                                                                                                                            | `validation/motor_map.yaml` (fail-closed, every row `unmapped`), the M0 contracts, the timestep rules                                      |
-| [#36](https://github.com/gianlucamazza/flymsg/issues/36) M4                                                           | `song.yaml` v1 run: uninformative, the no-go (14 of 32 neuropils resolve a sign; the model's pulse/sine index is about 0.05); the data were never opened                                                                                                                                                 | A JO band-pass or carrier-tuned input, before a version 2; then an eligible case other than song v1, which needs a new manifest version, since the v1 partition has no unused confirmatory case                                                                                              | The predictions, the frozen partition, the behavior lock                                                                                   |
+| [#36](https://github.com/gianlucamazza/flymsg/issues/36) M4                                                           | `song.yaml` v1 run: uninformative, the no-go (14 of 32 neuropils resolve a sign; the model's pulse/sine index is about 0.05); the data were never opened                                                                                                                                                 | A JO band-pass or carrier-tuned input, before a version 2; then an eligible case other than song v1, which needs a new manifest version, since the v1 partition has no unused confirmatory case                                                                                              | [Baker identity audit](baker-crossmatch.md), [v2 proposal and licence scope](m4-v2-proposal.md); predictions and frozen v1 locks preserved |
 
 ## Blocked on hardware
 
@@ -194,13 +194,22 @@ about the fly.
 
 ## Completion plan
 
-Status on 2026-10-16. flymsg is complete when a model prediction passes an
+Status on 2026-10-17. flymsg is complete when a model prediction passes an
 independent held-out benchmark (M4, [#36](https://github.com/gianlucamazza/flymsg/issues/36));
 everything else serves that. An open problem closes with a measurement, a lock and a run,
 never with a chosen value, so the order follows the evidence that exists. The
 [sensorimotor environment plan](sensorimotor-environment-plan.md) sets the gates a headless
 closed-loop experiment needs on the way ([#176](https://github.com/gianlucamazza/flymsg/issues/176));
 it is a plan, not a result.
+
+**M4 candidate progress (2026-10-17).** The [Baker identity audit](baker-crossmatch.md)
+extends complete named MaleCNS coverage from 2 to 12 of 28 classes: 11 retain
+unresolved sex compatibility, and AVLP_pr36 remains excluded for dimorphism.
+Fourteen classes are partial and two absent. The [v2 proposal](m4-v2-proposal.md)
+documents the licence basis for private noncommercial analysis and the separate
+review of public outputs. Root-ID updating is complete; next resolve missing
+identity/sex evidence and obtain the measured JO input before a prospective
+partition and lock. No candidate is benchmark eligible and no responses were opened.
 
 **1. Now: nothing outside is needed.**
 
