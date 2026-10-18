@@ -506,6 +506,10 @@ struct Worker {
         continue; // done before an interruption
       const auto prepared = std::chrono::steady_clock::now();
       flymsg::Runtime runtime(flymsg::batch_fixture(base, batch, k));
+      // the job's semantics string is checked before this point; the rebuilt
+      // fixture must also be version 1, as export_batch guarantees
+      flymsg::require(runtime.input[1] == 1,
+                      "batches cover version-1 fixtures only");
       flymsg::require(runtime.input[3] == steps, "batch runs differ in length");
       const auto estimated = (base.size() + batch.size()) * 4ull +
                              runtime.input.size() * 8ull +
