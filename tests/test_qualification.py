@@ -974,7 +974,8 @@ def test_gpufault_fake_portal(monkeypatch, tmp_path, case, scenario, expected):
                 self.state = "suspended"
             else:
                 self.alive = True
-                self.state = "awaiting_recovery" if not self.faulted else "running"
+                if self.faulted or self.state != "suspended":
+                    self.state = "running"
             return ""
 
         def put(self, package, rel, path):

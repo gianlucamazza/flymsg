@@ -85,8 +85,10 @@ def run_case(portal, args, sha, epoch, name, record):
         epoch.check("F2-after-suspend")
         job.control("fault.json", "flymsg.worker_fault/v1", step=step)
         app_call(portal, "POST", args.package, args.aumid)
-        ready = wait(job, record, "parked", {"awaiting_recovery"})
-        if ready.get("state") != "awaiting_recovery":
+        # A suspended job stays parked `suspended` until resume.json; the worker
+        # reserves `awaiting_recovery` for jobs interrupted while running.
+        ready = wait(job, record, "parked", {"suspended"})
+        if ready.get("state") != "suspended" or ready.get("step") != saved_step:
             return "indeterminate"
     record["processes_before"] = processes(portal, args.worker_image)
     pid = resolve_pid(record["processes_before"])

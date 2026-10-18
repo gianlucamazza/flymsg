@@ -391,7 +391,8 @@ belong in the output. The report schema is `flymsg.console_gpufault/v1`.
   suspend once with app DELETE and require an interior `suspended` boundary and
   complete checkpoint. Download both checkpoint files and hash their exact bytes.
   While stopped, upload `fault.json` at checkpoint step + 200,000 (strictly below
-  the horizon), restart, require `awaiting_recovery`, and explicitly resume.
+  the horizon), restart, require the job still parked `suspended` at the
+  checkpoint step, and explicitly resume.
   Require the same failed/device-removed/exit evidence as F1 and SHA256 of both
   `checkpoint.bin` and `checkpoint.json` unchanged after the fault. Never consume
   or delete `fault.json` or any partial artifact.
@@ -421,3 +422,12 @@ or interrupted observation. Missing evidence never passes. Both cases and cleanu
 must pass for an overall pass. Always stop the app in `finally`, verify no worker
 process remains, and leave the console on Home. This gate does not qualify
 biological behavior, full-connectome v2 or gamepad input.
+
+**Revision 2 (2026-10-18, before the second attempt).** Attempt 1 (`98fe27f`
+worker, archived with the evidence) passed F1 and stopped F2 on a protocol error:
+after a suspension the worker correctly keeps the job parked `suspended` until
+`resume.json` (`Worker.cpp` reserves `awaiting_recovery` for jobs interrupted while
+`running` or `checkpointing`), while revision 1 required `awaiting_recovery`; the
+harness timed out waiting for it. Revision 2 requires `suspended` at the
+checkpoint step. Nothing else changes; both cases are rerun from scratch on the
+same requalified binary, and attempt 1 is reported, not replaced.
