@@ -87,6 +87,88 @@ do not use `managed.PROTOCOLS`; execution semantics and archived results are unc
 Input licences and acquisition obligations remain in the data table above. Local
 integrity success does not establish that an external operator can acquire every input.
 
+## Local clean-clone protocol (2026-10-18; registered before execution)
+
+This is a **same-machine, same-operator** protocol for SF5/#151. It does not satisfy
+independent-operator replication or independent evaluation. The harness has not been
+run; the following are prospective comparisons, not new results.
+
+`scripts/clean_clone_replication.py` reserves a new destination, uses `git clone
+--no-local` (a local repository by default, or `--repository
+https://github.com/gianlucamazza/flymsg.git`), and checks out the selected index entry's
+full `source_commit` (`--source-commit FULL_SHA` optionally asserts it). That checkout is the given source commit; the current branch
+is never used to simulate a historical result. It runs `uv sync --frozen` with the
+archived Python version, a fresh external venv, a private uv cache with copy linking,
+and a private Numba cache. Dependency installation and cold compilation add time.
+
+The selection uses archived manifest `timestamps.finished_at - started_at`, not
+model duration. Among clean indexed results, convergence is the cheapest explicit
+positive diagnostic (`converged`); jump3d is the cheapest negative (`short`). Neither
+is biological validation. KC v2 (`within`, 438.63 s) and KC v3 (`none`, 356.99 s)
+are slower alternatives if those particular verdict categories are required.
+
+| Case                | Archived result | Source commit                              | Recorded CLI                               | Archived wall time |
+| ------------------- | --------------- | ------------------------------------------ | ------------------------------------------ | ------------------ |
+| Positive diagnostic | convergence v1  | `7c4d34d382018931e92021d41377aecd53557c73` | `uv run --frozen flymsg convergence --run` | 323.98 s (5m24s)   |
+| Negative            | jump3d v1       | `c05878d9e12331d0abf45477561abaa9c84ba1b6` | `uv run --frozen flymsg jump3d --run`      | 17.69 s            |
+| Stop before holdout | GF looming v1   | `0579ad8ddc5fd602234f7edb64fd22696c837ef6` | `uv run --frozen flymsg gf-looming --run`  | 4092.19 s (68m12s) |
+
+The no-go budget exceeds 30 minutes: no eligible archived no-go fits that preference
+(song v1 took 48601.80 s). GF v2 progressed to held-out scoring and is excluded.
+GF v1's indexed verdict is `uninformative: no-go`; its archived `report.txt` records
+zero scored model cells. At its pinned source, `evaluate` returns before `data_fits`
+when that no-go fails. The CLI first calls `inputs_present`, which only checks file
+presence with `is_file`. Existing Dombrovski files must therefore be present under
+`raw/dombrovski2025`; their contents are never required or hashed by this protocol.
+
+Point `--data` at an existing MaleCNS directory. The harness hashes only the two
+indexed compact tables before and after execution, and refuses different inputs.
+A Python audit hook denies opening **any other file under that data directory**
+before a Python reader can open it, while permitting the historical presence-only
+preflight. It fails closed if the model unexpectedly reaches held-out access.
+No Pacheco, Gruntman, Baker or scored held-out partition is selected. No fetch/build
+or data acquisition runs. This guard covers these Python CLI readers; it is not an
+OS sandbox for arbitrary native code. Use a data directory containing only required
+assets, and keep other held-out sources outside it.
+
+Run each command from this worktree, replacing `/absolute/MaleCNS-data` with the
+existing data path. Each destination must not exist:
+
+```bash
+uv run python scripts/clean_clone_replication.py --result positive --data /absolute/MaleCNS-data --destination /tmp/sf5-positive
+uv run python scripts/clean_clone_replication.py --result negative --data /absolute/MaleCNS-data --destination /tmp/sf5-negative
+uv run python scripts/clean_clone_replication.py --result no-go --data /absolute/MaleCNS-data --destination /tmp/sf5-no-go
+```
+
+`FLYMSG_DATA` supplies the data path without altering the recorded command's flags;
+the historical source/lock supplies its recorded config and seeds. Each fresh clone
+must produce exactly one manifest. The harness compares complete non-manifest output
+inventory and SHA-256, verdict, config, seeds and clean source identity against the
+index. It records `comparison.json`, `commands.json` and `process.log` outside the
+clone. Any mismatch or subprocess failure returns nonzero; evidence is retained.
+There is no tolerance, retry, overwrite or automatic archive update. A match shows
+local numerical repeatability only. The externally stored environment avoids dirtying
+the historical source tree. Audit guard injection is an execution constraint and
+must be disclosed with any comparison.
+
+### Checkpoint coverage
+
+Existing `test_runtime.py` compares CPU resume against the independent `sim.run`
+reference across parameters and silencing, including online inputs; it rejects changed
+parameters, invalid state and numeric corruption. `test_progress.py` checks exact typed
+Parquet round trips, lock identity and corrupt bytes. `test_runstore.py` already kills
+child processes after complete and partial step publication and checks writer exclusion
+and immutable final outputs.
+
+The local additions cover missing checkpoint files/fields, malformed bytes and changed
+numerical semantics without state mutation; missing/extra Steps artifacts; and changed
+parameter/backend/numerical-mode execution identity. A synthetic two-neuron workload
+through `managed.execute` and `Steps` now interrupts between arms and compares the
+resumed CSV bytes with an uninterrupted run, proving completed arms are not recomputed.
+Backend changes are tested at the Steps execution-identity boundary; CpuRuntime has
+one CPU backend and checks its numerical-semantics marker on restore. These are software
+unit tests, not full-connectome, hardware or biological qualification.
+
 ## A rerun done here
 
 The synapse weight rule v1 was rerun from its source commit `78f0673` in a clean detached

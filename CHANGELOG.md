@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **SF5 local replication protocol (#151).** Added a source-pinned clean-clone harness with isolated installation caches, compact-input hashes, a held-out read guard and exact archive comparisons. Registered three local reproduction candidates before execution; the harness has not been run. Added synthetic resume parity and checkpoint refusal coverage. Independent-operator replication remains open.
+
 - **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
 
 - **Entry protocols.** `docs/issue-resolution.md` states, per blocked front (eye, junctions and modulation, looming, head, muscles, completion), the stimulus, readout, only admissible input and control. No new version is written before its input exists. Docs only.
