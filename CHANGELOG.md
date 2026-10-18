@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Noncooperative termination protocol (#224).** Added a prospective two-case process-kill harness and fake-Portal tests, retaining recovery, checkpoint and oracle evidence. No physical trial has been run.
+
 - **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
 
 - **Entry protocols.** `docs/issue-resolution.md` states, per blocked front (eye, junctions and modulation, looming, head, muscles, completion), the stimulus, readout, only admissible input and control. No new version is written before its input exists. Docs only.

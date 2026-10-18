@@ -278,3 +278,51 @@ Full-connectome v2 is not measurable through this exporter because
 remains separate. There is no full-CNS real-time claim beyond the measured
 steps/s. GPU temperature is unobserved (Device Portal does not expose it);
 throttling is inferred from throughput only.
+
+### Noncooperative termination — protocol 2026-10-18
+
+Prospective protocol for #224, written before measurement. No physical result is
+claimed. Run `scripts/console_hardstop.py --package PFN --aumid AUMID
+--worker-image IMAGE.exe --shader LIF_CSO --lineage LINEAGE_JSON --out NEW_DIRECTORY`.
+Use the imported lifecycle synthetic fixture: 2,048 neurons, two inputs, seed 40,
+1,000,000 steps, version 1 (`extension=none`). Retain every attempt; refuse an
+existing output directory. The declared installed worker source must match every
+observed status. No address or credential belongs in the report.
+
+Method: resolve exactly one PID by exact worker image basename from WDP
+`GET /api/resourcemanager/processes` (`Processes`, `ImageName`, `ProcessId`).
+Record matching image/PID observations before and after
+`DELETE /api/taskmanager/process?pid=PID` (TerminateProcess). Never substitute
+`DELETE /api/taskmanager/app`, even with `forcestop=yes`, for this kill. The PID
+must disappear, no replacement worker may remain, and status must not report
+suspension after the kill. Missing/ambiguous PID or refused DELETE is **blocked**;
+a surviving process, suspension or uncertain observation is **indeterminate**,
+never pass. Observe running strictly between start and end immediately before
+DELETE. Record any observed `checkpointing` race without engineering one; it
+invalidates the mid-advance case and requires a fresh attempt.
+
+- **A — no checkpoint:** kill mid-advance before any checkpoint exists. Restart
+  the app, require `awaiting_recovery`, then upload explicit resume. Worker.cpp
+  reports parked step 0; without a checkpoint execution restarts from step 0.
+  Require completed output bit for bit against the independent CPU oracle and
+  `result.advance_steps == 1,000,000`.
+- **B — last complete checkpoint:** suspend the running app once using the app
+  DELETE, require `suspended` at an interior step, download `checkpoint.json` and
+  `checkpoint.bin`, and verify the declared SHA256. Record the suspended step
+  and checksum. Restart and resume once; after progress beyond that step, kill
+  mid-advance using process DELETE. Require the last complete checkpoint to be
+  unchanged, restart into `awaiting_recovery`, then explicitly resume. Require
+  bit-for-bit CPU parity and `result.advance_steps == 1,000,000 - saved_step`.
+  This verifies the restoration step independently of parked status (which is 0).
+
+For each case retain the remote TrialEpoch identity and checks across stop/kill/
+restart, timestamped status.json history, remote folder listings immediately
+before and after kill (including all temporary/incomplete filenames), downloaded
+status.json, checkpoint.json and checkpoint.bin snapshots where present, process
+observations, effective restoration step and pass/fail/indeterminate/blocked
+verdict. Preserve partial artifacts; never delete corrupt or incomplete evidence.
+Missing recovery or wrong output/restoration is fail; missing evidence is
+indeterminate. A partial-checkpoint observation cannot qualify a complete-checkpoint
+case. Always stop the app at the end, leaving the console idle on Home; failure
+of that cleanup prevents an overall pass. This synthetic gate does not qualify
+GPU/device faults, full-connectome throughput or biological behavior.

@@ -625,3 +625,265 @@ def test_sustained_readback_fault_is_recorded(monkeypatch, tmp_path, fault):
     else:
         assert record["final_state"] == "readback_failed"
     assert deleted == []
+
+
+@pytest.mark.parametrize("count", [0, 2])
+def test_hardstop_pid_resolution_refuses_missing_or_ambiguous(monkeypatch, count):
+    module = load("console_hardstop", monkeypatch)
+
+    class FakePortal:
+        def curl(self, method, path):
+            assert (method, path) == ("GET", "/api/resourcemanager/processes")
+            return json.dumps(
+                {
+                    "Processes": [
+                        {"ImageName": "C:\\worker\\Worker.exe", "ProcessId": i + 1}
+                        for i in range(count)
+                    ]
+                    + [{"ImageName": "Other.exe", "ProcessId": 99}]
+                }
+            )
+
+    matches = module.processes(FakePortal(), "worker.exe")
+    with pytest.raises(ValueError, match="exactly one"):
+        module.resolve_pid(matches)
+
+
+@pytest.mark.parametrize(
+    "scenario,expected",
+    [
+        ("refused", "blocked"),
+        ("survives", "indeterminate"),
+        ("suspended", "indeterminate"),
+        ("recovery", "pass"),
+        ("mismatch", "fail"),
+        ("checkpointing", "indeterminate"),
+        ("wrong-restoration", "fail"),
+    ],
+)
+@pytest.mark.parametrize("case", ["A", "B"])
+def test_hardstop_fake_portal_paths(monkeypatch, tmp_path, scenario, expected, case):
+    from types import SimpleNamespace
+
+    module = load("console_hardstop", monkeypatch)
+    lifecycle = __import__("console_lifecycle")
+    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+    monkeypatch.setattr(
+        module, "oracle", lambda: SimpleNamespace(advance_to=lambda _: None)
+    )
+    monkeypatch.setattr(lifecycle, "read_output", lambda *args: object())
+
+    def check(*args):
+        if scenario == "mismatch":
+            raise AssertionError("independent oracle mismatch")
+
+    monkeypatch.setattr(lifecycle, "check", check)
+    checkpoint = b"complete checkpoint"
+    checkpoint_sha = hashlib.sha256(checkpoint).hexdigest()
+    saved = {
+        "fixture_sha256": "fixture",
+        "shader_sha256": "shader",
+        "backend": "dx12",
+        "package": "package",
+        "source_commit": "source",
+        "checkpoint_sha256": checkpoint_sha,
+    }
+
+    class FakePortal:
+        state = "running"
+        alive = True
+        killed = False
+        checkpoint_exists = False
+        resumed = False
+
+        def __init__(self):
+            self.calls = []
+
+        def curl(self, method, path):
+            self.calls.append((method, path))
+            if path == "/api/resourcemanager/processes":
+                return json.dumps(
+                    {
+                        "Processes": [{"ImageName": "Worker.exe", "ProcessId": 42}]
+                        if self.alive
+                        else []
+                    }
+                )
+            if path.startswith("/api/filesystem/apps/files?"):
+                names = ["job.json", "fixture.bin", "status.json", "unrelated.tmp"]
+                if self.checkpoint_exists:
+                    names += ["checkpoint.json", "checkpoint.bin"]
+                return json.dumps({"Items": [{"Name": n} for n in names]})
+            if path == "/api/taskmanager/process?pid=42":
+                assert method == "DELETE"
+                if scenario == "refused":
+                    raise module.PortalError(method, path, 22, 403)
+                self.killed = True
+                self.alive = scenario == "survives"
+                self.state = (
+                    "suspended"
+                    if scenario == "suspended"
+                    else ("checkpointing" if scenario == "checkpointing" else "running")
+                )
+                return ""
+            assert path.startswith("/api/taskmanager/app?")
+            if method == "DELETE":
+                self.checkpoint_exists = True
+                self.state = "suspended"
+                self.alive = False
+            else:
+                self.alive = True
+                if self.killed:
+                    self.state = "awaiting_recovery"
+            return ""
+
+        def get(self, package, rel, name, local):
+            if name == "checkpoint.bin":
+                local.write_bytes(checkpoint)
+            elif name == "checkpoint.json":
+                local.write_text(json.dumps(saved))
+            elif name == "status.json":
+                local.write_text(json.dumps({"state": self.state}))
+            elif name == "output.bin":
+                local.write_bytes(b"output")
+            else:
+                raise AssertionError(name)
+
+    real_parity = module.Job.parity
+
+    class FakeJob:
+        id = "job"
+        rel = "inbox\\job"
+        steps = 1_000_000
+        parity = real_parity
+
+        def __init__(self, portal, package, sha, out, rt):
+            self.portal, self.package, self.rt = portal, package, rt
+            self.job = {"fixture_sha256": "fixture", "shader_sha256": "shader"}
+            self.folder = out / self.id
+            self.folder.mkdir()
+            self.fixture = self.folder / "fixture.bin"
+
+        def submit(self):
+            return 0
+
+        def status(self):
+            state = self.portal.state
+            step = {
+                "running": 200 if self.portal.resumed else 100,
+                "suspended": 100,
+                "awaiting_recovery": 0,
+                "checkpointing": 200,
+                "completed": self.steps,
+            }[state]
+            return {
+                "state": state,
+                "step": step,
+                "source_commit": "source",
+                "job_id": self.id,
+            }
+
+        def control(self, name, schema):
+            assert (name, schema) == ("resume.json", "flymsg.worker_resume/v1")
+            self.portal.resumed = True
+            self.portal.state = "completed" if self.portal.killed else "running"
+
+        def result(self):
+            restored = 100 if case == "B" else 0
+            return {
+                "advance_steps": self.steps
+                - restored
+                - (1 if scenario == "wrong-restoration" else 0),
+                "output_sha256": hashlib.sha256(b"output").hexdigest(),
+            }
+
+    monkeypatch.setattr(module, "Job", FakeJob)
+    epochs = []
+    epoch = SimpleNamespace(check=epochs.append, expected={"epoch": "trial"})
+    args = SimpleNamespace(
+        package="package",
+        aumid="app",
+        out=tmp_path,
+        worker_image="Worker.exe",
+        lineage={"worker_source_commit": "source"},
+    )
+    record = {}
+    portal = FakePortal()
+    assert module.run_case(portal, args, "shader", epoch, case, record) == expected
+    assert record["processes_before"] == [{"image": "Worker.exe", "pid": 42}]
+    assert "unrelated.tmp" in record["snapshots"]["after-kill"]["files"]
+    assert record["status_history"]
+    assert f"{case}-after-kill" in epochs
+    if expected == "pass":
+        assert record["restoration_step"] == (100 if case == "B" else 0)
+        assert record["oracle_parity"]
+    if case == "B":
+        assert record["checkpoint_sha256"] == checkpoint_sha
+
+
+def test_hardstop_existing_output_refused_before_contact(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    module = load("console_hardstop", monkeypatch)
+
+    def forbidden():
+        raise AssertionError("Portal must not be constructed")
+
+    monkeypatch.setattr(module, "Portal", forbidden)
+    with pytest.raises(FileExistsError):
+        module.run(SimpleNamespace(out=tmp_path))
+
+
+@pytest.mark.parametrize("interrupted", [False, True])
+def test_hardstop_always_stops_app_and_retains_safe_report(
+    monkeypatch, tmp_path, interrupted
+):
+    from types import SimpleNamespace
+
+    module = load("console_hardstop", monkeypatch)
+    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+    calls = []
+
+    class FakePortal:
+        def curl(self, method, path):
+            calls.append((method, path))
+            if path == "/api/resourcemanager/processes":
+                return json.dumps({"Processes": []})
+            assert path.startswith("/api/taskmanager/app?")
+            return ""
+
+        def close(self):
+            calls.append(("close", ""))
+
+    monkeypatch.setattr(module, "Portal", FakePortal)
+    monkeypatch.setattr(
+        module,
+        "TrialEpoch",
+        lambda *args: SimpleNamespace(expected={"epoch": "trial", "lineage": args[3]}),
+    )
+
+    def trial(*args):
+        if interrupted:
+            raise RuntimeError("https://private-address/ secret-credential")
+        return "pass"
+
+    monkeypatch.setattr(module, "run_case", trial)
+    shader = tmp_path / "lif.cso"
+    shader.write_bytes(b"shader")
+    args = SimpleNamespace(
+        out=tmp_path / "new",
+        shader=shader,
+        package="package",
+        aumid="app",
+        worker_image="Worker.exe",
+        lineage={"worker_source_commit": "abcdef01", "private": "secret-credential"},
+    )
+    report = module.run(args)
+    assert report["verdict"] == ("indeterminate" if interrupted else "pass")
+    assert calls[-3][0] == "DELETE"
+    assert calls[-2] == ("GET", "/api/resourcemanager/processes")
+    assert calls[-1] == ("close", "")
+    stored = (args.out / "report.json").read_text()
+    assert "private-address" not in stored
+    assert "secret-credential" not in stored
+    assert json.loads(stored)["schema"] == "flymsg.console_hardstop/v1"
