@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **GPU device removal on Series S (#224).** Test-only `fault.json` triggers `ID3D12Device5::RemoveDevice`; the requalified worker (72/72 parity) fails the job with `0x887A0005`, exits and recovers bit for bit, with and without a checkpoint (`docs/evidence/series-s-gpufault-2026-10-18.json`).
+
 - **GPU device-removal protocol (#224).** Added an inert-by-default test-only `fault.json` control using supported `ID3D12Device5::RemoveDevice`, HRESULT-bearing quarantine errors, a prospective two-case harness and fake-Portal tests. Requires new-binary full GPU parity before measurement; hardware fault/recovery remains unmeasured.
 
 - **Noncooperative termination protocol (#224).** Prospective two-case process-kill harness, fake-Portal tests and Series S result: both cases pass (`docs/evidence/series-s-hardstop-2026-10-18.json`), recovering bit for bit from step 0 and from the last complete checkpoint. GPU fault and gamepad remain open.

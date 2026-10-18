@@ -431,3 +431,24 @@ after a suspension the worker correctly keeps the job parked `suspended` until
 harness timed out waiting for it. Revision 2 requires `suspended` at the
 checkpoint step. Nothing else changes; both cases are rerun from scratch on the
 same requalified binary, and attempt 1 is reported, not replaced.
+
+### GPU device removal — result 2026-10-18
+
+Worker `98fe27f` (PR #244 merge build, CI run 39110356086, signed MSIX
+`be417752…`, shader `957a1202…`), requalified before any fault: 72 of 72
+parity cases bit for bit (12 v1, 60 v2) and 12 declared refusals. Attempt 2
+under revision 2; attempt 1 (F1 pass, F2 stopped by the revision-1 error) is
+archived in the same [evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-gpufault-2026-10-18.json) zip with the requalification report.
+
+| Case | Fault                              | Device result                          | Worker                                                        | Recovery (fresh job)             | Verdict  |
+| ---- | ---------------------------------- | -------------------------------------- | ------------------------------------------------------------- | -------------------------------- | -------- |
+| F1   | step 200,000, no checkpoint        | `0x887A0005` DXGI_ERROR_DEVICE_REMOVED | `failed`, no output/result; exit 0.36 s after terminal status | first status 1.85 s; bit for bit | **pass** |
+| F2   | step 214,336, checkpoint at 14,336 | `0x887A0005`                           | `failed`; checkpoint.bin/json SHA256 unchanged; exit 3.05 s   | first status 1.59 s; bit for bit | **pass** |
+
+Fault-to-exit upper bounds are 6.47 s and 8.48 s (submission/resume to exit);
+no device clock timestamps the removal itself. No worker process remained after
+the final stop (console on Home); no persistent device setting was changed. This
+qualifies the worker's handling of an API-induced device removal on the
+synthetic 2,048-neuron v1 fixture, not a hardware, driver or TDR fault, which has
+no supported injection on the console. Gamepad input remains the last open gate
+of #224.
