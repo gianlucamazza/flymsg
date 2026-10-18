@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Stimulus primitive.** `song.dead_time` moves verbatim to `flymsg.stimulus` (same object re-exported by `song`); giant-fiber looming no longer imports the song experiment. Behaviour, locks and outputs unchanged.
+
 - **Lock codec.** The YAML-subset parser and canonical content hash move from `prereg` to `flymsg.lock_codec`, so `locks` and `manifest` no longer depend on battery policy. Old names stay importable as the same objects; every lock hashes byte-identically.
 
 - **Module boundaries (ADR accepted 2026-10-18).** Added an ADR with logical layers, compatibility invariants and eight staged PR gates, plus a documentation authority catalog. No modules or scientific artifacts moved.
