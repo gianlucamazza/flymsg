@@ -345,3 +345,79 @@ present before or after either kill. The kill landed during advance, not during
 `checkpointing`, so a kill mid-publish stays unobserved, as declared. This
 closes the noncooperative-termination gate of #224 for the synthetic 2,048-neuron
 v1 fixture; GPU/device fault and gamepad input remain open.
+
+### GPU device removal — protocol 2026-10-18
+
+Prospective #224 protocol, written before measurement. **Unmeasured**: this
+change supplies instrumentation and a harness, not a hardware result. Test
+hardware only. Use the documented
+[ID3D12Device5::RemoveDevice](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12device5-removedevice)
+(Windows build 20348 or later; the console reports 26100), which tells the runtime
+the device can no longer be used and signals every fence to `UINT64_MAX`. This is
+an API-induced removal exercising the worker's removal path, not a hardware,
+driver or TDR fault; Microsoft does not describe it as a test method. Query the optional interface once at device creation; a requested
+injection without that interface fails before any dispatch with
+`fault injection unavailable`. Do not substitute a driver reset, TDR registry
+change or persistent device setting. Removal is process-local; restoration is a
+process restart. Record that no persistent device setting changed.
+
+Build a new worker and record CI run, exact commit, MSIX and shader SHA256.
+Download the CI artifacts independently, verify their hashes, and retain the
+installed package identity and actual hardware/driver identity with the trial.
+Before injecting any fault, requalify **that new binary** using
+`scripts/console_gpu_parity.py --v2` (with its usual package, shader and output
+arguments): the unchanged full matrix must pass, 12 v1 cases, 60 v2 cases and
+12 declared refusals. Retain the report and artifact hashes with the lineage.
+Lifecycle is not repeated in this protocol. Prior parity or lifecycle evidence
+does not qualify the new binary.
+
+Run `scripts/console_gpufault.py --package PFN --aumid AUMID --worker-image
+IMAGE.exe --shader LIF_CSO --lineage LINEAGE_JSON --out NEW_DIRECTORY` only after
+that prerequisite passes. Lineage must declare `worker_source_commit`; every
+observed job status must match it. Use the unchanged lifecycle fixture: synthetic
+version 1, 2,048 neurons, two inputs, seed 40, 1,000,000 steps. Retain every attempt
+and its files; refuse an existing output directory. No address or credentials
+belong in the output. The report schema is `flymsg.console_gpufault/v1`.
+
+- **F1 — mid-advance without checkpoint.** Upload `fault.json` with schema
+  `flymsg.worker_fault/v1`, the exact job folder ID and step 200,000 before
+  publishing `job.json`. At the first submission cursor at or above that step,
+  immediately after ExecuteCommandLists and Signal, remove the device once.
+  Require status `failed` containing a failing device-removed HRESULT (hex), the
+  original worker PID gone with no replacement worker, no `output.bin` or
+  completed result, no checkpoint, and a retained folder listing and fault
+  control. Allow at most 60 s from terminal-status observation to PID exit.
+- **F2 — after a published checkpoint.** Start an identical job without a fault;
+  suspend once with app DELETE and require an interior `suspended` boundary and
+  complete checkpoint. Download both checkpoint files and hash their exact bytes.
+  While stopped, upload `fault.json` at checkpoint step + 200,000 (strictly below
+  the horizon), restart, require `awaiting_recovery`, and explicitly resume.
+  Require the same failed/device-removed/exit evidence as F1 and SHA256 of both
+  `checkpoint.bin` and `checkpoint.json` unchanged after the fault. Never consume
+  or delete `fault.json` or any partial artifact.
+
+For each fault record the failing GetDeviceRemovedReason HRESULT (not an assumed
+`0x887A0005`), selected status history, source/package/shader identity, TrialEpoch
+checks across transitions, PID observations and all job folder filenames. Record
+fault-to-PID-exit time as an interval: the injection is between submission/resume
+and terminal observation; the submit/resume-to-exit elapsed time is a conservative
+upper bound, with lower bound zero. Also record terminal-observation-to-exit
+elapsed time. These polling observations do not establish an exact device clock
+timestamp or an exact RemoveDevice-to-exit latency.
+
+After each fault, restart the app and publish a **fresh**, identical job ID
+without `fault.json`. Require its first identity-checked worker status within
+**60 s**, including the app-start request and submission. Require completion
+at 1,000,000 steps within 900 s and output bit for bit against the independent CPU
+oracle. A failed job is terminal and is never resumed for this recovery check.
+
+Verdicts: **pass** only with all case evidence and fresh-job parity; **blocked**
+when injection is unavailable and status is failed; **fail** for failed status
+without a failing device-removed HRESULT, any other terminal state (including
+completed despite the request), changed checkpoint, output/result after the fault,
+PID-exit deadline, recovery deadline or parity failure; **indeterminate** for
+missing/inaccessible evidence, identity loss, an unqualified suspension boundary
+or interrupted observation. Missing evidence never passes. Both cases and cleanup
+must pass for an overall pass. Always stop the app in `finally`, verify no worker
+process remains, and leave the console on Home. This gate does not qualify
+biological behavior, full-connectome v2 or gamepad input.

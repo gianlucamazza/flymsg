@@ -887,3 +887,277 @@ def test_hardstop_always_stops_app_and_retains_safe_report(
     assert "private-address" not in stored
     assert "secret-credential" not in stored
     assert json.loads(stored)["schema"] == "flymsg.console_hardstop/v1"
+
+
+@pytest.mark.parametrize("case", ["F1", "F2"])
+@pytest.mark.parametrize(
+    "scenario,expected",
+    [
+        ("unavailable", "blocked"),
+        ("removed", "pass"),
+        ("no-hresult", "fail"),
+        ("completed", "fail"),
+        ("recovery-timeout", "fail"),
+        ("wrong-output", "fail"),
+        ("pid-survives", "fail"),
+        ("checkpoint-changed", "fail"),
+        ("checkpoint-json-changed", "fail"),
+    ],
+)
+def test_gpufault_fake_portal(monkeypatch, tmp_path, case, scenario, expected):
+    from types import SimpleNamespace
+
+    module = load("console_gpufault", monkeypatch)
+    lifecycle = __import__("console_lifecycle")
+    if scenario in {"checkpoint-changed", "checkpoint-json-changed"} and case == "F1":
+        expected = "pass"
+    clock = [0.0]
+    monkeypatch.setattr(module.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(
+        module.time, "sleep", lambda _: clock.__setitem__(0, clock[0] + 30)
+    )
+    monkeypatch.setattr(
+        module, "oracle", lambda: SimpleNamespace(advance_to=lambda _: None)
+    )
+    monkeypatch.setattr(lifecycle, "read_output", lambda *args: object())
+
+    def check(*args):
+        if scenario == "wrong-output":
+            raise AssertionError("independent oracle mismatch")
+
+    monkeypatch.setattr(lifecycle, "check", check)
+    checkpoint = b"published checkpoint"
+    saved = {
+        "checkpoint_sha256": hashlib.sha256(checkpoint).hexdigest(),
+        "fixture_sha256": "fixture",
+        "shader_sha256": "shader",
+        "backend": "dx12",
+        "package": "package",
+        "source_commit": "source",
+    }
+
+    class FakePortal:
+        alive = True
+        faulted = False
+        checkpoint_exists = False
+        state = "running"
+
+        def __init__(self):
+            self.controls = {}
+
+        def curl(self, method, path):
+            if path == "/api/resourcemanager/processes":
+                return json.dumps(
+                    {
+                        "Processes": [{"ImageName": "Worker.exe", "ProcessId": 42}]
+                        if self.alive
+                        else []
+                    }
+                )
+            if path.startswith("/api/filesystem/apps/files?"):
+                names = [
+                    "status.json",
+                    "job.json",
+                    "fixture.bin",
+                    "fault.json",
+                    "partial.tmp",
+                ]
+                if self.checkpoint_exists:
+                    names += ["checkpoint.bin", "checkpoint.json"]
+                if self.state == "completed":
+                    names += ["output.bin", "result.json"]
+                return json.dumps({"Items": [{"Name": n} for n in names]})
+            assert path.startswith("/api/taskmanager/app?")
+            if method == "DELETE":
+                self.alive = False
+                self.checkpoint_exists = True
+                self.state = "suspended"
+            else:
+                self.alive = True
+                self.state = "awaiting_recovery" if not self.faulted else "running"
+            return ""
+
+        def put(self, package, rel, path):
+            if path.name.endswith(".json"):
+                self.controls[path.name] = json.loads(path.read_text())
+            if path.name == "resume.json" or (
+                path.name == "job.json" and "fault.json" in self.controls
+            ):
+                self.faulted = True
+                self.state = "completed" if scenario == "completed" else "failed"
+                self.alive = scenario in {"unavailable", "pid-survives"}
+
+        def get(self, package, rel, name, local):
+            if name == "checkpoint.bin":
+                local.write_bytes(
+                    checkpoint
+                    + (
+                        b"corrupt"
+                        if self.faulted and scenario == "checkpoint-changed"
+                        else b""
+                    )
+                )
+            elif name == "checkpoint.json":
+                local.write_text(
+                    json.dumps(saved)
+                    + (
+                        " "
+                        if self.faulted and scenario == "checkpoint-json-changed"
+                        else ""
+                    )
+                )
+            elif name == "status.json":
+                local.write_text(json.dumps({"state": self.state}))
+            elif name == "output.bin":
+                local.write_bytes(b"output")
+            else:
+                raise AssertionError(name)
+
+    class FakeJob:
+        parity = module.Job.parity
+        control = module.Job.control
+        steps = module.STEPS
+        counter = 0
+
+        def __init__(self, portal, package, sha, out, rt):
+            self.portal, self.package, self.rt = portal, package, rt
+            self.id = f"job-{FakeJob.counter}"
+            FakeJob.counter += 1
+            self.rel = "inbox\\" + self.id
+            self.folder = out / self.id
+            self.folder.mkdir()
+            self.fixture = self.folder / "fixture.bin"
+            self.job = {"fixture_sha256": "fixture", "shader_sha256": "shader"}
+
+        def submit(self, *, fault_step=None):
+            if fault_step is not None:
+                self.control("fault.json", "flymsg.worker_fault/v1", step=fault_step)
+                path = self.folder / "job.json"
+                path.write_text("{}")
+                self.portal.put(self.package, self.rel, path)
+
+        def status(self):
+            if self.id == "job-1":
+                if scenario == "recovery-timeout":
+                    return {}
+                state, step = "completed", self.steps
+            else:
+                state = self.portal.state
+                step = self.steps if state == "completed" else 100
+            error = {
+                "unavailable": "fault injection unavailable",
+                "no-hresult": "some failure with secret address",
+            }.get(
+                scenario,
+                "GPU runtime quarantined (device removed HRESULT 0x887A0005); restart the worker process",
+            )
+            return {
+                "state": state,
+                "step": step,
+                "error": error,
+                "source_commit": "source",
+                "job_id": self.id,
+            }
+
+        def result(self):
+            return {"output_sha256": hashlib.sha256(b"output").hexdigest()}
+
+    monkeypatch.setattr(module, "Job", FakeJob)
+    epoch = SimpleNamespace(expected={"epoch": "trial"}, check=lambda _: None)
+    args = SimpleNamespace(
+        package="package",
+        aumid="app",
+        out=tmp_path,
+        worker_image="Worker.exe",
+        lineage={"worker_source_commit": "source"},
+    )
+    record = {}
+    assert (
+        module.run_case(FakePortal(), args, "shader", epoch, case, record) == expected
+    )
+    assert "secret address" not in json.dumps(record)
+    assert "partial.tmp" in record["snapshots"]["after-fault"]["files"]
+    if expected == "pass":
+        assert record["oracle_parity"]
+        assert record["processes_after"] == []
+        assert record["device_removed_hresult"] == "0X887A0005"
+        assert record["fault_to_exit_seconds"]["upper"] >= 0
+
+
+def test_gpufault_existing_output_refused_before_contact(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    module = load("console_gpufault", monkeypatch)
+    monkeypatch.setattr(module, "Portal", lambda: pytest.fail("unexpected contact"))
+    with pytest.raises(FileExistsError):
+        module.run(SimpleNamespace(out=tmp_path))
+
+
+@pytest.mark.parametrize("exception", [False, True])
+def test_gpufault_always_stops_app(monkeypatch, tmp_path, exception):
+    from types import SimpleNamespace
+
+    module = load("console_gpufault", monkeypatch)
+    calls = []
+
+    class FakePortal:
+        def close(self):
+            calls.append("close")
+
+    monkeypatch.setattr(module, "Portal", FakePortal)
+    monkeypatch.setattr(
+        module, "TrialEpoch", lambda *args: SimpleNamespace(expected={})
+    )
+    monkeypatch.setattr(
+        module, "app_call", lambda p, method, *args: calls.append(method)
+    )
+    monkeypatch.setattr(module, "processes", lambda *args: [])
+    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+
+    def run_case(*args):
+        if exception:
+            raise RuntimeError("private credential and address")
+        return "pass"
+
+    monkeypatch.setattr(module, "run_case", run_case)
+    shader = tmp_path / "shader.cso"
+    shader.write_bytes(b"shader")
+    args = SimpleNamespace(
+        out=tmp_path / "new",
+        package="package",
+        aumid="app",
+        worker_image="Worker.exe",
+        shader=shader,
+        lineage={"worker_source_commit": "abcdef0"},
+    )
+    report = module.run(args)
+    assert calls == ["POST", "DELETE", "close"]
+    assert report["verdict"] == ("indeterminate" if exception else "pass")
+    stored = (args.out / "report.json").read_text()
+    assert "private credential" not in stored
+    assert json.loads(stored)["schema"] == "flymsg.console_gpufault/v1"
+
+
+def test_job_fault_upload_precedes_job_publication(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    module = load("console_lifecycle", monkeypatch)
+    uploads = []
+    job = object.__new__(module.Job)
+    job.folder = tmp_path
+    job.id = "exact-id"
+    job.rel = "inbox\\exact-id"
+    job.package = "package"
+    job.fixture = tmp_path / "fixture.bin"
+    job.fixture.write_bytes(b"fixture")
+    job.job = {"job_id": job.id}
+    job.portal = SimpleNamespace(
+        mkdir=lambda *args: None, put=lambda p, r, path: uploads.append(path.name)
+    )
+    job.submit(fault_step=200_000)
+    assert uploads == ["fixture.bin", "fault.json", "job.json"]
+    assert json.loads((tmp_path / "fault.json").read_text()) == {
+        "schema": "flymsg.worker_fault/v1",
+        "job_id": "exact-id",
+        "step": 200_000,
+    }

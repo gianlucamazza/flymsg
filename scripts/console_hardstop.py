@@ -73,6 +73,9 @@ def resolve_pid(matches):
 
 def sample(job, record, phase):
     status = job.status()
+    error = status.get("error", "")
+    removed = re.search(r"device removed HRESULT (0x[0-9A-Fa-f]{8})", error)
+    unavailable = error == "fault injection unavailable"
     status = {
         k: status[k]
         for k in (
@@ -87,6 +90,10 @@ def sample(job, record, phase):
         )
         if k in status
     }
+    if removed:
+        status["device_removed_hresult"] = removed[1].upper()
+    if unavailable:
+        status["fault_injection_unavailable"] = True
     record.setdefault("status_history", []).append(
         {"utc": now(), "phase": phase, "status": status}
     )
