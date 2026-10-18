@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Native sparse inputs.** Explicit `input_encoding="sparse"` exports version-3 ordered nonzero kick records; DX12 streams whole-step event blocks under the 512 MiB input budget. Legacy dense exports retain their bytes. New fixture/worker semantics are versioned explicitly.
+- **Native per-neuron membranes.** Version-4 fixtures carry Python-precomputed per-neuron float32 membrane constants through the CPU executor and shader, including sparse/graded combinations. Uniform membranes retain the scalar format; Gap-node and continuous-clamp refusals remain. Acceptance adds 48 synthetic cases, with CPU byte-parity, resume and export-size checks. Physical GPU qualification of the new formats remains pending.
+
 - **GPU device removal on Series S (#224).** Test-only `fault.json` triggers `ID3D12Device5::RemoveDevice`; the requalified worker (72/72 parity) fails the job with `0x887A0005`, exits and recovers bit for bit, with and without a checkpoint (`docs/evidence/series-s-gpufault-2026-10-18.json`).
 
 - **GPU device-removal protocol (#224).** Added an inert-by-default test-only `fault.json` control using supported `ID3D12Device5::RemoveDevice`, HRESULT-bearing quarantine errors, a prospective two-case harness and fake-Portal tests. Requires new-binary full GPU parity before measurement; hardware fault/recovery remains unmeasured.

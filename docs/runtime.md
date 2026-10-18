@@ -145,3 +145,28 @@ The full MaleCNS default model (165,122 neurons, 24.5 million synapses; looming 
 A GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation beyond this batching. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
 
 Run `uv run pytest tests/test_runtime.py tests/test_core.py tests/test_embodiment.py`. Existing CI also checks all synthetic regressions, documentation links, formatting and browser modules.
+
+## Native fixture extension implementation (2026-10-18)
+
+This implementation update supersedes the earlier native `Membrane` limitation
+without changing the accepted scientific update phases. `export_fixture` accepts
+explicit `input_encoding="sparse"` (default remains dense): fixture v3 stores
+strictly ordered nonzero `(step, column, float64 count)` events with semantics
+`flymsg.lif/ordered-f32-v2`. GPU inputs stream in whole-step blocks within the
+512 MiB input-buffer budget, without a dense GPU allocation or a reset of the
+neural cursor. Sparse fixture size scales with event count; host input generation
+and output/state allocations retain their own limits.
+
+Non-uniform `sim.Membrane` uses fixture v4 and semantics
+`flymsg.lif/ordered-f32-v3`, carrying per-neuron float32 decay/gain, rest/reset and
+threshold arrays from the same `sim.kernel_constants` used by Numba. The native
+CPU and shader retain the kernel's arithmetic order. Uniform membranes retain
+the scalar format; global refractory timing and refusals on Gap nodes stay the
+same. Sparse input and membranes compose with supported graded/gap fixtures.
+Worker jobs bind the exact semantics returned by the exporter.
+
+See [the binary contract and limits](https://github.com/gianlucamazza/flymsg/blob/main/native/README.md#sparse-inputs-and-per-neuron-membranes-2026-10-18).
+Acceptance adds 48 cases to the original 72, preserving the original fixture
+bytes and 12 clamp refusals. CPU parity and block planning are checked locally;
+new-format physical GPU parity and sustained full-connectome measurements
+remain pending. Historical console results above are unchanged.

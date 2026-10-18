@@ -287,6 +287,18 @@ remains separate. There is no full-CNS real-time claim beyond the measured
 steps/s. GPU temperature is unobserved (Device Portal does not expose it);
 throttling is inferred from throughput only.
 
+### Sparse kicks and per-neuron membranes on Series S — 2026-10-18
+
+Worker `8752178` (CI run 39116571890): the [parity matrix](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-native-v34-parity-2026-10-18.json)
+passes 120 of 120 cases bit for bit, the 72 earlier ones plus 48 new sparse, membrane,
+sparse+membrane and sparse+both fixtures, with the 12 declared refusals. Under revision 4 of
+the sustained protocol (declared in `f61a94e` before measuring), one
+[1,500,000-step full-connectome looming job](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-sparse-long-2026-10-18.json) in
+the sparse encoding completes bit for bit against the CPU oracle at 2,632 steps/s (213 MB
+fixture, peak app memory 1.87 GB). Dense kicks capped such a job at about 760k steps within
+the 512 MiB GPU input budget. The worker was stopped afterwards; the harness does not stop it
+itself. Full-connectome version-2 configurations are now exportable; none was measured here.
+
 ### Noncooperative termination — protocol 2026-10-18
 
 Prospective protocol for #224, written before measurement. No physical result is
@@ -460,3 +472,17 @@ qualifies the worker's handling of an API-induced device removal on the
 synthetic 2,048-neuron v1 fixture, not a hardware, driver or TDR fault, which has
 no supported injection on the console. Gamepad input remains the last open gate
 of #224.
+
+### Combined worker requalification — 2026-10-18
+
+Sparse kicks and membranes (#249) and fault injection (#244) both change the worker, so
+their merge is a new binary. A cross-vendor review then found that a batch job did not check
+the version of its rebuilt fixture; the fix adds a refusal and makes one more binary,
+`6371226` (CI run 39123378480). That binary passes the
+[parity matrix](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-parity-2026-10-18.json) (120 of 120, 12 declared
+refusals), the [batch battery](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-battery-2026-10-18.json) (30 runs equal to
+`sim.run`, 128 s end to end) and [both device-removal cases](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-gpufault-2026-10-18.json)
+(F1 and F2 `0x887A0005`, checkpoint unchanged, fresh jobs bit for bit, worker stopped). An
+intermediate combined build `a4cec40` passed the same parity and fault cases before the fix.
+The 1.5M-step sparse job ran on `8752178`; the final binary differs from it by the inert
+fault-control path and the batch refusal, and was not rerun on that job.

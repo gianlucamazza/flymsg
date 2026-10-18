@@ -104,6 +104,7 @@ class Job:
         seed: int = SEED,
         scope: str = "lifecycle qualification fixture, not biological validation",
         extension: str = "none",
+        input_encoding: str = "dense",
     ):
         self.portal, self.package = portal, package
         self.id = str(uuid.uuid4())
@@ -112,13 +113,13 @@ class Job:
         self.rel = f"inbox\\{self.id}"
         self.rt = oracle(extension) if rt is None else rt
         fixture = self.folder / "fixture.bin"
-        meta = export_fixture(self.rt, fixture)
+        meta = export_fixture(self.rt, fixture, input_encoding=input_encoding)
         self.steps = int(meta["steps"])
         self.fixture = fixture
         self.job = {
             "schema": "flymsg.neural_job/v1",
             "job_id": self.id,
-            "semantics": "flymsg.lif/ordered-f32-v1",
+            "semantics": meta["semantics"],
             "backend": "dx12",
             "fixture_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
             "shader_sha256": shader_sha,
