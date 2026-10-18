@@ -7,7 +7,7 @@ from reference_sim import run_reference
 from scipy import sparse
 
 from flymsg import sim
-from flymsg.native import NativeCapabilityError, export_fixture
+from flymsg.native import export_fixture
 from flymsg.runtime import CpuRuntime
 
 
@@ -137,7 +137,7 @@ def test_invalid_membranes_are_refused(field, value, message):
         sim.membrane_arrays(sim.Membrane(**base), 10, sim.Params())
 
 
-def test_coupled_neurons_and_the_native_executor_refuse_a_membrane(tmp_path):
+def test_coupled_neurons_refuse_a_membrane_and_native_exports_uncoupled(tmp_path):
     W = random_network(n=10)
     membrane = sim.Membrane(
         idx=np.array([4]),
@@ -153,5 +153,7 @@ def test_coupled_neurons_and_the_native_executor_refuse_a_membrane(tmp_path):
     with pytest.raises(ValueError, match="electrically coupled"):
         CpuRuntime(W, STIM, steps=100, kicks=kicks, gap=gap, membrane=membrane)
     rt = CpuRuntime(W, STIM, steps=100, kicks=kicks, membrane=membrane)
-    with pytest.raises(NativeCapabilityError, match="membrane"):
-        export_fixture(rt, tmp_path / "fixture.bin")
+    assert (
+        export_fixture(rt, tmp_path / "fixture.bin")["schema"]
+        == "flymsg.native_fixture/v4"
+    )

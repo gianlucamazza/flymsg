@@ -1,0 +1,49 @@
+{
+  "backend": "console",
+  "battery": {
+    "cases": [
+      "looming escape",
+      "giant fiber output",
+      "P1 courtship drive",
+      "pIP10 song pathway",
+      "sugar feeding",
+      "bitter feeding"
+    ],
+    "duration_ms": 600.0,
+    "runs": 30,
+    "seeds": 5
+  },
+  "console": {
+    "advance_ms": 71886.399193,
+    "advance_steps": 180000,
+    "host_s": {
+      "console_s": 79.58629996504169,
+      "download_s": 6.664701503992546,
+      "export_s": 29.082652345008682,
+      "upload_s": 9.809482090000529
+    },
+    "prepare_ms": 5233.735973999999,
+    "wall_s": 127.75538891501492,
+    "write_ms": 338.653655
+  },
+  "date": "2026-10-18",
+  "host_load_average": [
+    1.83984375,
+    1.3134765625,
+    1.4189453125
+  ],
+  "host_sim_run_s": 37.21108244283823,
+  "mismatched_runs": [],
+  "network": {
+    "neurons": 165122,
+    "synapses": 24539704
+  },
+  "passed": true,
+  "platform": "Xbox Series S, Dev Mode",
+  "schema": "flymsg.console_battery/v1",
+  "scope": "one graph's battery; equality of counts and first spikes per run",
+  "script": "scripts/console_battery.py",
+  "worker_adapter": "SraKmd_arden",
+  "worker_package": "GianlucaMazza.FlymsgWorker_0.1.0.0_x64__g0p5dcfz4t9z4",
+  "worker_shader_sha256": "6517ea7fd6ad4a01bef3a997d7f485da714c965a66eee4f6debd6b42c0253eef"
+}
