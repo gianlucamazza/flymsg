@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Module boundaries (ADR accepted 2026-10-18).** Added an ADR with logical layers, compatibility invariants and eight staged PR gates, plus a documentation authority catalog. No modules or scientific artifacts moved.
+
 - **Native sparse inputs.** Explicit `input_encoding="sparse"` exports version-3 ordered nonzero kick records; DX12 streams whole-step event blocks under the 512 MiB input budget. Legacy dense exports retain their bytes. New fixture/worker semantics are versioned explicitly.
 - **Native per-neuron membranes.** Version-4 fixtures carry Python-precomputed per-neuron float32 membrane constants through the CPU executor and shader, including sparse/graded combinations. Uniform membranes retain the scalar format; Gap-node and continuous-clamp refusals remain. Acceptance adds 48 synthetic cases, with CPU byte-parity, resume and export-size checks. Physical GPU qualification of the new formats remains pending.
 
