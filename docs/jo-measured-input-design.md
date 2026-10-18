@@ -2,8 +2,8 @@
 
 Status: **complete design for review, not an implemented or qualified input**,
 2026-10-17. Applies to [entry protocol 6](issue-resolution.md) and
-[M4 v2](m4-v2-proposal.md). The [proposed ADR](adr-measured-jo-input.md) requires
-owner acceptance before runtime implementation. No source response archive,
+[M4 v2](m4-v2-proposal.md). The [ADR](adr-measured-jo-input.md), accepted
+2026-10-18, defers runtime implementation until a measured source establishes the mode. No source response archive,
 Baker/Pacheco outcome, simulation, seed search or new validation lock was opened
 or executed for this design.
 

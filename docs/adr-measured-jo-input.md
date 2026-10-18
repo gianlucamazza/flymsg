@@ -1,6 +1,7 @@
 # ADR: measured JO source boundary
 
-Status: **proposed; pending project-owner acceptance**, 2026-10-17.
+Status: accepted by the owner, 2026-10-18 (proposed 2026-10-17). Implementation
+waits for a measured source that establishes the eligible mode.
 Scope: entry protocol 6 and a prospective song/M4 input version.
 No runtime implementation or validation-lock change is authorized by this ADR.
 The [measured-input design](jo-measured-input-design.md) specifies source evidence,

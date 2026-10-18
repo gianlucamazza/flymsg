@@ -38,7 +38,7 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 **Exit:** at least one independently defensible sensory/neural input/output comparison is _eligible for prospective scoring_ with a frozen protocol. If source/registration/observation semantics remain absent, mark S1 blocked; an engineered Poisson encoder does not pass.
 
 **JO progress (2026-10-17):** protocol 6 now has a [source/identity/input design](jo-measured-input-design.md)
-and [proposed ADR](adr-measured-jo-input.md). The 146 selected MaleCNS bodies
+and [accepted ADR](adr-measured-jo-input.md). The 146 selected MaleCNS bodies
 are an anatomical population, not 146 measured transfer functions. Absolute
 source calibration and sex transfer remain blocked; runtime implementation awaits
 ADR acceptance. This advances S1 design, not its scientific exit.

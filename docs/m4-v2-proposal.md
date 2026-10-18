@@ -114,7 +114,7 @@ before the prospective lock.
 ## Blockers and owner decisions
 
 - Obtain protocol 6's JO input under the [measured-input design](jo-measured-input-design.md)
-  and [proposed ADR](adr-measured-jo-input.md), pending owner acceptance. The audited
+  and [accepted ADR](adr-measured-jo-input.md). The audited
   calcium/population sources do not yet supply an eligible absolute JO-A/B/D input.
   No auditory case can be scored until source, identity/sex and numerical gates pass.
 - Resolve the remaining missing FlyWire labels and MaleCNS identities listed in
