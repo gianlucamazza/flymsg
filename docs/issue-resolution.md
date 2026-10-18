@@ -326,3 +326,22 @@ indeterminate. A partial-checkpoint observation cannot qualify a complete-checkp
 case. Always stop the app at the end, leaving the console idle on Home; failure
 of that cleanup prevents an overall pass. This synthetic gate does not qualify
 GPU/device faults, full-connectome throughput or biological behavior.
+
+### Noncooperative termination — result 2026-10-18
+
+Run under the protocol above (committed in `6ccde6c` before measurement), worker
+source `22bef37`, shader SHA256 `957a1202…`. [Evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-hardstop-2026-10-18.json): report, trial
+epochs, status histories, folder listings and checkpoint snapshots; the zip
+holds SHA256SUMS of every file including the binaries left out of it.
+
+| Case | Kill (WDP process DELETE) | After kill                                 | Recovery                                                                 | Verdict  |
+| ---- | ------------------------- | ------------------------------------------ | ------------------------------------------------------------------------ | -------- |
+| A    | step 12,288, PID gone     | status stale `running`, no checkpoint      | `awaiting_recovery` at restart; resume from step 0; bit for bit          | **pass** |
+| B    | step 145,792, PID gone    | checkpoint (step 14,144) unchanged, SHA ok | `awaiting_recovery`; restored at step 14,144; 985,856 steps; bit for bit | **pass** |
+
+Neither case reported `suspended` after the kill, and no worker process remained
+after the final app stop (console on Home). No `.tmp` or incomplete file was
+present before or after either kill. The kill landed during advance, not during
+`checkpointing`, so a kill mid-publish stays unobserved, as declared. This
+closes the noncooperative-termination gate of #224 for the synthetic 2,048-neuron
+v1 fixture; GPU/device fault and gamepad input remain open.

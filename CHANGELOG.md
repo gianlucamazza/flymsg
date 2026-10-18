@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Noncooperative termination protocol (#224).** Added a prospective two-case process-kill harness and fake-Portal tests, retaining recovery, checkpoint and oracle evidence. No physical trial has been run.
+- **Noncooperative termination protocol (#224).** Prospective two-case process-kill harness, fake-Portal tests and Series S result: both cases pass (`docs/evidence/series-s-hardstop-2026-10-18.json`), recovering bit for bit from step 0 and from the last complete checkpoint. GPU fault and gamepad remain open.
 
 - **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
 
