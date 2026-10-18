@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Lock codec.** The YAML-subset parser and canonical content hash move from `prereg` to `flymsg.lock_codec`, so `locks` and `manifest` no longer depend on battery policy. Old names stay importable as the same objects; every lock hashes byte-identically.
+
 - **Module boundaries (ADR accepted 2026-10-18).** Added an ADR with logical layers, compatibility invariants and eight staged PR gates, plus a documentation authority catalog. No modules or scientific artifacts moved.
 
 - **Native sparse inputs.** Explicit `input_encoding="sparse"` exports version-3 ordered nonzero kick records; DX12 streams whole-step event blocks under the 512 MiB input budget. Legacy dense exports retain their bytes. New fixture/worker semantics are versioned explicitly.
