@@ -118,7 +118,7 @@ class Job:
         self.job = {
             "schema": "flymsg.neural_job/v1",
             "job_id": self.id,
-            "semantics": "flymsg.lif/ordered-f32-v1",
+            "semantics": meta["semantics"],
             "backend": "dx12",
             "fixture_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
             "shader_sha256": shader_sha,

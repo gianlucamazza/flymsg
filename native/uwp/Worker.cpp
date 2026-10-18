@@ -293,8 +293,11 @@ struct Worker {
     flymsg::require(id == folder.filename().string(),
                     "job directory identity mismatch");
     status(folder, id, "validating", 0);
+    const auto semantics = field(doc, L"semantics");
     flymsg::require(field(doc, L"schema") == "flymsg.neural_job/v1" &&
-                        field(doc, L"semantics") == "flymsg.lif/ordered-f32-v1",
+                        (semantics == "flymsg.lif/ordered-f32-v1" ||
+                         semantics == "flymsg.lif/ordered-f32-v2" ||
+                         semantics == "flymsg.lif/ordered-f32-v3"),
                     "incompatible job contract");
     const auto fixture = folder / L"fixture.bin";
     const auto backend = field(doc, L"backend");
@@ -311,10 +314,18 @@ struct Worker {
       flymsg::require(sha256(shader) == field(doc, L"shader_sha256"),
                       "shader hash mismatch");
     if (doc.HasKey(L"batch")) {
+      flymsg::require(semantics == "flymsg.lif/ordered-f32-v1",
+                      "incompatible batch semantics");
       execute_batch(folder, doc, id, hash, backend, shader);
       return;
     }
     flymsg::Runtime runtime(flymsg::read_words(fixture));
+    const auto expected_semantics =
+        runtime.input[1] == 4   ? "flymsg.lif/ordered-f32-v3"
+        : runtime.input[1] == 3 ? "flymsg.lif/ordered-f32-v2"
+                                : "flymsg.lif/ordered-f32-v1";
+    flymsg::require(semantics == expected_semantics,
+                    "fixture semantics mismatch");
     {
       std::lock_guard guard(telemetry_mutex);
       telemetry.total = runtime.input[3];

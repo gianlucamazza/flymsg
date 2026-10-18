@@ -34,7 +34,8 @@ inline uint64_t digest(const std::vector<uint32_t> &words) {
 }
 inline std::vector<uint32_t> read_words(const std::filesystem::path &path) {
   const auto bytes = std::filesystem::file_size(path);
-  require(bytes <= max_bytes && bytes % 4 == 0, "invalid native file size");
+  require(bytes <= uint64_t(UINT32_MAX) && bytes % 4 == 0,
+          "invalid native file size");
   std::vector<uint32_t> words(bytes / 4);
   std::ifstream file(path, std::ios::binary);
   file.read(reinterpret_cast<char *>(words.data()), std::streamsize(bytes));
@@ -128,6 +129,10 @@ inline std::vector<uint32_t> batch_fixture(const std::vector<uint32_t> &base,
     at = kicks_at + 1 + kicks;
   }
 }
+struct InputBlock {
+  uint64_t first, last;
+  uint32_t end;
+};
 class Runtime {
 public:
   std::vector<uint32_t> input, state;
@@ -138,30 +143,36 @@ public:
   uint64_t x_gcol = 0, x_lo = 0, x_span = 0, x_scale = 0, x_gpos = 0,
            x_nodes = 0, x_off = 0, x_moff = 0, x_mat = 0, x_amp = 0;
   uint64_t s_ring = 0, s_new = 0, s_vsum = 0, s_buf = 0, s_pulse = 0;
+  uint64_t membrane = 0, events = 0;
+  bool sparse_input = false;
   explicit Runtime(std::vector<uint32_t> fixture) : input(std::move(fixture)) {
     require(std::endian::native == std::endian::little,
             "little endian host required");
     require(input.size() >= 40 && input[0] == fixture_magic &&
-                (input[1] == 1 || input[1] == 2),
+                (input[1] >= 1 && input[1] <= 4),
             "incompatible fixture");
+    require(input[1] >= 3 || (input[1] == 2) == (input[37] != 0),
+            "invalid legacy extension version");
     const uint64_t n = input[2], steps = input[3], per = input[4], d = input[5],
                    ns = input[7], nt = input[8];
     require(n && steps && per && d && steps % per == 0 && ns <= n && nt <= n,
             "invalid fixture dimensions");
     require(steps + uint64_t(input[6]) < uint64_t(INT32_MAX),
             "deadline overflow");
-    require(input[34] == input.size() &&
-                uint64_t(input[35]) * 4 + input.size() * 4 <= max_bytes,
+    require(input[34] == input.size() && uint64_t(input[35]) * 4 <= max_bytes,
             "fixture budget exceeded");
-    const uint64_t sizes[] = {n + 1, input[36], input[36],     n, n, n,
-                              n,     n,         steps * ns * 2};
+    const uint64_t sizes[] = {
+        n + 1, input[36], input[36],
+        n,     n,         n,
+        n,     n,         input[1] >= 3 ? 0 : steps * ns * 2};
     uint64_t cursor = 40;
     for (uint32_t k = 16; k <= 24; ++k) {
-      require(input[k] == cursor, "invalid input offset");
+      if (k != 24 || input[1] < 3)
+        require(input[k] == cursor, "invalid input offset");
       cursor += sizes[k - 16];
       require(cursor <= input.size(), "input range overflow");
     }
-    if (input[1] == 2) {
+    if (input[37]) {
       require(input[37] == cursor && cursor + 5 <= input.size(),
               "invalid extension offset");
       ng = input[cursor];
@@ -183,7 +194,34 @@ public:
       }
     } else
       require(input[37] == 0 && input[38] == 0, "unexpected extension");
+    if (input[1] >= 3) {
+      require(input[39] == cursor && cursor + 3 <= input.size(),
+              "invalid input descriptor");
+      sparse_input = input[cursor] == 1;
+      events = input[cursor + 1];
+      membrane = input[cursor + 2];
+      require(input[cursor] <= 1 && (input[1] != 3 || sparse_input) &&
+                  (input[1] == 4) == (membrane != 0),
+              "invalid feature flags");
+      cursor += 3;
+      if (membrane) {
+        require(membrane == cursor && cursor + 5 * n <= input.size(),
+                "invalid membrane block");
+        for (uint64_t k = 0; k < 5 * n; ++k)
+          require(std::isfinite(std::bit_cast<float>(input[cursor + k])),
+                  "nonfinite membrane constant");
+        cursor += 5 * n;
+      }
+      require(input[24] == cursor && (sparse_input || events == 0),
+              "invalid kick offset");
+      cursor += sparse_input ? events * 4 : steps * ns * 2;
+    } else
+      require(input[39] == 0, "unexpected input descriptor");
     require(cursor == input.size(), "unexpected fixture tail");
+    require((uint64_t(input[35]) + (sparse_input ? input[24] : input.size())) *
+                    4 <=
+                max_bytes,
+            "resident fixture budget exceeded");
     const uint64_t state_sizes[] = {
         n, n, n, n, d * n, (steps / per) * n, n, steps * nt, n};
     cursor = 0;
@@ -191,7 +229,7 @@ public:
       require(input[k] == cursor, "invalid state offset");
       cursor += state_sizes[k - 25];
     }
-    if (input[1] == 2) {
+    if (input[37]) {
       require(input[38] == cursor, "invalid extension state offset");
       s_ring = cursor;
       s_new = s_ring + d * ng;
@@ -244,19 +282,31 @@ public:
                 std::all_of(seen_stim.begin(), seen_stim.end(),
                             [](bool v) { return v; }),
             "incomplete column map");
-    for (uint64_t i = 0; i < steps * ns; ++i) {
-      auto at = input[24] + i * 2;
+    uint64_t previous_step = 0, previous_col = 0;
+    for (uint64_t i = 0; i < (sparse_input ? events : steps * ns); ++i) {
+      auto at = input[24] + i * (sparse_input ? 4 : 2);
+      if (sparse_input) {
+        const uint64_t tick = input[at], col = input[at + 1];
+        require(tick < steps && col < ns &&
+                    (i == 0 || tick > previous_step ||
+                     (tick == previous_step && col > previous_col)),
+                "unordered sparse kick");
+        previous_step = tick;
+        previous_col = col;
+        at += 2;
+      }
       double count = std::bit_cast<double>(uint64_t(input[at]) |
                                            uint64_t(input[at + 1]) << 32);
       require(std::isfinite(count) && count >= 0 &&
-                  count <= 9007199254740992.0 && std::floor(count) == count,
+                  count <= 9007199254740992.0 && std::floor(count) == count &&
+                  (!sparse_input || count > 0),
               "invalid kick count");
     }
-    if (input[1] == 2)
+    if (input[37])
       validate_extension(n);
     state.resize(input[35], 0);
     for (uint32_t i = 0; i < n; ++i) {
-      state[input[25] + i] = input[13];
+      state[input[25] + i] = std::bit_cast<uint32_t>(parameter(13, i));
       state[input[31] + i] = uint32_t(-1);
     }
   }
@@ -284,6 +334,10 @@ public:
       const auto i = input[x_nodes + k];
       require(i < n && int32_t(input[x_gpos + i]) == int32_t(k),
               "invalid coupled neuron map");
+      if (membrane)
+        for (uint32_t slot : {9u, 10u, 11u, 13u, 14u})
+          require(parameter(slot, i) == constant(slot),
+                  "membrane on coupled neuron");
     }
     uint64_t coupled = 0;
     for (uint64_t i = 0; i < n; ++i)
@@ -315,6 +369,48 @@ public:
     state[input[slot] + i] = std::bit_cast<uint32_t>(value);
   }
   float constant(uint32_t at) const { return std::bit_cast<float>(input[at]); }
+  float parameter(uint32_t slot, uint32_t i) const {
+    const uint32_t column = slot == 9    ? 0
+                            : slot == 10 ? 1
+                            : slot == 11 ? 2
+                            : slot == 13 ? 3
+                                         : 4;
+    return membrane
+               ? std::bit_cast<float>(input[membrane + column * input[2] + i])
+               : constant(slot);
+  }
+  uint64_t event_lower_bound(uint32_t tick, uint32_t col = 0) const {
+    uint64_t lo = 0, hi = events;
+    while (lo < hi) {
+      const auto mid = lo + (hi - lo) / 2, at = input[24] + 4 * mid;
+      if (input[at] < tick || (input[at] == tick && input[at + 1] < col))
+        lo = mid + 1;
+      else
+        hi = mid;
+    }
+    return lo;
+  }
+  InputBlock input_block(uint32_t tick, uint32_t target,
+                         uint64_t capacity) const {
+    require(sparse_input && tick < target && target <= input[3],
+            "invalid input block boundary");
+    const auto first = event_lower_bound(tick);
+    const auto limit = std::min(events, first + capacity);
+    const auto end = limit == events
+                         ? target
+                         : std::min(target, input[input[24] + 4 * limit]);
+    require(end > tick, "one input step exceeds GPU event capacity");
+    return {first, event_lower_bound(end), end};
+  }
+  double kick(uint32_t tick, uint32_t col) const {
+    if (!sparse_input)
+      return word_double(input,
+                         input[24] + (uint64_t(tick) * input[7] + col) * 2);
+    const auto event = event_lower_bound(tick, col), at = input[24] + 4 * event;
+    return event < events && input[at] == tick && input[at + 1] == col
+               ? word_double(input, at + 2)
+               : 0.0;
+  }
   void advance_to(uint32_t target) {
     require(target >= step && target <= input[3], "invalid advance boundary");
     const uint32_t n = input[2], d = input[5];
@@ -349,17 +445,17 @@ public:
           --state[s_pulse + k];
       for (uint32_t i = 0; i < n; ++i) {
         const bool frozen = state[input[28] + i] > step;
-        float vi = (get(25, i) - constant(13)) * constant(9) +
-                   get(26, i) * constant(11) + constant(13);
-        float gi = get(26, i) * constant(10);
-        set(25, i, frozen ? constant(13) : vi);
+        float vi = (get(25, i) - parameter(13, i)) * parameter(9, i) +
+                   get(26, i) * parameter(11, i) + parameter(13, i);
+        float gi = get(26, i) * parameter(10, i);
+        set(25, i, frozen ? parameter(13, i) : vi);
         if (!frozen)
           set(26, i, gi);
         if (nc && int32_t(input[x_gpos + i]) >= 0 && !frozen)
           state[input[25] + i] = state[s_buf + input[x_gpos + i]];
         set(27, i, get(27, i) * constant(12));
         const int32_t k = ng ? int32_t(input[x_gcol + i]) : -1;
-        state[input[33] + i] = (get(25, i) > constant(14) + get(27, i) &&
+        state[input[33] + i] = (get(25, i) > parameter(14, i) + get(27, i) &&
                                 !input[input[20] + i] && k < 0);
         if (k >= 0) {
           float f = (get(25, i) - std::bit_cast<float>(input[x_lo + k])) /
@@ -401,16 +497,14 @@ public:
         }
         auto col = int32_t(input[input[23] + i]);
         if (col >= 0) {
-          auto at = input[24] + (uint64_t(step) * input[7] + uint32_t(col)) * 2;
-          double count = std::bit_cast<double>(uint64_t(input[at]) |
-                                               uint64_t(input[at + 1]) << 32);
+          const double count = kick(step, uint32_t(col));
           set(25, i, float(double(get(25, i)) + double(constant(15)) * count));
         }
       }
       for (uint32_t i = 0; i < n; ++i) {
         const uint32_t emitted = state[input[33] + i];
         if (emitted) {
-          set(25, i, constant(13));
+          set(25, i, parameter(13, i));
           set(26, i, 0);
           set(27, i, get(27, i) + std::bit_cast<float>(input[input[21] + i]));
           if (!input[input[19] + i])

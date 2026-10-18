@@ -22,7 +22,18 @@ def load(name, monkeypatch):
 
 def records(v2=True, success="passed"):
     # Explicit expected contract, not derived from the production fixture registry.
-    extensions = ("none", "graded", "gap", "spikelets", "both", "gap-all-free")
+    extensions = (
+        "none",
+        "graded",
+        "gap",
+        "spikelets",
+        "both",
+        "gap-all-free",
+        "sparse",
+        "membrane",
+        "sparse-membrane",
+        "sparse-both",
+    )
     cases = [
         {
             "seed": seed,
@@ -62,7 +73,7 @@ def test_complete_matrix_passes(monkeypatch, v2, success):
     cases, refused = records(v2, success)
     result = module.qualification(cases, refused, v2=v2, success_field=success)
     assert result["qualified"]
-    assert result["expected_cases"] == (72 if v2 else 12)
+    assert result["expected_cases"] == (120 if v2 else 12)
     assert result["expected_refusals"] == (12 if v2 else 0)
 
 
@@ -163,13 +174,16 @@ def test_console_report_checks_coverage_and_download(monkeypatch, tmp_path, dama
                 assert name == "output.bin"
                 path.write_bytes(b"gpu")
 
-    def export(oracle, path):
+    def export(oracle, path, *, input_encoding="dense"):
+        assert input_encoding == (
+            "sparse" if oracle.case["extension"].startswith("sparse") else "dense"
+        )
         if "reason" in oracle.case or (
             damage == "unexpected-refusal" and oracle.case["extension"] == "graded"
         ):
             raise module.NativeCapabilityError(refused[0]["reason"])
         path.write_bytes(b"fixture")
-        return {}
+        return {"semantics": "flymsg.lif/ordered-f32-v1"}
 
     monkeypatch.setattr(module, "Portal", Portal)
     monkeypatch.setattr(module.time, "sleep", lambda _: None)

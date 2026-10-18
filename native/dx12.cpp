@@ -179,7 +179,7 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   Event event;
   D3D12_ROOT_PARAMETER parameters[5]{};
   parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-  constexpr UINT constant_words = 23;
+  constexpr UINT constant_words = 26;
   parameters[0].Constants = {0, 0, constant_words};
   parameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
   parameters[1].Descriptor = {0, 0};
@@ -229,11 +229,22 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   const uint64_t coupled_groups = (runtime.nc + 63) / 64;
   require(coupled_groups <= 65535, "GPU coupled rows exceed dispatch limit");
   // Inputs live in a default heap: an upload heap is read uncached every tick.
-  auto inputs_upload =
-      buffer(device.Get(), runtime.input.size() * 4, D3D12_HEAP_TYPE_UPLOAD,
-             D3D12_RESOURCE_STATE_GENERIC_READ);
-  auto inputs = buffer(device.Get(), runtime.input.size() * 4,
-                       D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_DEST);
+  // Sparse events are streamed at whole-step boundaries. The static prefix
+  // contains the network and optional extensions; no dense expansion is made.
+  const uint64_t prefix =
+      runtime.sparse_input ? runtime.input[24] : runtime.input.size();
+  const uint64_t capacity =
+      runtime.sparse_input
+          ? std::min({runtime.events, (max_bytes / 4 - prefix) / 4,
+                      std::max<uint64_t>(65536, runtime.input[7])})
+          : 0;
+  require(!runtime.sparse_input || !runtime.events || capacity > 0,
+          "no GPU event block capacity");
+  const uint64_t input_bytes = (prefix + 4 * capacity) * 4;
+  auto inputs_upload = buffer(device.Get(), input_bytes, D3D12_HEAP_TYPE_UPLOAD,
+                              D3D12_RESOURCE_STATE_GENERIC_READ);
+  auto inputs = buffer(device.Get(), input_bytes, D3D12_HEAP_TYPE_DEFAULT,
+                       D3D12_RESOURCE_STATE_COPY_DEST);
   auto outs_upload =
       buffer(device.Get(), outgoing.size() * 4, D3D12_HEAP_TYPE_UPLOAD,
              D3D12_RESOURCE_STATE_GENERIC_READ);
@@ -251,7 +262,9 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
                       D3D12_RESOURCE_STATE_COPY_DEST, true);
   auto readback = buffer(device.Get(), bytes, D3D12_HEAP_TYPE_READBACK,
                          D3D12_RESOURCE_STATE_COPY_DEST);
-  upload(inputs_upload.Get(), runtime.input);
+  std::vector<uint32_t> block(runtime.input.begin(),
+                              runtime.input.begin() + prefix);
+  upload(inputs_upload.Get(), block);
   upload(outs_upload.Get(), outgoing);
   upload(active_upload.Get(), active_words);
   upload(initial.Get(), runtime.state);
@@ -282,8 +295,7 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
     list->CopyBufferRegion(state.Get(), 0, initial.Get(), 0, bytes);
     transition(list.Get(), state.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
                D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    list->CopyBufferRegion(inputs.Get(), 0, inputs_upload.Get(), 0,
-                           runtime.input.size() * 4);
+    list->CopyBufferRegion(inputs.Get(), 0, inputs_upload.Get(), 0, prefix * 4);
     transition(list.Get(), inputs.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
                D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     list->CopyBufferRegion(outs.Get(), 0, outs_upload.Get(), 0,
@@ -294,8 +306,30 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
                            active_words.size() * 4);
     transition(list.Get(), active.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
                D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    uint32_t block_end = runtime.step;
+    uint64_t block_count = 0;
     for (uint32_t tick = runtime.step; tick < target;) {
-      const auto end = std::min(target, tick + 64);
+      if (runtime.sparse_input && tick == block_end) {
+        const auto plan = runtime.input_block(tick, target, capacity);
+        block_end = plan.end;
+        block_count = plan.last - plan.first;
+        // Complete the previous copy before mapping its upload heap again.
+        submit();
+        block.resize(prefix);
+        block.insert(block.end(),
+                     runtime.input.begin() + prefix + 4 * plan.first,
+                     runtime.input.begin() + prefix + 4 * plan.last);
+        upload(inputs_upload.Get(), block);
+        transition(list.Get(), inputs.Get(),
+                   D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+                   D3D12_RESOURCE_STATE_COPY_DEST);
+        list->CopyBufferRegion(inputs.Get(), 0, inputs_upload.Get(), 0,
+                               block.size() * 4);
+        transition(list.Get(), inputs.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
+                   D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+      }
+      const auto end = std::min(std::min(target, tick + 64),
+                                runtime.sparse_input ? block_end : target);
       list->SetComputeRootSignature(root.Get());
       list->SetPipelineState(pipeline.Get());
       list->SetComputeRootShaderResourceView(1, inputs->GetGPUVirtualAddress());
@@ -332,7 +366,10 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
               uint32_t(runtime.s_new),
               uint32_t(runtime.s_vsum),
               uint32_t(runtime.s_buf),
-              uint32_t(runtime.s_pulse)};
+              uint32_t(runtime.s_pulse),
+              uint32_t(runtime.membrane),
+              uint32_t(runtime.sparse_input),
+              uint32_t(block_count)};
           list->SetComputeRoot32BitConstants(0, constant_words, constants, 0);
           list->Dispatch(UINT(phase == 4 ? coupled_groups : groups), 1, 1);
           D3D12_RESOURCE_BARRIER barrier{};

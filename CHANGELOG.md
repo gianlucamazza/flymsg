@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Native sparse inputs.** Explicit `input_encoding="sparse"` exports version-3 ordered nonzero kick records; DX12 streams whole-step event blocks under the 512 MiB input budget. Legacy dense exports retain their bytes. New fixture/worker semantics are versioned explicitly.
+- **Native per-neuron membranes.** Version-4 fixtures carry Python-precomputed per-neuron float32 membrane constants through the CPU executor and shader, including sparse/graded combinations. Uniform membranes retain the scalar format; Gap-node and continuous-clamp refusals remain. Acceptance adds 48 synthetic cases, with CPU byte-parity, resume and export-size checks. Physical GPU qualification of the new formats remains pending.
+
 - **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
 
 - **Entry protocols.** `docs/issue-resolution.md` states, per blocked front (eye, junctions and modulation, looming, head, muscles, completion), the stimulus, readout, only admissible input and control. No new version is written before its input exists. Docs only.
