@@ -278,3 +278,15 @@ Full-connectome v2 is not measurable through this exporter because
 remains separate. There is no full-CNS real-time claim beyond the measured
 steps/s. GPU temperature is unobserved (Device Portal does not expose it);
 throttling is inferred from throughput only.
+
+### Sparse kicks and per-neuron membranes on Series S — 2026-10-18
+
+Worker `8752178` (CI run 39116571890): the [parity matrix](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-native-v34-parity-2026-10-18.json)
+passes 120 of 120 cases bit for bit, the 72 earlier ones plus 48 new sparse, membrane,
+sparse+membrane and sparse+both fixtures, with the 12 declared refusals. Under revision 4 of
+the sustained protocol (declared in `f61a94e` before measuring), one
+[1,500,000-step full-connectome looming job](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-sparse-long-2026-10-18.json) in
+the sparse encoding completes bit for bit against the CPU oracle at 2,632 steps/s (213 MB
+fixture, peak app memory 1.87 GB). Dense kicks capped such a job at about 760k steps within
+the 512 MiB GPU input budget. The worker was stopped afterwards; the harness does not stop it
+itself. Full-connectome version-2 configurations are now exportable; none was measured here.
