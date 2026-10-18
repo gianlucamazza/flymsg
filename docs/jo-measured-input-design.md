@@ -277,10 +277,10 @@ endpoint yields indeterminate. A nonsignificant difference never establishes
 equivalence. Report each condition even when the overall decision is stopped.
 
 A concrete planning rule is precision-based. For K prespecified primary
-comparisons and familywise error α, use α_j = α/K (or another frozen justified
+comparisons and familywise error α, use α*j = α/K (or another frozen justified
 allocation). Given a source-only pilot estimate s_j of the standard deviation
 of independent animal residuals and target confidence-interval half-width ε_j,
-start with `n_j = ceil((z_(1−α_j/2) · s_j / ε_j)^2)` and take the maximum across
+start with `n_j = ceil((z*(1−α_j/2) · s_j / ε_j)^2)` and take the maximum across
 required endpoints. Before confirmation, recalculate upward with the t critical
 value at n−1 degrees of freedom until the planned half-width criterion holds;
 record the resulting n and pilot variance estimate. Choose ε_j prospectively
