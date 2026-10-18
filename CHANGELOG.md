@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **G2 landmark placement decided.** The eyemap → head-capsule landmarks will be placed by an algorithm committed with synthetic-volume tests before any volume is processed, with a ±1 voxel / ±10 % threshold sensitivity check against the same 25 µm gate instead of two raters. The measurement is deferred until a head-to-thorax angle source exists. Docs only.
+
 - **SF5 local replication protocol (#151).** Added a source-pinned clean-clone harness with isolated installation caches, compact-input hashes, a held-out read guard and exact archive comparisons. Registered three local reproduction candidates before execution; the harness has not been run. Added synthetic resume parity and checkpoint refusal coverage. Independent-operator replication remains open.
 
 - **Stimulus primitive.** `song.dead_time` moves verbatim to `flymsg.stimulus` (same object re-exported by `song`); giant-fiber looming no longer imports the song experiment. Behaviour, locks and outputs unchanged.
