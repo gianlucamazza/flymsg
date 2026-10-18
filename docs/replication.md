@@ -169,6 +169,21 @@ Backend changes are tested at the Steps execution-identity boundary; CpuRuntime 
 one CPU backend and checks its numerical-semantics marker on restore. These are software
 unit tests, not full-connectome, hardware or biological qualification.
 
+### Local clean-clone result (2026-10-18)
+
+All three selected results reproduce from a fresh clone at their source commit, with a new
+virtual environment and new caches, input hashes checked before and after
+([summary](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/sf5-clean-clone-2026-10-18.json)):
+
+| Choice              | Result         | Verdict                | Output hashes, config, seeds, source                                  |
+| ------------------- | -------------- | ---------------------- | --------------------------------------------------------------------- |
+| positive            | convergence v1 | `converged`            | identical                                                             |
+| negative            | jump3d v1      | `short`                | identical                                                             |
+| before-holdout stop | gf_looming v1  | `uninformative: no-go` | identical; the audit hook refused nothing, so no recording was opened |
+
+This is same-machine, same-operator evidence: it shows the archived software outputs are
+reconstructible from clean commits, not that an independent operator has reproduced them.
+
 ## A rerun done here
 
 The synapse weight rule v1 was rerun from its source commit `78f0673` in a clean detached
