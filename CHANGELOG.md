@@ -4,6 +4,10 @@
 
 - **Noncooperative termination protocol (#224).** Prospective two-case process-kill harness, fake-Portal tests and Series S result: both cases pass (`docs/evidence/series-s-hardstop-2026-10-18.json`), recovering bit for bit from step 0 and from the last complete checkpoint. GPU fault and gamepad remain open.
 
+- **Measured JO input design (ADR accepted 2026-10-18).** `docs/jo-measured-input-design.md` and `docs/adr-measured-jo-input.md` define protocol 6 source, identity, calibration, causal replay and experimental gates; The owner accepted the ADR on 2026-10-18; implementation waits for a measured source. Six mathematical controls pass 19 assertions. This does not qualify measured input; no runtime or frozen lock changed.
+
+- **Baker anatomical correspondence.** A coordinate-anchored CAVE v783 audit extends complete named MaleCNS type coverage from 2 to 12 of 28 Baker classes, including the still-excluded dimorphic AVLP_pr36. Fourteen remain partial and two absent. All 404 anchors agree with both historical ID lineages and independent annotation supervoxels; 332 have named MaleCNS routes. No response data opened, no benchmark scored, no scientific eligibility claimed. See `docs/baker-crossmatch.md` and the captured evidence.
+
 - **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
 
 - **Entry protocols.** `docs/issue-resolution.md` states, per blocked front (eye, junctions and modulation, looming, head, muscles, completion), the stimulus, readout, only admissible input and control. No new version is written before its input exists. Docs only.
