@@ -1,0 +1,92 @@
+{
+  "schema": "flymsg.jo-design-math-controls/v1",
+  "scope": "Synthetic mathematical controls; DO NOT qualify JO physiology.",
+  "exclusions": [
+    "no measured data",
+    "no neural model runs",
+    "no JO adapter",
+    "no gain or filter selection",
+    "no source-trace acquisition",
+    "no downstream held-out outcomes"
+  ],
+  "protocol_sha256": "bfc00f431c23dfede4edfc39e40b80149d4d6556b780dede0849cb59c86eb527",
+  "script_sha256": "3f51be000f46a1744a574f4906f21f2b193cd434e1cb956dba6954be529a69ee",
+  "floating_tolerance": 1e-12,
+  "cases": [
+    {
+      "case": "envelope_non_identifiability",
+      "assertions": 2,
+      "pass": true
+    },
+    {
+      "case": "abstract_sampling_alias",
+      "assertions": 1,
+      "pass": true,
+      "max_error": 5.2235993308613615e-14,
+      "sample_hz": 10,
+      "carrier_hz": [
+        101,
+        111
+      ]
+    },
+    {
+      "case": "amplitude_and_impedance",
+      "assertions": 5,
+      "pass": true,
+      "peak": 2.0,
+      "peak_to_peak": 4.0,
+      "rms": 1.414213562373095,
+      "velocity_for_distinct_impedances": [
+        1.0,
+        0.5
+      ]
+    },
+    {
+      "case": "half_open_collision_and_alignment",
+      "assertions": 5,
+      "pass": true,
+      "counts": [
+        2,
+        1,
+        1
+      ],
+      "excluded_end_us": 300,
+      "onset_us": 150,
+      "ceiling_us": 200,
+      "floor_us": 100
+    },
+    {
+      "case": "marginals_do_not_identify_correlation",
+      "assertions": 3,
+      "pass": true,
+      "mean_per_bin": 0.5,
+      "clone_correlation": 1,
+      "complement_correlation": -1
+    },
+    {
+      "case": "normalized_tuning_unknown_gain",
+      "assertions": 3,
+      "pass": true,
+      "normalized_shape": [
+        0.25,
+        1.0,
+        0.5
+      ],
+      "absolute_traces": [
+        [
+          5.0,
+          20.0,
+          10.0
+        ],
+        [
+          20.0,
+          80.0,
+          40.0
+        ]
+      ]
+    }
+  ],
+  "case_count": 6,
+  "assertion_count": 19,
+  "all_pass": true
+}

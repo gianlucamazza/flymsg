@@ -52,7 +52,7 @@ def load(path: Path = PATH) -> dict:
 
 
 def content_hash(doc: dict) -> str:
-    return locks.prereg.content_hash(doc)
+    return locks.content_hash(doc)
 
 
 def assert_locked(doc: dict | None = None) -> dict:

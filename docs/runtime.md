@@ -1,6 +1,6 @@
 # ADR: scientific semantics and replaceable execution backends
 
-Status: accepted by the user, 2026-10-14. CPU foundation (R0) and a native CPU fixture executor (R1, CPU) implemented; the HLSL shader, DX12 host and UWP worker build in CI; on a Series S the worker runs and the DX12 lane matches the CPU oracle bit for bit on the 12 version-1 fixtures (2026-10-15); the worker's cancel, stop-to-suspension with checkpoint and resume pass on the console with bit-for-bit output, at about 44,000 steps/s on a 2,048-neuron synthetic fixture; the default full connectome is bit for bit at about 2,320 steps/s with exact float32; the [sustained v1 workload](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-sustained-2026-10-16.json) is bit for bit at about 2,650 steps/s looming and 3,690 steps/s bitter, with no throughput decline over four back-to-back 500,000-step jobs per stimulus. Version-2 fixtures are implemented on the GPU lane (#215); the [2026-10-16 qualification](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-gpu-v2-2026-10-16.json) passes 12 v1 and 60 v2 cases on Series S, retaining 12 expected clamp refusals. The graded+gap v2 lifecycle also passes one million steps, cancel and suspension/resume; hard-stop and GPU-fault gates remain separate. A GPU fault with hard termination is unmeasured ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40)). Related: architecture #30, workbench #27, embodiment #31 and sensory feedback #34.
+Status: accepted by the user, 2026-10-14. CPU foundation (R0) and a native CPU fixture executor (R1, CPU) implemented; the HLSL shader, DX12 host and UWP worker build in CI; on a Series S the worker runs and the DX12 lane matches the CPU oracle bit for bit on the 12 version-1 fixtures (2026-10-15); the worker's cancel, stop-to-suspension with checkpoint and resume pass on the console with bit-for-bit output, at about 44,000 steps/s on a 2,048-neuron synthetic fixture; the default full connectome is bit for bit at about 2,320 steps/s with exact float32; the [sustained v1 workload](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-sustained-2026-10-16.json) is bit for bit at about 2,650 steps/s looming and 3,690 steps/s bitter, with no throughput decline over four back-to-back 500,000-step jobs per stimulus. Version-2 fixtures are implemented on the GPU lane (#215); the [2026-10-16 qualification](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-gpu-v2-2026-10-16.json) passes 12 v1 and 60 v2 cases on Series S, retaining 12 expected clamp refusals. The graded+gap v2 lifecycle also passes one million steps, cancel and suspension/resume. A [noncooperative process kill](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-hardstop-2026-10-18.json) (2026-10-18) recovers bit for bit from step 0 and from the last complete checkpoint. An [API-induced GPU device removal](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-gpufault-2026-10-18.json) (`RemoveDevice`, 2026-10-18) fails the job with `DXGI_ERROR_DEVICE_REMOVED`, exits the worker and recovers bit for bit on restart; a hardware fault is unmeasured ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40)). Related: architecture #30, workbench #27, embodiment #31 and sensory feedback #34.
 
 Independent v2 GPU evidence from #216 is also retained in `docs/evidence/series-s-gpu-parity-v2-2026-10-16.json`.
 
@@ -145,3 +145,28 @@ The full MaleCNS default model (165,122 neurons, 24.5 million synapses; looming 
 A GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation beyond this batching. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
 
 Run `uv run pytest tests/test_runtime.py tests/test_core.py tests/test_embodiment.py`. Existing CI also checks all synthetic regressions, documentation links, formatting and browser modules.
+
+## Native fixture extension implementation (2026-10-18)
+
+This implementation update supersedes the earlier native `Membrane` limitation
+without changing the accepted scientific update phases. `export_fixture` accepts
+explicit `input_encoding="sparse"` (default remains dense): fixture v3 stores
+strictly ordered nonzero `(step, column, float64 count)` events with semantics
+`flymsg.lif/ordered-f32-v2`. GPU inputs stream in whole-step blocks within the
+512 MiB input-buffer budget, without a dense GPU allocation or a reset of the
+neural cursor. Sparse fixture size scales with event count; host input generation
+and output/state allocations retain their own limits.
+
+Non-uniform `sim.Membrane` uses fixture v4 and semantics
+`flymsg.lif/ordered-f32-v3`, carrying per-neuron float32 decay/gain, rest/reset and
+threshold arrays from the same `sim.kernel_constants` used by Numba. The native
+CPU and shader retain the kernel's arithmetic order. Uniform membranes retain
+the scalar format; global refractory timing and refusals on Gap nodes stay the
+same. Sparse input and membranes compose with supported graded/gap fixtures.
+Worker jobs bind the exact semantics returned by the exporter.
+
+See [the binary contract and limits](https://github.com/gianlucamazza/flymsg/blob/main/native/README.md#sparse-inputs-and-per-neuron-membranes-2026-10-18).
+Acceptance adds 48 cases to the original 72, preserving the original fixture
+bytes and 12 clamp refusals. CPU parity and block planning are checked locally;
+new-format physical GPU parity and sustained full-connectome measurements
+remain pending. Historical console results above are unchanged.

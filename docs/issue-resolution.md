@@ -78,7 +78,10 @@ Until that input exists no new version is written and no recorded result is reru
    MANC type/neuron disagreement (140 of 623) is resolved before any per-neuron use. Without
    a published muscle → actuator pairing `motor_map.command` keeps refusing; NeuroMechFly's
    short jump does not become the missing force.
-6. **Completion (#36, M4).** First, a Johnston's organ input with a measured band-pass, or
+6. **Completion (#36, M4).** Follow the [measured JO input design](jo-measured-input-design.md)
+   and [accepted source-boundary ADR](adr-measured-jo-input.md).
+   Source acquisition/calibration and sex compatibility remain blocked; a calcium
+   band-pass alone is diagnostic. First, a Johnston's organ input with a measured band-pass, or
    tuned to the carrier, on exactly MaleCNS JO-A, JO-B and JO-D. Then a case still eligible
    in the frozen partition, other than song v1. Checked on 2026-10-16: the v1 manifest has
    none left. Its only scored held-out case, ORN_DM1 → DM1_lPN, ran and failed; ORN_V is
@@ -87,6 +90,11 @@ Until that input exists no new version is written and no recorded result is reru
    before its data, from a source that did not select the model. The Pacheco data are not
    opened to choose the mechanism; a fitted filter and mosquito tuning do not enter. Only a positive outcome
    against unused animal observations closes the project; a documented no-go does not.
+   The [2026-10-17 Baker audit](baker-crossmatch.md) completes named MaleCNS routes
+   for 12 of 28 classes (AVLP_pr36 still excluded for dimorphism); 14 remain partial
+   and two absent. Root-ID access/updating is verified. The [v2 proposal](m4-v2-proposal.md)
+   records the noncommercial licence scope; remaining sex/input/readout evidence
+   and the prospective partition/lock still block scoring. No responses were opened.
 
 ## Physical trial procedure
 
@@ -278,3 +286,203 @@ Full-connectome v2 is not measurable through this exporter because
 remains separate. There is no full-CNS real-time claim beyond the measured
 steps/s. GPU temperature is unobserved (Device Portal does not expose it);
 throttling is inferred from throughput only.
+
+### Sparse kicks and per-neuron membranes on Series S — 2026-10-18
+
+Worker `8752178` (CI run 39116571890): the [parity matrix](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-native-v34-parity-2026-10-18.json)
+passes 120 of 120 cases bit for bit, the 72 earlier ones plus 48 new sparse, membrane,
+sparse+membrane and sparse+both fixtures, with the 12 declared refusals. Under revision 4 of
+the sustained protocol (declared in `f61a94e` before measuring), one
+[1,500,000-step full-connectome looming job](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-sparse-long-2026-10-18.json) in
+the sparse encoding completes bit for bit against the CPU oracle at 2,632 steps/s (213 MB
+fixture, peak app memory 1.87 GB). Dense kicks capped such a job at about 760k steps within
+the 512 MiB GPU input budget. The worker was stopped afterwards; the harness does not stop it
+itself. Full-connectome version-2 configurations are now exportable; none was measured here.
+
+### Noncooperative termination — protocol 2026-10-18
+
+Prospective protocol for #224, written before measurement. No physical result is
+claimed. Run `scripts/console_hardstop.py --package PFN --aumid AUMID
+--worker-image IMAGE.exe --shader LIF_CSO --lineage LINEAGE_JSON --out NEW_DIRECTORY`.
+Use the imported lifecycle synthetic fixture: 2,048 neurons, two inputs, seed 40,
+1,000,000 steps, version 1 (`extension=none`). Retain every attempt; refuse an
+existing output directory. The declared installed worker source must match every
+observed status. No address or credential belongs in the report.
+
+Method: resolve exactly one PID by exact worker image basename from WDP
+`GET /api/resourcemanager/processes` (`Processes`, `ImageName`, `ProcessId`).
+Record matching image/PID observations before and after
+`DELETE /api/taskmanager/process?pid=PID` (TerminateProcess). Never substitute
+`DELETE /api/taskmanager/app`, even with `forcestop=yes`, for this kill. The PID
+must disappear, no replacement worker may remain, and status must not report
+suspension after the kill. Missing/ambiguous PID or refused DELETE is **blocked**;
+a surviving process, suspension or uncertain observation is **indeterminate**,
+never pass. Observe running strictly between start and end immediately before
+DELETE. Record any observed `checkpointing` race without engineering one; it
+invalidates the mid-advance case and requires a fresh attempt.
+
+- **A — no checkpoint:** kill mid-advance before any checkpoint exists. Restart
+  the app, require `awaiting_recovery`, then upload explicit resume. Worker.cpp
+  reports parked step 0; without a checkpoint execution restarts from step 0.
+  Require completed output bit for bit against the independent CPU oracle and
+  `result.advance_steps == 1,000,000`.
+- **B — last complete checkpoint:** suspend the running app once using the app
+  DELETE, require `suspended` at an interior step, download `checkpoint.json` and
+  `checkpoint.bin`, and verify the declared SHA256. Record the suspended step
+  and checksum. Restart and resume once; after progress beyond that step, kill
+  mid-advance using process DELETE. Require the last complete checkpoint to be
+  unchanged, restart into `awaiting_recovery`, then explicitly resume. Require
+  bit-for-bit CPU parity and `result.advance_steps == 1,000,000 - saved_step`.
+  This verifies the restoration step independently of parked status (which is 0).
+
+For each case retain the remote TrialEpoch identity and checks across stop/kill/
+restart, timestamped status.json history, remote folder listings immediately
+before and after kill (including all temporary/incomplete filenames), downloaded
+status.json, checkpoint.json and checkpoint.bin snapshots where present, process
+observations, effective restoration step and pass/fail/indeterminate/blocked
+verdict. Preserve partial artifacts; never delete corrupt or incomplete evidence.
+Missing recovery or wrong output/restoration is fail; missing evidence is
+indeterminate. A partial-checkpoint observation cannot qualify a complete-checkpoint
+case. Always stop the app at the end, leaving the console idle on Home; failure
+of that cleanup prevents an overall pass. This synthetic gate does not qualify
+GPU/device faults, full-connectome throughput or biological behavior.
+
+### Noncooperative termination — result 2026-10-18
+
+Run under the protocol above (committed in `6ccde6c` before measurement), worker
+source `22bef37`, shader SHA256 `957a1202…`. [Evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-hardstop-2026-10-18.json): report, trial
+epochs, status histories, folder listings and checkpoint snapshots; the zip
+holds SHA256SUMS of every file including the binaries left out of it.
+
+| Case | Kill (WDP process DELETE) | After kill                                 | Recovery                                                                 | Verdict  |
+| ---- | ------------------------- | ------------------------------------------ | ------------------------------------------------------------------------ | -------- |
+| A    | step 12,288, PID gone     | status stale `running`, no checkpoint      | `awaiting_recovery` at restart; resume from step 0; bit for bit          | **pass** |
+| B    | step 145,792, PID gone    | checkpoint (step 14,144) unchanged, SHA ok | `awaiting_recovery`; restored at step 14,144; 985,856 steps; bit for bit | **pass** |
+
+Neither case reported `suspended` after the kill, and no worker process remained
+after the final app stop (console on Home). No `.tmp` or incomplete file was
+present before or after either kill. The kill landed during advance, not during
+`checkpointing`, so a kill mid-publish stays unobserved, as declared. This
+closes the noncooperative-termination gate of #224 for the synthetic 2,048-neuron
+v1 fixture; GPU/device fault and gamepad input remain open.
+
+### GPU device removal — protocol 2026-10-18
+
+Prospective #224 protocol, written before measurement. **Unmeasured**: this
+change supplies instrumentation and a harness, not a hardware result. Test
+hardware only. Use the documented
+[ID3D12Device5::RemoveDevice](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12device5-removedevice)
+(Windows build 20348 or later; the console reports 26100), which tells the runtime
+the device can no longer be used and signals every fence to `UINT64_MAX`. This is
+an API-induced removal exercising the worker's removal path, not a hardware,
+driver or TDR fault; Microsoft does not describe it as a test method. Query the optional interface once at device creation; a requested
+injection without that interface fails before any dispatch with
+`fault injection unavailable`. Do not substitute a driver reset, TDR registry
+change or persistent device setting. Removal is process-local; restoration is a
+process restart. Record that no persistent device setting changed.
+
+Build a new worker and record CI run, exact commit, MSIX and shader SHA256.
+Download the CI artifacts independently, verify their hashes, and retain the
+installed package identity and actual hardware/driver identity with the trial.
+Before injecting any fault, requalify **that new binary** using
+`scripts/console_gpu_parity.py --v2` (with its usual package, shader and output
+arguments): the unchanged full matrix must pass, 12 v1 cases, 60 v2 cases and
+12 declared refusals. Retain the report and artifact hashes with the lineage.
+Lifecycle is not repeated in this protocol. Prior parity or lifecycle evidence
+does not qualify the new binary.
+
+Run `scripts/console_gpufault.py --package PFN --aumid AUMID --worker-image
+IMAGE.exe --shader LIF_CSO --lineage LINEAGE_JSON --out NEW_DIRECTORY` only after
+that prerequisite passes. Lineage must declare `worker_source_commit`; every
+observed job status must match it. Use the unchanged lifecycle fixture: synthetic
+version 1, 2,048 neurons, two inputs, seed 40, 1,000,000 steps. Retain every attempt
+and its files; refuse an existing output directory. No address or credentials
+belong in the output. The report schema is `flymsg.console_gpufault/v1`.
+
+- **F1 — mid-advance without checkpoint.** Upload `fault.json` with schema
+  `flymsg.worker_fault/v1`, the exact job folder ID and step 200,000 before
+  publishing `job.json`. At the first submission cursor at or above that step,
+  immediately after ExecuteCommandLists and Signal, remove the device once.
+  Require status `failed` containing a failing device-removed HRESULT (hex), the
+  original worker PID gone with no replacement worker, no `output.bin` or
+  completed result, no checkpoint, and a retained folder listing and fault
+  control. Allow at most 60 s from terminal-status observation to PID exit.
+- **F2 — after a published checkpoint.** Start an identical job without a fault;
+  suspend once with app DELETE and require an interior `suspended` boundary and
+  complete checkpoint. Download both checkpoint files and hash their exact bytes.
+  While stopped, upload `fault.json` at checkpoint step + 200,000 (strictly below
+  the horizon), restart, require the job still parked `suspended` at the
+  checkpoint step, and explicitly resume.
+  Require the same failed/device-removed/exit evidence as F1 and SHA256 of both
+  `checkpoint.bin` and `checkpoint.json` unchanged after the fault. Never consume
+  or delete `fault.json` or any partial artifact.
+
+For each fault record the failing GetDeviceRemovedReason HRESULT (not an assumed
+`0x887A0005`), selected status history, source/package/shader identity, TrialEpoch
+checks across transitions, PID observations and all job folder filenames. Record
+fault-to-PID-exit time as an interval: the injection is between submission/resume
+and terminal observation; the submit/resume-to-exit elapsed time is a conservative
+upper bound, with lower bound zero. Also record terminal-observation-to-exit
+elapsed time. These polling observations do not establish an exact device clock
+timestamp or an exact RemoveDevice-to-exit latency.
+
+After each fault, restart the app and publish a **fresh**, identical job ID
+without `fault.json`. Require its first identity-checked worker status within
+**60 s**, including the app-start request and submission. Require completion
+at 1,000,000 steps within 900 s and output bit for bit against the independent CPU
+oracle. A failed job is terminal and is never resumed for this recovery check.
+
+Verdicts: **pass** only with all case evidence and fresh-job parity; **blocked**
+when injection is unavailable and status is failed; **fail** for failed status
+without a failing device-removed HRESULT, any other terminal state (including
+completed despite the request), changed checkpoint, output/result after the fault,
+PID-exit deadline, recovery deadline or parity failure; **indeterminate** for
+missing/inaccessible evidence, identity loss, an unqualified suspension boundary
+or interrupted observation. Missing evidence never passes. Both cases and cleanup
+must pass for an overall pass. Always stop the app in `finally`, verify no worker
+process remains, and leave the console on Home. This gate does not qualify
+biological behavior, full-connectome v2 or gamepad input.
+
+**Revision 2 (2026-10-18, before the second attempt).** Attempt 1 (`98fe27f`
+worker, archived with the evidence) passed F1 and stopped F2 on a protocol error:
+after a suspension the worker correctly keeps the job parked `suspended` until
+`resume.json` (`Worker.cpp` reserves `awaiting_recovery` for jobs interrupted while
+`running` or `checkpointing`), while revision 1 required `awaiting_recovery`; the
+harness timed out waiting for it. Revision 2 requires `suspended` at the
+checkpoint step. Nothing else changes; both cases are rerun from scratch on the
+same requalified binary, and attempt 1 is reported, not replaced.
+
+### GPU device removal — result 2026-10-18
+
+Worker `98fe27f` (PR #244 merge build, CI run 39110356086, signed MSIX
+`be417752…`, shader `957a1202…`), requalified before any fault: 72 of 72
+parity cases bit for bit (12 v1, 60 v2) and 12 declared refusals. Attempt 2
+under revision 2; attempt 1 (F1 pass, F2 stopped by the revision-1 error) is
+archived in the same [evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-gpufault-2026-10-18.json) zip with the requalification report.
+
+| Case | Fault                              | Device result                          | Worker                                                        | Recovery (fresh job)             | Verdict  |
+| ---- | ---------------------------------- | -------------------------------------- | ------------------------------------------------------------- | -------------------------------- | -------- |
+| F1   | step 200,000, no checkpoint        | `0x887A0005` DXGI_ERROR_DEVICE_REMOVED | `failed`, no output/result; exit 0.36 s after terminal status | first status 1.85 s; bit for bit | **pass** |
+| F2   | step 214,336, checkpoint at 14,336 | `0x887A0005`                           | `failed`; checkpoint.bin/json SHA256 unchanged; exit 3.05 s   | first status 1.59 s; bit for bit | **pass** |
+
+Fault-to-exit upper bounds are 6.47 s and 8.48 s (submission/resume to exit);
+no device clock timestamps the removal itself. No worker process remained after
+the final stop (console on Home); no persistent device setting was changed. This
+qualifies the worker's handling of an API-induced device removal on the
+synthetic 2,048-neuron v1 fixture, not a hardware, driver or TDR fault, which has
+no supported injection on the console. Gamepad input remains the last open gate
+of #224.
+
+### Combined worker requalification — 2026-10-18
+
+Sparse kicks and membranes (#249) and fault injection (#244) both change the worker, so
+their merge is a new binary. A cross-vendor review then found that a batch job did not check
+the version of its rebuilt fixture; the fix adds a refusal and makes one more binary,
+`6371226` (CI run 39123378480). That binary passes the
+[parity matrix](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-parity-2026-10-18.json) (120 of 120, 12 declared
+refusals), the [batch battery](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-battery-2026-10-18.json) (30 runs equal to
+`sim.run`, 128 s end to end) and [both device-removal cases](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-gpufault-2026-10-18.json)
+(F1 and F2 `0x887A0005`, checkpoint unchanged, fresh jobs bit for bit, worker stopped). An
+intermediate combined build `a4cec40` passed the same parity and fault cases before the fix.
+The 1.5M-step sparse job ran on `8752178`; the final binary differs from it by the inert
+fault-control path and the batch refusal, and was not rerun on that job.
