@@ -104,6 +104,7 @@ class Job:
         seed: int = SEED,
         scope: str = "lifecycle qualification fixture, not biological validation",
         extension: str = "none",
+        input_encoding: str = "dense",
     ):
         self.portal, self.package = portal, package
         self.id = str(uuid.uuid4())
@@ -112,7 +113,7 @@ class Job:
         self.rel = f"inbox\\{self.id}"
         self.rt = oracle(extension) if rt is None else rt
         fixture = self.folder / "fixture.bin"
-        meta = export_fixture(self.rt, fixture)
+        meta = export_fixture(self.rt, fixture, input_encoding=input_encoding)
         self.steps = int(meta["steps"])
         self.fixture = fixture
         self.job = {

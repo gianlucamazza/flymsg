@@ -45,12 +45,16 @@ from flymsg.runtime import CpuRuntime
 PROTOCOL = {
     "schema": "flymsg.console_sustained_protocol/v1",
     "declared": "2026-10-16, before any sustained measurement",
-    "revision": 3,
+    "revision": 4,
     "revision_reason": "attempt 1 (1d1fde5) kept each job's fixture, checkpoint and output on the console; the third 500k-step upload got HTTP 500 and the script stopped without a record. Revision 2 deletes a job's large files from the console once its output is downloaded and hashed, and records a Device Portal error as the job's final state",
     "revision_3": "cross-vendor review fixes, no change to cases or measures: a failed "
     "result or output read-back is recorded as `readback_failed`; the console copy is "
     "deleted only when the downloaded bytes match the worker's reported hash; a zero first "
     "window gives no last/first ratio instead of an exception",
+    "revision_4": "2026-10-18, before measuring it: adds `long-looming-sparse`, one "
+    "1,500,000-step looming job in the sparse kick encoding (fixture v3), beyond the "
+    "~760k-step cap that dense kicks hit within the 512 MiB GPU input budget; existing "
+    "cases unchanged and not rerun",
     "console_cleanup": ["fixture.bin", "checkpoint.bin", "output.bin"],
     "model": "MaleCNS v1.0 default model, version-1 fixture (no graded or coupled neurons)",
     "rate_hz": validate.RATE_HZ,
@@ -79,6 +83,15 @@ PROTOCOL = {
             "steps": 500_000,
             "jobs": 4,
             "per_bin": 10_000,
+        },
+        {
+            "name": "long-looming-sparse",
+            "stimulus": "looming escape",
+            "seed": 603,
+            "steps": 1_500_000,
+            "jobs": 1,
+            "per_bin": 10_000,
+            "input_encoding": "sparse",
         },
     ],
     "activity": "looming escape drives DNp01 and TTMn (battery positive); bitter feeding "
@@ -155,6 +168,7 @@ def one_job(portal, args, sha, out, rt, case, index) -> dict:
         dataset="malecns-v1.0",
         seed=case["seed"],
         scope="sustained workload qualification, not biological validation",
+        input_encoding=case.get("input_encoding", "dense"),
     )
     t0 = time.time()
     try:
