@@ -78,7 +78,10 @@ Until that input exists no new version is written and no recorded result is reru
    MANC type/neuron disagreement (140 of 623) is resolved before any per-neuron use. Without
    a published muscle → actuator pairing `motor_map.command` keeps refusing; NeuroMechFly's
    short jump does not become the missing force.
-6. **Completion (#36, M4).** First, a Johnston's organ input with a measured band-pass, or
+6. **Completion (#36, M4).** Follow the [measured JO input design](jo-measured-input-design.md)
+   and [accepted source-boundary ADR](adr-measured-jo-input.md).
+   Source acquisition/calibration and sex compatibility remain blocked; a calcium
+   band-pass alone is diagnostic. First, a Johnston's organ input with a measured band-pass, or
    tuned to the carrier, on exactly MaleCNS JO-A, JO-B and JO-D. Then a case still eligible
    in the frozen partition, other than song v1. Checked on 2026-10-16: the v1 manifest has
    none left. Its only scored held-out case, ORN_DM1 → DM1_lPN, ran and failed; ORN_V is
@@ -87,6 +90,11 @@ Until that input exists no new version is written and no recorded result is reru
    before its data, from a source that did not select the model. The Pacheco data are not
    opened to choose the mechanism; a fitted filter and mosquito tuning do not enter. Only a positive outcome
    against unused animal observations closes the project; a documented no-go does not.
+   The [2026-10-17 Baker audit](baker-crossmatch.md) completes named MaleCNS routes
+   for 12 of 28 classes (AVLP_pr36 still excluded for dimorphism); 14 remain partial
+   and two absent. Root-ID access/updating is verified. The [v2 proposal](m4-v2-proposal.md)
+   records the noncommercial licence scope; remaining sex/input/readout evidence
+   and the prospective partition/lock still block scoring. No responses were opened.
 
 ## Physical trial procedure
 
