@@ -125,6 +125,29 @@ MaleCNS parquet. `replay.py` verifies input hashes, reconstructs the source rows
 and both historical lineages, recomputes the joins, checks the independent CAVE
 oracles and reconciles the counts. See the archive README for the exact command.
 
+## Sex annotation audit (2026-10-18)
+
+For the 11 complete classes other than AVLP*pr36, every one of the 126 matched
+MaleCNS bodies has an empty `dimorphism`, and every one of the 82 anchored
+materialization-783 roots is `isomorphic` in flywire_annotations v3.2.0. That
+column was added in v3.0.0 from the MaleCNS comparison (Berg et al.,
+[bioRxiv 2025](https://doi.org/10.1101/2025.10.09.680999), now
+[Cell 2026](https://doi.org/10.1016/j.cell.2026.08.015)), whose isomorphic
+category means no consistent \_morphological* sex difference. Neither paper's
+retrieved text names these types. [`audit.py`](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/baker-sex-audit-2026-10-18/audit.py)
+reproduces the counts from hashed inputs into
+[`results.json`](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/baker-sex-audit-2026-10-18/results.json).
+
+The female label does not clear the sex gate. It is the residual value of the
+column, not a per-type comparison result: v3.2.0 has no empty `dimorphism`, and
+1,528 `isomorphic` neurons have no `cell_type` at all, so they cannot have been
+compared at type level (5,012 more typed ones match no MaleCNS `flywireType`
+token). MaleCNS has no `isomorphic` value; its empty field means unflagged. Both
+sides therefore say only "not flagged dimorphic", and morphology does not
+establish physiological equivalence of female recordings and male neurons. The
+11 classes keep **unresolved** sex compatibility. An explicit per-type statement
+from the MaleCNS authors, or male recordings of the same types, would resolve it.
+
 ## Remaining limits
 
 Empty sex annotations do not establish isomorphism. The completed routes other
