@@ -134,11 +134,25 @@ resting angle.
 | Whitehead et al. 2015, _J Exp Biol_ 218:3508, doi:10.1242/jeb.122622                                                | Body pitch control in free flight after impulsive torques: recovery of the body pitch angle, not a head posture. Excluded by entry protocol 4                                                                                                                                                                                                                                                                          | © The Company of Biologists                                                      | title and abstract (2026-10-16)              |
 | Ispizua et al. 2026, bioRxiv doi:10.64898/2026.05.03.722293 (preprint)                                              | Free-walking 3D tracking of 50 keypoints, including head and thorax. No head pitch is reported. Code is named at `elliottabe/3d_tracking_ik` and `moments-behavior`. The curated kinematics are a Google Drive folder linked from the preprint (`bit.ly/3UWoXBF`); that folder's licence is not stated                                                                                                                 | CC BY 4.0 (Crossref, 2026-10-16). Dataset licence not checked                    | text (data-availability section, 2026-10-16) |
 
+Public raw data checked on 2026-10-18 (agents; metadata, scanner info images and file
+headers only, nothing over 50 MB downloaded) for a measurement of our own:
+
+| Source                                                     | Public raw data                                                                                                                         | Verdict for a resting head-to-thorax angle                                                                                                                         |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Zhao et al. 2025 µCT, doi:10.25378/janelia.29111339.v1     | Three PTA head volumes, ~1 µm voxels, ~1 mm field; CC BY 4.0                                                                            | Unusable: the glued thorax is at most a posterior sliver cut by the field (no scutellum); fixed posture                                                            |
+| Lobato-Rios et al. 2022 µCT, doi:10.7910/DVN/PEOVAV        | One resin-embedded female, 360-slice whole-fly crop; CC0                                                                                | Unusable for a dispersion (n = 1, resin posture); at most a pilot of landmark visibility                                                                           |
+| Ispizua, Abe et al. 2026, Drive folder of `3d_tracking_ik` | Grooming, headless and stairs tables of the MuJoCo inverse-kinematics fit, checkpoints, one example bout; no licence file on the folder | Unusable as deposited: the pre-fit landmarks (`kp3d.npz`, listed as a pipeline output in the code README) are not deposited; the fit adopts the model's head joint |
+| Haustein et al. 2024; Anipose; DeepFly3D; LiftPose3D       | Tethered treadmill or prism/ventral recordings; leg keypoints, at most two antennal points                                              | Unusable: tethered, or no head-capsule and thorax landmark pair                                                                                                    |
+| Schoborg et al. 2019; MorphoSource; Digimorph              | No public raw volume (restricted download, or CT listed as n/a)                                                                         | Unusable                                                                                                                                                           |
+
+The only candidate is the undeposited pre-fit landmark set of Ispizua, Abe et al. (13 males,
+9 females, free behaviour, `Antenna_Base`, `EyeL/R`, `Scutellum`, wing bases, T1 coxae). A
+measurement protocol for it is drafted (session scratchpad, not locked) and needs the data
+first.
+
 Next: still blocked. Hengstenberg 1991 and Ispizua et al. 2026 do not supply a resting
-head-to-thorax angle with n. A registration would be a new measurement, for example landmarks
-located in Zhao's µCT volume (whether the glued thorax is in the field of view is unchecked:
-the figshare record, read on 2026-10-16 without downloading, describes scans of "whole
-drosophila heads" in three PTA archives of 0.64–0.72 GB and does not mention the thorax)
+head-to-thorax angle with n. A registration would be a new measurement: an eyemap-to-head-capsule
+rotation located in Zhao's µCT heads (the thorax is not usable there, see the table above)
 joined to a head-to-thorax pitch from free-walking keypoints. Yaw and roll, individual
 variation (n = 3 eye maps) and the female eye under a male CNS stay open.
 
@@ -179,6 +193,17 @@ published, and FlyGym 2.1.0 now ships a muscle model.
 | Özdil et al., arXiv 2509.06426 (ICLR 2026), FlyMimic; shipped in FlyGym 2.1.0 as `assets/model/musculoskeletal/` | 15 Hill-type muscles of the left front leg named with their tendons and the joints they cross (coxa yaw/pitch/roll, trochanter yaw/pitch/roll, tibia pitch), grouped after Azevedo 2024 and Soler 2004; on a NeuroMechFly leg, not FlyBody; mid and hind legs not released; FlyGym ships the MJCF and fetches the meshes                                                                                          | CC BY 4.0 (paper), Apache-2.0 (model)                                                                                  | data (local MJCF)                   |
 | Vaxenburg et al. 2025, _Nature_, doi:10.1038/s41586-025-09029-4                                                  | FlyBody has joint actuators (and tendon actuators coupling abdomen and tarsus DoFs), no muscles and no muscle → actuator table; legs body–coxa, coxa–femur, femur–tibia, tibia–tarsus; no trochanter                                                                                                                                                                                                              | CC BY 4.0                                                                                                              | text                                |
 | Lesser et al. 2024, _Nature_, doi:10.1038/s41586-024-07600-z                                                     | Extended Data Fig. 6, read on PMC11356479 (2026-10-16): the tergotrochanter originates on the dorsal thoracic cuticle, crosses the body–coxa joint and extends the trochanter, and it inserts on the same tendon as the sternotrochanter and the trochanter extensor (citing Azevedo et al.). Biarticular, and not named as a FlyBody actuator                                                                    | PMC11356479. Crossref lists a Springer text-and-data-mining licence and no Creative Commons licence                    | text (2026-10-16)                   |
+
+Force and geometry checked on 2026-10-18 (agent; abstract-level items re-read):
+Zumstein et al. 2004 (_J Exp Biol_ 207:3515, doi:10.1242/jeb.01181) measure the jump muscle's
+peak force through the mesothoracic legs of female Canton-S flies, 101 ± 4.4 µN, reaching its
+peak in 8.2 ms (abstract read 2026-10-18); latency and decay landmarks are in the paywalled
+Results and were not re-read. Eldred et al. 2010 (doi:10.1016/j.bpj.2009.11.051) give
+skinned-fibre active stress, not whole-muscle force or torque. No measured T2 TTM moment arm,
+tendon line of action or joint torque was found; FlyMimic's muscles are left-front-leg only.
+NeuroMechFly fuses trochanter and femur, so the candidate is the
+`coxa-trochanterfemur-pitch` hinge of each middle leg, an authored assignment. The chain
+therefore lacks the published actuator pairing, the T2 lever and a spike-to-force kernel.
 
 Next: still blocked as a published co-naming. A search on 2026-10-16 found no source that
 names a MaleCNS or MANC muscle together with a FlyBody or NeuroMechFly actuator. Lesser et al.
