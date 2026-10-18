@@ -464,3 +464,13 @@ qualifies the worker's handling of an API-induced device removal on the
 synthetic 2,048-neuron v1 fixture, not a hardware, driver or TDR fault, which has
 no supported injection on the console. Gamepad input remains the last open gate
 of #224.
+
+### Combined worker requalification — 2026-10-18
+
+Sparse kicks and membranes (#249) and fault injection (#244) both change the worker, so
+their merge is a new binary: `a4cec40`, CI run 39121871651. Before it can stand for either
+result it passes the [parity matrix](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-combined-parity-2026-10-18.json) (120 of
+120, 12 declared refusals) and [both device-removal cases](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-combined-gpufault-2026-10-18.json)
+(F1 and F2 `0x887A0005`, checkpoint unchanged, fresh jobs bit for bit, worker stopped). The
+1.5M-step sparse job ran on the uncombined `8752178`; the combined binary differs from it only
+by the inert fault-control path, and was not rerun on that job.
