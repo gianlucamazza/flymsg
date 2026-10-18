@@ -468,9 +468,13 @@ of #224.
 ### Combined worker requalification — 2026-10-18
 
 Sparse kicks and membranes (#249) and fault injection (#244) both change the worker, so
-their merge is a new binary: `a4cec40`, CI run 39121871651. Before it can stand for either
-result it passes the [parity matrix](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-combined-parity-2026-10-18.json) (120 of
-120, 12 declared refusals) and [both device-removal cases](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-combined-gpufault-2026-10-18.json)
-(F1 and F2 `0x887A0005`, checkpoint unchanged, fresh jobs bit for bit, worker stopped). The
-1.5M-step sparse job ran on the uncombined `8752178`; the combined binary differs from it only
-by the inert fault-control path, and was not rerun on that job.
+their merge is a new binary. A cross-vendor review then found that a batch job did not check
+the version of its rebuilt fixture; the fix adds a refusal and makes one more binary,
+`6371226` (CI run 39123378480). That binary passes the
+[parity matrix](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-parity-2026-10-18.json) (120 of 120, 12 declared
+refusals), the [batch battery](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-battery-2026-10-18.json) (30 runs equal to
+`sim.run`, 128 s end to end) and [both device-removal cases](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-gpufault-2026-10-18.json)
+(F1 and F2 `0x887A0005`, checkpoint unchanged, fresh jobs bit for bit, worker stopped). An
+intermediate combined build `a4cec40` passed the same parity and fault cases before the fix.
+The 1.5M-step sparse job ran on `8752178`; the final binary differs from it by the inert
+fault-control path and the batch refusal, and was not rerun on that job.
