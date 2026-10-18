@@ -17,7 +17,7 @@ def test_grid_is_locked_and_contains_the_default_cell():
     assert len(sensitivity.jobs(doc)) == 10 * 6
     edited = sensitivity.load()
     edited["grid"]["seeds"] = 3
-    edited["content_sha256"] = sensitivity.locks.prereg.content_hash(edited)
+    edited["content_sha256"] = sensitivity.locks.content_hash(edited)
     with pytest.raises(sensitivity.SensitivityError, match="without a bump"):
         sensitivity.assert_locked(edited)
 
