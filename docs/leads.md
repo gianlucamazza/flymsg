@@ -145,7 +145,7 @@ headers only, nothing over 50 MB downloaded) for a measurement of our own:
 | Haustein et al. 2024; Anipose; DeepFly3D; LiftPose3D       | Tethered treadmill or prism/ventral recordings; leg keypoints, at most two antennal points                                              | Unusable: tethered, or no head-capsule and thorax landmark pair                                                                                                    |
 | Schoborg et al. 2019; MorphoSource; Digimorph              | No public raw volume (restricted download, or CT listed as n/a)                                                                         | Unusable                                                                                                                                                           |
 
-The only candidate is the undeposited pre-fit landmark set of Ispizua, Abe et al. (13 males,
+The eyemap → head-capsule half is measurable from public data ([feasibility](https://github.com/gianlucamazza/flymsg/blob/main/docs/g2-capsule-rotation.md)). The only candidate is the undeposited pre-fit landmark set of Ispizua, Abe et al. (13 males,
 9 females, free behaviour, `Antenna_Base`, `EyeL/R`, `Scutellum`, wing bases, T1 coxae). A
 measurement protocol for it is drafted (session scratchpad, not locked) and needs the data
 first.
