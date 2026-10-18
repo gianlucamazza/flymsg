@@ -55,6 +55,8 @@ PAGES = (
     ("index", "README.md", "Overview"),
     ("data", "docs/data.md", "Data"),
     ("architecture", "docs/architecture.md", "Architecture"),
+    ("adr-module-boundaries", "docs/adr-module-boundaries.md", "Module boundaries ADR"),
+    ("catalog", "docs/catalog.md", "Documentation catalog"),
     ("model", "docs/model.md", "Model"),
     ("embodiment", "docs/embodiment.md", "Embodiment"),
     ("eye", "docs/eye.md", "Eye"),
