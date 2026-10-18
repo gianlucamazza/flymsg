@@ -1,0 +1,135 @@
+{
+  "classes": {
+    "A2": {
+      "female_dimorphism": {
+        "isomorphic": 2
+      },
+      "female_roots_783": 2,
+      "male_bodies": 2,
+      "male_dimorphism": {
+        "": 2
+      }
+    },
+    "AVLP_pr04": {
+      "female_dimorphism": {
+        "isomorphic": 4
+      },
+      "female_roots_783": 4,
+      "male_bodies": 6,
+      "male_dimorphism": {
+        "": 6
+      }
+    },
+    "AVLP_pr05": {
+      "female_dimorphism": {
+        "isomorphic": 25
+      },
+      "female_roots_783": 25,
+      "male_bodies": 55,
+      "male_dimorphism": {
+        "": 55
+      }
+    },
+    "AVLP_pr12": {
+      "female_dimorphism": {
+        "isomorphic": 13
+      },
+      "female_roots_783": 13,
+      "male_bodies": 10,
+      "male_dimorphism": {
+        "": 10
+      }
+    },
+    "AVLP_pr23": {
+      "female_dimorphism": {
+        "isomorphic": 2
+      },
+      "female_roots_783": 2,
+      "male_bodies": 4,
+      "male_dimorphism": {
+        "": 4
+      }
+    },
+    "AVLP_pr35": {
+      "female_dimorphism": {
+        "isomorphic": 2
+      },
+      "female_roots_783": 2,
+      "male_bodies": 2,
+      "male_dimorphism": {
+        "": 2
+      }
+    },
+    "B2": {
+      "female_dimorphism": {
+        "isomorphic": 6
+      },
+      "female_roots_783": 6,
+      "male_bodies": 6,
+      "male_dimorphism": {
+        "": 6
+      }
+    },
+    "IPS/WED_pr01": {
+      "female_dimorphism": {
+        "isomorphic": 13
+      },
+      "female_roots_783": 13,
+      "male_bodies": 21,
+      "male_dimorphism": {
+        "": 21
+      }
+    },
+    "IPS_pr02": {
+      "female_dimorphism": {
+        "isomorphic": 2
+      },
+      "female_roots_783": 2,
+      "male_bodies": 2,
+      "male_dimorphism": {
+        "": 2
+      }
+    },
+    "SAD_pr01": {
+      "female_dimorphism": {
+        "isomorphic": 2
+      },
+      "female_roots_783": 2,
+      "male_bodies": 2,
+      "male_dimorphism": {
+        "": 2
+      }
+    },
+    "WED_pr01": {
+      "female_dimorphism": {
+        "isomorphic": 11
+      },
+      "female_roots_783": 11,
+      "male_bodies": 16,
+      "male_dimorphism": {
+        "": 16
+      }
+    }
+  },
+  "female_dimorphism_values": {
+    "female-specific": 270,
+    "isomorphic": 138072,
+    "potentially female-specific": 93,
+    "potentially sexually dimorphic": 161,
+    "sexually dimorphic": 652
+  },
+  "female_isomorphic_typed_without_male_flywireType_token": 5012,
+  "female_isomorphic_without_cell_type": 1528,
+  "inputs": {
+    "flywire_v3_2_0_tsv": "b214970b55d2fbe0853bba536fdcb9e28730f4eb7ab06f600491df795da683cd",
+    "neurons_parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c"
+  },
+  "male_dimorphism_values": {
+    "": 162754,
+    "male-specific": 1258,
+    "potentially male-specific": 162,
+    "potentially sexually dimorphic": 177,
+    "sexually dimorphic": 771
+  },
+  "schema": "flymsg.baker_sex_audit/v1"
+}
