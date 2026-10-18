@@ -27,7 +27,7 @@ All formats are little endian, versioned and reject incompatible dimensions/offs
 
 Version 2 fixtures add graded neurons and electrically coupled groups (`sim.Graded`, `sim.Gap`). Header word 37 points to an extension block (graded and coupled counts, matrix size, spike-term length and amplitude, the per-neuron graded column and coupled position, release parameters, group offsets and the float64 step matrices [P | Q | S]); word 38 points to its state (release ring, this step's release, per-bin potential sums in float64, the coupled-group buffer, the steps left of each spike term). The C++ executor validates every extension field and reproduces the CPU runtime bit for bit, including checkpoint and resume; the acceptance runs each synthetic case without extension, with graded neurons, with coupling, with asymmetric coupling and spikelets, and with graded neurons and spikelets together (60 cases). The DX12 lane runs version 2 fixtures too (#39). A fifth phase, before the four of each tick, steps each coupled group in float64 from the state before the update, one thread per coupled row, in the CPU's order and with no fused operation. A graded neuron's release divides by its span as a correctly rounded float32, from a float32 reciprocal refined in double and then corrected by exact tests against the neighbouring midpoints; the host refuses a span whose reciprocal would leave the normal float32 range. Each neuron's synapses from graded sources are listed on the host, so the release sum reads only those, in ascending order. On 2026-10-16 the 60 version-2 acceptance cases and the 12 version-1 ones matched the CPU oracle bit for bit on a Series S (`docs/evidence/series-s-gpu-parity-v2-2026-10-16.json`).
 
-The acceptance contract requires 12 version-1 cases, 60 supported version-2 cases and exactly 12 expected continuous-refractory-clamp refusals. Missing or duplicate cases and unexpected refusals fail qualification. Per-neuron `Membrane` and continuous refractory clamps remain refused.
+The legacy acceptance contract requires 12 version-1 cases, 60 supported version-2 cases and exactly 12 expected continuous-refractory-clamp refusals; the new formats add 48 supported cases below. Missing or duplicate cases and unexpected refusals fail qualification. Continuous refractory clamps remain refused. New sparse-input and per-neuron membrane cases are described below.
 
 **Batches** (`flymsg.native.export_batch`, `batch_fixture` in `lif.h`) carry several runs of one network: a base fixture, then for each run the words before the kicks that differ from the base, as (offset, word) pairs, and its own kicks.
 
@@ -85,3 +85,89 @@ condition before admitting an electrical fixture; otherwise it raises
 `NativeCapabilityError`. The acceptance report preserves original fixtures in their named boundary mode and lists
 dynamic continuous refractory fixtures as unsupported. The 12 gap-all-free fixtures are qualified on the Series S
 GPU (2026-10-16). This is not qualification of dynamic continuous clamps.
+
+## Sparse inputs and per-neuron membranes (2026-10-18)
+
+The native lane now supports two opt-in fixture extensions. These implement the
+requested input/membrane contract; the original scientific update order and all
+version-1/version-2 fixture bytes stay unchanged. Earlier per-neuron native
+refusals in this document describe the implementation before this update.
+On 2026-10-18 the Series S passed all 120 parity cases and one 1.5M-step full-connectome sparse looming job ([issue resolution](../docs/issue-resolution.md)).
+
+```python
+export_fixture(runtime, path, input_encoding="sparse")
+```
+
+`input_encoding` defaults to `"dense"` for compatibility. Sparse encoding is
+explicit rather than automatic: it uses 16 bytes per nonzero kick, with no
+per-step offset table, versus dense's 8 bytes per step per input. Choose sparse
+when fewer than half the dense entries are nonzero. The runtime's Python input
+array remains dense; the exporter scans bounded row chunks without constructing
+a dense float64 copy. This removes the dense GPU-input horizon limit (about
+760,000 looming steps under the 512 MiB budget); state/recording and host memory
+still bound the horizon.
+
+- Fixture **v3**, semantics `flymsg.lif/ordered-f32-v2`: sparse input without a
+  non-uniform membrane. Header word 39 points to three words: sparse flag (1),
+  event count and membrane offset (0). Header word 24 points to the final event
+  array: strictly ordered `(step, input column, float64 integer count)` records,
+  four uint32 words each, with positive counts at most 2^53. Missing events mean
+  zero, including empty steps and trailing silence. Every stimulated neuron
+  still performs the double kick addition, even for zero, after thresholding.
+- Fixture **v4**, semantics `flymsg.lif/ordered-f32-v3`: an optional per-neuron
+  membrane block, with dense or sparse input. The descriptor's third word points
+  to five float32 arrays of length n: membrane decay, synaptic decay, synaptic
+  gain, rest/reset and threshold. These encode `tau_m`, `tau_syn`, `v_rest` and
+  `v_th` using `sim.kernel_constants` directly: decays and gain are calculated
+  in float64 by Python, rounded once to float32, and never recomputed with GPU
+  transcendental functions. Integration preserves each float32 subtraction,
+  multiplication and addition in the Numba kernel's order. `t_ref` and threshold
+  adaptation decay remain global. Uniform membranes use the legacy scalar
+  format; one equal to `Params` produces the same fixture bytes as no membrane.
+
+For v3/v4, any graded/gap extension (header words 37/38) precedes the descriptor,
+then the membrane block if present, then the input at word 24. Old v1/v2 layout
+and readers remain supported. Membranes on Gap nodes and unsupported continuous
+refractory clamps retain their existing refusals. Graded neurons can use their
+own membrane constants.
+
+The static prefix and state retain the 512 MiB resident qualification cap.
+Sparse files can exceed 512 MiB, up to the little-endian format's uint32 byte
+address bound (less than 4 GiB). `advance_gpu` streams sparse events in whole-step
+blocks, normally at most 65,536 events (1 MiB), enlarging for a wider stimulus
+step only within the 512 MiB input-buffer cap. No step is split; a single step
+that cannot fit is refused. The previous GPU submission completes before an
+upload heap is reused. Block boundaries, advance endpoints and checkpoint/resume
+leave tick numbers and the delayed-spike ring unchanged. Host memory still holds
+the complete sparse file; this is GPU upload streaming, not disk streaming.
+
+Worker jobs must use the semantics returned by `export_fixture` in their job
+contract; mismatched fixture/semantics versions fail before execution. New
+contracts fail on old workers. Batches remain limited to legacy v1 fixtures.
+`input_ms`, output decoding and checkpoint identity support the new layouts.
+
+The acceptance matrix adds sparse, membrane, sparse+membrane and sparse+graded/gap
+cases: 120 supported cases and 12 expected clamp refusals. Existing 72 cases keep
+their bytes. `console_gpu_parity.py --v2` includes the new cases along with the
+older extensions; a current worker and shader are required. CPU checks cover
+byte-identical dense/sparse outputs, resume, exporter reconstruction, an input
+whose hypothetical dense encoding exceeds 512 MiB, and non-uniform membrane
+parity with `CpuRuntime` and `sim.run`. These software checks are not biological qualification.
+
+`fault.json` is a **test-hardware-only** control for API-induced, process-local GPU
+removal (documented `RemoveDevice`, not a hardware fault): `{"schema":"flymsg.worker_fault/v1","job_id":"<folder-id>","step":200000}`.
+Publish it before `job.json`, or before explicit resume while stopped. Only DX12
+jobs read it, once at execution start. The step must be an unsigned integer
+strictly beyond the restored cursor; invalid schema/identity/step is ignored and
+recorded in `fault-observation.json` (a step at/before restoration fails validation).
+The file is never consumed or deleted. No control means no injection, with the
+same binary and no build flag. Both single and batch GPU advances accept the
+control; batch steps refer to the per-run cursor and injection occurs once per
+job execution. `ID3D12Device5` is queried before dispatch; its absence on a requested
+test fails with `fault injection unavailable`. Otherwise RemoveDevice is called
+once after submission and Signal, and the existing polling/quarantine path raises
+`GpuFault` with GetDeviceRemovedReason in hex. The worker records failed and exits
+before writing a completed result/output for that advance. Earlier batch outputs
+remain evidence. Restart the process to restore; no persistent device setting is
+changed. Use the prospective [GPU fault protocol](../docs/issue-resolution.md#gpu-device-removal--protocol-2026-10-18)
+and `scripts/console_gpufault.py`; hardware results remain unmeasured.

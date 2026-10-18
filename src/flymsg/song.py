@@ -29,6 +29,7 @@ import pandas as pd
 from scipy import io, sparse
 
 from flymsg import draws, locks, nulls, parallel, sim
+from flymsg.stimulus import dead_time
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "song.yaml"
@@ -51,7 +52,7 @@ def load(path: Path = PATH) -> dict:
 
 
 def content_hash(doc: dict) -> str:
-    return locks.prereg.content_hash(doc)
+    return locks.content_hash(doc)
 
 
 def assert_locked(doc: dict | None = None) -> dict:
@@ -234,18 +235,6 @@ def envelope(kind: str, steps: int, dt: float, doc: dict, rng) -> np.ndarray:
     out = np.zeros(steps, bool)
     for a in starts:
         out[a : a + on] = True
-    return out
-
-
-def dead_time(k: np.ndarray, gap: int) -> np.ndarray:
-    """At most one kick per step and none within `gap` steps of the previous kept one."""
-    out = np.zeros(k.shape, np.int8)
-    for j in range(k.shape[1]):
-        last = -gap
-        for t in np.flatnonzero(k[:, j]):
-            if t - last >= gap:
-                out[t, j] = 1
-                last = t
     return out
 
 

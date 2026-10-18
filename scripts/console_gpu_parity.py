@@ -29,7 +29,7 @@ import numpy as np
 from scipy import sparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from native_acceptance import EXTENSIONS, check, qualification
+from native_acceptance import EXTENSIONS, check, encoding, qualification
 
 from flymsg import sim
 from flymsg.console import (  # the scripts beside this one import them here
@@ -79,7 +79,7 @@ def run(
         folder.mkdir(parents=True)
         fixture = folder / "fixture.bin"
         try:
-            meta = export_fixture(oracle, fixture)
+            meta = export_fixture(oracle, fixture, input_encoding=encoding(ext))
         except NativeCapabilityError as exc:
             unsupported.append(
                 {
@@ -94,7 +94,7 @@ def run(
         job = {
             "schema": "flymsg.neural_job/v1",
             "job_id": job_id,
-            "semantics": "flymsg.lif/ordered-f32-v1",
+            "semantics": meta["semantics"],
             "backend": "dx12",
             "fixture_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
             "shader_sha256": shader_sha,

@@ -29,7 +29,7 @@ import numpy as np
 import pandas as pd
 from scipy import io, signal
 
-from flymsg import draws, eye, locks, parallel, sim, song
+from flymsg import draws, eye, locks, parallel, sim, stimulus
 from flymsg.runtime import CpuRuntime
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -171,7 +171,7 @@ def respond(W, lc4, lplc2, gf, rv_ms, g4, g2, seed, doc, p) -> dict:
     # stimulated neurons are never refractory in the kernel: kicks keep one refractory
     # period apart, as in song
     raw = np.random.default_rng(seed).poisson(lam)
-    kicks = song.dead_time(raw, round(p.t_ref / p.dt)).astype(np.int64)
+    kicks = stimulus.dead_time(raw, round(p.t_ref / p.dt)).astype(np.int64)
     steps = kicks.shape[0]
     rt = CpuRuntime(
         W,
