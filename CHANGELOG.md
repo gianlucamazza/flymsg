@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **arena-1 DN inventory.** `docs/dn-arena-inventory.md` names MaleCNS v1.0 bodyIds and sides for the accepted DN-arena ADR: DNa01 and DNa02 by exact `type`; oDN1 as traced `DNg97` via the official synonym `Sapkal 2024: oDN1`; MDN and DNp01 listed only. No gain is chosen. Required types are mapped, so the milestone does not stop on identity. Docs only.
+
 - **DN arena ADR (accepted).** Gianluca Mazza accepted `docs/adr-dn-arena.md` on 2026-10-19. It is a synthetic steering fixture behind `closedloop.Body`, not the sensorimotor plan's VEE-0 take-off. Commands are `yaw` in `rad/s` and `forward` in `m/s`: `arena-2` extends the `ActuatorRef` allow-list and leaves schema `flymsg.embodiment/v2` unchanged. Synthetic `closedloop._commands` already checks the compiled table and does not call `pose.command`. Gains stay in the experiment lock, not in `validation/evidence.yaml`. The null is intact yaw inside the wiring-null seed range; the script control is reported and does not decide. Follow-ups are `arena-1` through `arena-6`, one PR at a time. This commit changes no code. Docs only.
 
 - **G2 landmark placement decided.** The eyemap → head-capsule landmarks will be placed by an algorithm committed with synthetic-volume tests before any volume is processed, with a ±1 voxel / ±10 % threshold sensitivity check against the same 25 µm gate instead of two raters. The measurement is deferred until a head-to-thorax angle source exists. Docs only.
