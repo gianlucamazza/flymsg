@@ -1,6 +1,7 @@
 """G5 (#180): ADR order, fail-closed evidence, the record and replay parity, on toys only."""
 
 import dataclasses
+import hashlib
 import json
 
 import numpy as np
@@ -117,6 +118,8 @@ def run(arm="intact", mode="synthetic", evidence=None, body=None, **kw):
         optics_config_sha256="c" * 64,
         run_identity_sha256="b" * 64,
         input_gap_steps=kw.pop("input_gap_steps", 0),
+        input_encoding=kw.pop("input_encoding", "counts"),
+        pathway_sha256=kw.pop("pathway_sha256", None),
         **kw,
     )
 
@@ -451,3 +454,252 @@ def test_a_resumed_run_keeps_the_dead_time_across_the_break(tmp_path):
         checkpoint_every_us=5000,
     )
     assert resumed == whole
+
+
+V1_FIELDS = {
+    "arm",
+    "clock",
+    "evidence",
+    "input_ids",
+    "mode",
+    "optics_config_sha256",
+    "provenance",
+    "run_identity_sha256",
+    "schema",
+    "silenced_ids",
+    "ticks",
+    "traced_ids",
+}
+V1_TICK_FIELDS = {
+    "commands",
+    "contacts",
+    "input_counts",
+    "spikes",
+    "state",
+    "stepped",
+    "stimulus",
+    "time_us",
+}
+PATHWAY = "d" * 64
+OTHER_PATHWAY = "e" * 64
+
+
+def kick_runtime(duration_us=40_000):
+    edges, sign, n = chain([400])
+    p = sim.Params()
+    return CpuRuntime(
+        sim.weight_matrix(edges, sign, n, p.w_syn),
+        np.array([0]),
+        steps=duration_us // CLOCK.neural_us,
+        kicks=np.zeros((0, 1), dtype=np.float32),
+        p=p,
+        per_bin=CLOCK.control_us // CLOCK.neural_us,
+        trace=np.array([1]),
+        input_encoding="kick_equivalent",
+    )
+
+
+def kick_transducer(stim):
+    """One kick per step, with the first step a float32 fraction of the stimulus."""
+    per = CLOCK.body_us // CLOCK.neural_us
+    raw = max(0.0, stim[0])
+    unit = np.float32(raw / (1.0 + raw))
+    drive = np.full((per, 1), np.float32(1.0), dtype=np.float32)
+    drive[0, 0] = unit
+    return drive
+
+
+def kick_run(arm="intact", body=None, **kw):
+    if "runtime" not in kw:
+        kw["runtime"] = kick_runtime()
+    kw.setdefault("transducer", kick_transducer)
+    kw.setdefault("input_encoding", "kick_equivalent")
+    kw.setdefault("pathway_sha256", PATHWAY)
+    return run(arm, body=body, **kw)
+
+
+def test_a_counts_run_stays_byte_identical_to_the_v1_record():
+    plain = run()
+    text = plain.to_json()
+    assert type(plain) is closedloop.Record
+    assert plain.schema == closedloop.SCHEMA == "flymsg.closedloop/v1"
+    assert closedloop.from_json(text) == plain
+    assert closedloop.from_json(text).to_json() == text
+    document = json.loads(text)
+    assert set(document) == V1_FIELDS
+    assert set(document["ticks"][0]) == V1_TICK_FIELDS
+    assert "input_drive" not in text
+    assert "input_encoding" not in text
+    assert "pathway_sha256" not in text
+    # the bytes the code produced before record v2 (main 155058f, same toy runs)
+    assert hashlib.sha256(text.encode()).hexdigest() == (
+        "3dce36bcb451d021620eecb78e1911756a9b3717276a2b9e7fa22cc2e23e5208"
+    )
+    gapped = run(transducer=_fast, input_gap_steps=GAP).to_json()
+    assert hashlib.sha256(gapped.encode()).hexdigest() == (
+        "337446edc5f17d5206e37615fdc067ed2722dac7b0ed4e51cbbcf2d0edc53b32"
+    )
+    with pytest.raises(ContractError, match="no pathway"):
+        run(pathway_sha256=PATHWAY)
+    archived = json.dumps(document, sort_keys=True, separators=(",", ":"))
+    assert archived == text
+    assert closedloop.from_json(archived).to_json() == archived
+
+
+def test_kick_equivalent_records_the_drive_and_replays_it():
+    delivered = []
+
+    def watch(stim):
+        drive = kick_transducer(stim)
+        delivered.append(drive.copy())
+        return drive
+
+    rt = kick_runtime()
+    record = kick_run(runtime=rt, transducer=watch)
+    assert type(record) is closedloop.RecordV2
+    assert record.schema == closedloop.SCHEMA_V2 == "flymsg.closedloop/v2"
+    assert record.input_encoding == "kick_equivalent"
+    assert record.pathway_sha256 == PATHWAY
+    text = record.to_json()
+    assert closedloop.from_json(text) == record
+    assert closedloop.from_json(text).to_json() == text
+    stacked = np.concatenate(delivered)
+    recorded = np.concatenate(
+        [np.asarray(tick.input_drive, dtype=np.float64) for tick in record.ticks]
+    )
+    assert recorded.shape == stacked.shape
+    assert recorded.tobytes() == stacked.astype(np.float64).tobytes()
+    stored = rt.snapshot()["input_drive"][: recorded.shape[0]]
+    assert stored.tobytes() == recorded.tobytes()
+    again = kick_run("replay", replay=record)
+    closedloop.replay_parity(record, again)
+    assert [tick.spikes for tick in again.ticks] == [
+        tick.spikes for tick in record.ticks
+    ]
+    assert any(tick.spikes for tick in record.ticks)
+    replayed = np.concatenate(
+        [np.asarray(tick.input_drive, dtype=np.float64) for tick in again.ticks]
+    )
+    assert replayed.tobytes() == recorded.tobytes()
+    rows = list(record.ticks[0].input_drive)
+    rows[0] = (rows[0][0] + 1.0,)
+    ticks = list(record.ticks)
+    ticks[0] = dataclasses.replace(ticks[0], input_drive=tuple(rows))
+    with pytest.raises(ContractError, match="input drive differs"):
+        closedloop.replay_parity(dataclasses.replace(record, ticks=tuple(ticks)), again)
+
+
+def test_encoding_pathway_and_drive_refuse_before_any_step(tmp_path):
+    record = kick_run()
+    closed = run()
+    body = ToyBody()
+    with pytest.raises(ContractError, match="encoding or pathway"):
+        run("replay", replay=record, body=body)
+    assert body.calls == []
+    body = ToyBody()
+    with pytest.raises(ContractError, match="encoding or pathway"):
+        kick_run("replay", replay=record, body=body, pathway_sha256=OTHER_PATHWAY)
+    assert body.calls == []
+    body = ToyBody()
+    with pytest.raises(ContractError, match="no pathway"):
+        run(
+            "replay",
+            replay=closed,
+            body=body,
+            pathway_sha256=PATHWAY,
+            runtime=runtime(),
+        )
+    assert body.calls == []
+    body = ToyBody()
+    with pytest.raises(ContractError, match="encoding or pathway"):
+        kick_run("replay", replay=closed, body=body)
+    assert body.calls == []
+    body = ToyBody()
+    with pytest.raises(ContractError, match="kick_equivalent"):
+        kick_run(body=body, input_gap_steps=1)
+    assert body.calls == []
+    body = ToyBody()
+    with pytest.raises(ContractError, match="pathway"):
+        kick_run(body=body, pathway_sha256=None)
+    assert body.calls == []
+    body = ToyBody()
+    with pytest.raises(ContractError, match="runtime input encoding"):
+        kick_run(body=body, runtime=runtime())
+    assert body.calls == []
+
+    text = record.to_json()
+    bad = json.loads(text)
+    bad["ticks"][0]["input_drive"][0][0] = 0.1
+    with pytest.raises(ContractError, match="float32"):
+        closedloop.from_json(json.dumps(bad))
+    bad = json.loads(text)
+    bad["ticks"][0]["input_drive"][0][0] = -1.0
+    with pytest.raises(ContractError, match="finite"):
+        closedloop.from_json(json.dumps(bad))
+    bad = json.loads(text)
+    bad["ticks"][0]["input_drive"][0][0] = float("nan")
+    with pytest.raises(ContractError, match="finite"):
+        closedloop.from_json(json.dumps(bad))
+    bad = json.loads(text)
+    bad["pathway_sha256"] = None
+    with pytest.raises(ContractError, match="pathway"):
+        closedloop.from_json(json.dumps(bad))
+    del bad["pathway_sha256"]
+    with pytest.raises(ContractError, match="missing"):
+        closedloop.from_json(json.dumps(bad))
+
+    counted = json.loads(text)
+    counted["input_encoding"] = "counts"
+    counted["pathway_sha256"] = None
+    width = len(counted["ticks"][0]["input_drive"])
+    for tick in counted["ticks"]:
+        tick["input_drive"] = [[0] for _ in range(width)]
+        tick["input_drive"][0] = [1]
+    parsed = closedloop.from_json(json.dumps(counted))
+    assert parsed.input_encoding == "counts" and parsed.pathway_sha256 is None
+    assert parsed.to_json() == closedloop.from_json(parsed.to_json()).to_json()
+    counted["ticks"][0]["input_drive"][0][0] = -1
+    with pytest.raises(ContractError, match="integer"):
+        closedloop.from_json(json.dumps(counted))
+    counted["ticks"][0]["input_drive"][0][0] = 1
+    counted["pathway_sha256"] = PATHWAY
+    with pytest.raises(ContractError, match="no pathway"):
+        closedloop.from_json(json.dumps(counted))
+
+    with pytest.raises(ContractError, match="killed"):
+        run(body=Crash(23_500), checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    idle = ToyBody()
+    with pytest.raises(ContractError, match="encoding or pathway"):
+        kick_run(body=idle, checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    assert idle.calls == []
+    idle = ToyBody()
+    with pytest.raises(ContractError, match="encoding or pathway"):
+        run(
+            body=idle,
+            pathway_sha256=OTHER_PATHWAY,
+            checkpoint_dir=tmp_path,
+            checkpoint_every_us=5000,
+        )
+    assert idle.calls == []
+
+
+def test_a_resumed_kick_equivalent_run_equals_the_uninterrupted_one(tmp_path):
+    whole = kick_run()
+    with pytest.raises(ContractError, match="killed"):
+        kick_run(body=Crash(23_500), checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    idle = ToyBody()
+    with pytest.raises(ContractError, match="encoding or pathway"):
+        kick_run(
+            body=idle,
+            pathway_sha256=OTHER_PATHWAY,
+            checkpoint_dir=tmp_path,
+            checkpoint_every_us=5000,
+        )
+    assert idle.calls == []
+    idle = ToyBody()
+    with pytest.raises(ContractError, match="encoding or pathway"):
+        run(body=idle, checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    assert idle.calls == []
+    resumed = kick_run(checkpoint_dir=tmp_path, checkpoint_every_us=5000)
+    assert resumed == whole
+    assert resumed.to_json() == whole.to_json()

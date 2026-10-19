@@ -224,6 +224,8 @@ def test_heading_matches_the_arena_after_every_tick():
         optics_config_sha256="c" * 64,
         run_identity_sha256="b" * 64,
         input_gap_steps=0,
+        input_encoding="counts",
+        pathway_sha256=None,
     )
     heading = dn_arena.heading_rad(record, clock)
     assert np.array_equal(heading, body.logged)

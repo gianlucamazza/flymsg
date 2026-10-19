@@ -232,6 +232,8 @@ def wiring_null(
         optics_config_sha256=optics_config_sha256,
         run_identity_sha256=run_identity_sha256,
         input_gap_steps=input_gap_steps,
+        input_encoding="counts",
+        pathway_sha256=None,
         **kwargs,
     )
     return WiringNullControl(

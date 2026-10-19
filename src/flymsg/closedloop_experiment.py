@@ -172,6 +172,8 @@ def run(cfg: dict, config_path: Path, out: Path) -> Path:
                 optics_config_sha256=optical_hash,
                 run_identity_sha256=execution.id,
                 input_gap_steps=INPUT_GAP_STEPS,
+                input_encoding="counts",
+                pathway_sha256=None,
                 silenced_ids=(2,) if arm == "silenced" else (),
                 replay=records.get("intact") if arm == "replay" else None,
                 checkpoint_dir=execution.root / "checkpoints" / arm,
