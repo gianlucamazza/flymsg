@@ -5,6 +5,8 @@ import json
 
 import pandas as pd
 import pytest
+import test_convergence
+import test_path_metrics
 
 from flymsg import cli, draws, managed, manifest, runstore, workbench
 
@@ -260,3 +262,34 @@ def test_sister_writer_policy_is_explicit_and_complete():
             assert not managed.enabled(args)  # no output requested
         else:
             assert managed.enabled(args)
+
+
+@pytest.mark.parametrize(
+    ("command", "module", "key", "cells"),
+    [
+        ("convergence", "convergence", "convergence", test_convergence._cells),
+        ("path-metrics", "path_metrics", "path_metrics", test_path_metrics._cells),
+    ],
+)
+def test_grid_checks_publish_their_judgement_once(
+    monkeypatch, data_dir, tmp_path, clean_source, command, module, key, cells
+):
+    mod = getattr(cli, module)
+    grid = cells({0.1: [10, 12, 14], 0.05: [10, 11, 13], 0.025: [9, 12, 15]})
+    monkeypatch.setattr(mod, "run", lambda *a, **k: grid)
+    args = ["--data", data_dir, command, "--run", "--workers", "1"]
+    _call(monkeypatch, *args)
+    (output,) = tmp_path.glob(f"runs/{command}/v1.executions/*/output")
+    doc = mod.assert_matches_code()
+    judged = mod.judge(grid, doc)
+    verdict = mod.verdict(judged, doc)
+    assert (output / "judged.csv").read_text() == judged.to_csv(index=False)
+    assert (output / "report.txt").read_text().endswith(f"verdict: {verdict}\n")
+    stamped = json.loads((output / "manifest.json").read_text())
+    assert stamped["command"] == f"{command} --run"
+    assert stamped["config"][f"{key}_sha256"] == doc["content_sha256"]
+    assert stamped["extra"]["verdict"] == verdict
+    before = runstore.inventory(output.parent)
+    monkeypatch.setattr(mod, "run", lambda *a, **k: pytest.fail("recomputed"))
+    _call(monkeypatch, *args)
+    assert runstore.inventory(output.parent) == before

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Module boundaries step 5: grid-check publication.** `flymsg convergence --run` and `flymsg path-metrics --run` publish through one private helper in `cli/validation.py` (`_publish_grid`: cells, judgement, report, manifest stamp); each command keeps its lock check, summary and run. Net 8 lines fewer; no registry, no new lifecycle. Outputs at the base and the new commit (both commands, workers 1 and 2, a non-converged grid) are byte-identical for `cells.csv`, `judged.csv` and `report.txt`, and the manifests differ only in timestamps, temporary paths and the attempt id, with the same execution hash. A test covers publication and no recompute on replay.
+
 - **Module boundaries step 7a: source-aware doc links.** Pages resolves Markdown links against the source-tree path and rewrites each to a built page, a copied site asset (`img` / `live`), or a GitHub blob URL, so the same relative links work on GitHub and on Pages. No document moves.
 
 - **Module boundaries step 4.** Qualification helpers are importable as `flymsg.native_acceptance` (numerical oracle and coverage, kept separate from `flymsg.native`), `flymsg.console_gpu_parity`, `flymsg.console_lifecycle`, `flymsg.console_bench`, `flymsg.console_sustained`, `flymsg.console_hardstop`, `flymsg.console_gpufault`, `flymsg.quest_xr`, `flymsg.quest_compare`, `flymsg.quest_bounded`, `flymsg.quest_profile`, `flymsg.bench_viewer` and `flymsg.bench_check` (the viewer check stays separate from the viewer). The old `scripts/` paths stay runnable wrappers with unchanged outputs. Hardware qualification remains unclaimed.
