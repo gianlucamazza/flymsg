@@ -139,3 +139,14 @@ without moving or promoting historical material.
   machinery without a demonstrated two-command reduction.
 - Leave as is: the graph is healthy, but locks → battery, cross-experiment utilities
   and script imports remain concrete maintenance coupling without an explicit plan.
+
+## Implementation status (2026-10-19)
+
+| PR  | State                                                                                                                                                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1–3 | Merged 2026-10-18: the ADR (#245), `lock_codec` (#246), `stimulus.dead_time` (#247)                                                                                                                           |
+| 4   | Merged (#268): qualification helpers importable, scripts are wrappers                                                                                                                                         |
+| 5   | Merged (#271): `convergence` and `path-metrics` publish through one helper; outputs byte-identical                                                                                                            |
+| 6   | Merged (#273): archive and index tooling importable with explicit roots; index and audit byte-identical                                                                                                       |
+| 7   | Merged: source-aware links (#267), then `plan` (#272), `report` (#275), `reference` (#277), `result` (#278), `adr` (#279); documents named by a lock stay in place; the two `index` documents stay at the top |
+| 8   | Not started: the package still resolves the repository as `parents[2]`                                                                                                                                        |

@@ -114,8 +114,10 @@ glutamatergic, which only matters where they synapse onto central neurons.
   count: the kernel adds `kick · K[t, s]` in float64 at the same phase as Poisson input, so
   integer values given as floats reproduce the Poisson run spike for spike (tested), and a
   fraction per step integrates like a current. The eye uses it for photoreceptors
-  (`eye.photoreceptor_kicks`). `CpuRuntime` and the native executor accept integer counts
-  only and refuse anything else.
+  (`eye.photoreceptor_kicks`). `CpuRuntime` takes an explicit `input_encoding`: `counts`
+  (nonnegative integers) or `kick_equivalent` (a nonnegative finite float32 drive, applied
+  as its float64 widening, bit-identical to `sim.run` with the same kicks; graded eye ADR,
+  vee1-2). The native executor accepts counts only and refuses a `kick_equivalent` runtime.
 - Results are binned (default 10 ms). `sim` reports per type the stimulus-window rate with all
   neurons of the type counted (silent ones included), the share of seeds where the type fired
   (`p_active`), the across-seed SD, the latency of its earliest neuron, and the post-stimulus

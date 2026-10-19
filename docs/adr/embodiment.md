@@ -123,7 +123,11 @@ adapter.
 - **Record** (`flymsg.closedloop/v1`): per body tick the held commands, sampled state,
   per-column stimulus, input counts, spikes as bodyIds, stepped state and contacts; once the
   arm, mode, evidence, clock, optics configuration hash and run identity. Canonical JSON that
-  parses back identically and never as a B6 v1/v2 trace.
+  parses back identically and never as a B6 v1/v2 trace. A `kick_equivalent` run (graded
+  eye ADR, vee1-3) writes `flymsg.closedloop/v2` instead: the same fields, plus
+  `input_encoding`, the visual pathway's `pathway_sha256` and a per-tick `input_drive`
+  (float32 values stored as their float64 widening); replay and resume refuse a different
+  encoding or pathway before any step. Counts runs keep writing version 1.
 
 - **Stimulus**: `closedloop.optical` puts `optics.sample` behind the stimulus step: per
   column with a lens, the largest single-sphere coverage of its acceptance profile (a lower
