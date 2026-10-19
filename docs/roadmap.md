@@ -46,7 +46,7 @@ These are evidence-based planning identifiers, **not yet native GitHub Milestone
 | Looming → giant fiber timing v1 (#34)      | uninformative, the no-go: the giant fiber fires in every cell                       | [benchmarks](result/benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                    |
 | Looming → giant fiber timing v2 (#34)      | uninformative: peaks follow the stimulus; the flies' interval holds the onset slope | [benchmarks](result/benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)                    |
 | APL claw contrast v1 (#85)                 | uninformative, the no-go: with APL the mean KC sits below rest                      | [validation](validation.md#apl-and-the-odor-contrast-at-kc-claws-85)                                   |
-| NeuroMechFly jump v1                       | short                                                                               | [embodiment](embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)                    |
+| NeuroMechFly jump v1                       | short                                                                               | [embodiment](adr/embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)                |
 | Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference                        | [comparison](result/comparison.md)                                                                     |
 | Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                                               | [comparison](result/comparison.md)                                                                     |
 | Motor map                                  | every row `unmapped`                                                                | [`validation/motor_map.yaml`](../validation/motor_map.yaml)                                            |
@@ -104,36 +104,36 @@ three stay off unless a lock names them.
 
 ## Done model-side
 
-| Item                                                                    | Where                                                                                                           |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Engine parity with Shiu et al. 2024 (brian2)                            | [model](model.md)                                                                                               |
-| Calibration battery 29/29; held-out ORN_DM1 fails                       | [validation](validation.md), [benchmarks](result/benchmarks.md)                                                 |
-| Sensitivity grid (#28)                                                  | [validation](validation.md)                                                                                     |
-| One-bit looming loop; DNp01 silence check fails                         | [behavior](result/behavior.md)                                                                                  |
-| Residual `TTMn_R` drive: DNp02 and DNp06, replicated (#20)              | [behavior](result/behavior.md#result-of-version-3-2026-10-12)                                                   |
-| KC → MBON11 depression v1 run: inconsistent (#85)                       | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13)               |
-| Left mirror replicates; DNp06 alone sufficient at 200 Hz (#76)          | [behavior](result/behavior.md#residual-partner-follow-up)                                                       |
-| M0 interface, M1 jump body, M2 closed loop (engineering)                | [embodiment](embodiment.md)                                                                                     |
-| Eye map, column stimuli, graded photoreceptor kicks                     | [eye](reference/eye.md)                                                                                         |
-| Odors as DoOR receptor vectors                                          | [data](reference/data.md#odor-responses-flymsg-odor)                                                            |
-| Graded neurons and electrical synapses; spikelets when a lock sets them | [model](model.md#electrical-synapses-optional-2026-10-13)                                                       |
-| T4/T5 v1 neither; v2, v3 and v4 robust neither                          | [eye](reference/eye.md)                                                                                         |
-| NeuroMechFly jump v1 short; closed loop cuts input at takeoff           | [embodiment](embodiment.md)                                                                                     |
-| R0 incremental CPU runtime; native executor matches the oracle          | [runtime](runtime.md)                                                                                           |
-| Archived outputs; figures redraw from a clone                           | [`results/`](../results/README.md)                                                                              |
-| Viewer baseline of the live scenes (#153)                               | [viz](reference/viz.md)                                                                                         |
-| Evidence records for sourced parameters (SF1, #147)                     | [scientific fidelity](plan/scientific-fidelity.md)                                                              |
-| Taylor solver for the continuous clamp (#155, ADR accepted 2026-10-14)  | [ADR](adr-gap-refractory.md)                                                                                    |
-| Timestep convergence v1: converged at 0.1 ms (SF2, #148)                | [validation](validation.md#timestep-convergence-sf2-a-check-not-a-score)                                        |
-| Weak-pathway metrics v1: latency not converged (sugar MN9, SF2, #148)   | [validation](validation.md#weak-pathway-timestep-metrics-sf2-a-check-not-a-score)                               |
-| Identifiability re-read v1: post-hoc, parameters blocked (SF2, #148)    | [validation](validation.md#identifiability-re-read-sf2-post-hoc-not-a-score)                                    |
-| Replication package: index, operator guide, claims audit (SF5, #151)    | [replication](replication.md)                                                                                   |
-| Faster per-neuron membranes, bit-identical (#182)                       | [model](model.md#per-neuron-membranes-optional-2026-10-13)                                                      |
-| Graded potentials in the 3D replay; eye-on live scene                   | [viz](reference/viz.md#graded-neurons)                                                                          |
-| Optional WebXR observer (experimental, unqualified on a headset, #177)  | [viz](reference/viz.md#optional-webxr-observation-experimental), [ADR](adr-virtual-experimental-environment.md) |
-| B6 v2 pose contract (G1, #178); body-wiring ADR accepted 2026-10-14     | [embodiment](embodiment.md#b6-v2-6-dof-body-and-eye-pose-g1-178), [ADR](adr-body-wiring.md)                     |
-| Geometric optics onto the measured columns (G2, #179)                   | [eye](reference/eye.md#eye-geometry-84)                                                                         |
-| G5 schedule, evidence gate and record, synthetic only (#180)            | [embodiment](embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)                                   |
+| Item                                                                    | Where                                                                                                               |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Engine parity with Shiu et al. 2024 (brian2)                            | [model](model.md)                                                                                                   |
+| Calibration battery 29/29; held-out ORN_DM1 fails                       | [validation](validation.md), [benchmarks](result/benchmarks.md)                                                     |
+| Sensitivity grid (#28)                                                  | [validation](validation.md)                                                                                         |
+| One-bit looming loop; DNp01 silence check fails                         | [behavior](result/behavior.md)                                                                                      |
+| Residual `TTMn_R` drive: DNp02 and DNp06, replicated (#20)              | [behavior](result/behavior.md#result-of-version-3-2026-10-12)                                                       |
+| KC → MBON11 depression v1 run: inconsistent (#85)                       | [model](model.md#dopamine-gated-depression-at-kenyon-cell-to-mbon11-synapses-optional-2026-10-13)                   |
+| Left mirror replicates; DNp06 alone sufficient at 200 Hz (#76)          | [behavior](result/behavior.md#residual-partner-follow-up)                                                           |
+| M0 interface, M1 jump body, M2 closed loop (engineering)                | [embodiment](adr/embodiment.md)                                                                                     |
+| Eye map, column stimuli, graded photoreceptor kicks                     | [eye](reference/eye.md)                                                                                             |
+| Odors as DoOR receptor vectors                                          | [data](reference/data.md#odor-responses-flymsg-odor)                                                                |
+| Graded neurons and electrical synapses; spikelets when a lock sets them | [model](model.md#electrical-synapses-optional-2026-10-13)                                                           |
+| T4/T5 v1 neither; v2, v3 and v4 robust neither                          | [eye](reference/eye.md)                                                                                             |
+| NeuroMechFly jump v1 short; closed loop cuts input at takeoff           | [embodiment](adr/embodiment.md)                                                                                     |
+| R0 incremental CPU runtime; native executor matches the oracle          | [runtime](adr/runtime.md)                                                                                           |
+| Archived outputs; figures redraw from a clone                           | [`results/`](../results/README.md)                                                                                  |
+| Viewer baseline of the live scenes (#153)                               | [viz](reference/viz.md)                                                                                             |
+| Evidence records for sourced parameters (SF1, #147)                     | [scientific fidelity](plan/scientific-fidelity.md)                                                                  |
+| Taylor solver for the continuous clamp (#155, ADR accepted 2026-10-14)  | [ADR](adr/adr-gap-refractory.md)                                                                                    |
+| Timestep convergence v1: converged at 0.1 ms (SF2, #148)                | [validation](validation.md#timestep-convergence-sf2-a-check-not-a-score)                                            |
+| Weak-pathway metrics v1: latency not converged (sugar MN9, SF2, #148)   | [validation](validation.md#weak-pathway-timestep-metrics-sf2-a-check-not-a-score)                                   |
+| Identifiability re-read v1: post-hoc, parameters blocked (SF2, #148)    | [validation](validation.md#identifiability-re-read-sf2-post-hoc-not-a-score)                                        |
+| Replication package: index, operator guide, claims audit (SF5, #151)    | [replication](replication.md)                                                                                       |
+| Faster per-neuron membranes, bit-identical (#182)                       | [model](model.md#per-neuron-membranes-optional-2026-10-13)                                                          |
+| Graded potentials in the 3D replay; eye-on live scene                   | [viz](reference/viz.md#graded-neurons)                                                                              |
+| Optional WebXR observer (experimental, unqualified on a headset, #177)  | [viz](reference/viz.md#optional-webxr-observation-experimental), [ADR](adr/adr-virtual-experimental-environment.md) |
+| B6 v2 pose contract (G1, #178); body-wiring ADR accepted 2026-10-14     | [embodiment](adr/embodiment.md#b6-v2-6-dof-body-and-eye-pose-g1-178), [ADR](adr/adr-body-wiring.md)                 |
+| Geometric optics onto the measured columns (G2, #179)                   | [eye](reference/eye.md#eye-geometry-84)                                                                             |
+| G5 schedule, evidence gate and record, synthetic only (#180)            | [embodiment](adr/embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)                                   |
 
 ## Blocked on evidence
 
@@ -151,7 +151,7 @@ three stay off unless a lock names them.
 | ---------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Dynamic continuous clamp, refused on every native lane              | Series S GPU parity bit for bit, 12 version-1 fixtures (2026-10-15) and 60 version-2 fixtures (2026-10-16), including the 12 gap-all-free cases |
 | [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | GPU fault and hard termination on the console                       | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; full connectome bit for bit at about 2,320 steps/s                   |
-| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss | `?xr=1` in the viewer, session-state tests ([ADR](adr-virtual-experimental-environment.md))                                                     |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss | `?xr=1` in the viewer, session-state tests ([ADR](adr/adr-virtual-experimental-environment.md))                                                 |
 
 ## What an animal test could check
 
@@ -237,7 +237,7 @@ predictions (what value the result would need), never a chosen value.
 The sensorimotor gate G1 (B6 v2 pose contract, #178) is complete. G2's geometric projection
 (#179) is implemented but qualification remains open; G2 runs on the real eye once the micro-CT → NeuroMechFly head
 registration has a source. G5 (#180) has its schedule, evidence gate and record on synthetic
-components; the [body-wiring ADR](adr-body-wiring.md) is accepted, and a biological closed
+components; the [body-wiring ADR](adr/adr-body-wiring.md) is accepted, and a biological closed
 loop refuses until G3 and G4 are measured.
 
 **4. Hardware.** On a Series S in Dev Mode the version-1 lane is qualified (#39, #40): 12 of 12

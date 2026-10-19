@@ -29,7 +29,7 @@ Three grades, never merged into one claim:
 
 VEE-0 can be delivered from inside the project; VEE-1 and VEE-2 can be blocked by evidence that
 does not exist. A synthetically coupled demo is an engineering fixture, never a substitute for
-VEE-1. The names avoid the embodiment sequence E1–E6 ([embodiment](../embodiment.md)).
+VEE-1. The names avoid the embodiment sequence E1–E6 ([embodiment](../adr/embodiment.md)).
 
 The first task is an approaching dark disc, one side or both, through LC4/LPLC2 → giant fiber
 → TTMn → TTM to a simulated take-off, comparing sides, timing and kinematics. Free flight,
@@ -38,14 +38,14 @@ walking and real-time whole-CNS execution are out of scope.
 ## What is reused
 
 - **Runtime:** `flymsg.sim` and `flymsg.runtime.CpuRuntime` with the 100 µs neural tick and
-  batch/incremental parity ([runtime](../runtime.md), accepted). No second executor or clock.
+  batch/incremental parity ([runtime](../adr/runtime.md), accepted). No second executor or clock.
 - **Embodiment:** `flymsg.embodiment` (M0, `flymsg.embodiment/v1`, accepted for the synthetic
   fixture), `jump`, `loop`, `jump3d`, `ttm`, and `flygym==2.1.0` with MuJoCo. M0's `BodyState`
   and `MotorCommand` are scalar, point-mass contracts, not 6-DoF ones.
 - **Vision:** `flymsg.eye` (`columns`, `photoreceptors`, `angular_distance_deg`,
   `disk_coverage`) over the measured column directions; `eye.photoreceptor_kicks` takes an
   unmeasured gain. T4/T5 status is on [eye](../reference/eye.md): v1 neither, v2–v4 robust neither. No vision path
-  from the body pose exists yet ([embodiment](../embodiment.md)).
+  from the body pose exists yet ([embodiment](../adr/embodiment.md)).
 - **Stimuli:** `flymsg.sensory` and `sensory_runtime` are exploratory Poisson drive, kept as a
   named circuit-only baseline, never as a retina.
 - **Motor:** `validation/motor_map.yaml` stays fail-closed; the NeuroMechFly TTM route of

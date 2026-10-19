@@ -2,7 +2,7 @@
 
 **Result: exact sampled raster and reported primitive-span checks pass.**
 This is static correctness evidence, not performance admission or physical XR
-qualification. The [exact-fidelity decision](../adr-exact-observer-performance.md)
+qualification. The [exact-fidelity decision](../adr/adr-exact-observer-performance.md)
 requires original geometry; no bounded-path candidate is used here.
 
 ## Source and device

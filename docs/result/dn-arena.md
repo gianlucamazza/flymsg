@@ -1,6 +1,6 @@
 # DN arena
 
-Version 1 of the synthetic steering fixture of the [DN-arena ADR](../adr-dn-arena.md):
+Version 1 of the synthetic steering fixture of the [DN-arena ADR](../adr/adr-dn-arena.md):
 the full MaleCNS v1.0 connectome in a closed loop with the kinematic planar body
 `flymsg.arena`, an engineered descending-neuron readout (`flymsg.dn_decoder`) and an
 engineered photoreceptor drive from a lateral dark sphere. Lock:
@@ -73,7 +73,7 @@ its 100 Hz rate (`transducer.rate_from`), not as a prediction of a silent readou
 ## What follows
 
 - In the fly, photoreceptors hyperpolarize LMCs through graded, sign-inverting
-  transmission. The [graded eye ADR (VEE-1)](../adr-vee1-graded-eye.md) replaces the
+  transmission. The [graded eye ADR (VEE-1)](../adr/adr-vee1-graded-eye.md) replaces the
   spiking photoreceptor drive with the graded pathway of T4/T5 versions 2–4
   (`vee1-1` to `vee1-3`).
 - A DN-arena version 2 needs its own lock (`vee1-4`) with owner approval. Version 4 of

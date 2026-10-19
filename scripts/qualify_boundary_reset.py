@@ -1,5 +1,5 @@
 """Qualify the boundary reset against the continuous clamp on the Kenyon cell coupling (KC
-sparseness v7, docs/adr-gap-refractory.md). Usage:
+sparseness v7, docs/adr/adr-gap-refractory.md). Usage:
 
     FLYMSG_DATA=data uv run python scripts/qualify_boundary_reset.py OUT.json
 

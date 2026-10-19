@@ -3,7 +3,7 @@
 The accepted bounded-error experiment is complete. It demonstrates a useful
 fixed-view reduction, **not a completed interactive or XR performance fix**.
 The default renderer and scientific outputs are unchanged. See the accepted
-[experiment ADR](../adr-observer-screen-error.md) for the different fidelity contract.
+[experiment ADR](../adr/adr-observer-screen-error.md) for the different fidelity contract.
 
 ## Completed work
 

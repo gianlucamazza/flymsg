@@ -1,5 +1,5 @@
 """Qualify the Taylor solver of the continuous clamp against its dense maps on the Kenyon
-cell coupling (issue #155, docs/adr-gap-refractory.md). Usage:
+cell coupling (issue #155, docs/adr/adr-gap-refractory.md). Usage:
 
     FLYMSG_DATA=data uv run python scripts/qualify_taylor.py OUT.json
 

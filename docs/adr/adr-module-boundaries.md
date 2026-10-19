@@ -128,7 +128,7 @@ or forge old identities as part of organization.
 Boundaries become reviewable before relocation, with small independently checked
 changes. Facades and resource checks add temporary maintenance cost; logical layer
 names need not become directories. Acceptance does not authorize scientific changes
-or close any qualification gate. The [catalog](catalog.md) records document authority
+or close any qualification gate. The [catalog](../catalog.md) records document authority
 without moving or promoting historical material.
 
 ## Alternatives rejected

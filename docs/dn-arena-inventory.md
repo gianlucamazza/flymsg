@@ -1,7 +1,7 @@
 # arena-1: descending-neuron inventory
 
 Status: **inventory** for `arena-1` of the accepted
-[DN-arena ADR](adr-dn-arena.md) (Gianluca Mazza, 2026-10-19). This document
+[DN-arena ADR](adr/adr-dn-arena.md) (Gianluca Mazza, 2026-10-19). This document
 names MaleCNS v1.0 bodyIds and sides for the ADR's decoder types. It does not
 choose a gain, write a lock, run a fixture, or edit
 `validation/evidence.yaml`, `validation/motor_map.yaml`, `closedloop.ARMS` or

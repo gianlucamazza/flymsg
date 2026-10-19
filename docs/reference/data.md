@@ -147,7 +147,7 @@ in MANC", 834 rows) from
 `data/motor/manc_types.parquet` (one row per MANC type: targets, muscle, certainty range,
 publications, source) and `data/motor/muscles.parquet` (one row per MaleCNS `vnc_motor`
 neuron, joined on the `mancType` annotation of the raw body annotations). See
-[embodiment](../embodiment.md#muscles-from-manc-phase-c) for the match counts.
+[embodiment](../adr/embodiment.md#muscles-from-manc-phase-c) for the match counts.
 
 ## Female brain: FlyWire FAFB v783 (`--dataset fafb`)
 

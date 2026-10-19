@@ -81,7 +81,7 @@ activity, are identical in the archive.
 
 ## Resolution boundary
 
-The [accepted rendering ADR](../adr-observer-rendering.md) remains authoritative:
+The [accepted rendering ADR](../adr/adr-observer-rendering.md) remains authoritative:
 preserve all selected anatomy, explicit representation, original geometry as
 reference, no resource-driven substitutions or hidden quality reductions.
 Its implementation has corrected that fidelity failure and prevents normal XR

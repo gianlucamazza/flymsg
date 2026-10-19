@@ -3,7 +3,7 @@
 MaleCNS optic-lobe columns, their measured viewing directions, and the T4/T5 locks that
 use them. The fetch, the licence and the files are in
 [data](data.md#eye-map-flymsg-eye). The body and the jump are in
-[embodiment](../embodiment.md).
+[embodiment](../adr/embodiment.md).
 
 ## Eye geometry (#84)
 
@@ -48,7 +48,7 @@ The giant fiber's size/velocity split (Ache et al. 2019) is a separate test on t
 
 **Geometric optics from a 6-DoF pose (G2, [#179](https://github.com/gianlucamazza/flymsg/issues/179)).**
 `flymsg.optics` measures dark spheres in the world from every column, given a B6 v2 body
-state and eye mounts (`flymsg.pose`, [embodiment](../embodiment.md#b6-v2-6-dof-body-and-eye-pose-g1-178)):
+state and eye mounts (`flymsg.pose`, [embodiment](../adr/embodiment.md#b6-v2-6-dof-body-and-eye-pose-g1-178)):
 the angle from the column's axis to each sphere, the sphere's angular radius asin(r/d) and its
 rate, its angular velocity relative to the eye (so a turning fly sees the world turn the other
 way), the covered share of the acceptance profile and which sphere the column's axis meets

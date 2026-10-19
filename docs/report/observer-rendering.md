@@ -1,6 +1,6 @@
 # Observer rendering qualification
 
-The owner accepted the [rendering ADR](../adr-observer-rendering.md) on 2026-10-15.
+The owner accepted the [rendering ADR](../adr/adr-observer-rendering.md) on 2026-10-15.
 Quest 2 remains unqualified. The initial immersive timing result failed; the
 adaptive-controller fixes did not establish that the original workload fits.
 The [current diagnosis](quest-rendering-diagnosis.md) includes a real-device

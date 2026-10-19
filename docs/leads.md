@@ -111,7 +111,7 @@ was uninformative
 
 ## Sensorimotor gates: registration, transduction, motor map (search of 2026-10-14)
 
-What blocks a biological closed loop under the [body-wiring ADR](adr-body-wiring.md): the
+What blocks a biological closed loop under the [body-wiring ADR](adr/adr-body-wiring.md): the
 eye-map registration (G2, [#179](https://github.com/gianlucamazza/flymsg/issues/179)), a measured
 looming transducer (G3, [#34](https://github.com/gianlucamazza/flymsg/issues/34)) and a muscle →
 actuator assignment (G4, [#19](https://github.com/gianlucamazza/flymsg/issues/19),

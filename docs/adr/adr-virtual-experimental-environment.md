@@ -2,16 +2,16 @@
 
 Status: accepted as an experimental, opt-in observer, 2026-10-14; unqualified on any headset
 ([#177](https://github.com/gianlucamazza/flymsg/issues/177)). The sensorimotor arena it is kept
-apart from is planned in the [sensorimotor environment plan](plan/sensorimotor-environment-plan.md)
+apart from is planned in the [sensorimotor environment plan](../plan/sensorimotor-environment-plan.md)
 ([#176](https://github.com/gianlucamazza/flymsg/issues/176)). No biological claim.
 
 ## Context
 
 flymsg has an incremental runtime (`CpuRuntime`), the M0 sensor, body and clock contracts
 (accepted for the synthetic fixture), an exploratory M2 feedback loop, a NeuroMechFly jump, the
-measured eye geometry and a three.js viewer of anatomy and replays ([viz](reference/viz.md)). The one-bit
+measured eye geometry and a three.js viewer of anatomy and replays ([viz](../reference/viz.md)). The one-bit
 looming jump fails its DNp01 silencing check, T4/T5 v1 is neither and v2–v4 are robust
-neither ([eye](reference/eye.md)), the NeuroMechFly jump is short and `validation/motor_map.yaml` maps no
+neither ([eye](../reference/eye.md)), the NeuroMechFly jump is short and `validation/motor_map.yaml` maps no
 actuator. An immersive view changes none of that.
 
 Two things must stay apart: a headless, evidence-gated experimental environment that produces

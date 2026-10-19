@@ -143,7 +143,7 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     if sets and sets != ELN_SETS:
         raise SparsenessError("the eLN sets are not Eckstein et al.'s types")
     # a new electrical lock names its integrator; the boundary reset only with the
-    # qualification against the continuous clamp it rests on (docs/adr-gap-refractory.md)
+    # qualification against the continuous clamp it rests on (docs/adr/adr-gap-refractory.md)
     new_electrical = "coupling" in doc and doc["version"] >= 6
     named = doc.get("electrical_semantics")
     if new_electrical and named not in {
