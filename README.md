@@ -263,7 +263,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 
 ## Documentation
 
-- [Evidence-gated delivery milestones](docs/milestones.md): S0–S4 scientific
+- [Evidence-gated delivery milestones](docs/plan/milestones.md): S0–S4 scientific
   gates, H1/H2 independent hardware tracks, issue ownership, acceptance and
   explicit no-go rules.
 
@@ -282,7 +282,7 @@ under its date.
 | [leads](docs/leads.md)                                                                                                                | sources that could lift an approximation; none used without a lock                                              |
 | [validation](docs/validation.md)                                                                                                      | battery status, the dated status log, protocol, calibration, findings log                                       |
 | [benchmarks](docs/benchmarks.md)                                                                                                      | held-out partition, the ORN_DM1 failure, both corners fail                                                      |
-| [M4 v2 proposal](docs/m4-v2-proposal.md), [Baker correspondence](docs/baker-crossmatch.md)                                            | prospective eligibility, licence scope and anatomical identity audit; no new scored result                      |
+| [M4 v2 proposal](docs/plan/m4-v2-proposal.md), [Baker correspondence](docs/baker-crossmatch.md)                                       | prospective eligibility, licence scope and anatomical identity audit; no new scored result                      |
 | [Measured JO design](docs/jo-measured-input-design.md), [accepted ADR](docs/adr-measured-jo-input.md)                                 | protocol 6 source audit, identity/units contract and qualification; input blocked, ADR accepted                 |
 | [behavior](docs/behavior.md)                                                                                                          | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated                                    |
 | [architecture](docs/architecture.md)                                                                                                  | module layers, the six contracts and their tests, migration order                                               |
@@ -290,10 +290,10 @@ under its date.
 | [eye](docs/eye.md)                                                                                                                    | column directions, column stimuli, T4/T5 v1–v4 (neither)                                                        |
 | [runtime](docs/runtime.md)                                                                                                            | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                                             |
 | [nulls](docs/nulls.md)                                                                                                                | pre-registered null families, scores, draw counts, methods                                                      |
-| [scientific fidelity](docs/scientific-fidelity.md)                                                                                    | numerical, physiological and behavioral validation gates; evidence records (SF1)                                |
+| [scientific fidelity](docs/plan/scientific-fidelity.md)                                                                               | numerical, physiological and behavioral validation gates; evidence records (SF1)                                |
 | [replication](docs/replication.md)                                                                                                    | rerun an archived result; the replication index; the claims audit                                               |
 | [CLAIMS](https://github.com/gianlucamazza/flymsg/blob/main/docs/claims.md)                                                            | measured, engineered and not claimed for the closed loop                                                        |
-| [sensorimotor plan](docs/sensorimotor-environment-plan.md)                                                                            | gates for a headless closed-loop experiment; reuse inventory; no-go rules                                       |
+| [sensorimotor plan](docs/plan/sensorimotor-environment-plan.md)                                                                       | gates for a headless closed-loop experiment; reuse inventory; no-go rules                                       |
 | [integrity audit](docs/integrity-audit-2026-10-13.md)                                                                                 | engineering audit of 2026-10-13 and its resolution ledger                                                       |
 | [ADR: gap refractory](docs/adr-gap-refractory.md)                                                                                     | electrical coupling with refractory clamps; dense and Taylor solvers                                            |
 | [ADR: run integrity](docs/adr-run-integrity.md)                                                                                       | immutable run identity, resumable steps, finalization                                                           |

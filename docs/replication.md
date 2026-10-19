@@ -195,7 +195,7 @@ cross-platform equality; that needs an outside operator.
 
 ## Claims audit
 
-The four categories of the [scientific fidelity](scientific-fidelity.md#claims-taxonomy)
+The four categories of the [scientific fidelity](plan/scientific-fidelity.md#claims-taxonomy)
 taxonomy, plus two used here: a model diagnostic compares the model with itself, another
 model or another dataset and makes no claim about the animal; a reproduction is
 "attempted" when the measurement was published before the lock and the model is scored

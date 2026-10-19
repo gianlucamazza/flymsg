@@ -1,6 +1,6 @@
 # Evidence-gated delivery milestones
 
-Status: **proposed for review**, 2026-10-16. This is the delivery plan for the [roadmap](roadmap.md#completion-plan), not a new scientific protocol, calibrated model or source of experimental verdicts. Historical locks, scored results, `w_syn=0.192` and `th_jump=0` are unchanged. Do not infer biological fidelity from GPU parity, anatomical rendering, geometry, wiring shuffles or a synthetic closed loop.
+Status: **proposed for review**, 2026-10-16. This is the delivery plan for the [roadmap](../roadmap.md#completion-plan), not a new scientific protocol, calibrated model or source of experimental verdicts. Historical locks, scored results, `w_syn=0.192` and `th_jump=0` are unchanged. Do not infer biological fidelity from GPU parity, anatomical rendering, geometry, wiring shuffles or a synthetic closed loop.
 
 ## Baseline and conventions
 
@@ -37,8 +37,8 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 
 **Exit:** at least one independently defensible sensory/neural input/output comparison is _eligible for prospective scoring_ with a frozen protocol. If source/registration/observation semantics remain absent, mark S1 blocked; an engineered Poisson encoder does not pass.
 
-**JO progress (2026-10-17):** protocol 6 now has a [source/identity/input design](jo-measured-input-design.md)
-and [accepted ADR](adr-measured-jo-input.md). The 146 selected MaleCNS bodies
+**JO progress (2026-10-17):** protocol 6 now has a [source/identity/input design](../jo-measured-input-design.md)
+and [accepted ADR](../adr-measured-jo-input.md). The 146 selected MaleCNS bodies
 are an anatomical population, not 146 measured transfer functions. Absolute
 source calibration and sex transfer remain blocked; runtime implementation awaits
 ADR acceptance. This advances S1 design, not its scientific exit.
@@ -63,12 +63,12 @@ ADR acceptance. This advances S1 design, not its scientific exit.
 
 **Exit:** publish an independently scored preregistered test with a reproducible pass/fail/indeterminate/no-go and all controls. **Only a pass against untouched animal observations** satisfies the project's stated behavioral-completion claim. A properly documented failed or blocked run is valuable research but does not close that claim.
 
-**Dated progress (2026-10-17):** the [Baker audit](baker-crossmatch.md) completes
+**Dated progress (2026-10-17):** the [Baker audit](../baker-crossmatch.md) completes
 anatomical routes for 12 of 28 classes, including the still-excluded dimorphic
 AVLP_pr36; 14 remain partial and two absent. The [M4 v2 proposal](m4-v2-proposal.md)
 records a scoped basis for noncommercial local analysis and publication review.
 This advances candidate identification, not S3 qualification: sex compatibility,
-[qualified measured JO input](jo-measured-input-design.md), observable qualification and the prospective partition/lock
+[qualified measured JO input](../jo-measured-input-design.md), observable qualification and the prospective partition/lock
 remain required. No response data were opened or benchmark scored.
 
 ### S4 — External reproduction and claim audit (P1; mandatory for research release)

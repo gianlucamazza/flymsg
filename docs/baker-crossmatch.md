@@ -2,7 +2,7 @@
 
 Anatomical identity audit, 2026-10-17. No physiological response files were
 opened, no benchmark was scored, and no manifest or model default changed.
-The [M4 v2 proposal](m4-v2-proposal.md) remains a proposal.
+The [M4 v2 proposal](plan/m4-v2-proposal.md) remains a proposal.
 
 ## Result
 

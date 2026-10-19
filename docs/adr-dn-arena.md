@@ -11,7 +11,7 @@ Scope: a first **synthetic** steering fixture that reuses the existing closed
 loop. It supplements the accepted [body-wiring](adr-body-wiring.md),
 [embodiment](embodiment.md), [runtime](runtime.md) and
 [module-boundaries](adr-module-boundaries.md) decisions and the proposed
-[sensorimotor plan](sensorimotor-environment-plan.md) without editing them. It
+[sensorimotor plan](plan/sensorimotor-environment-plan.md) without editing them. It
 is not that plan's VEE-0 take-off (an approaching dark disc through LC4/LPLC2
 to the giant fiber and TTM). It does not close that plan's VEE-0 exit, G2, G3,
 G4 or G5.
@@ -193,7 +193,7 @@ This milestone does not claim that:
 - MaleCNS, T4/T5, LC cells or descending neurons implement the behaviour;
 - the decoder, gains, or kinematic body are biological;
 - world→sensory or muscle→actuator maps exist;
-- VEE-0, VEE-1 or VEE-2 of the [sensorimotor plan](sensorimotor-environment-plan.md)
+- VEE-0, VEE-1 or VEE-2 of the [sensorimotor plan](plan/sensorimotor-environment-plan.md)
   is done, including that plan's take-off task (G2 registration, G3
   transduction and G4 motor map remain open);
 - a yaw change outside the wiring-null seed range is a biological or

@@ -1,7 +1,8 @@
 # Documentation catalog
 
-Inventory of every top-level `docs/*.md` on 2026-10-19. Category describes the
-primary purpose; mixed documents retain their own detailed scope and statuses.
+Inventory of documentation prose under `docs/` on 2026-10-19 (top-level files and
+`docs/plan/`). Category describes the primary purpose; mixed documents retain their
+own detailed scope and statuses.
 **Accepted** records an explicit decision/plan acceptance, not successful implementation
 or qualification. **Proposed** awaits acceptance. **Historical** is a dated snapshot;
 **current** is maintained guidance or a ledger, not an architectural approval.
@@ -35,8 +36,8 @@ Locks and archived artifacts remain authoritative for their own protocols/result
 | [integrity-audit-2026-10-13.md](integrity-audit-2026-10-13.md)                                                                                          | report    | historical       | Dated numerical/provenance audit and resolution ledger.                       |
 | [issue-resolution.md](issue-resolution.md)                                                                                                              | report    | current          | Issue-resolution ledger and blocked-front entry protocols.                    |
 | [leads.md](leads.md)                                                                                                                                    | reference | current          | Evidence sources that could lift specific approximations.                     |
-| [m4-v2-proposal.md](https://github.com/gianlucamazza/flymsg/blob/main/docs/m4-v2-proposal.md)                                                           | plan      | proposed         | Prospective M4 v2 eligibility and input blockers; no lock or score.           |
-| [milestones.md](milestones.md)                                                                                                                          | plan      | proposed         | Evidence-gated delivery stages and exit criteria.                             |
+| [m4-v2-proposal.md](https://github.com/gianlucamazza/flymsg/blob/main/docs/plan/m4-v2-proposal.md)                                                      | plan      | proposed         | Prospective M4 v2 eligibility and input blockers; no lock or score.           |
+| [milestones.md](plan/milestones.md)                                                                                                                     | plan      | proposed         | Evidence-gated delivery stages and exit criteria.                             |
 | [model.md](model.md)                                                                                                                                    | reference | current          | LIF equations, parameters, electrical semantics and KC diagnostics.           |
 | [nulls.md](nulls.md)                                                                                                                                    | result    | current          | Locked null-family design and pathway-dependence results.                     |
 | [observer-rendering.md](observer-rendering.md)                                                                                                          | report    | current          | Observer implementation/qualification ledger and unresolved performance.      |
@@ -51,16 +52,16 @@ Locks and archived artifacts remain authoritative for their own protocols/result
 | [quest-paged-pipeline.md](quest-paged-pipeline.md)                                                                                                      | report    | current          | Experimental immutable GPU-page implementation and qualification limits.      |
 | [quest-performance-2026-10-16.md](https://github.com/gianlucamazza/flymsg/blob/main/docs/quest-performance-2026-10-16.md)                               | report    | historical       | Completed fixed-view bounded experiment and its limited interpretation.       |
 | [quest-rendering-diagnosis.md](quest-rendering-diagnosis.md)                                                                                            | report    | current          | Dense-scene/XR failure diagnosis and qualification blockers.                  |
-| [quest-wifi-trials.md](quest-wifi-trials.md)                                                                                                            | plan      | current          | Operational Wi-Fi comparison protocol under accepted rendering decisions.     |
+| [quest-wifi-trials.md](plan/quest-wifi-trials.md)                                                                                                       | plan      | current          | Operational Wi-Fi comparison protocol under accepted rendering decisions.     |
 | [related.md](related.md)                                                                                                                                | reference | current          | Related connectome/model work and scope comparisons.                          |
 | [replication.md](replication.md)                                                                                                                        | reference | current          | Archived-result reconstruction procedure and claims audit.                    |
 | [roadmap.md](roadmap.md)                                                                                                                                | index     | current          | Scientific verdict index, blockers and completion criteria.                   |
 | [run-integrity.md](run-integrity.md)                                                                                                                    | reference | current          | Implemented run identity, resume and electrical-mode contracts.               |
 | [runtime.md](runtime.md)                                                                                                                                | adr       | accepted         | Scientific runtime semantics and replaceable backend gates.                   |
-| [scientific-fidelity.md](scientific-fidelity.md)                                                                                                        | plan      | proposed         | Evidence/validation architecture and partial SF implementation status.        |
-| [sensorimotor-environment-plan.md](sensorimotor-environment-plan.md)                                                                                    | plan      | proposed         | Evidence-gated headless sensorimotor development plan.                        |
+| [scientific-fidelity.md](plan/scientific-fidelity.md)                                                                                                   | plan      | proposed         | Evidence/validation architecture and partial SF implementation status.        |
+| [sensorimotor-environment-plan.md](plan/sensorimotor-environment-plan.md)                                                                               | plan      | proposed         | Evidence-gated headless sensorimotor development plan.                        |
 | [validation.md](validation.md)                                                                                                                          | result    | current          | Battery protocol, calibration history and findings log.                       |
-| [vee-qualification.md](vee-qualification.md)                                                                                                            | plan      | accepted         | Accepted operational VEE/Quest criteria; hardware admission remains separate. |
+| [vee-qualification.md](plan/vee-qualification.md)                                                                                                       | plan      | accepted         | Accepted operational VEE/Quest criteria; hardware admission remains separate. |
 | [viz.md](viz.md)                                                                                                                                        | reference | current          | Viewer bundles, geometry, replay and published scenes.                        |
 
 [docs/evidence](https://github.com/gianlucamazza/flymsg/tree/main/docs/evidence)

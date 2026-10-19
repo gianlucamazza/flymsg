@@ -53,6 +53,17 @@ def test_rewrite_keeps_fragments():
     )
 
 
+def test_rewrite_keeps_old_landing_paths_after_category_move():
+    assert rewrite("milestones.md", source="docs/catalog.md") == "milestones.html"
+    assert rewrite("plan/milestones.md", source="docs/catalog.md") == "milestones.html"
+    assert rewrite("docs/milestones.md", source="README.md") == "milestones.html"
+    assert rewrite("docs/plan/milestones.md", source="README.md") == "milestones.html"
+    assert (
+        rewrite("../roadmap.md#completion-plan", source="docs/plan/milestones.md")
+        == "roadmap.html#completion-plan"
+    )
+
+
 def test_rewrite_sends_unlisted_docs_to_the_blob():
     assert (
         rewrite("adr-dn-arena.md", source="docs/catalog.md")

@@ -90,7 +90,7 @@ uninformative ([benchmarks](benchmarks.md#looming-to-giant-fiber-timing-lock-202
 Berg et al. 2026 report that the sensory and motor periphery is largely isomorphic between
 the sexes, so female recordings can test non-dimorphic circuits, not fru/dsx ones.
 
-The [M4 v2 proposal](m4-v2-proposal.md) records prospective candidate eligibility
+The [M4 v2 proposal](plan/m4-v2-proposal.md) records prospective candidate eligibility
 and Baker's noncommercial licence scope. The [Baker identity audit](baker-crossmatch.md)
 advances anatomical correspondence only; response files remain unopened and no
 candidate is benchmark eligible. Empty sex annotations do not establish isomorphism.

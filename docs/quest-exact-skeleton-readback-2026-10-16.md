@@ -70,6 +70,6 @@ and owned resource cleanup must be verified when that session ends. Intermediate
 verdict.
 
 Complete exact-skeleton and original-surface comparisons under the unchanged
-[Wi-Fi protocol](quest-wifi-trials.md), then physical XR/session/context/thermal
+[Wi-Fi protocol](plan/quest-wifi-trials.md), then physical XR/session/context/thermal
 qualification remain open in #177. Phone work under #24 is separate. No speed
 gain, hardware-limit verdict or normal-XR qualification is established here.

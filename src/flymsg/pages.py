@@ -38,7 +38,7 @@ PAGES = (
     ("runtime", "docs/runtime.md", "Runtime"),
     ("validation", "docs/validation.md", "Validation"),
     ("benchmarks", "docs/benchmarks.md", "Benchmarks"),
-    ("m4-v2-proposal", "docs/m4-v2-proposal.md", "M4 v2 proposal"),
+    ("m4-v2-proposal", "docs/plan/m4-v2-proposal.md", "M4 v2 proposal"),
     ("baker-crossmatch", "docs/baker-crossmatch.md", "Baker correspondence"),
     (
         "jo-measured-input-design",
@@ -53,7 +53,7 @@ PAGES = (
     ("dimorphism", "docs/dimorphism.md", "Dimorphism"),
     ("related", "docs/related.md", "Related"),
     ("viz", "docs/viz.md", "3D view"),
-    ("vee-qualification", "docs/vee-qualification.md", "VEE qualification"),
+    ("vee-qualification", "docs/plan/vee-qualification.md", "VEE qualification"),
     ("issue-resolution", "docs/issue-resolution.md", "Issue resolution"),
     ("observer-rendering", "docs/observer-rendering.md", "Observer rendering"),
     ("quest-paged-pipeline", "docs/quest-paged-pipeline.md", "GPU page candidate"),
@@ -69,16 +69,16 @@ PAGES = (
         "Exact fidelity ADR",
     ),
     ("quest-exact-performance", "docs/quest-exact-performance.md", "Exact Quest work"),
-    ("quest-wifi-trials", "docs/quest-wifi-trials.md", "Quest Wi-Fi protocol"),
-    ("milestones", "docs/milestones.md", "Milestones"),
+    ("quest-wifi-trials", "docs/plan/quest-wifi-trials.md", "Quest Wi-Fi protocol"),
+    ("milestones", "docs/plan/milestones.md", "Milestones"),
     ("roadmap", "docs/roadmap.md", "Roadmap"),
     ("approximations", "docs/approximations.md", "Approximations"),
     ("leads", "docs/leads.md", "Leads"),
-    ("scientific-fidelity", "docs/scientific-fidelity.md", "Scientific fidelity"),
+    ("scientific-fidelity", "docs/plan/scientific-fidelity.md", "Scientific fidelity"),
     ("replication", "docs/replication.md", "Replication"),
     (
         "sensorimotor-environment-plan",
-        "docs/sensorimotor-environment-plan.md",
+        "docs/plan/sensorimotor-environment-plan.md",
         "Sensorimotor plan",
     ),
     ("integrity-audit", "docs/integrity-audit-2026-10-13.md", "Integrity audit"),
@@ -96,6 +96,14 @@ PAGES = (
 
 # Repo-relative source path → built page. Stems stay stable when sources move later.
 _PAGE_HTML = {rel: f"{stem}.html" for stem, rel, _ in PAGES}
+# Old top-level docs/ landing paths keep resolving after a category move.
+_PAGE_HTML.update(
+    {
+        f"docs/{Path(rel).name}": f"{stem}.html"
+        for stem, rel, _ in PAGES
+        if rel.startswith("docs/") and "/" in rel.removeprefix("docs/")
+    }
+)
 
 _AUTOLINK = re.compile(r"<(https?://[^>\s]+)>")
 _ATTR = re.compile(r'\b(href|src)="([^"]*)"')

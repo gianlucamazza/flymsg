@@ -92,7 +92,7 @@ Until that input exists no new version is written and no recorded result is reru
    against unused animal observations closes the project; a documented no-go does not.
    The [2026-10-17 Baker audit](baker-crossmatch.md) completes named MaleCNS routes
    for 12 of 28 classes (AVLP_pr36 still excluded for dimorphism); 14 remain partial
-   and two absent. Root-ID access/updating is verified. The [v2 proposal](m4-v2-proposal.md)
+   and two absent. Root-ID access/updating is verified. The [v2 proposal](plan/m4-v2-proposal.md)
    records the noncommercial licence scope; remaining sex/input/readout evidence
    and the prospective partition/lock still block scoring. No responses were opened.
 
@@ -111,7 +111,7 @@ NEW_DIRECTORY`. A selectable mode is instrumentation, not a passed hardware tria
 Retain CPU-vs-console end-to-end latency including preparation/upload/download; the
 existing battery does not establish a console throughput advantage.
 
-Quest trials follow [the accepted profile](vee-qualification.md) and
+Quest trials follow [the accepted profile](plan/vee-qualification.md) and
 [candidate procedure](quest-paged-pipeline.md): complete content first, actual measured
 refresh, p95 ≤ 1.1 frame budgets, p99 ≤ 2 budgets, estimated missed slots ≤ 1%.
 Keep estimates distinct from compositor drops and UI diagnostics from stereo timing.
