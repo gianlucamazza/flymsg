@@ -1,5 +1,7 @@
 """Engineered DN decoder: windowed rates to (yaw, forward) (DN-arena ADR)."""
 
+import json
+
 import pytest
 
 from flymsg.embodiment import Clock, ContractError, SpikeEvent
@@ -9,6 +11,14 @@ DNA01_L, DNA01_R = 10442, 10760
 DNA02_L, DNA02_R = 523769, 10360
 ODN1_L, ODN1_R = 13805, 230783
 MDN_L = 11288
+NEURONS = {
+    DNA01_L: ("DNa01", "L"),
+    DNA01_R: ("DNa01", "R"),
+    DNA02_L: ("DNa02", "L"),
+    DNA02_R: ("DNa02", "R"),
+    ODN1_L: ("oDN1", "L"),
+    ODN1_R: ("oDN1", "R"),
+}
 WINDOW = (0, 1_000_000)  # 1 s
 GAINS = {"DNa01": 0.5, "DNa02": 0.25, "oDN1": 0.1}
 # one control period per second, so a count reads directly as spikes/s
@@ -21,7 +31,7 @@ def arena():
     return Arena(z_m=1e-3, roll_rad=0.0, pitch_rad=0.0, source="test kinematic")
 
 
-def decoder(gains=None, window=WINDOW, actuators=None, clock=CLOCK):
+def decoder(gains=None, window=WINDOW, actuators=None, clock=CLOCK, neurons=None):
     from flymsg.dn_decoder import Decoder
 
     return Decoder(
@@ -29,6 +39,7 @@ def decoder(gains=None, window=WINDOW, actuators=None, clock=CLOCK):
         window=window,
         actuators=actuators if actuators is not None else arena().actuators,
         clock=clock,
+        neurons=dict(NEURONS) if neurons is None else neurons,
     )
 
 
@@ -102,3 +113,68 @@ def test_a_rate_is_the_call_count_over_one_control_period():
     clock = Clock(neural_us=100, body_us=500, control_us=1000)
     one_ms = values(decoder(clock=clock)(spikes((ODN1_L, 5000))))
     assert one_ms["forward"] == GAINS["oDN1"] * 1000.0
+
+
+@pytest.mark.parametrize(
+    ("mutate", "match"),
+    [
+        ("missing", "six"),
+        ("extra", "six"),
+        ("duplicate", "duplicate"),
+        ("type", "unknown descending type"),
+        ("side", "side must be"),
+        ("zero", "bodyId"),
+    ],
+)
+def test_a_neuron_map_that_is_not_the_six_rows_refuses(mutate, match):
+    neurons = dict(NEURONS)
+    if mutate == "missing":
+        del neurons[DNA01_R]
+    elif mutate == "extra":
+        neurons[1] = ("oDN1", "R")
+    elif mutate == "duplicate":
+        del neurons[DNA01_R]
+        neurons[1] = ("DNa01", "L")
+    elif mutate == "type":
+        neurons[DNA01_L] = ("MDN", "L")
+    elif mutate == "side":
+        neurons[DNA01_L] = ("DNa01", "M")
+    else:
+        neurons = {0 if k == DNA01_L else k: v for k, v in neurons.items()}
+    with pytest.raises(ContractError, match=match):
+        decoder(neurons=neurons)
+
+
+def test_body_ids_are_sorted_and_describe_is_canonical():
+    neurons = {
+        ODN1_R: ("oDN1", "R"),
+        DNA02_L: ("DNa02", "L"),
+        DNA01_R: ("DNa01", "R"),
+        ODN1_L: ("oDN1", "L"),
+        DNA02_R: ("DNa02", "R"),
+        DNA01_L: ("DNa01", "L"),
+    }
+    dec = decoder(neurons=neurons)
+    ordered = (DNA02_R, DNA01_L, DNA01_R, ODN1_L, ODN1_R, DNA02_L)
+    assert dec.body_ids == ordered
+    neurons[1] = ("DNa01", "L")
+    assert dec.body_ids == ordered
+    described = dec.describe()
+    assert described == {
+        "schema": "flymsg.dn_decoder/v1",
+        "gains": {"DNa01": 0.5, "DNa02": 0.25, "oDN1": 0.1},
+        "window_us": [0, 1_000_000],
+        "control_us": CLOCK.control_us,
+        "neurons": [
+            {"body_id": DNA01_L, "type": "DNa01", "side": "L"},
+            {"body_id": DNA01_R, "type": "DNa01", "side": "R"},
+            {"body_id": DNA02_L, "type": "DNa02", "side": "L"},
+            {"body_id": DNA02_R, "type": "DNa02", "side": "R"},
+            {"body_id": ODN1_L, "type": "oDN1", "side": "L"},
+            {"body_id": ODN1_R, "type": "oDN1", "side": "R"},
+        ],
+        "actuators": {"yaw": "rad/s", "forward": "m/s"},
+    }
+    assert list(described["gains"]) == ["DNa01", "DNa02", "oDN1"]
+    assert list(described["actuators"]) == ["yaw", "forward"]
+    assert json.loads(json.dumps(described)) == described

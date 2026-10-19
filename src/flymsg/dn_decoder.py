@@ -5,9 +5,9 @@ In a declared control window, spike rates of DNa01 / DNa02 (steering) and oDN1
 `flymsg.arena.Arena`. Gains and the window are required caller values (the lock
 and the record will name them; this module invents none). `closedloop.run` hands
 the decoder one control period of spikes per call, so a rate is that call's count
-over `clock.control_us`; the window only gates which spikes count. BodyIds are the mapped
-rows in `docs/dn-arena-inventory.md`. Not a motor map and not a connectome-derived
-controller.
+over `clock.control_us`; the window only gates which spikes count. BodyIds come
+from the lock, which names the rows of `docs/dn-arena-inventory.md`. Not a motor
+map and not a connectome-derived controller.
 """
 
 from __future__ import annotations
@@ -18,16 +18,9 @@ from flymsg.closedloop import Command
 from flymsg.embodiment import Clock, ContractError, SpikeEvent, integer
 from flymsg.pose import ActuatorRef
 
-# arena-1 inventory (MaleCNS v1.0). MDN and DNp01 are later-version only.
-NEURONS = {
-    10442: ("DNa01", "L"),
-    10760: ("DNa01", "R"),
-    523769: ("DNa02", "L"),
-    10360: ("DNa02", "R"),
-    13805: ("oDN1", "L"),
-    230783: ("oDN1", "R"),
-}
 TYPES = ("DNa01", "DNa02", "oDN1")
+SIDES = ("L", "R")
+SCHEMA = "flymsg.dn_decoder/v1"
 
 
 def _finite(value, name: str) -> float:
@@ -35,6 +28,29 @@ def _finite(value, name: str) -> float:
     if not math.isfinite(out):
         raise ContractError(f"{name} must be finite")
     return out
+
+
+def _neuron_map(neurons: dict) -> dict[int, tuple[str, str]]:
+    if type(neurons) is not dict:
+        raise ContractError("neurons map a bodyId to a (type, side)")
+    if len(neurons) != len(TYPES) * len(SIDES):
+        raise ContractError("a decoder names exactly six neurons")
+    seen: set[tuple[str, str]] = set()
+    copied: dict[int, tuple[str, str]] = {}
+    for body_id, pair in neurons.items():
+        integer(body_id, "bodyId", 1)
+        if type(pair) is not tuple or len(pair) != 2:
+            raise ContractError("a neuron is a (type, side)")
+        kind, side = pair
+        if kind not in TYPES:
+            raise ContractError(f"unknown descending type {kind}")
+        if side not in SIDES:
+            raise ContractError("side must be L or R")
+        if (kind, side) in seen:
+            raise ContractError(f"duplicate neuron {kind} {side}")
+        seen.add((kind, side))
+        copied[body_id] = (kind, side)
+    return copied
 
 
 class Decoder:
@@ -47,6 +63,7 @@ class Decoder:
         window: tuple[int, int],
         actuators: dict[str, ActuatorRef],
         clock: Clock,
+        neurons: dict[int, tuple[str, str]],
     ):
         if set(gains) != set(TYPES):
             raise ContractError("gains must name exactly DNa01, DNa02 and oDN1")
@@ -69,15 +86,35 @@ class Decoder:
             raise ContractError("a decoder needs the loop's clock")
         clock.validate()
         self.control_us = clock.control_us
+        self._neurons = _neuron_map(neurons)
+
+    @property
+    def body_ids(self) -> tuple[int, ...]:
+        """The six bodyIds, ascending. Callers pass this as `traced_ids`."""
+        return tuple(sorted(self._neurons))
+
+    def describe(self) -> dict:
+        """JSON-ready canonical description for the lock and the run record."""
+        neurons = [
+            {"body_id": body_id, "type": kind, "side": side}
+            for body_id, (kind, side) in self._neurons.items()
+        ]
+        neurons.sort(key=lambda row: (row["type"], row["side"]))
+        return {
+            "schema": SCHEMA,
+            "gains": {name: self.gains[name] for name in TYPES},
+            "window_us": [self.start_us, self.end_us],
+            "control_us": self.control_us,
+            "neurons": neurons,
+            "actuators": {"yaw": self._yaw.unit, "forward": self._forward.unit},
+        }
 
     def __call__(self, spikes: tuple[SpikeEvent, ...]) -> tuple[Command, ...]:
-        counts = dict.fromkeys(
-            ((name, side) for name in TYPES for side in ("L", "R")), 0
-        )
+        counts = dict.fromkeys(((name, side) for name in TYPES for side in SIDES), 0)
         for spike in spikes:
             if not isinstance(spike, SpikeEvent):
                 raise ContractError("a spike is a SpikeEvent")
-            key = NEURONS.get(spike.neuron_id)
+            key = self._neurons.get(spike.neuron_id)
             if key is None:
                 raise ContractError(f"unknown descending neuron {spike.neuron_id}")
             if self.start_us <= spike.time_us < self.end_us:

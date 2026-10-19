@@ -1,18 +1,18 @@
 """Script and wiring-null fixture controls (DN-arena ADR Decision 5)."""
 
+import json
 import math
 
 import numpy as np
 import pandas as pd
 import pytest
+from test_dn_decoder import DNA01_L, NEURONS, ODN1_L
 
 from flymsg import closedloop, sim, wiring
 from flymsg.embodiment import Clock, ContractError
 from flymsg.pose import Provenance
 from flymsg.runtime import CpuRuntime
 
-# docs/dn-arena-inventory.md (MaleCNS v1.0); not a gain
-DNA01_L, ODN1_L = 10442, 13805
 CLOCK = Clock(neural_us=100, body_us=500, control_us=1000)
 DURATION = 4_000
 PROVENANCE = Provenance("synthetic", "a" * 64, "fixture", 7)
@@ -35,6 +35,7 @@ def decoder(body=None):
         window=(0, DURATION),
         actuators=body.actuators,
         clock=CLOCK,
+        neurons=dict(NEURONS),
     )
 
 
@@ -265,3 +266,103 @@ def test_missing_or_nonfinite_parameters_refuse():
         run_wiring_null(edges=pd.DataFrame({"pre": [0]}))
     with pytest.raises(TypeError):
         wiring_null(body)
+
+
+def test_the_script_record_round_trips_byte_for_byte():
+    from flymsg.arena_controls import script_from_json
+
+    result = run_script()
+    text = result.to_json()
+    assert result.schema == "flymsg.arena_script/v1"
+    assert script_from_json(text) == result
+    assert script_from_json(text).to_json() == text
+
+
+def test_the_wiring_null_record_round_trips_byte_for_byte():
+    from flymsg.arena_controls import wiring_null_from_json
+
+    result = run_wiring_null()
+    text = result.to_json()
+    embedded = json.loads(text)["record"]
+    assert result.schema == "flymsg.arena_wiring_null/v1"
+    assert isinstance(embedded, dict)
+    assert (
+        json.dumps(embedded, sort_keys=True, separators=(",", ":"))
+        == result.record.to_json()
+    )
+    assert wiring_null_from_json(text) == result
+    assert wiring_null_from_json(text).to_json() == text
+
+
+DROP = object()
+
+
+def _mutate(d, path, value):
+    *head, last = path
+    for key in head:
+        d = d[key]
+    if value is DROP:
+        del d[last]
+    else:
+        d[last] = value
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("schema",), "flymsg.closedloop/v1"),
+        (("control",), "wiring-null"),
+        (("bonus",), 1),
+        (("notes",), DROP),
+        (("notes",), {"control": "script", "nested": {"a": 1}}),
+        (("notes",), ["script"]),
+        (("notes",), {"control": "script", "x": float("nan")}),
+        (("ticks", 2, "time_us"), 1001),
+        (("ticks", 2, "time_us"), 500),
+        (("ticks", 0, "yaw_rad"), float("nan")),
+        (("ticks", 0, "stimulus"), [float("inf")]),
+        (("ticks", 0, "commands"), [["yaw", 0]]),
+        (("ticks", 1, "commands"), [["yaw", 0, 0.1], ["forward", 1, 0.0]]),
+        (("ticks", 0, "state", "time_us"), 500),
+        (("ticks", 0, "state", "pose", "orientation", "extra"), 1),
+        (("duration_us",), 1500),
+        (("clock", "body_us"), 250),
+    ],
+)
+def test_a_malformed_script_record_refuses(path, value):
+    from flymsg.arena_controls import script_from_json
+
+    d = json.loads(run_script().to_json())
+    _mutate(d, path, value)
+    with pytest.raises(ContractError):
+        script_from_json(json.dumps(d))
+
+
+@pytest.mark.parametrize(
+    ("path", "value"),
+    [
+        (("schema",), "flymsg.arena_script/v1"),
+        (("control",), "script"),
+        (("bonus",), 1),
+        (("record",), "{}"),
+        (("stats", "n_edges"), 1.5),
+        (("stats", "n_edges"), True),
+        (("stats", "n_edges"), -1),
+        (("stats", "bonus"), 0),
+        (("stats", "n_extra_edges"), DROP),
+        (("notes",), {"control": "wiring-null", "shuffle_seed": 3, "x": [1]}),
+        (("notes",), {"control": "wiring-null", "x": float("nan")}),
+        (("seed",), -1),
+        (("seed",), 1.5),
+        (("record", "arm"), "wiring-null"),
+        (("record", "schema"), "flymsg.closedloop/v2"),
+        (("record", "ticks", 0, "time_us"), 1),
+    ],
+)
+def test_a_malformed_wiring_null_record_refuses(path, value):
+    from flymsg.arena_controls import wiring_null_from_json
+
+    d = json.loads(run_wiring_null().to_json())
+    _mutate(d, path, value)
+    with pytest.raises(ContractError):
+        wiring_null_from_json(json.dumps(d))
