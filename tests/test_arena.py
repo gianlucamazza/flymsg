@@ -117,3 +117,37 @@ def test_existing_synthetic_closedloop_replay_is_unchanged():
     from test_closedloop import test_a_replay_reproduces_the_recorded_spikes_exactly
 
     test_a_replay_reproduces_the_recorded_spikes_exactly()
+
+
+def test_heading_is_unwrapped_past_a_full_turn():
+    arena = body()
+    arena.reset()
+    yaw = arena.actuators["yaw"]
+    state, _ = arena.step(((yaw, 3 * math.pi),), 1_000_000)
+    assert arena.yaw_rad == 3 * math.pi
+    # the quaternion only shows the heading modulo a full turn
+    q, ref = state.pose.orientation, yaw_q(math.pi)
+    assert close((q.w, q.x, q.y, q.z), (ref.w, ref.x, ref.y, ref.z))
+
+
+def test_an_actuator_commanded_twice_refuses():
+    arena = body()
+    arena.reset()
+    yaw = arena.actuators["yaw"]
+    with pytest.raises(ContractError, match="twice"):
+        arena.step(((yaw, 0.1), (yaw, 0.2)), 1000)
+
+
+def test_heading_before_reset_refuses():
+    with pytest.raises(ContractError, match="reset"):
+        _ = body().yaw_rad
+
+
+def test_a_tiny_yaw_rate_still_moves_the_body():
+    arena = body()
+    arena.reset()
+    yaw, forward = arena.actuators["yaw"], arena.actuators["forward"]
+    arena.step(((yaw, 1.0),), 1_000_000)
+    state, _ = arena.step(((yaw, 1e-14), (forward, 0.1)), 1000)
+    expected = (1e-4 * math.cos(1.0), 1e-4 * math.sin(1.0), 1e-3)
+    assert close(state.pose.position_m, expected, tol=1e-18)
