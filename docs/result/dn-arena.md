@@ -70,16 +70,30 @@ lamina ([eye](../reference/eye.md)). The DN-arena ADR kept the Poisson drive for
 already predicted this outcome before the lock. The lock cites that version only for
 its 100 Hz rate (`transducer.rate_from`), not as a prediction of a silent readout.
 
+## Version 2 (locked, not run)
+
+`validation/dn_arena.yaml` version 2 is the graded-input lock (`vee1-4`, draft for
+owner approval). It keeps the MaleCNS graph, the kinematic body, the lateral dark
+sphere and the six decoder neurons. The drive is the kick-equivalent of T4/T5 version
+4, `float32(gain * (1 - coverage))`, over three configurations: lamina-to-medulla
+gains 1, 4 and 16 at that version's midpoints and 200 Hz release. One decoder cell
+uses 2 °/s per Hz of yaw and 0.2 mm/s per Hz of forward. Each graph is dark-anchored
+before its loop; a wiring-null (seeds 7300–7338) keeps the intact photoreceptor
+release rate and drive gain and anchors on its own shuffled graph. Lock hash
+`1426386c…`. A timing-only smoke (no spike, command or heading read) measured 156 s
+per 1 s loop, 43 s to serialize its record, about 100 s per dark-anchored pathway and
+4.4 GB per process, so about 3 h for the 132 runs with 4 workers. No counted run of
+this version exists; the run waits for the owner's approval of the lock.
+
 ## What follows
 
 - In the fly, photoreceptors hyperpolarize LMCs through graded, sign-inverting
   transmission. The [graded eye ADR (VEE-1)](../adr/adr-vee1-graded-eye.md) replaces the
   spiking photoreceptor drive with the graded pathway of T4/T5 versions 2–4
   (`vee1-1` to `vee1-3`).
-- A DN-arena version 2 needs its own lock (`vee1-4`) with owner approval. Version 4 of
-  T4/T5 is `robust: neither`, so the graded pathway carries the edge into the medulla
-  but is not yet selective. Version 2 may also be uninformative, and its lock has to
-  say so before any run.
+- Version 2 of the lock is written above and has no counted run. T4/T5 version 4's
+  verdict is `robust: neither`. The lock's no-go makes a configuration with a silent
+  readout `uninformative` before any run.
 - Nothing here is a claim about steering, the descending neurons or flight. The
   components keep the statuses of the ADR's evidence table; `validation/evidence.yaml`
   is unchanged.

@@ -1,13 +1,14 @@
-version: 1
-content_sha256: "9ba9a69c8397fae5c6aa9ee60cd48147d4898110c2dbb22a2d461254b4583aa3"
+version: 2
+content_sha256: "1426386c66041510812bdcd6b3bfebb91d05a0811c5bfe33f9c191f3cd9a3ac7"
 yaml_subset: 2
 evidence: none
-evidence_none: "A synthetic milestone (DN-arena ADR): no recording is scored and validation/evidence.yaml is not edited by any arena step. The sources behind the decoder's sign and the gain envelope are cited under decoder.sources and in docs/leads.md."
+evidence_none: "A synthetic milestone (DN-arena ADR, graded eye ADR): no recording is scored and validation/evidence.yaml is not edited. The sources behind the decoder's sign are cited under decoder and in docs/leads.md; the graded pathway's sources are those of validation/t4t5.yaml version 4."
 issue: 263
 claim:
   scored: false
-  text: "On the full MaleCNS v1.0 connectome in a closed loop with a kinematic planar body, an engineered descending-neuron readout and an engineered photoreceptor drive from a lateral dark sphere: does the intact graph's change in yaw over the locked window lie outside the range of 39 degree-preserving shuffles of the same graph, at every cell of the gain envelope? A yaw change outside that range is a synthetic difference, not a biological or connectome-derived mechanism."
-seen_before_lock: "Nothing of this protocol has run on the full connectome before this lock. Engineering checks were run on toy networks only (tests). Two timing smoke runs of the intact arm at the first cell (yaw 0.5 deg/s per Hz, forward 0.05 mm/s per Hz) were made on the full connectome, one under cProfile and one without, for wall time and memory only (unprofiled: build 3 s, arm 12 s, record store 11 s, peak 2.2 GB; the two gzipped records had the same size); their spikes, commands and heading were not read, and their records were deleted unread. Sources: Rayshubskiy et al. bioRxiv v4 and Yang et al. bioRxiv v1 were read in full text for the quotes below; Chen et al. 2018 could not be opened and is not cited."
+  text: "On the full MaleCNS v1.0 connectome in a closed loop with a kinematic planar body, an engineered descending-neuron readout and the graded visual pathway of T4/T5 version 4 driven by a lateral dark sphere: does the intact graph's change in yaw over the locked window lie outside the range of 39 degree-preserving shuffles of the same graph, at every configuration of the pathway envelope? A yaw change outside that range is a synthetic difference, not a biological or connectome-derived mechanism."
+seen_before_lock: "Version 1 of this lock ran (results/dn-arena/v1, docs/result/dn-arena.md): uninformative, the six decoder neurons silent at every cell; a post-verdict exploratory count found only the input photoreceptors active, all their output synapses inhibitory. That outcome motivates this version and was read before it. T4/T5 version 4 (results/t4t5/v4) was read: robust neither, T4 firing only at medulla release 200 Hz; the configurations below are chosen from that reading and say so. Nothing of this version's graded closed loop has run on the full connectome before this lock except the timing smoke runs named in smoke, whose spikes, commands and heading were not read and whose records were deleted unread."
+smoke: "Timing only, on the full connectome, with this lock's code at the gain 16 configuration: setup 5 s; intact pathway with 6 dark passes 160 s; one intact 1 s arm 156 s; record serialization 43 s (839 MB of JSON); a wiring-null pathway on a shuffle with seed 1, outside the locked seeds, 97 s; peak memory 4.4 GB per process. An earlier attempt stopped after the pathway (102 s) on an invalid execution id. No spike, command or heading was read and no record was kept. Estimated cost of the counted run: about 3 h with 4 workers."
 model:
   dataset: malecns
   params: "sim.Params() defaults"
@@ -16,8 +17,8 @@ model:
   control_us: 10000
   latency_us: 0
   duration_us: 1000000
-  input_gap_steps: 22
-  input_gap_from: "round(Params.t_ref / Params.dt): the input dead time of song and gf_looming, so an input cannot fire faster than its refractory period"
+  input_encoding: kick_equivalent
+  input_encoding_from: "graded eye ADR Decision 1: the photoreceptor drive is the real-valued kick-equivalent of T4/T5 version 4, no Poisson draw; the input dead time does not apply (input_gap_steps 0)"
 body:
   source: "flymsg.arena kinematic planar body (DN-arena ADR)"
   z_m: 0.0
@@ -37,11 +38,21 @@ stimulus:
   center_rule: "y +10 mm is the fly's left at heading 0; static in the world"
   radius_m: 0.002
   evidence: engineered
-transducer:
-  inputs: "every photoreceptor (R1-R6, R7, R8) that eye.photoreceptors assigns to a column with a viewing direction, both eyes"
-  rate_full_light_hz: 100.0
-  rate_rule: "rate = rate_full_light_hz * (1 - coverage of its column); a dark sphere lowers it"
-  rate_from: "the 100 Hz Poisson stimulus of every flymsg protocol, as validation/t4t5.yaml version 1 states; photoreceptor transduction has no measured value for a spiking model"
+pathway:
+  source: "validation/t4t5.yaml version 4: graded_lmc, graded_medulla, medulla_mv, timing, dark_anchor_passes and settle_ms are taken from that lock; the code refuses to run when it is not that version or its hash differs"
+  t4t5_version: 4
+  t4t5_sha256: "dc65228c3fdbc6c37e245235c329bbbf314121e09a0e2a3a372f82ae599ceabc"
+  builder: "flymsg.visual_pathway.prepare and build (vee1-1), bit-identical to T4/T5 version 4 for its own configurations"
+  inputs: "every photoreceptor (R1-R6, R7, R8) that eye.photoreceptors assigns to a column with a viewing direction, both eyes; graded, non-spiking"
+  lit: "the same inputs: the photoreceptor release rate is calibrated on all of them (visual_pathway.photoreceptor_rate), where T4/T5 version 4 calibrates on its stimulus window"
+  drive_rule: "drive per input and neural step = float32(gain * (1 - coverage of its column)), gain = visual_pathway.photoreceptor_gain(photoreceptor_response_mv); constant over a body tick, from that tick's stimulus sample"
+  photoreceptor_response_mv: 52.5
+  lmc_hyperpolarisation_mv: 32.5
+  lmc_rate_hz: 200.0
+  medulla_rate_hz: 200.0
+  lamina_medulla_gain: [1.0, 4.0, 16.0]
+  configurations_from: "the three T4/T5 version 4 configurations with LMC and medulla release at 200 Hz, one per lamina to medulla gain: in version 4 T4 fired 0 spikes at every medulla release 50 Hz configuration and 93, 35586 and 350264 spikes at gains 1, 4 and 16 with LMC and medulla release 200 Hz (results/t4t5/v4 spikes.csv); response and hyperpolarisation at version 4's midpoints"
+  dark_anchor: "once per configuration and graph, open loop, before any closed-loop run on that graph: dark_anchor_passes passes of settle_ms in darkness (zero drive) through sim.run, exactly as T4/T5 version 4; the five arms share the intact graph's anchored pathway, each wiring-null run anchors on its own shuffled graph; every loop starts from a fresh state with the anchored release curve"
   evidence: engineered
 decoder:
   neurons:
@@ -56,35 +67,36 @@ decoder:
   forward_rule: "forward m/s = g_forward * (oDN1 L + oDN1 R) spikes/s"
   sign_from: "ipsilateral steering: 'Both cells are depolarized just before the fly steers in the ipsilateral direction' (Rayshubskiy et al., bioRxiv 10.1101/2020.04.04.024703 v4, Fig 1D legend); 'the cell with a soma in the right hemisphere was more active during right turns, and vice versa' (Yang et al., bioRxiv 10.1101/2023.10.15.562426 v1, Fig 2A)"
   linear_from: "'rotational velocity was consistently related to the difference in right-left firing rates' and 'This relationship was essentially linear through its entire dynamic range' (Rayshubskiy et al. v4, Fig 3B-C)"
-  yaw_gain_deg_s_per_hz: [0.5, 2.0, 8.0]
-  forward_gain_mm_s_per_hz: [0.05, 0.2]
-  gains_from: "engineered envelope: no source states a numeric gain (Rayshubskiy et al. fit a slope m per cell, Fig 2F, without printing it) and no source gives an oDN1 rate against speed (Sapkal et al. 2024). The yaw grid spans a factor 16, the same gain for DNa01 and DNa02 (no measured ratio); Yang et al. v1 Fig 1C bins turning peaks at 20-200 deg/s. Gains are not evidence and do not enter validation/evidence.yaml"
+  yaw_gain_deg_s_per_hz: 2.0
+  forward_gain_mm_s_per_hz: 0.2
+  gains_from: "one cell of version 1's engineered envelope (its middle yaw gain and its larger forward gain), chosen by the owner to bound cost; no source states a numeric gain. Gains are not evidence and do not enter validation/evidence.yaml"
   window_us: [0, 1000000]
   evidence: engineered
 arms: [intact, disconnected, shuffled, replay, silenced]
 silenced: "the six decoder neurons"
-shuffled: "closedloop.run's shuffled arm: the open-loop samples of the body held at its reset pose, in an order permuted with seed + 1 (7001). With a static sphere every sample sees the same scene, so this arm receives the disconnected arm's stimulus and, with the shared Poisson seed, its input counts: it is expected to equal the disconnected arm, is reported, and does not enter the verdict"
 controls:
   wiring_null:
-    seed0: 7100
+    seed0: 7300
     seeds: 39
-    rule: "wiring.shuffle_targets on the MaleCNS edges before building the runtime; the intact loop otherwise, at every cell"
+    rule: "wiring.shuffle_targets on the MaleCNS edges, then the intact loop at that configuration: the pathway is rebuilt on the shuffled graph by the same builder (timing scale and lamina to medulla gain by type, graded release by type) and dark-anchored on it; the photoreceptor release rate and the drive gain are those of the intact graph, a calibration of the stimulus, not of the network"
   script:
     rule: "yaw +100 deg/s toward the eye with the larger summed coverage (left positive), 0 when equal; forward 10 mm/s; from the previous control tick's sample"
     evidence: synthetic
-seed: 7000
+seed: 7200
+seed_note: "the drive is deterministic (no Poisson draw); the seed orders the shuffled arm's ticks and is recorded"
 score:
   metric: "change in unwrapped heading (rad) from 200000 to 1000000 us"
   window_us: [200000, 1000000]
-  per_cell: "null if the intact change lies within the minimum and maximum of the 39 wiring-null changes at that cell (inclusive); difference otherwise"
-  envelope: "robust: <verdict> when every cell has the same verdict; depends otherwise"
-  reported: "per cell: intact, disconnected, shuffled, replay, silenced and script changes, intact minus script, the wiring-null minimum, median and maximum, spikes of the six decoder neurons per arm; replay parity is required"
-no_go: "a cell is uninformative when the six decoder neurons fire no spike in its intact arm: the readout is then zero and the comparison empty. The envelope verdict is uninformative when every cell is"
-data_rule: "a null, a difference or an uninformative outcome is archived as it is and not rerun with new gains, geometry or seeds"
+  per_configuration: "null if the intact change lies within the minimum and maximum of the 39 wiring-null changes at that configuration (inclusive); difference otherwise"
+  envelope: "robust: <verdict> when every configuration has the same verdict; depends otherwise"
+  reported: "per configuration: intact, disconnected, shuffled, replay, silenced and script changes, intact minus script, the wiring-null minimum, median and maximum, spikes of the six decoder neurons per arm, the pathway hash of the intact graph; replay parity is required"
+no_go: "a configuration is uninformative when the six decoder neurons fire no spike in its intact arm: the readout is then zero and the comparison empty. The envelope verdict is uninformative when every configuration is"
+data_rule: "a null, a difference or an uninformative outcome is archived as it is and not rerun with new configurations, gains, geometry or seeds"
 limits:
-  - "Synthetic: every component carries its status from the DN-arena ADR evidence table; a biological run still refuses."
-  - "Spiking photoreceptors driven by Poisson rates; the graded eye of t4t5 versions 2-4 is not in this loop (DN-arena ADR, Decision 3)."
+  - "Synthetic: every component carries its status from the DN-arena ADR and graded eye ADR evidence tables; a biological run still refuses."
+  - "The graded pathway is T4/T5 version 4's, whose own verdict is robust neither: graded transport is not visual selectivity."
   - "Eyemap to body registration is a test-only identity (#179); eye mounts are NeuroMechFly's."
   - "A planar kinematic body: no legs, no physics, no flight."
-  - "One stimulus geometry, one Poisson seed and one duration."
+  - "One stimulus geometry, one decoder cell and one duration; three pathway configurations chosen from a read result."
+  - "Host only: kick_equivalent input does not run on the console (graded eye ADR Decision 5)."
 defaults_changed: false

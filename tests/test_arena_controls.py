@@ -66,7 +66,7 @@ def toy_edges():
 def runtime_from_edges(edges):
     n = 3
     params = sim.Params()
-    return CpuRuntime(
+    runtime = CpuRuntime(
         sim.weight_matrix(edges, np.ones(n, dtype=np.int8), n, params.w_syn),
         np.array([0]),
         steps=DURATION // CLOCK.neural_us,
@@ -76,6 +76,7 @@ def runtime_from_edges(edges):
         trace=np.array([1, 2]),
         input_encoding="counts",
     )
+    return runtime, None
 
 
 def run_script(**kw):
@@ -110,6 +111,7 @@ def run_wiring_null(**kw):
     kw.setdefault("optics_config_sha256", "c" * 64)
     kw.setdefault("run_identity_sha256", "b" * 64)
     kw.setdefault("input_gap_steps", 0)
+    kw.setdefault("input_encoding", "counts")
     return wiring_null(body, **kw)
 
 
@@ -294,6 +296,54 @@ def test_the_wiring_null_record_round_trips_byte_for_byte():
     )
     assert wiring_null_from_json(text) == result
     assert wiring_null_from_json(text).to_json() == text
+
+
+def _kick_runtime(edges, digest):
+    n = 3
+    params = sim.Params()
+    runtime = CpuRuntime(
+        sim.weight_matrix(edges, np.ones(n, dtype=np.int8), n, params.w_syn),
+        np.array([0]),
+        steps=DURATION // CLOCK.neural_us,
+        kicks=np.zeros((0, 1), np.float32),
+        p=params,
+        per_bin=CLOCK.control_us // CLOCK.neural_us,
+        trace=np.array([1, 2]),
+        input_encoding="kick_equivalent",
+    )
+    return runtime, digest
+
+
+def test_wiring_null_records_the_kick_equivalent_pathway_hash():
+    from flymsg.arena_controls import wiring_null_from_json
+
+    digest = "d" * 64
+    per = CLOCK.body_us // CLOCK.neural_us
+
+    def transducer(_stim):
+        return np.full((per, 1), 0.25, dtype=np.float32)
+
+    result = run_wiring_null(
+        runtime_from_edges=lambda edges: _kick_runtime(edges, digest),
+        transducer=transducer,
+        input_encoding="kick_equivalent",
+    )
+    assert type(result.record) is closedloop.RecordV2
+    assert result.record.input_encoding == "kick_equivalent"
+    assert result.record.pathway_sha256 == digest
+    assert result.schema == "flymsg.arena_wiring_null/v1"
+    text = result.to_json()
+    assert wiring_null_from_json(text) == result
+    assert wiring_null_from_json(text).to_json() == text
+
+
+def test_wiring_null_refuses_a_bare_runtime_and_a_counts_hash():
+    with pytest.raises(ContractError, match="pathway_sha256"):
+        run_wiring_null(runtime_from_edges=lambda edges: runtime_from_edges(edges)[0])
+    with pytest.raises(ContractError, match="pathway_sha256"):
+        run_wiring_null(
+            runtime_from_edges=lambda edges: (runtime_from_edges(edges)[0], "d" * 64)
+        )
 
 
 DROP = object()

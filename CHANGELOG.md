@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **vee1-4 DN arena v2 lock (draft for owner approval).** Version 2 of `validation/dn_arena.yaml` locks the DN arena on the graded visual pathway of T4/T5 version 4: `kick_equivalent` drive `float32(gain * (1 - coverage))`, three lamina-to-medulla configurations, one decoder cell, a dark anchor on each graph, and wiring-null seeds 7300–7338 that keep the intact photoreceptor rate and drive gain. It replaces version 1's Poisson photoreceptor rates, input dead time and six-cell gain envelope. `content_sha256` and `smoke` remain for the maintainer. No counted run exists.
+
 - **Docs synced with the merged work.** `docs/model.md` and `docs/adr/runtime.md` describe `CpuRuntime`'s `counts` / `kick_equivalent` input encoding; `docs/adr/embodiment.md` and `docs/reference/claims.md` add the `flymsg.closedloop/v2` record and the graded transducer; the graded eye, DN-arena and module-boundaries ADRs gain an implementation status (decisions unchanged); `docs/reference/eye.md` records the shared visual-pathway builder and its parity; README links the DN arena result.
 
 - **vee1-3 closed-loop record v2.** `kick_equivalent` runs record `flymsg.closedloop/v2` (`input_encoding`, `pathway_sha256`, and per-tick `input_drive` as the float32 drive widened to float64). Replay feeds that drive and `replay_parity` compares it exactly; replay admission and checkpoint resume refuse before any step when the encoding or the pathway hash differs from the recorded run. `counts` stays `flymsg.closedloop/v1` with the same bytes, the same dead time and the same parser. `closedloop.ARMS` and `COMPONENTS` are unchanged.
