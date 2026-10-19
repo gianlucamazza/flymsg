@@ -164,12 +164,8 @@ def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word
 
 
 def test_the_console_parity_script_builds_version_one_and_two_fixtures(tmp_path):
-    import importlib.util
+    from flymsg import console_gpu_parity as module
 
-    path = Path(__file__).resolve().parents[1] / "scripts" / "console_gpu_parity.py"
-    spec = importlib.util.spec_from_file_location("console_gpu_parity", path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # puts scripts/ on the path for its siblings
     assert len(list(module.fixtures())) == 12
     versions = {1: 0, 2: 0, 3: 0, 4: 0}
     for (seed, _, _, ext), oracle in module.fixtures(tuple(module.EXTENSIONS)):
@@ -194,19 +190,8 @@ def test_the_console_parity_script_builds_version_one_and_two_fixtures(tmp_path)
 
 
 def test_the_console_lifecycle_fixture_is_version_one_and_long(tmp_path):
-    import importlib.util
-    import sys
+    from flymsg import console_lifecycle as module
 
-    scripts = Path(__file__).resolve().parents[1] / "scripts"
-    sys.path.insert(0, str(scripts))  # the script imports its siblings
-    try:
-        spec = importlib.util.spec_from_file_location(
-            "console_lifecycle", scripts / "console_lifecycle.py"
-        )
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-    finally:
-        sys.path.remove(str(scripts))
     oracle = module.oracle()
     fixture = tmp_path / "lifecycle.bin"
     meta = export_fixture(oracle, fixture)
@@ -219,22 +204,9 @@ def test_the_console_lifecycle_fixture_is_version_one_and_long(tmp_path):
 
 
 def test_the_console_bench_drives_a_battery_case():
-    import importlib.util
-    import sys
+    from flymsg import console_bench, sensitivity
 
-    from flymsg import sensitivity
-
-    scripts = Path(__file__).resolve().parents[1] / "scripts"
-    sys.path.insert(0, str(scripts))
-    try:
-        spec = importlib.util.spec_from_file_location(
-            "console_bench", scripts / "console_bench.py"
-        )
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-    finally:
-        sys.path.remove(str(scripts))
-    assert module.CASE in sensitivity.load()["cases"]["positive"]
+    assert console_bench.CASE in sensitivity.load()["cases"]["positive"]
 
 
 def test_a_native_run_replays_as_a_simulation_result(tmp_path):
@@ -267,14 +239,9 @@ def test_a_native_run_replays_as_a_simulation_result(tmp_path):
 
 
 def _acceptance():
-    import importlib.util
+    from flymsg import native_acceptance
 
-    spec = importlib.util.spec_from_file_location(
-        "native_acceptance", ROOT / "scripts" / "native_acceptance.py"
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return native_acceptance
 
 
 def _battery_runs():
@@ -601,13 +568,9 @@ def test_console_batches_need_a_worker_that_lists_their_output(
 @pytest.mark.parametrize(
     "extension", ["none", "graded", "both", "membrane", "membrane-mixed"]
 )
-def test_sparse_inputs_match_dense_bytes_and_resume(
-    native_exe, tmp_path, monkeypatch, extension
-):
-    monkeypatch.syspath_prepend(str(ROOT / "scripts"))
-    from native_acceptance import EXTENSIONS, check
-
+def test_sparse_inputs_match_dense_bytes_and_resume(native_exe, tmp_path, extension):
     from flymsg import native, sim
+    from flymsg.native_acceptance import EXTENSIONS, check
 
     options = EXTENSIONS.get(extension, {})
     if extension == "membrane-mixed":

@@ -1,19 +1,12 @@
 """The viewer benchmark judges a pass by the CPU other processes used, not by the load its own
 browser makes (issue #24)."""
 
-import importlib.util
 import os
 import subprocess
 import sys
 import time
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location(
-    "bench_viewer", ROOT / "scripts" / "bench_viewer.py"
-)
-bench = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(bench)
+from flymsg import bench_viewer as bench
 
 
 def test_proc_lines_are_parsed():

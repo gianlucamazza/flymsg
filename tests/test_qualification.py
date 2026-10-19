@@ -1,7 +1,7 @@
 """Qualification must cover a fixed matrix, including deliberate native refusals."""
 
 import hashlib
-import importlib.util
+import importlib
 import json
 import shutil
 import subprocess
@@ -12,12 +12,8 @@ import pytest
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
 
-def load(name, monkeypatch):
-    monkeypatch.syspath_prepend(str(SCRIPTS))
-    spec = importlib.util.spec_from_file_location(name, SCRIPTS / f"{name}.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+def load(name):
+    return importlib.import_module(f"flymsg.{name}")
 
 
 def records(v2=True, success="passed"):
@@ -69,7 +65,7 @@ def records(v2=True, success="passed"):
 @pytest.mark.parametrize("v2", [False, True])
 @pytest.mark.parametrize("success", ["passed", "parity"])
 def test_complete_matrix_passes(monkeypatch, v2, success):
-    module = load("native_acceptance", monkeypatch)
+    module = load("native_acceptance")
     cases, refused = records(v2, success)
     result = module.qualification(cases, refused, v2=v2, success_field=success)
     assert result["qualified"]
@@ -93,7 +89,7 @@ def test_complete_matrix_passes(monkeypatch, v2, success):
     ],
 )
 def test_incomplete_or_changed_matrix_fails(monkeypatch, damage):
-    module = load("native_acceptance", monkeypatch)
+    module = load("native_acceptance")
     cases, refused = records()
     if damage == "v1-only":
         cases = [c for c in cases if c["extension"] == "none"]
@@ -132,7 +128,7 @@ def test_incomplete_or_changed_matrix_fails(monkeypatch, damage):
     ],
 )
 def test_console_report_checks_coverage_and_download(monkeypatch, tmp_path, damage):
-    module = load("console_gpu_parity", monkeypatch)
+    module = load("console_gpu_parity")
     cases, refused = records(damage != "v1-only")
     matrix = cases + refused
 
@@ -214,7 +210,7 @@ def test_console_report_checks_coverage_and_download(monkeypatch, tmp_path, dama
     "extension", ["graded", "gap", "spikelets", "both", "gap-all-free"]
 )
 def test_lifecycle_can_export_supported_v2(monkeypatch, tmp_path, extension):
-    module = load("console_lifecycle", monkeypatch)
+    module = load("console_lifecycle")
     from flymsg.native import export_fixture
 
     monkeypatch.setattr(module, "N", 8)
@@ -228,7 +224,7 @@ def test_lifecycle_can_export_supported_v2(monkeypatch, tmp_path, extension):
 def test_parity_rejects_opposite_signed_zero(monkeypatch):
     import numpy as np
 
-    module = load("native_acceptance", monkeypatch)
+    module = load("native_acceptance")
     state = {
         name: np.zeros(1, dtype=np.float32)
         for name in ("v", "g", "th", "ref_until", "counts", "first")
@@ -259,7 +255,7 @@ def test_parity_rejects_opposite_signed_zero(monkeypatch):
 
 
 def test_wait_timeout_keeps_the_last_status(monkeypatch, tmp_path):
-    module = load("console_lifecycle", monkeypatch)
+    module = load("console_lifecycle")
     job = object.__new__(module.Job)
     seen = {"state": "checkpointing", "step": 1_000_000, "source_commit": "90249e45"}
     job.status = lambda: dict(seen)
@@ -352,7 +348,7 @@ def test_publish_records_failed_or_completed_from_the_temporary_size(
 
 
 def test_throughput_timeout_is_not_a_lineage_mismatch(monkeypatch, tmp_path):
-    module = load("console_lifecycle", monkeypatch)
+    module = load("console_lifecycle")
 
     class Job:
         def __init__(self, *args, **kwargs):
@@ -402,7 +398,7 @@ def test_throughput_timeout_is_not_a_lineage_mismatch(monkeypatch, tmp_path):
 def test_lifecycle_rejects_download_corruption_before_advancing_oracle(
     monkeypatch, tmp_path
 ):
-    module = load("console_lifecycle", monkeypatch)
+    module = load("console_lifecycle")
     job = object.__new__(module.Job)
     job.folder, job.package, job.rel = tmp_path, "mock", "inbox"
 
@@ -416,7 +412,7 @@ def test_lifecycle_rejects_download_corruption_before_advancing_oracle(
 
 
 def test_force_stop_is_explicit_and_scoped_to_one_package(monkeypatch):
-    module = load("console_lifecycle", monkeypatch)
+    module = load("console_lifecycle")
     calls = []
 
     class Portal:
@@ -440,7 +436,7 @@ def test_force_stop_is_explicit_and_scoped_to_one_package(monkeypatch):
 def test_lifecycle_preserves_progress_when_recovery_fails(
     monkeypatch, tmp_path, failure, match
 ):
-    module = load("console_lifecycle", monkeypatch)
+    module = load("console_lifecycle")
     created = []
 
     class Job:
@@ -503,7 +499,7 @@ def test_lifecycle_preserves_progress_when_recovery_fails(
 
 
 def test_remote_epoch_detects_replaced_app_context(monkeypatch, tmp_path):
-    module = load("console_lifecycle", monkeypatch)
+    module = load("console_lifecycle")
     remote = {}
 
     class Portal:
@@ -523,7 +519,7 @@ def test_remote_epoch_detects_replaced_app_context(monkeypatch, tmp_path):
 
 
 def test_sustained_windows_use_running_steps_only(monkeypatch):
-    module = load("console_sustained", monkeypatch)
+    module = load("console_sustained")
     samples = [{"t": 0.0, "state": "validating", "step": 0}]
     samples += [
         {"t": float(t), "state": "running", "step": 100 * t} for t in range(1, 131)
@@ -539,7 +535,7 @@ def test_sustained_windows_use_running_steps_only(monkeypatch):
     "damage", ["none", "other_output", "failed", "oracle", "upload", "cleanup"]
 )
 def test_sustained_case_fails_closed(monkeypatch, tmp_path, damage):
-    module = load("console_sustained", monkeypatch)
+    module = load("console_sustained")
     case = {
         "name": "c",
         "stimulus": "s",
@@ -589,7 +585,7 @@ def test_sustained_case_fails_closed(monkeypatch, tmp_path, damage):
 
 @pytest.mark.parametrize("fault", ["result", "download", "hash"])
 def test_sustained_readback_fault_is_recorded(monkeypatch, tmp_path, fault):
-    module = load("console_sustained", monkeypatch)
+    module = load("console_sustained")
     deleted = []
 
     class Portal:
@@ -643,7 +639,7 @@ def test_sustained_readback_fault_is_recorded(monkeypatch, tmp_path, fault):
 
 @pytest.mark.parametrize("count", [0, 2])
 def test_hardstop_pid_resolution_refuses_missing_or_ambiguous(monkeypatch, count):
-    module = load("console_hardstop", monkeypatch)
+    module = load("console_hardstop")
 
     class FakePortal:
         def curl(self, method, path):
@@ -679,8 +675,8 @@ def test_hardstop_pid_resolution_refuses_missing_or_ambiguous(monkeypatch, count
 def test_hardstop_fake_portal_paths(monkeypatch, tmp_path, scenario, expected, case):
     from types import SimpleNamespace
 
-    module = load("console_hardstop", monkeypatch)
-    lifecycle = __import__("console_lifecycle")
+    module = load("console_hardstop")
+    lifecycle = importlib.import_module("flymsg.console_lifecycle")
     monkeypatch.setattr(module.time, "sleep", lambda _: None)
     monkeypatch.setattr(
         module, "oracle", lambda: SimpleNamespace(advance_to=lambda _: None)
@@ -838,7 +834,7 @@ def test_hardstop_fake_portal_paths(monkeypatch, tmp_path, scenario, expected, c
 def test_hardstop_existing_output_refused_before_contact(monkeypatch, tmp_path):
     from types import SimpleNamespace
 
-    module = load("console_hardstop", monkeypatch)
+    module = load("console_hardstop")
 
     def forbidden():
         raise AssertionError("Portal must not be constructed")
@@ -854,7 +850,7 @@ def test_hardstop_always_stops_app_and_retains_safe_report(
 ):
     from types import SimpleNamespace
 
-    module = load("console_hardstop", monkeypatch)
+    module = load("console_hardstop")
     monkeypatch.setattr(module.time, "sleep", lambda _: None)
     calls = []
 
@@ -921,8 +917,8 @@ def test_hardstop_always_stops_app_and_retains_safe_report(
 def test_gpufault_fake_portal(monkeypatch, tmp_path, case, scenario, expected):
     from types import SimpleNamespace
 
-    module = load("console_gpufault", monkeypatch)
-    lifecycle = __import__("console_lifecycle")
+    module = load("console_gpufault")
+    lifecycle = importlib.import_module("flymsg.console_lifecycle")
     if scenario in {"checkpoint-changed", "checkpoint-json-changed"} and case == "F1":
         expected = "pass"
     clock = [0.0]
@@ -1102,7 +1098,7 @@ def test_gpufault_fake_portal(monkeypatch, tmp_path, case, scenario, expected):
 def test_gpufault_existing_output_refused_before_contact(monkeypatch, tmp_path):
     from types import SimpleNamespace
 
-    module = load("console_gpufault", monkeypatch)
+    module = load("console_gpufault")
     monkeypatch.setattr(module, "Portal", lambda: pytest.fail("unexpected contact"))
     with pytest.raises(FileExistsError):
         module.run(SimpleNamespace(out=tmp_path))
@@ -1112,7 +1108,7 @@ def test_gpufault_existing_output_refused_before_contact(monkeypatch, tmp_path):
 def test_gpufault_always_stops_app(monkeypatch, tmp_path, exception):
     from types import SimpleNamespace
 
-    module = load("console_gpufault", monkeypatch)
+    module = load("console_gpufault")
     calls = []
 
     class FakePortal:
@@ -1156,7 +1152,7 @@ def test_gpufault_always_stops_app(monkeypatch, tmp_path, exception):
 def test_job_fault_upload_precedes_job_publication(monkeypatch, tmp_path):
     from types import SimpleNamespace
 
-    module = load("console_lifecycle", monkeypatch)
+    module = load("console_lifecycle")
     uploads = []
     job = object.__new__(module.Job)
     job.folder = tmp_path
