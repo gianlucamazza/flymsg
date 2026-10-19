@@ -322,6 +322,7 @@ def _mutate(d, path, value):
     [
         (("ticks", 2, "input_counts", 0, 0), 1.5),
         (("ticks", 2, "input_counts", 0, 0), True),
+        (("ticks", 2, "input_counts", 0, 0), -1),
         (("ticks", 2, "contacts"), [["ground", -1.0]]),
         (("ticks", 2, "contacts"), [["", 0.0]]),
         (("ticks", 2, "contacts"), [["ground"]]),
