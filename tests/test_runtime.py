@@ -1,3 +1,4 @@
+import hashlib
 import json
 from dataclasses import replace
 
@@ -785,3 +786,84 @@ def test_prepare_kernel_is_not_called_from_advance_to(monkeypatch):
     assert calls["n"] == 3
     again.advance_to(_STEPS)
     assert calls["n"] == 3
+
+
+# State and sim.run digests of each mixed case, produced by the code before the
+# kernel preparation moved out of `_advance` (main cb945e1): an oracle that the new
+# code cannot share a mistake with.
+_GOLDEN = {
+    "counts-few-dense": (
+        "f058ad8869cce42456edb877187dcf3a148bac80f23b19a2645958920c0ea082",
+        "a5fcb7e5b234ef629243692e584e94b288e3dabfcf8bb5a3158df6e10e6d3e2b",
+    ),
+    "counts-few-taylor": (
+        "f058ad8869cce42456edb877187dcf3a148bac80f23b19a2645958920c0ea082",
+        "a5fcb7e5b234ef629243692e584e94b288e3dabfcf8bb5a3158df6e10e6d3e2b",
+    ),
+    "counts-most-dense": (
+        "60b7804dc584e425816db17dd783cce364c0526bc23d53d06f6e36d930c3da22",
+        "f2783d46a38ec975b15a9088ad7a1364432f045d330b75cbea0426351a999380",
+    ),
+    "counts-most-taylor": (
+        "60b7804dc584e425816db17dd783cce364c0526bc23d53d06f6e36d930c3da22",
+        "f2783d46a38ec975b15a9088ad7a1364432f045d330b75cbea0426351a999380",
+    ),
+    "counts-anchor-dense": (
+        "caaf08eab7190e681b11c1489d3145d7394c2ecfc8f2b4d7fb61330cf723a246",
+        "31d773e30d3ee45b927eec7d028640f25f38820c59e25f49f91f0e8dd3e487a4",
+    ),
+    "counts-anchor-taylor": (
+        "caaf08eab7190e681b11c1489d3145d7394c2ecfc8f2b4d7fb61330cf723a246",
+        "31d773e30d3ee45b927eec7d028640f25f38820c59e25f49f91f0e8dd3e487a4",
+    ),
+    "kick_equivalent-few-dense": (
+        "1c56aab9751a7d3eb5682a92b40fc868599072117e3a34ece3a17423d9c00e45",
+        "545460028119bd448f269ed087e539f1b92656a319e520a616b773f3eed0bc6c",
+    ),
+    "kick_equivalent-few-taylor": (
+        "1c56aab9751a7d3eb5682a92b40fc868599072117e3a34ece3a17423d9c00e45",
+        "545460028119bd448f269ed087e539f1b92656a319e520a616b773f3eed0bc6c",
+    ),
+    "kick_equivalent-most-dense": (
+        "f7f6e309d566ccdb268137c5d110a45279aeb55342fa7d6c85db14155fb8c282",
+        "03a148a457774a3c1c4fcdc0522bc701b56fcb67729974d94facf3b2b0b7a463",
+    ),
+    "kick_equivalent-most-taylor": (
+        "f7f6e309d566ccdb268137c5d110a45279aeb55342fa7d6c85db14155fb8c282",
+        "03a148a457774a3c1c4fcdc0522bc701b56fcb67729974d94facf3b2b0b7a463",
+    ),
+    "kick_equivalent-anchor-dense": (
+        "7487111c8a3e98af76cb8ecfc5289c18a44913f1b4be1a4b016f1c4edd82bf80",
+        "664054b90a4c753e07e5caf111b81cb1cb70111bfa1aa8cbb24d6c3e1e263a71",
+    ),
+    "kick_equivalent-anchor-taylor": (
+        "7487111c8a3e98af76cb8ecfc5289c18a44913f1b4be1a4b016f1c4edd82bf80",
+        "664054b90a4c753e07e5caf111b81cb1cb70111bfa1aa8cbb24d6c3e1e263a71",
+    ),
+}
+
+
+def _digest(arrays):
+    h = hashlib.sha256()
+    for name in sorted(arrays):
+        a = np.ascontiguousarray(arrays[name])
+        h.update(name.encode())
+        h.update(a.dtype.str.encode())
+        h.update(str(a.shape).encode())
+        h.update(a.tobytes())
+    return h.hexdigest()
+
+
+@pytest.mark.parametrize("encoding", ["counts", "kick_equivalent"])
+@pytest.mark.parametrize("branch", ["few", "most", "anchor"])
+@pytest.mark.parametrize("solver", ["dense", "taylor"])
+def test_mixed_cases_equal_the_code_before_the_preparation_moved(
+    encoding, branch, solver
+):
+    case = _mixed_case(encoding, branch, solver)
+    rt = _mixed_runtime(case)
+    rt.advance_to(_STEPS)
+    result = _mixed_run(case)
+    arrays = {k: v for k, v in vars(result).items() if isinstance(v, np.ndarray)}
+    expected = _GOLDEN[f"{encoding}-{branch}-{solver}"]
+    assert (_digest(rt.snapshot()), _digest(arrays)) == expected
