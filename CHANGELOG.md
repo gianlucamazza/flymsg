@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **arena-2 heading and arc.** `Arena.yaw_rad` is the integrated, unwrapped heading for the yaw-change metric (the `BodyState` quaternion shows heading modulo a full turn). The arc chord is in half-angle form, so a yaw rate near zero still translates the body (the difference-of-sines form moved it by 0 m at 1e-14 rad/s). `Arena.step` refuses an actuator commanded twice. `docs/claims.md` lists DN identity as mapped by `arena-1`.
+
 - **arena-4 fixture controls.** `flymsg.arena_controls` runs the script control (the same `arena` integrator, stimulus geometry and command units, driven by a caller-supplied rule; `arena.step` on the given clock; no connectome and no `CpuRuntime`) and the wiring-null control (the intact loop on a degree-preserving shuffle of the traced graph via `wiring.shuffle_targets`, through `closedloop.run` with the arena body and the decoder; seeds are caller-supplied) as separate fixture runs. Each control names itself in its return value and notes, never in `closedloop.Record.arm`. No lock or counted run.
 
 - **arena-3 DN decoder.** `flymsg.dn_decoder.Decoder` maps windowed DNa01 / DNa02 and oDN1 (`DNg97`) spike rates to `(yaw, forward)` commands of `flymsg.arena.Arena`. Gains and the control window are required caller values; none are chosen here. Not a motor map. No lock or counted run.

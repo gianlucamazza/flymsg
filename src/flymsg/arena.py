@@ -3,6 +3,8 @@
 Integrate yaw rate (`rad/s`) and forward speed (`m/s`) on the plane. Emit B6 v2
 `pose.BodyState`; schema stays `flymsg.embodiment/v2`. _z_, roll and pitch are
 caller-supplied constants (the lock will name them; this module invents none).
+Heading is integrated without wrapping: `yaw_rad` keeps whole turns that the
+`BodyState` quaternion cannot show, so a yaw change over a window is read from it.
 SI units. No MuJoCo. `snapshot` / `restore` match what `closedloop.run` asks of
 `FlyGymBody` when `checkpoint_dir` is set.
 """
@@ -79,26 +81,35 @@ class Arena:
         if not self._ready:
             raise ContractError("reset the body before stepping it")
         omega, speed = 0.0, 0.0
+        seen = set()
         for actuator, value in commands:
             if self.actuators.get(actuator.name) != actuator:
                 raise ContractError(f"{actuator.name} is not an actuator of this body")
+            if actuator.name in seen:
+                raise ContractError(f"{actuator.name} is commanded twice in one step")
+            seen.add(actuator.name)
             value = _finite(value, actuator.name)
             if actuator.name == "yaw":
                 omega = value
             else:
                 speed = value
         dt = dt_us / 1e6
-        yaw0 = self._yaw
-        yaw1 = yaw0 + omega * dt
-        if omega == 0.0:
-            self._x += speed * math.cos(yaw0) * dt
-            self._y += speed * math.sin(yaw0) * dt
-        else:
-            self._x += speed / omega * (math.sin(yaw1) - math.sin(yaw0))
-            self._y -= speed / omega * (math.cos(yaw1) - math.cos(yaw0))
-        self._yaw, self._v, self._omega = yaw1, speed, omega
+        half = omega * dt / 2.0
+        # chord of the arc in half-angle form: no cancellation as omega -> 0
+        chord = speed * dt * (math.sin(half) / half if half else 1.0)
+        mid = self._yaw + half
+        self._x += chord * math.cos(mid)
+        self._y += chord * math.sin(mid)
+        self._yaw, self._v, self._omega = self._yaw + omega * dt, speed, omega
         self._t_us += dt_us
         return self._state(), ()
+
+    @property
+    def yaw_rad(self) -> float:
+        """Unwrapped heading in rad, counterclockwise about world z."""
+        if not self._ready:
+            raise ContractError("reset the body before reading its heading")
+        return self._yaw
 
     def snapshot(self, path: Path) -> None:
         """Clock, planar pose, held command and construction, atomically."""
