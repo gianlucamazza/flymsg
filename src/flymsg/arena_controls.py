@@ -202,6 +202,7 @@ def wiring_null(
     provenance,
     optics_config_sha256: str,
     run_identity_sha256: str,
+    input_gap_steps: int,
     **kwargs,
 ) -> WiringNullControl:
     """Intact `closedloop.run` on a degree-preserving shuffle of `edges`."""
@@ -230,6 +231,7 @@ def wiring_null(
         provenance=provenance,
         optics_config_sha256=optics_config_sha256,
         run_identity_sha256=run_identity_sha256,
+        input_gap_steps=input_gap_steps,
         **kwargs,
     )
     return WiringNullControl(
