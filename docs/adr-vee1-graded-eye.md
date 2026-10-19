@@ -118,7 +118,7 @@ input.
 
 | Alternative                                                     | Problem                                                                                                 | Verdict                   |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Keep Poisson photoreceptor drive                                | Known not to pass the lamina (T4/T5 v1)                                                                 | Kept only for DN-arena v1 |
+| Keep Poisson photoreceptor drive                                | Did not pass the lamina in T4/T5 v1                                                                     | Kept only for DN-arena v1 |
 | Rate-coded LMC drive (skip photoreceptors)                      | Bypasses the measured lamina wiring; a new engineered transfer with no source                           | Rejected                  |
 | A trained connectome-constrained eye (flyvis, Lappalainen 2024) | A second executor and clock in the loop; its units are not the LIF's; trained weights replace the graph | Rejected                  |
 | Quantize the graded drive to integer counts                     | Changes version 4's numbers; a hidden rounding rule                                                     | Rejected                  |
