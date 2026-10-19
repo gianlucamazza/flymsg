@@ -4,7 +4,7 @@ Status on 2026-10-16. This page is the index. Each verdict is recorded on the li
 and the table adds none. What remains open needs a measurement from an animal, a published
 map, hardware, or a lock that is written and not yet run.
 
-The [integrity audit](integrity-audit-2026-10-13.md) records the numerical/provenance
+The [integrity audit](report/integrity-audit-2026-10-13.md) records the numerical/provenance
 baseline and the accepted corrections. [Run integrity](run-integrity.md) specifies
 immutable executions, checkpoint compatibility and explicit electrical numerical modes.
 [Approximations](approximations.md) lists every simplification of the model with its status
@@ -172,7 +172,7 @@ about the fly.
 ## Open model-side
 
 - Integrity corrections are implemented under the accepted ADRs; the baseline and the
-  corrections accepted on 2026-10-13 are recorded in the [audit](integrity-audit-2026-10-13.md). Archived results and
+  corrections accepted on 2026-10-13 are recorded in the [audit](report/integrity-audit-2026-10-13.md). Archived results and
   already registered boundary-reset protocols preserve their original physics.
 
 - T4/T5 v3: robust neither ([eye](eye.md)). With Mi1, Tm3, Mi4, Mi9 and C3 graded, the edge

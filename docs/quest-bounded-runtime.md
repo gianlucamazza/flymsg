@@ -1,7 +1,7 @@
 # Certified bounded skeleton runtime
 
 The accepted [runtime ADR](adr-bounded-skeleton-runtime.md) extends the
-[fixed-view experiment](quest-performance-2026-10-16.md). The implementation is
+[fixed-view experiment](report/quest-performance-2026-10-16.md). The implementation is
 explicitly diagnostic: use `?check&representation=skeleton-bounded`. It requires
 paged uploads; `uploads=0` is rejected. The normal viewer default is unchanged.
 Do not describe this mode as admitted or XR qualified without device evidence.

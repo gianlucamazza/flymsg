@@ -37,7 +37,7 @@ compositor drops. Static native-buffer/geometry/raster evidence remains separate
 in [the readback report](quest-bounded-readback-2026-10-16.md).
 
 The first candidate motion arm discarded 99 requests and fell back on 72 of 166
-captured frames. This motivated the [selection follow-up](quest-bounded-motion-followup.md),
+captured frames. This motivated the [selection follow-up](report/quest-bounded-motion-followup.md),
 including seven failing-before/passing-after unit regressions. The corrected
 runtime `b4427da` passed 187 Node tests (one network skip), its real-viewer
 bounded/context fixture and Linux/Windows/Python CI. These software results do

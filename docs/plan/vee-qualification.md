@@ -5,7 +5,7 @@ and [body-wiring ADR](../adr-body-wiring.md) remain the decisions. This page rec
 criteria; it does not promote a synthetic experiment to an animal result.
 
 The subsequent accepted [rendering ADR](../adr-observer-rendering.md) and
-[implementation status](../observer-rendering.md) address the failed Quest workload.
+[implementation status](../report/observer-rendering.md) address the failed Quest workload.
 The collector now requires an explicit representation for diagnostic comparisons;
 its default requests full surfaces and never silently substitutes skeletons.
 
@@ -90,7 +90,7 @@ same across comparisons. USB debugging authorization is persistent; reverse mapp
 trial resources.
 
 Wireless ADB is also usable through an explicitly selected transport; see the
-[issue-resolution procedure](../issue-resolution.md#physical-trial-procedure). A transport
+[issue-resolution procedure](../report/issue-resolution.md#physical-trial-procedure). A transport
 change starts a new trial. Record temporary user-requested keep-awake settings and restore
 their original values; such diagnostic runs must not silently inherit the original
 qualification profile. Page visibility alone does not prove that the headset is awake.

@@ -62,6 +62,25 @@ def test_rewrite_keeps_old_landing_paths_after_category_move():
         rewrite("../roadmap.md#completion-plan", source="docs/plan/milestones.md")
         == "roadmap.html#completion-plan"
     )
+    assert rewrite("issue-resolution.md", source="docs/catalog.md") == (
+        "issue-resolution.html"
+    )
+    assert rewrite("report/issue-resolution.md", source="docs/catalog.md") == (
+        "issue-resolution.html"
+    )
+    assert rewrite("docs/issue-resolution.md", source="README.md") == (
+        "issue-resolution.html"
+    )
+    assert rewrite("docs/report/issue-resolution.md", source="README.md") == (
+        "issue-resolution.html"
+    )
+    assert (
+        rewrite(
+            "../validation.md#protocol",
+            source="docs/report/issue-resolution.md",
+        )
+        == "validation.html#protocol"
+    )
 
 
 def test_rewrite_sends_unlisted_docs_to_the_blob():
@@ -76,9 +95,9 @@ def test_rewrite_resolves_images_and_evidence():
     assert rewrite("img/kc-sparseness.svg", source="docs/model.md") == (
         "img/kc-sparseness.svg"
     )
-    evidence = "evidence/quest2-qualification-2026-10-16.json"
-    assert rewrite(evidence, source="docs/quest-paged-pipeline.md") == (
-        f"{BLOB}/docs/{evidence}"
+    evidence = "../evidence/quest2-qualification-2026-10-16.json"
+    assert rewrite(evidence, source="docs/report/quest-paged-pipeline.md") == (
+        f"{BLOB}/docs/evidence/quest2-qualification-2026-10-16.json"
     )
 
 

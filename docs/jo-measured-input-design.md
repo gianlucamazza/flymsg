@@ -1,7 +1,7 @@
 # Qualify measured JO input before scoring
 
 Status: **complete design for review, not an implemented or qualified input**,
-2026-10-17. Applies to [entry protocol 6](issue-resolution.md) and
+2026-10-17. Applies to [entry protocol 6](report/issue-resolution.md) and
 [M4 v2](plan/m4-v2-proposal.md). The [ADR](adr-measured-jo-input.md), accepted
 2026-10-18, defers runtime implementation until a measured source establishes the mode. No source response archive,
 Baker/Pacheco outcome, simulation, seed search or new validation lock was opened
