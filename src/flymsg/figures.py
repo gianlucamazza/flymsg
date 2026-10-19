@@ -757,3 +757,60 @@ def jump_range(seeds: Sequence[dict], lo_mm: float, hi_mm: float) -> str:
         "NeuroMechFly jump v1: the drag-free range is short",
         [a],
     )
+
+
+def t4_spikes(rows: pd.DataFrame) -> str:
+    """T4 spikes per T4/T5 version 4 configuration, on a log axis.
+
+    `rows` has lamina_medulla_gain, lmc_rate_hz, medulla_rate_hz and t4_spikes (the
+    sum over T4a-d, every direction and polarity) in the lock's configuration order.
+    Blue marks the configurations with LMC and medulla release at 200 Hz, the ones
+    DN arena version 2 uses; a zero is drawn at the axis origin and labelled 0.
+    """
+    rows = rows.reset_index(drop=True)
+    n = len(rows)
+    top = float(np.ceil(np.log10(max(1.0, float(rows["t4_spikes"].max())))))
+    a = Panel(
+        260,
+        52,
+        420,
+        20 * n,
+        (0, top + 0.4),
+        (n - 0.45, -0.55),
+        "T4 spikes per configuration (all directions and polarities)",
+        xlabel="spikes, log scale (0 at the origin)",
+    )
+    marks = list(range(int(top) + 1))
+    a.frame(xticks=marks, xticklabels=[f"{10**m:,}" for m in marks], yticks=())
+    for i, r in rows.iterrows():
+        spikes = int(r["t4_spikes"])
+        chosen = r["lmc_rate_hz"] == 200.0 and r["medulla_rate_hz"] == 200.0
+        colour = BLUE if chosen else GREY
+        x = float(np.log10(spikes)) if spikes else 0.0
+        if spikes:
+            a.hbar(i, 0.62, 0, x, colour, 0.85)
+        a.text(a.X(x) + 4, a.Y(i) + 3, f"{spikes:,}", colour)
+        label = (
+            f"gain {r['lamina_medulla_gain']:g} · LMC {r['lmc_rate_hz']:g} Hz · "
+            f"medulla {r['medulla_rate_hz']:g} Hz"
+        )
+        a.text(a.x0 - 8, a.Y(i) + 3, label, "#222", "end")
+    a.text(
+        a.x0,
+        a.y0 + a.h + 48,
+        "Blue: LMC and medulla release 200 Hz, the three configurations of DN arena "
+        "version 2.",
+        GREY,
+    )
+    a.text(
+        a.x0,
+        a.y0 + a.h + 62,
+        "T4 is silent at every configuration with medulla release 50 Hz.",
+        GREY,
+    )
+    return document(
+        780,
+        a.y0 + a.h + 80,
+        "T4/T5 version 4: T4 fires only with medulla release at 200 Hz",
+        [a],
+    )

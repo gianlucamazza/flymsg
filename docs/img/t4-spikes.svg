@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="372" viewBox="0 0 780 372" font-family="system-ui, sans-serif" font-size="10">
+<rect width="780" height="372" fill="#ffffff"/>
+<text x="12" y="18" font-size="12">T4/T5 version 4: T4 fires only with medulla release at 200 Hz</text>
+<rect x="260" y="52" width="420" height="240" fill="none" stroke="#999"/>
+<text x="260" y="46" font-size="11">T4 spikes per configuration (all directions and polarities)</text>
+<line x1="260.0" x2="260.0" y1="292" y2="295" stroke="#999"/><text x="260.0" y="306" text-anchor="middle">1</text>
+<line x1="325.6" x2="325.6" y1="292" y2="295" stroke="#999"/><text x="325.6" y="306" text-anchor="middle">10</text>
+<line x1="391.2" x2="391.2" y1="292" y2="295" stroke="#999"/><text x="391.2" y="306" text-anchor="middle">100</text>
+<line x1="456.9" x2="456.9" y1="292" y2="295" stroke="#999"/><text x="456.9" y="306" text-anchor="middle">1,000</text>
+<line x1="522.5" x2="522.5" y1="292" y2="295" stroke="#999"/><text x="522.5" y="306" text-anchor="middle">10,000</text>
+<line x1="588.1" x2="588.1" y1="292" y2="295" stroke="#999"/><text x="588.1" y="306" text-anchor="middle">100,000</text>
+<line x1="653.8" x2="653.8" y1="292" y2="295" stroke="#999"/><text x="653.8" y="306" text-anchor="middle">1,000,000</text>
+<text x="470.0" y="320" text-anchor="middle">spikes, log scale (0 at the origin)</text>
+<text x="264.0" y="65.9" fill="#888888" text-anchor="start">0</text>
+<text x="252.0" y="65.9" fill="#222" text-anchor="end">gain 1 · LMC 50 Hz · medulla 50 Hz</text>
+<text x="264.0" y="85.7" fill="#888888" text-anchor="start">0</text>
+<text x="252.0" y="85.7" fill="#222" text-anchor="end">gain 1 · LMC 50 Hz · medulla 200 Hz</text>
+<text x="264.0" y="105.6" fill="#888888" text-anchor="start">0</text>
+<text x="252.0" y="105.6" fill="#222" text-anchor="end">gain 1 · LMC 200 Hz · medulla 50 Hz</text>
+<rect x="260.0" y="116.3" width="129.2" height="12.3" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="393.2" y="125.4" fill="#2b6cb0" text-anchor="start">93</text>
+<text x="252.0" y="125.4" fill="#222" text-anchor="end">gain 1 · LMC 200 Hz · medulla 200 Hz</text>
+<text x="264.0" y="145.2" fill="#888888" text-anchor="start">0</text>
+<text x="252.0" y="145.2" fill="#222" text-anchor="end">gain 4 · LMC 50 Hz · medulla 50 Hz</text>
+<rect x="260.0" y="155.9" width="105.1" height="12.3" fill="#888888" fill-opacity="0.85"/>
+<text x="369.1" y="165.1" fill="#888888" text-anchor="start">40</text>
+<text x="252.0" y="165.1" fill="#222" text-anchor="end">gain 4 · LMC 50 Hz · medulla 200 Hz</text>
+<text x="264.0" y="184.9" fill="#888888" text-anchor="start">0</text>
+<text x="252.0" y="184.9" fill="#222" text-anchor="end">gain 4 · LMC 200 Hz · medulla 50 Hz</text>
+<rect x="260.0" y="195.6" width="298.7" height="12.3" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="562.7" y="204.8" fill="#2b6cb0" text-anchor="start">35,586</text>
+<text x="252.0" y="204.8" fill="#222" text-anchor="end">gain 4 · LMC 200 Hz · medulla 200 Hz</text>
+<text x="264.0" y="224.6" fill="#888888" text-anchor="start">0</text>
+<text x="252.0" y="224.6" fill="#222" text-anchor="end">gain 16 · LMC 50 Hz · medulla 50 Hz</text>
+<rect x="260.0" y="235.3" width="295.4" height="12.3" fill="#888888" fill-opacity="0.85"/>
+<text x="559.4" y="244.4" fill="#888888" text-anchor="start">31,697</text>
+<text x="252.0" y="244.4" fill="#222" text-anchor="end">gain 16 · LMC 50 Hz · medulla 200 Hz</text>
+<text x="264.0" y="264.3" fill="#888888" text-anchor="start">0</text>
+<text x="252.0" y="264.3" fill="#222" text-anchor="end">gain 16 · LMC 200 Hz · medulla 50 Hz</text>
+<rect x="260.0" y="274.9" width="363.9" height="12.3" fill="#2b6cb0" fill-opacity="0.85"/>
+<text x="627.9" y="284.1" fill="#2b6cb0" text-anchor="start">350,264</text>
+<text x="252.0" y="284.1" fill="#222" text-anchor="end">gain 16 · LMC 200 Hz · medulla 200 Hz</text>
+<text x="260.0" y="340.0" fill="#888888" text-anchor="start">Blue: LMC and medulla release 200 Hz, the three configurations of DN arena version 2.</text>
+<text x="260.0" y="354.0" fill="#888888" text-anchor="start">T4 is silent at every configuration with medulla release 50 Hz.</text>
+</svg>

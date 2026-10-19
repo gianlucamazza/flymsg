@@ -193,3 +193,15 @@ def test_jump_range_labels_an_archived_seed_and_says_whose_clock():
     assert "110" in texts
     assert f"{one['range_mm']:.2f}" in texts
     assert any("not a measured takeoff latency." in t for t in texts)
+
+
+def test_t4_spikes_labels_archived_configurations():
+    (folder,) = (ROOT / "results/t4t5").glob("v4.executions/*/output")
+    configs = pd.read_csv(folder / "configurations.csv")
+    spikes = pd.read_csv(folder / "spikes.csv")
+    t4 = spikes[spikes["subtype"].str.startswith("T4")].groupby("config")["spikes"]
+    configs["t4_spikes"] = configs["config"].map(t4.sum()).astype(int)
+    texts = _texts(_parse(figures.t4_spikes(configs)))
+    for row in configs.itertuples():
+        assert f"{row.t4_spikes:,}" in texts
+    assert "gain 16 · LMC 200 Hz · medulla 200 Hz" in texts
