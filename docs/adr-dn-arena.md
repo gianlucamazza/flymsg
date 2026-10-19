@@ -1,11 +1,11 @@
 # ADR: descending-neuron readout and a kinematic arena (VEE-0)
 
-Status: **Proposed**, 2026-10-19. No code is authorized. The owner, Gianluca Mazza,
-must accept this ADR before any implementation PR, as for the
-[body-wiring ADR](adr-body-wiring.md) (accepted 2026-10-14). The decisions below
-are closed. Acceptance is still a separate owner act, and merging this draft is
-not that act. Implementation, after acceptance, is `arena-1` through `arena-6`.
-Those names are not the module-boundaries PR numbers.
+Status: **accepted** by Gianluca Mazza, 2026-10-19 (proposed the same day).
+Acceptance authorizes `arena-1` through `arena-6`, one reviewed PR at a time.
+It does not change code in this commit, and it does not authorize a lock, a
+run, or an edit to `validation/evidence.yaml`, `validation/motor_map.yaml`,
+`closedloop.ARMS` or `flymsg.closedloop/v1`. Those names are not the
+module-boundaries PR numbers. The decisions below stay as accepted.
 
 Scope: a first **synthetic** steering fixture that reuses the existing closed
 loop. It supplements the accepted [body-wiring](adr-body-wiring.md),
@@ -250,17 +250,18 @@ steering does not need the connectome.
 | Overload `rad` or `N` for yaw rate or forward speed     | The unit would name a different quantity                                                                                   | Rejected; add `rad/s` and `m/s` in `arena-2` |
 | Store decoder gains in `validation/evidence.yaml`       | That registry has no `engineered` status; a gain row would read as SF1 evidence                                            | Rejected; gains stay in the experiment lock  |
 | Wait for module-boundaries step 8 before adding `arena` | That step is optional and unstarted; a flat module can move later                                                          | Rejected; default is a flat module           |
-| Kinematic planar body + engineered DN decoder           | Synthetic only; less spectacle; same evidence limits as A with fewer parts                                                 | Adopted as milestone 1, pending acceptance   |
+| Kinematic planar body + engineered DN decoder           | Synthetic only; less spectacle; same evidence limits as A with fewer parts                                                 | Adopted                                      |
 
 FlyBody (Vaxenburg et al. 2025, _Nature_, doi:10.1038/s41586-025-09029-4)
 stays unselected (#19, #35).
 
 ## Consequences, risks, rollback
 
-**Consequences.** After acceptance, code PRs may add `arena`, the decoder, a
-lock and a fixture. Until then, only this document, its catalog line and the
-changelog entry exist. Existing closed-loop records, M0 v1, B6 v2, `CpuRuntime`
-numerics, `validation/motor_map.yaml` and archived results are unchanged.
+**Consequences.** Acceptance authorizes later PRs to add `arena`, the decoder,
+a lock and a fixture, one step at a time. This commit still changes only this
+document, its catalog line, the README index row and the changelog entry.
+Existing closed-loop records, M0 v1, B6 v2, `CpuRuntime` numerics,
+`validation/motor_map.yaml` and archived results are unchanged.
 Rendering still cannot enter the loop
 ([WebXR ADR](adr-virtual-experimental-environment.md)).
 
@@ -289,9 +290,9 @@ and does not rewrite v1.
 
 ## Planned follow-up (`arena-1` … `arena-6`)
 
-None of these is authorized by this Proposed ADR. Each waits on owner
-acceptance, then on the step before it. Each later PR also updates
-`CHANGELOG.md`. These names are not module-boundaries PRs 4–8. No step edits
+Acceptance authorizes this sequence. Each step is still its own reviewed PR
+and waits on the step before it. Each later PR also updates `CHANGELOG.md`.
+These names are not module-boundaries PRs 4–8. No step edits
 `validation/evidence.yaml`.
 
 | Step    | Content                                                                                                                          | Touches                                                                               |
@@ -330,7 +331,7 @@ that package instead. This document does not move files.
 Module-boundaries PR 7 reorganises documentation links and Pages stems. This
 file is not added to `pages.PAGES` here (docs-only; no `src/` change). The
 catalog therefore points at the GitHub blob, as for other docs that are not
-built site pages. Pages registration can follow acceptance.
+built site pages. Pages registration can follow in a later docs PR.
 
 ## Invariants
 
@@ -350,11 +351,11 @@ built site pages. Pages registration can follow acceptance.
 
 ## Acceptance (owner)
 
-- Status remains Proposed until Gianluca Mazza accepts it. Acceptance is an
-  explicit owner act, not a merge of this draft PR by itself.
-- After acceptance, implementation still proceeds one PR at a time
-  (`arena-1` through `arena-6`). `arena-2` does not wait on module-boundaries
-  step 8.
+- Accepted by Gianluca Mazza on 2026-10-19, while this pull request was still
+  a draft. Merging records this text. It does not replace `arena-1` through
+  `arena-6`.
+- Implementation proceeds one PR at a time (`arena-1` through `arena-6`).
+  `arena-2` does not wait on module-boundaries step 8.
 - The evidence table, the "not claimed" list, the lock-before-run rule and
   the published-null rule are not optional in later PRs.
 - Full CI green on this docs-only change (`tests.yml`: ruff, prettier 3.8.1
