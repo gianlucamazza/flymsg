@@ -20,10 +20,10 @@ registration, an engineered looming transducer and a synthetic torque decoder.
 That is infrastructure, not a world→sensory or muscle→actuator map
 ([DN-arena ADR](adr-dn-arena.md), [embodiment](embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)).
 
-The accepted [DN-arena ADR](adr-dn-arena.md) names a later kinematic planar body
-and an engineered descending-neuron decoder. Acceptance authorizes `arena-1`
-through `arena-6`, one reviewed PR at a time. It does not implement them, write
-a lock or authorize a counted run.
+The accepted [DN-arena ADR](adr-dn-arena.md) names a kinematic planar body and
+an engineered descending-neuron decoder. `flymsg.arena` is that body. The
+decoder, a lock and a counted run are later steps. Acceptance still authorizes
+`arena-1` through `arena-6` one reviewed PR at a time.
 
 Earlier one-axis fixtures stay as recorded and are not this loop: the one-bit
 looming cut ([behavior](behavior.md)), M1 `flymsg jump` and M2 `flymsg loop`
@@ -59,7 +59,7 @@ controller ([#31](https://github.com/gianlucamazza/flymsg/issues/31)).
 | Existing body adapter      | `flymsg.flygym_body.FlyGymBody` reports `engineered`: posture gain and torque-driven hinges are chosen. NeuroMechFly (FlyGym 2.1.0; Wang-Chen et al. 2024, _Nat Methods_, doi:10.1038/s41592-024-02497-y) sits behind the adapter.                                                                                                                                | [embodiment](embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)    |
 | Synthetic closed-loop mode | `mode: synthetic` in `examples/closedloop-nmf.yaml`. Five arms: intact, disconnected, shuffled, replay, silenced. Record `flymsg.closedloop/v1`.                                                                                                                                                                                                                  | [VEE qualification](vee-qualification.md), [body-wiring ADR](adr-body-wiring.md) |
 | DN decoder and its gains   | Accepted design only. Windowed spike rates of named descending types map to `(yaw, forward)` of the kinematic body: DNa01 / DNa02 for steering, oDN1 for forward speed. Gains are declared per run in the experiment lock and the run record, with no defaults in code or in docs. They do not enter `validation/evidence.yaml`. Not implemented until `arena-3`. | [DN-arena ADR](adr-dn-arena.md)                                                  |
-| Kinematic arena body       | Accepted design only. Planar integrator of yaw rate (`rad/s`) and forward speed (`m/s`) behind `closedloop.Body`. _z_, roll and pitch stay at lock constants. No MuJoCo in that loop. Not free flight. Not implemented until `arena-2`.                                                                                                                           | [DN-arena ADR](adr-dn-arena.md)                                                  |
+| Kinematic arena body       | `flymsg.arena.Arena` behind `closedloop.Body`: planar integrator of yaw rate (`rad/s`) and forward speed (`m/s`). _z_, roll and pitch are required constructor arguments (the lock will name them; this module invents none). No MuJoCo. Not free flight. Synthetic. No lock or counted run.                                                                      | [DN-arena ADR](adr-dn-arena.md)                                                  |
 
 M1 `engineered_decoder` and M2's looming transducer are the same kind of choice
 on the earlier one-axis bodies: stated gains, not a motor map
