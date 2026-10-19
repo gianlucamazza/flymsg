@@ -97,13 +97,11 @@ PAGES = (
 # Repo-relative source path → built page. Stems stay stable when sources move later.
 _PAGE_HTML = {rel: f"{stem}.html" for stem, rel, _ in PAGES}
 # Old top-level docs/ landing paths keep resolving after a category move.
-_PAGE_HTML.update(
-    {
-        f"docs/{Path(rel).name}": f"{stem}.html"
-        for stem, rel, _ in PAGES
-        if rel.startswith("docs/") and "/" in rel.removeprefix("docs/")
-    }
-)
+_MOVED = [(stem, rel) for stem, rel, _ in PAGES if rel.count("/") > 1]
+_OLD_HTML = {f"docs/{Path(rel).name}": f"{stem}.html" for stem, rel in _MOVED}
+if len(_OLD_HTML) != len(_MOVED) or _OLD_HTML.keys() & _PAGE_HTML.keys():
+    raise RuntimeError("an old landing path collides with another page")
+_PAGE_HTML.update(_OLD_HTML)
 
 _AUTOLINK = re.compile(r"<(https?://[^>\s]+)>")
 _ATTR = re.compile(r'\b(href|src)="([^"]*)"')
