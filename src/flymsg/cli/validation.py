@@ -12,6 +12,7 @@ from flymsg import (
     console,
     convergence,
     data,
+    dn_arena,
     gf_looming,
     managed,
     nulls,
@@ -506,6 +507,36 @@ def cmd_song(a, neurons, edges):
         {"verdict": result["verdict"]},
     )
     print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_dn_arena(a, neurons, edges):
+    """Run the locked synthetic DN arena (issue #263)."""
+    started = datetime.now(UTC)
+    doc = dn_arena.assert_matches_code()
+    print(dn_arena.summary(doc))
+    out = managed.output(a, Path("runs/dn-arena") / f"v{doc['version']}")
+    found = dn_arena.run(a.data, out, a.workers, a.checkpoint, a._run.id)
+    wn = doc["controls"]["wiring_null"]
+    stamp(
+        out,
+        "dn-arena --run",
+        a,
+        neurons,
+        edges,
+        {
+            "dn_arena_version": doc["version"],
+            "dn_arena_sha256": doc["content_sha256"],
+            "duration_us": doc["model"]["duration_us"],
+        },
+        {
+            "poisson": doc["seed"],
+            "wiring_null_seed0": wn["seed0"],
+            "wiring_null_seeds": wn["seeds"],
+        },
+        started,
+        extra={"verdict": found["envelope"]},
+    )
+    print(f"envelope: {found['envelope']}")
 
 
 def cmd_gf_looming(a, neurons, edges):

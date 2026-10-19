@@ -263,3 +263,20 @@ file of a candidate benchmark was opened.
 What would unblock a front is now a request, not a search: LC4/LPLC2 recordings (protocol 3),
 the Ispizua keypoints and their licence (4), Dataset S1 of Apostolopoulou & Lin 2020 (2) and the
 Kohn et al. 2021 traces (2).
+
+## Descending steering readout ([#263](https://github.com/gianlucamazza/flymsg/issues/263), 2026-10-19)
+
+Read for the DN-arena lock (`validation/dn_arena.yaml` v1). Quotes checked verbatim on the
+bioRxiv full texts on 2026-10-19; the eLife and Cell versions could not be fetched and their
+figure numbers may differ.
+
+| Quantity                       | Source                                                                                                                                                                                                     | What it gives                                                                    | Use                                                                                               |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Steering sign of DNa01 / DNa02 | Rayshubskiy et al., bioRxiv [10.1101/2020.04.04.024703](https://doi.org/10.1101/2020.04.04.024703) v4, Fig 1D legend: "Both cells are depolarized just before the fly steers in the ipsilateral direction" | Ipsilateral: the cell on one side leads turns toward that side                   | Sign of the decoder's yaw term (left minus right, positive = left turn)                           |
+| Same, imaging and whole-cell   | Yang et al., bioRxiv [10.1101/2023.10.15.562426](https://doi.org/10.1101/2023.10.15.562426) v1, Fig 2A: "the cell with a soma in the right hemisphere was more active during right turns, and vice versa"  | Same sign for DNa01, DNa02, DNb05, DNg13                                         | As above                                                                                          |
+| Form of the steering relation  | Rayshubskiy et al. v4, Fig 3B–C: "rotational velocity was consistently related to the difference in right-left firing rates"; "This relationship was essentially linear through its entire dynamic range"  | Linear in the right−left rate difference                                         | Linear decoder with no offset                                                                     |
+| Numeric gain                   | Rayshubskiy et al. v4, Fig 2F: slope _m_ of `vr = mf + b` per cell, not printed in the text                                                                                                                | No published value (DNa02 steeper than DNa01 per the text, not checked verbatim) | Gain is an engineered envelope; asking the Wilson lab for the per-cell _m_ would make it measured |
+| Turning speeds in free walking | Yang et al. v1, Fig 1C legend: bouts binned at 20–50, 50–100, 100–150 and 150–200 °/s                                                                                                                      | Range of measured turning peaks                                                  | Context for the yaw-gain envelope                                                                 |
+| oDN1 and forward speed         | Sapkal et al. 2024, _Nature_ [10.1038/s41586-024-07854-7](https://doi.org/10.1038/s41586-024-07854-7)                                                                                                      | Activation drives forward walking; no recorded rate against speed                | Forward gain is an engineered envelope                                                            |
+
+Chen et al. 2018 (_Nat Commun_, DNa01 imaging) could not be opened and is not used.

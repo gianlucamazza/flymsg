@@ -12,6 +12,7 @@ from flymsg import (
     benchmarks,
     convergence,
     data,
+    dn_arena,
     eye,
     jump3d_lock,
     kc_sparseness,
@@ -44,6 +45,7 @@ PROTOCOLS = {
     "mb-plasticity": plasticity,
     "kc-sparseness": kc_sparseness,
     "t4t5": t4t5,
+    "dn-arena": dn_arena,
     "jump3d": jump3d_lock,
     "weight-rule": weight_rule,
     "calibrate": prereg,
@@ -110,6 +112,12 @@ def prepare(a):
                     for name in medulla.FILES
                 }
             )
+    if a.cmd == "dn-arena":
+        eye.fetch(a.data)
+        paths.update(
+            {f"eyemap/{name}": eye.raw_dir(a.data) / name for name in eye.EYEMAP_FILES}
+        )
+        paths["raw/annotations"] = a.data / "raw" / data.RAW["annotations"]
     if a.cmd == "weight-rule":
         # measured before the run by `flymsg weight-rule --areas`, frozen with the tables
         paths[weight_rule.AREAS] = a.data / weight_rule.AREAS

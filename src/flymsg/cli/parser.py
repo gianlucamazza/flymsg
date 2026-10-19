@@ -258,6 +258,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     s.add_argument("--run", action="store_true", help="run the frozen test")
     s = sub.add_parser(
+        "dn-arena",
+        help="print the locked DN arena protocol (issue #263), or run it with --run",
+    )
+    s.add_argument("--run", action="store_true", help="run the locked protocol")
+    s.add_argument("--workers", type=int, default=1, help="worker processes")
+    s.add_argument(
+        "--checkpoint",
+        type=Path,
+        help="JSON-lines file; an interrupted run resumes from it",
+    )
+    s = sub.add_parser(
         "odor", help="a DoOR odorant as a response per MaleCNS ORN type (#96)"
     )
     s.add_argument("name", help="DoOR odorant name, e.g. 3-octanol")

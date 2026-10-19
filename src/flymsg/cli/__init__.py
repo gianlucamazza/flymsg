@@ -14,6 +14,7 @@ from flymsg import (
     convergence,
     data,
     dimorphism,
+    dn_arena,
     draws,
     gf_looming,
     identifiability,
@@ -69,6 +70,7 @@ from flymsg.cli.validation import (
     cmd_baselines,
     cmd_benchmarks,
     cmd_convergence,
+    cmd_dn_arena,
     cmd_gf_looming,
     cmd_nulls,
     cmd_path_metrics,
@@ -115,6 +117,7 @@ COMMANDS = {
     "odor": cmd_odor,
     "muscles": cmd_muscles,
     "t4t5": cmd_t4t5,
+    "dn-arena": cmd_dn_arena,
     "jump3d": cmd_jump3d,
     "kc-sparseness": cmd_kc_sparseness,
     "weight-rule": cmd_weight_rule,
@@ -152,6 +155,7 @@ MALECNS_ONLY = (
     "odor",
     "muscles",
     "t4t5",
+    "dn-arena",
     "jump3d",
     "kc-sparseness",
     "weight-rule",
@@ -244,6 +248,8 @@ def main() -> None:
             return print(kc_sparseness.summary())
         if a.cmd == "t4t5" and not a.run:
             return print(t4t5.summary())
+        if a.cmd == "dn-arena" and not a.run:
+            return print(dn_arena.summary())
         if a.cmd == "weight-rule" and a.areas:
             if a.run:
                 p.error("weight-rule takes --areas or --run, not both")
@@ -307,6 +313,8 @@ def main() -> None:
     except kc_sparseness.SparsenessError as err:
         sys.exit(f"flymsg: {err}")
     except t4t5.T4T5Error as err:
+        sys.exit(f"flymsg: {err}")
+    except dn_arena.DNArenaError as err:
         sys.exit(f"flymsg: {err}")
     except jump3d_lock.Jump3DError as err:
         sys.exit(f"flymsg: {err}")

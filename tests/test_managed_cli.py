@@ -203,6 +203,7 @@ def test_sister_writer_policy_is_explicit_and_complete():
         "mb-plasticity",
         "kc-sparseness",
         "t4t5",
+        "dn-arena",
         "jump3d",
         "weight-rule",
         "sensitivity",
