@@ -16,7 +16,7 @@ mount's orientation is unused, the columns carry their own directions.
 
 Coverage uses `eye.disk_coverage`'s profile, a circular Gaussian of full width at half
 maximum `acceptance_deg`, with the planar Rice CDF; `coverage_exact` integrates the same
-profile over the sphere and bounds the planar error (docs/eye.md). A sphere's silhouette is
+profile over the sphere and bounds the planar error (docs/reference/eye.md). A sphere's silhouette is
 a spherical cap of radius asin(r / d). Coverages are per sphere as if alone: where
 silhouettes overlap, `nearest` says which one the column axis sees, the shares do not
 subtract.

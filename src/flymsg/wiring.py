@@ -1,6 +1,6 @@
 """N1: one degree-preserving shuffle of the traced graph.
 
-Fixed in docs/related.md on 2026-10-10, before any confirmatory run. The permutation
+Fixed in docs/reference/related.md on 2026-10-10, before any confirmatory run. The permutation
 is numpy's Generator.permutation with seed 0 (PCG64). A later numpy that changes that
 permutation changes N1; tests/test_wiring.py locks the image of a five-element column.
 """

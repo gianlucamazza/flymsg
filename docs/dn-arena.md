@@ -64,7 +64,7 @@ any photoreceptor rate, any gain and any stimulus geometry. The decoder neurons 
 only 2–3 synapses from the inputs, so the distance is not the cause.
 
 This is the blocker T4/T5 version 1 had already shown: contrast stopped at the
-lamina ([eye](eye.md)). The DN-arena ADR kept the Poisson drive for version 1
+lamina ([eye](reference/eye.md)). The DN-arena ADR kept the Poisson drive for version 1
 (Decision 3), and the lock's no-go turned the outcome into an explicit
 `uninformative` rather than a false null. With hindsight, the T4/T5 version 1 result
 already predicted this outcome before the lock. The lock cites that version only for

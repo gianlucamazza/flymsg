@@ -25,7 +25,7 @@ an engineered descending-neuron decoder. `flymsg.arena` is that body.
 `flymsg.dn_decoder` is that decoder. `flymsg.arena_controls` is the script
 control and the wiring-null control, as separate fixture runs, not new arms.
 Implemented; synthetic. The lock is `validation/dn_arena.yaml` v1; its counted
-run is `uninformative` ([DN arena](dn-arena.md)). `arena-1` through `arena-6` are
+run is `uninformative` ([DN arena](../dn-arena.md)). `arena-1` through `arena-6` are
 complete.
 
 Earlier one-axis fixtures stay as recorded and are not this loop: the one-bit
