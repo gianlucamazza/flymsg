@@ -41,14 +41,14 @@ of a float, and that difference has not been measured yet.
 
 ## Data
 
-| Source                                     | How it is acquired                        | Licence                            |
-| ------------------------------------------ | ----------------------------------------- | ---------------------------------- |
-| MaleCNS v1.0 (Berg et al. 2026)            | `flymsg fetch`, then `flymsg build`       | CC BY 4.0 ([data](data.md))        |
-| FAFB / FlyWire (comparison only)           | `flymsg --dataset fafb fetch`, then build | see [data](data.md)                |
-| Eye map (Zhao et al. 2025, `reiserlab`)    | fetched on first use by `flymsg eye`      | GPL-3.0, fetched, not shipped      |
-| DoOR odor responses (Münch & Galizia 2016) | fetched on first use by `flymsg odor`     | CC BY-SA 4.0, fetched, not shipped |
-| Groschner et al. 2022 medulla voltages     | fetched by sha256 by `flymsg.medulla`     | CC BY 4.0                          |
-| MANC muscles (Cheong et al. 2024, supp. 3) | fetched by sha256 by `flymsg muscles`     | CC BY 4.0                          |
+| Source                                     | How it is acquired                        | Licence                               |
+| ------------------------------------------ | ----------------------------------------- | ------------------------------------- |
+| MaleCNS v1.0 (Berg et al. 2026)            | `flymsg fetch`, then `flymsg build`       | CC BY 4.0 ([data](reference/data.md)) |
+| FAFB / FlyWire (comparison only)           | `flymsg --dataset fafb fetch`, then build | see [data](reference/data.md)         |
+| Eye map (Zhao et al. 2025, `reiserlab`)    | fetched on first use by `flymsg eye`      | GPL-3.0, fetched, not shipped         |
+| DoOR odor responses (Münch & Galizia 2016) | fetched on first use by `flymsg odor`     | CC BY-SA 4.0, fetched, not shipped    |
+| Groschner et al. 2022 medulla voltages     | fetched by sha256 by `flymsg.medulla`     | CC BY 4.0                             |
+| MANC muscles (Cheong et al. 2024, supp. 3) | fetched by sha256 by `flymsg muscles`     | CC BY 4.0                             |
 
 Compare the sha256 of `neurons.parquet` and `edges.parquet` (and of any other input) with
 the index before a run: a different hash is a different input, and the run is then not a

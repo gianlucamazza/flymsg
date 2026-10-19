@@ -1,7 +1,7 @@
 # Male vs female
 
 flymsg runs the same model on the male CNS (MaleCNS v1.0) and the female brain (FlyWire FAFB
-v783, `--dataset fafb`, see [data](data.md#female-brain-flywire-fafb-v783---dataset-fafb)).
+v783, `--dataset fafb`, see [data](reference/data.md#female-brain-flywire-fafb-v783---dataset-fafb)).
 Cell types are matched through MaleCNS `flywireType`. Code: `src/flymsg/compare.py`.
 
 ## Engine check

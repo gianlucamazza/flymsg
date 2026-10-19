@@ -257,7 +257,7 @@ own evidence sentence. LB3a and LB3d were compared by connectivity when the suga
 was chosen, and MN9 is the calibration readout. The alternate LC4 routes were
 enumerated by `path`. GF → DLMn, vPR6, vMS11 and pCd were already inspected. MDN has
 no single recorded motor target in the manifest. T4/T5 needed a moving bar, and on 2026-10-11 this
-simulator's stimulus was a Poisson rate on a whole type (column stimuli came later, [eye](eye.md)). DN1pA acts over hours, outside
+simulator's stimulus was a Poisson rate on a whole type (column stimuli came later, [eye](reference/eye.md)). DN1pA acts over hours, outside
 a 600 ms run.
 
 In the lock, every row this table marks exploratory, excluded or not scored sits in

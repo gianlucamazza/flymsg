@@ -1,7 +1,7 @@
 # Certified bounded skeleton runtime
 
-The accepted [runtime ADR](adr-bounded-skeleton-runtime.md) extends the
-[fixed-view experiment](report/quest-performance-2026-10-16.md). The implementation is
+The accepted [runtime ADR](../adr-bounded-skeleton-runtime.md) extends the
+[fixed-view experiment](../report/quest-performance-2026-10-16.md). The implementation is
 explicitly diagnostic: use `?check&representation=skeleton-bounded`. It requires
 paged uploads; `uploads=0` is rejected. The normal viewer default is unchanged.
 Do not describe this mode as admitted or XR qualified without device evidence.
@@ -52,7 +52,7 @@ It cannot establish complete-scene device speed or hardware qualification.
 ## Collect device evidence
 
 Run only from clean committed source. Use the existing
-[Wi-Fi protocol](plan/quest-wifi-trials.md), preserving its full-content and quality
+[Wi-Fi protocol](../plan/quest-wifi-trials.md), preserving its full-content and quality
 requirements, independent correctness pages and all three repeats of all views:
 
 ```bash

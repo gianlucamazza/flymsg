@@ -44,7 +44,7 @@ The maps that would make a run biological are missing:
   [leads](leads.md), [g2-capsule-rotation](g2-capsule-rotation.md)); G3
   transduction is not a measured photoreceptor or LC4/LPLC2 transfer
   ([#140](https://github.com/gianlucamazza/flymsg/issues/140); T4/T5 v1 is
-  neither and v2–v4 are robust neither, [eye](eye.md)).
+  neither and v2–v4 are robust neither, [eye](reference/eye.md)).
 - muscle → actuator: MANC names a muscle for 406 of 708 `vnc_motor` neurons
   (Cheong et al. 2024, _eLife_, doi:10.7554/eLife.96084); `validation/motor_map.yaml`
   has every actuator row `unmapped`, so `motor_map.command` and `pose.command`
@@ -125,7 +125,7 @@ ADR names them; it does not implement them.
      the script does not call it. It calls `arena.step` on the locked clock.
    - **wiring-null:** the intact loop on a degree-preserving shuffle of the
      traced graph (`wiring.shuffle_targets`; the same permutation family as
-     `flymsg wiring-null` / N1, [related](related.md), [nulls](nulls.md)),
+     `flymsg wiring-null` / N1, [related](reference/related.md), [nulls](nulls.md)),
      through `closedloop.run`.
 
    **Preferred:** these are separate fixture runs. They do not change
