@@ -152,7 +152,7 @@ neuron, joined on the `mancType` annotation of the raw body annotations). See
 ## Female brain: FlyWire FAFB v783 (`--dataset fafb`)
 
 `flymsg --dataset fafb fetch` and `build` write the female brain to `data/fafb/` in the same
-schema, for the comparisons in [comparison.md](../comparison.md). Sources, pinned to commits:
+schema, for the comparisons in [comparison.md](../result/comparison.md). Sources, pinned to commits:
 
 | File                                        |   Size | Source                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

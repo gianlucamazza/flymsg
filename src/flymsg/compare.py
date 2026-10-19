@@ -289,7 +289,7 @@ def sex_cases(
     """The cases of `sex_comparison` that both datasets can run: sugar GRNs → MN9 and
     LC4_R → DNp01. The male sugar set is the validated one (LB3b_R + LB3c_R) and the female
     one is Shiu et al.'s; both read the contralateral pathway, the one they scored (see
-    docs/comparison.md)."""
+    docs/result/comparison.md)."""
     from flymsg import data, validate
 
     mn, fn = male[0], female[0]

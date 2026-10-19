@@ -19,9 +19,9 @@ validation battery: its protocol, how the defaults were chosen, and the
 - **N1** drops the same battery to 5/29 on one degree-preserving shuffle
   ([related](reference/related.md#n1-specific-checks-need-the-measured-partners)).
 - **Held-out** ORN_DM1 → DM1_lPN fails specific and stability
-  ([benchmarks](benchmarks.md)).
+  ([benchmarks](result/benchmarks.md)).
 - **One-bit looming jump** fails the DNp01 silence check. The residual drive is DNp02 and
-  DNp06 ([behavior](behavior.md)).
+  DNp06 ([behavior](result/behavior.md)).
 
 - **Cases:** looming escape, Giant Fiber output, P1 courtship drive, pIP10 song pathway,
   sugar → MN9, and bitter → MN9 as a negative case.
@@ -51,14 +51,14 @@ These notes stay in the order they were added.
   pathways are 0 on the real graph (LC4_R → TTMn, P1 → dPR1, sugar → MN9, bitter → MN9);
   bitter is not below the nulls. N1 is not redrawn. Hypotheses and thresholds are in
   [`validation/preregistration.yaml`](../validation/preregistration.yaml).
-- **Held-out manifest** (2026-10-11, [benchmarks](benchmarks.md)). Calibration, exploratory
+- **Held-out manifest** (2026-10-11, [benchmarks](result/benchmarks.md)). Calibration, exploratory
   and held-out cases were partitioned before the run. ORN_DM1 → DM1_lPN fails: positive
   passes at 284.4 Hz, specific fails against a 185.6 Hz olfactory control, and 4894
   neurons stay active (limit 100). The reported ORN_V case fails the same way and does
   not decide. Both sensitivity corners fail the same two checks: at `w_syn` 0.275 the
   control is 200 Hz and 7797 neurons stay active; at `th_jump` 2 the control is 105.6 Hz
   and 2669 stay active. Neither corner replaces the scored result. `w_syn` stays 0.192.
-- **One-bit looming jump** (2026-10-11, [behavior](behavior.md)). The closed-loop task was
+- **One-bit looming jump** (2026-10-11, [behavior](result/behavior.md)). The closed-loop task was
   frozen before the run. `LC4_R` drives the network; the third `TTMn_R` spike cuts that
   drive. The claim is a calibration feasibility check on the looming case, with jump,
   feedback, DNp01 silence, and a decoder-prefix check. FlyBody is not embedded. The
@@ -92,16 +92,16 @@ These notes stay in the order they were added.
 - **Numeric lock** (2026-10-12). numba is 0.68.0 and llvmlite is 0.50.0. The unit suite
   matches the NumPy reference kernel. The scored runs were not repeated, so their
   manifests stay on numba 0.67.0.
-- **Residual partner scan** (2026-10-12, [behavior](behavior.md#residual-partner-scan)).
+- **Residual partner scan** (2026-10-12, [behavior](result/behavior.md#residual-partner-scan)).
   Version 1 verdict: none. Silencing DNp02 or DNp06 with both `DNp01` removes every `TTMn_R`
   spike on six seeds, but each null (p 0.036, 0.041) contained the other unit; the threshold
   was 0.025. Version 2 excludes every screen pass from the null and confirms on seeds 20–22;
   fixed before its run. `w_syn` stays 0.192.
-- **Residual partner scan v2** (2026-10-12, [behavior](behavior.md#result-of-version-2-2026-10-12)).
+- **Residual partner scan v2** (2026-10-12, [behavior](result/behavior.md#result-of-version-2-2026-10-12)).
   Verdict: names_partner: DNp02, DNp06 (p 0.001 each against 0.025; 0 `TTMn_R` spikes on
   seeds 20–22). Model-side, and fixed after v1 was seen; `gf_required_for_the_jump_bit` stays
   `unverified`.
-- **Residual partner scan v3** (2026-10-12, [behavior](behavior.md#result-of-version-3-2026-10-12)).
+- **Residual partner scan v3** (2026-10-12, [behavior](result/behavior.md#result-of-version-3-2026-10-12)).
   A replication of v2 with every rule unchanged and fresh confirm seeds 30–32, locked before
   its run: names_partner: DNp02, DNp06 again (p 0.001 each). The v2 naming replicates;
   model-side.
@@ -840,19 +840,19 @@ resumed). Silencing IN03B024 (2) raises dPR1 by 101% after pIP10 and 100% after 
 Silencing vMS12_a+b+c (12) raises it by 67% and 78%. All four rises have p = 0.001.
 Silencing dMS9 together with IN03B024 raises it by 100% and 99%, and the 95% bootstrap
 intervals of the per-seed rise overlap in both cases. The chain is supported. `w_syn`
-stayed 0.192. The full record is in [dimorphism](dimorphism.md).
+stayed 0.192. The full record is in [dimorphism](result/dimorphism.md).
 
 **2026-10-11: T4** (pre-registered 2026-10-11, before the run; `runs/t4-loop.txt`).
 Silencing AVLP717m (2) drops pIP10 after P1 by 43% (104 → 60 Hz), p = 0.001, so the
 confirmatory test passes. The same silencing drops dPR1 after P1 by 28%; that row does
 not decide. After the pIP10 stimulus the matched null is not defined and dPR1 is
-unchanged. `w_syn` stayed 0.192. The full record is in [dimorphism](dimorphism.md).
+unchanged. `w_syn` stayed 0.192. The full record is in [dimorphism](result/dimorphism.md).
 
 ## Limits of this validation
 
 - Six cases in the calibration battery: five short feedforward chains and the bitter
   negative. They say little about long-range or recurrent processing. The held-out
-  olfactory case is a separate protocol and it fails ([benchmarks](benchmarks.md)).
+  olfactory case is a separate protocol and it fails ([benchmarks](result/benchmarks.md)).
 - Thresholds (3 spikes, 3× + 2 Hz, 100 neurons, ≥ 5 synapses for control exclusion, one spike
   of dose tolerance) are judgement calls, not derived from data.
 - Order and dose are quantitative but coarse: no absolute latencies (the model's delay and

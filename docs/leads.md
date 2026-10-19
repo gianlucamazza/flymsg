@@ -83,7 +83,7 @@ The MANC supplementary table is joined to MaleCNS types (#142): the muscle is th
 jump3d v2 is not a research gap. The body that ran has the TTM only and left the ground at
 0.06–0.07 m/s; Card & Dickinson's 0.48 m/s is the take-off speed a leg push would have to
 produce, and that push is not in the body. The giant-fiber timing locks v1 and v2 ran
-uninformative ([benchmarks](benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)).
+uninformative ([benchmarks](result/benchmarks.md#looming-to-giant-fiber-timing-lock-2026-10-15-34)).
 
 ## Held-out validation ([#36](https://github.com/gianlucamazza/flymsg/issues/36))
 
@@ -104,7 +104,7 @@ candidate is benchmark eligible. Empty sex annotations do not establish isomorph
 
 `song.yaml` v1 is locked and has run (2026-10-15): uninformative, the no-go. Fourteen of 32
 neuropils resolve a sign, and the Pacheco response file was not opened
-([benchmarks](benchmarks.md#pulse-vs-sine-song-across-neuropils-lock-2026-10-14-36)). A version
+([benchmarks](result/benchmarks.md#pulse-vs-sine-song-across-neuropils-lock-2026-10-14-36)). A version
 2 needs a measured JO band-pass or a carrier-tuned input. APL claw contrast v1 also ran, and
 was uninformative
 ([validation](validation.md#apl-and-the-odor-contrast-at-kc-claws-85)).

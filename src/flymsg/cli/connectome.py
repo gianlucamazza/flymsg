@@ -150,7 +150,7 @@ def cmd_homology(a, neurons, edges):
 
 
 def cmd_compare(a, neurons, edges):
-    """Regenerate the male-vs-female numbers of docs/comparison.md."""
+    """Regenerate the male-vs-female numbers of docs/result/comparison.md."""
     started = datetime.now(UTC)
     male, female = (neurons, edges), data.load(a.data, "fafb")
     rho, n_types = compare.synapse_density_ratio(male, female)

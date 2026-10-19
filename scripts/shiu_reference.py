@@ -8,7 +8,7 @@ separate environment:
     /tmp/brian/bin/python scripts/shiu_reference.py --rates 50,100,200
 
 Compare with flymsg: compare.shiu_rates(neurons, edges, stim, rate) on `--dataset fafb`
-(docs/comparison.md). Needs `flymsg --dataset fafb fetch` first.
+(docs/result/comparison.md). Needs `flymsg --dataset fafb fetch` first.
 """
 
 import argparse

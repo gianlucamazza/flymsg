@@ -1,4 +1,4 @@
-"""Post-verdict exploratory count for DN-arena v1 (docs/dn-arena.md); not scored.
+"""Post-verdict exploratory count for DN-arena v1 (docs/result/dn-arena.md); not scored.
 
 Usage: uv run python scripts/dn_arena_v1_exploratory.py DATA_DIR OUT_DIR
 

@@ -11,7 +11,7 @@ This proposes eligibility for a later manifest, not a new experimental result.
 The [v1 manifest](../../validation/benchmarks.yaml) has no unused scored case left.
 Its only scored held-out case, ORN_DM1 → DM1_lPN, ran and failed specificity and
 stability. ORN_V is reported only and does not decide. No exploratory row in the
-[benchmark inventory](../benchmarks.md#inventory) is promoted. A new source must not
+[benchmark inventory](../result/benchmarks.md#inventory) is promoted. A new source must not
 have selected the model. The [completion plan](../roadmap.md#completion-plan) requires
 a pass against untouched animal observations; a no-go does not close M4.
 

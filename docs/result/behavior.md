@@ -2,14 +2,14 @@
 
 Issue #8 asks for one closed loop in which an action changes the sensory input
 that follows it. This note freezes that task on 2026-10-11. The lock is
-[`validation/behavior.yaml`](../validation/behavior.yaml) (version 1). Changing
+[`validation/behavior.yaml`](../../validation/behavior.yaml) (version 1). Changing
 the task, the body, a deciding check, or a FlyBody number requires a new
 version.
 
 `flymsg behavior` prints the protocol and returns before loading the
 connectome. `flymsg behavior --run` executes that loop at the default
 parameters. Criterion v4, N1, and
-[`validation/benchmarks.yaml`](../validation/benchmarks.yaml) stay as they are.
+[`validation/benchmarks.yaml`](../../validation/benchmarks.yaml) stay as they are.
 The looming case is not added again to `validate.CASES`.
 
 ## Verdicts
@@ -31,7 +31,7 @@ The protocol file was not edited after the numbers. The run started from commit
 commit as dirty. The loop itself took 90.5 s. Same MaleCNS tables as the
 held-out run.
 
-![TTMn_R spikes, seeds 0–2. Black ticks are the closed loop and stop at the third spike (the jump). Grey ticks are the open loop after that. Blue ticks are TTMn_R with both DNp01 silenced.](img/looming-jump.svg)
+![TTMn_R spikes, seeds 0–2. Black ticks are the closed loop and stop at the third spike (the jump). Grey ticks are the open loop after that. Blue ticks are TTMn_R with both DNp01 silenced.](../img/looming-jump.svg)
 
 Each seed has two rows. The triangle is `t_jump`, and the closed loop has no
 spike after it. With both `DNp01` silenced, `TTMn_R` still reaches three
@@ -91,7 +91,7 @@ doi:10.1016/j.cub.2019.01.079). The chemical weights already reported for this
 case are LC4\*R → DNp01 2580/2580 (sum/max) and DNp01 → TTMn 90/70. On the
 traced graph the 90/70 pair is DNp01(GF)\_R → TTMn_R 70 and DNp01(GF)\_L → TTMn_L 20. The 70 is the maximum. It is the reported giant-fiber edge, not the residual
 partner. The direct LC4_R → TTMn weight is 0
-([validation](validation.md)). Those numbers are why the case was calibratable.
+([validation](../validation.md)). Those numbers are why the case was calibratable.
 They were not looked up again to choose a target.
 
 Walking, song, grooming, and proboscis extension need a map from motor neurons
@@ -147,7 +147,7 @@ allows Python >=3.10 and pins `numpy==1.26.4`. Issue
 It does not select FlyBody. Issue
 [#20](https://github.com/gianlucamazza/flymsg/issues/20) left the residual
 `TTMn_R` partner unnamed. The scan below named it. The authored map is
-[`validation/motor_map.yaml`](../validation/motor_map.yaml). Every actuator and
+[`validation/motor_map.yaml`](../../validation/motor_map.yaml). Every actuator and
 both `TTMn` neurons are `unmapped`. A command is refused. It does not select
 FlyBody.
 
@@ -174,7 +174,7 @@ Defaults are criterion v4 and `sim.Params`. `w_syn` is 0.19230769230769232 and
 | Jump bit      | first step at which `TTMn_R` has emitted 3 spikes                       | `validate.MIN_SPIKES`                  | 3 spikes are the v4 floor, not a measured muscle tension                                    |
 | Cut           | `LC4_R` kicks are zero on every step strictly after that step           | this protocol                          | the kick on the jump step itself is still the open-loop draw                                |
 | Silence set   | both `DNp01` neurons                                                    | the giant fiber pair                   | the contralateral fiber is included. The protocol does not test the right fiber alone       |
-| Gap junctions | absent, as in the default model                                         | [model](model.md)                      | the giant fiber here is the chemical path                                                   |
+| Gap junctions | absent, as in the default model                                         | [model](../model.md)                   | the giant fiber here is the chemical path                                                   |
 
 `LC4` has no `class` value in MaleCNS v1.0. Its superclass is
 `visual_projection`. The class-matched sensory control of criterion v4 is not a
@@ -262,7 +262,7 @@ used.
 No new shuffle is drawn. N1 already ran looming escape on one
 degree-preserving shuffle of `post`, seed 0. Every specific check that passes
 on the real graph fails on that shuffle, and the looming specific check is one
-of them ([related](reference/related.md)). A further wiring arm would be a second draw
+of them ([related](../reference/related.md)). A further wiring arm would be a second draw
 after that result. `wiring.draw` is false.
 
 ## Prediction
@@ -298,7 +298,7 @@ prediction.
 Issue [#20](https://github.com/gianlucamazza/flymsg/issues/20) leaves the
 partner that still drives `TTMn_R` with both `DNp01` silenced unnamed. This
 section freezes the measurement that would name it. The lock is
-[`validation/silence_scan.yaml`](../validation/silence_scan.yaml) (now version 3; version 1 is the file at v0.8.16, version 2 at v0.8.27).
+[`validation/silence_scan.yaml`](../../validation/silence_scan.yaml) (now version 3; version 1 is the file at v0.8.16, version 2 at v0.8.27).
 The candidate rule, the screen, the draw count, the p and the verdict are code
 in `src/flymsg/silence_scan.py`, tested on synthetic graphs. `flymsg
 silence-scan` prints the protocol and does not load the connectome; `--run`
@@ -357,7 +357,7 @@ With the other screen pass out of the pool, no draw reached the observed 0 spike
 the smallest the 1,000 draws allow, below the 0.025 threshold. Report:
 `results/silence-scan/v2/` (archived from `runs/`).
 
-![Screen and confirmation of scan v2. Left: TTMn_R spikes per silenced unit on seeds 0–2, with the base arm and the half-of-base screen bar. Right: DNp02 and DNp06 on seeds 20–22 against the matched null mean.](img/silence-scan-v2.svg)
+![Screen and confirmation of scan v2. Left: TTMn_R spikes per silenced unit on seeds 0–2, with the base arm and the half-of-base screen bar. Right: DNp02 and DNp06 on seeds 20–22 against the matched null mean.](../img/silence-scan-v2.svg)
 
 **Reading.** In the model, with both `DNp01` silenced, `TTMn_R` is driven through DNp02 and
 DNp06: silencing either one removes every spike on all nine seeds of both versions. Each is
@@ -411,7 +411,7 @@ and 3, silencing either unit with both `DNp01` removes every `TTMn_R` spike on t
 The runner keeps only the null mean and p, not the value of each draw, so the null
 distribution is not archived. Report: `results/silence-scan/v3/`.
 
-![Screen and confirmation of scan v3: the same screen on seeds 0–2; DNp02 and DNp06 on fresh seeds 30–32 against the matched null mean.](img/silence-scan-v3.svg)
+![Screen and confirmation of scan v3: the same screen on seeds 0–2; DNp02 and DNp06 on fresh seeds 30–32 against the matched null mean.](../img/silence-scan-v3.svg)
 
 The limits of version 2 that remain: the result is about this LIF on MaleCNS, not the fly;
 `gf_required_for_the_jump_bit` stays `unverified`; version 1 of the one-bit protocol is not
@@ -478,7 +478,7 @@ confirmed unit needs 3 × max(1000, 20 _m_) runs, about 3.2 h on one worker at
 Scan v3 names DNp02 and DNp06 on the right side and shows that each is necessary. Issue
 [#76](https://github.com/gianlucamazza/flymsg/issues/76) asks two more questions of the
 model, locked in
-[`validation/partner_followup.yaml`](../validation/partner_followup.yaml) before any run.
+[`validation/partner_followup.yaml`](../../validation/partner_followup.yaml) before any run.
 The runner is `src/flymsg/partner_followup.py`, tested on synthetic graphs. `flymsg
 partner-followup` prints the protocol; `--run` executes it on seeds 40–42.
 
@@ -540,6 +540,6 @@ in 300 ms), below the driven 200 Hz, so silencing DNp02 removes the drive it nee
 why each is necessary in the looming arm. The pair is specific: random descending pairs
 almost never drive `TTMn_R`.
 
-![Follow-up v1: the left mirror with each named unit silenced against its matched null; TTMn_R spikes with DNp02_R, DNp06_R or both driven at 200 Hz; the null of 1,000 matched pairs with the observed pair mean.](img/partner-followup.svg)
+![Follow-up v1: the left mirror with each named unit silenced against its matched null; TTMn_R spikes with DNp02_R, DNp06_R or both driven at 200 Hz; the null of 1,000 matched pairs with the observed pair mean.](../img/partner-followup.svg)
 
 Outputs: `results/partner-followup/v1/` (with every null draw).

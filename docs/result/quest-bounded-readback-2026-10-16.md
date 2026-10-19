@@ -42,7 +42,7 @@ head motion, lifecycle or sustained XR acceptance follows from these checks.
 
 ## Artifact
 
-[Readback archive](evidence/quest-bounded-readback-2026-10-16.zip): 6,596,572 bytes,
+[Readback archive](../evidence/quest-bounded-readback-2026-10-16.zip): 6,596,572 bytes,
 27 entries, SHA-256
 `d4d4fee3e2c6e271a087c56330563cb8bb1d8b80c5335b451db2f90dc170aa43`.
 The archive includes image receipts, native geometry audit reports, source

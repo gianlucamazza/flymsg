@@ -3,7 +3,7 @@
 Issue #7 asks for circuits that were not used to choose the model, and for a
 sensitivity check that is not a retune. This note freezes that partition on
 2026-10-11, before any held-out simulation. The lock is
-[`validation/benchmarks.yaml`](../validation/benchmarks.yaml) (version 1). Changing a
+[`validation/benchmarks.yaml`](../../validation/benchmarks.yaml) (version 1). Changing a
 held-out case, a check, or a sensitivity corner requires a new version. Criterion v4
 stays the baseline: `flymsg validate` is unchanged, and N1 is not redrawn.
 
@@ -85,7 +85,7 @@ those synapses reaches the soma, so the Kenyon cells excite each other into a lo
 outlasts the input. The two APL neurons send 196,200 inhibitory synapses onto Kenyon cells,
 but here APL is a spiking point neuron.
 
-![Mean rate per neuron over time for the Kenyon cells, all other non-stimulus neurons and DM1_lPN (divided by 10), with the stimulus window shaded. Kenyon cells and DM1_lPN keep firing after 300 ms.](img/kc-persistence.svg)
+![Mean rate per neuron over time for the Kenyon cells, all other non-stimulus neurons and DM1_lPN (divided by 10), with the stimulus window shaded. Kenyon cells and DM1_lPN keep firing after 300 ms.](../img/kc-persistence.svg)
 
 This points at a model limit, not a fitted fix. In the fly, Kenyon cell–Kenyon cell synapses
 are mostly axo-axonal in the lobes, and APL gives graded, non-spiking feedback inhibition
@@ -146,7 +146,7 @@ before any response value of the data was read.
 ## Looming to giant fiber timing (lock, 2026-10-15, #34)
 
 The first scored test of the looming transducer (gate G3 of the
-[sensorimotor plan](plan/sensorimotor-environment-plan.md),
+[sensorimotor plan](../plan/sensorimotor-environment-plan.md),
 [#34](https://github.com/gianlucamazza/flymsg/issues/34)): does the connectome's giant fiber
 (DNp01) peak at the right time before a looming disc's collision? Dombrovski et al. 2025
 (doi:10.1038/s41586-025-09037-4) deposited the giant fiber's whole-cell potential to discs at
@@ -239,13 +239,13 @@ not turned into a firing rate.
 | -------------------- | ------------------------------------------ | ----------------------------------------------- | ----------------- | ----------------------- |
 | ORN_DM1 → DM1_lPN    | Couto et al. 2005; Kazama & Wilson 2008    | this glomerulus's ORNs recruit its PN (74 → 2)  | recording         | held-out, confirmatory  |
 | ORN_V → V PNs        | Suh et al. 2004; Jones et al. 2007         | V ORNs recruit V_ilPN and V_l2PN (55 → 2 and 2) | recording         | held-out, reported      |
-| v4 battery           | [validation](validation.md)                | the six cases that chose `w_syn`                | mixed             | calibration             |
+| v4 battery           | [validation](../validation.md)             | the six cases that chose `w_syn`                | mixed             | calibration             |
 | LPLC2 → DNp01        | von Reyn et al. 2014; Ache et al. 2019     | LPLC2 also drives the giant fiber               | recording         | exploratory             |
 | LB3a → MN9           | Tastekin et al. 2025                       | water GRNs and proboscis extension              | behavior          | exploratory             |
 | LB3d → MN9           | Tastekin et al. 2025                       | high salt, sign depends on concentration        | behavior          | exploratory, not scored |
 | LC4 via DNp02, DNp11 | `path --alt` already lists these routes    | other chemical routes from LC4 to TTMn          | graph             | exploratory             |
 | GF → DLMn            | Blagburn et al. 1999; Allen & Murphey 2007 | DLM spike; the chemical path reached 4.4 Hz     | recording         | exploratory, excluded   |
-| vPR6, vMS11          | [validation](validation.md)                | stay silent under pIP10                         | model observation | exploratory             |
+| vPR6, vMS11          | [validation](../validation.md)             | stay silent under pIP10                         | model observation | exploratory             |
 | pCd persistence      | findings log, after P1                     | P1/pCd activity that outlasts the stimulus      | literature state  | exploratory             |
 | MDN                  | Bidaye et al. 2014                         | backward walking; MDN is 4 neurons              | behavioral proxy  | not scored              |
 | T4 / T5              | Maisak et al. 2013                         | direction selectivity to a moving bar           | recording         | not scored              |
@@ -257,7 +257,7 @@ own evidence sentence. LB3a and LB3d were compared by connectivity when the suga
 was chosen, and MN9 is the calibration readout. The alternate LC4 routes were
 enumerated by `path`. GF → DLMn, vPR6, vMS11 and pCd were already inspected. MDN has
 no single recorded motor target in the manifest. T4/T5 needed a moving bar, and on 2026-10-11 this
-simulator's stimulus was a Poisson rate on a whole type (column stimuli came later, [eye](reference/eye.md)). DN1pA acts over hours, outside
+simulator's stimulus was a Poisson rate on a whole type (column stimuli came later, [eye](../reference/eye.md)). DN1pA acts over hours, outside
 a 600 ms run.
 
 In the lock, every row this table marks exploratory, excluded or not scored sits in
@@ -270,8 +270,8 @@ choose the test after the olfactory failure and the silence failure. A later cas
 still needs a new version and a source that did not select the model. This note does
 not add that source.
 
-The [M4 v2 proposal](plan/m4-v2-proposal.md) is the prospective path for a new source.
-Its [Baker identity audit](baker-crossmatch.md) extends anatomical coverage without
+The [M4 v2 proposal](../plan/m4-v2-proposal.md) is the prospective path for a new source.
+Its [Baker identity audit](../baker-crossmatch.md) extends anatomical coverage without
 opening responses or creating a new partition. Remaining scientific eligibility
 and publication conditions are recorded there. Neither document changes this
 frozen v1 manifest, promotes an exploratory row, or supplies a scored result.

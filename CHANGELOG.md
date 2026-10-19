@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Module boundaries step 7e: result documents.** Nine `result` catalog documents move to `docs/result/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. `docs/validation.md` and `docs/nulls.md` stay: a lock names those paths.
+
 - **Module boundaries step 7d: reference documents.** Nine `reference` catalog documents move to `docs/reference/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. `docs/model.md`, `docs/leads.md`, `docs/dn-arena-inventory.md` and `docs/replication.md` stay: a lock or archived evidence names those paths.
 
 - **arena-6 DN arena v1: uninformative.** The counted run of `validation/dn_arena.yaml` v1 (issue #263), from clean `main` at `1043368`: at all six gain cells the six decoder neurons fired no spike in the intact arm, so the lock's no-go gives `uninformative` (heading change 0 in every arm and in all 234 wiring-null runs; replay parity holds; the script control turns 1.396 rad). Archived as it is in `results/dn-arena/v1.executions/df21c26c…/output` (tables; the 265 records stay in the run directory, their sha256 in `results.csv`); replication index regenerated. `archive_results` now archives a managed run's top-level tables and checks them against the completion inventory, after verifying the whole source inventory, records included. A post-verdict exploratory count (`docs/dn-arena.md`) finds only the 3,903 input photoreceptors active at full light: all 64,171 of their output synapses are inhibitory (histamine), so the silence is structural, the T4/T5 v1 blocker that the graded eye ADR addresses. No rerun.

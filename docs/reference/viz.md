@@ -107,7 +107,7 @@ grey when one export lacks them; a selected neuron lists its spikes and first bi
 run. Two identical runs give zero difference in every bin (tested in Python and in node).
 
 The site serves four pairs; the fourth, right against left, is described under **Sides**. [LC4_R against LC4_R with both DNp01 silenced](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146)
-is the failed silence check of the one-bit protocol ([behavior](../behavior.md)): `TTMn_R`
+is the failed silence check of the one-bit protocol ([behavior](../result/behavior.md)): `TTMn_R`
 fires 22 times in A, first in the 10–20 ms bin, and still 7 times in B, first in the
 60–70 ms bin. [DNp01 against DNp01 + DNp02](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp02/?run=difference&t=60&paused&select=800146)
 and [DNp01 against DNp01 + DNp06](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp06/?run=difference&t=60&paused&select=800146)
