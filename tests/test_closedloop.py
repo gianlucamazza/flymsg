@@ -673,7 +673,7 @@ def test_encoding_pathway_and_drive_refuse_before_any_step(tmp_path):
         kick_run(body=idle, checkpoint_dir=tmp_path, checkpoint_every_us=5000)
     assert idle.calls == []
     idle = ToyBody()
-    with pytest.raises(ContractError, match="encoding or pathway"):
+    with pytest.raises(ContractError, match="no pathway"):
         run(
             body=idle,
             pathway_sha256=OTHER_PATHWAY,
