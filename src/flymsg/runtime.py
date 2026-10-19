@@ -29,7 +29,15 @@ SEMANTICS = "flymsg.lif/ordered-f32-v1"
 
 
 class NeuralRuntime(Protocol):
-    """Absolute, exclusive step boundaries; snapshots never alias live state."""
+    """Absolute, exclusive step boundaries; snapshots never alias live state.
+
+    `input_encoding` is `counts` (nonnegative integer Poisson counts) or
+    `kick_equivalent` (nonnegative finite float32 drive, stored widened to
+    float64). `schedule_inputs` accepts only that encoding's dtype.
+    """
+
+    @property
+    def input_encoding(self) -> str: ...
 
     def advance_to(self, step: int) -> None: ...
 
@@ -43,10 +51,12 @@ class NeuralRuntime(Protocol):
 
 
 class CpuRuntime:
-    """Known-horizon runtime with explicit Poisson kicks and bounded recording.
+    """Known-horizon runtime with an explicit input schedule and bounded recording.
 
-    Inputs are copied. RNG is owned by the caller: checkpoint identity includes
-    the complete kick schedule. All arrays are private implementation state.
+    `input_encoding="counts"` copies nonnegative integer kicks. `kick_equivalent`
+    copies a nonnegative finite float32 drive and widens it to float64, the value
+    `sim.run` applies. RNG is owned by the caller: checkpoint identity includes
+    the encoding and the complete input schedule. All arrays are private.
     """
 
     def __init__(
@@ -56,6 +66,7 @@ class CpuRuntime:
         *,
         steps: int,
         kicks: np.ndarray,
+        input_encoding: str,
         p: sim.Params | None = None,
         per_bin: int = 100,
         silence: np.ndarray | None = None,
@@ -64,6 +75,12 @@ class CpuRuntime:
         gap: sim.Gap | None = None,
         membrane: sim.Membrane | None = None,
     ):
+        if input_encoding not in ("counts", "kick_equivalent"):
+            raise ValueError("input_encoding must be 'counts' or 'kick_equivalent'")
+        self._input_encoding = input_encoding
+        self._input_key = (
+            "input_counts" if input_encoding == "counts" else "input_drive"
+        )
         if type(steps) is not int or steps <= 0 or steps >= 2**31:
             raise ValueError("steps must be a positive int below 2**31")
         if type(per_bin) is not int or per_bin <= 0 or steps % per_bin:
@@ -96,20 +113,36 @@ class CpuRuntime:
 
         self._stim = np.unique(ids(stim))
         raw = np.asarray(kicks)
-        if (
-            raw.ndim != 2
-            or raw.shape[1] != self._stim.size
-            or raw.shape[0] > steps
-            or raw.dtype.kind not in "iu"
-            or np.any(raw < 0)
-        ):
-            raise ValueError(
-                "kicks must be nonnegative integer counts (steps, unique stim)"
-            )
-        if raw.dtype.kind == "u" and np.any(raw > np.iinfo(np.int64).max):
-            raise ValueError("kick count exceeds int64")
+        if input_encoding == "counts":
+            if (
+                raw.ndim != 2
+                or raw.shape[1] != self._stim.size
+                or raw.shape[0] > steps
+                or raw.dtype.kind not in "iu"
+                or np.any(raw < 0)
+            ):
+                raise ValueError(
+                    "kicks must be nonnegative integer counts (steps, unique stim)"
+                )
+            if raw.dtype.kind == "u" and np.any(raw > np.iinfo(np.int64).max):
+                raise ValueError("kick count exceeds int64")
+            stored = np.int64
+        else:
+            if (
+                raw.ndim != 2
+                or raw.shape[1] != self._stim.size
+                or raw.shape[0] > steps
+                or raw.dtype != np.float32
+                or not np.isfinite(raw).all()
+                or np.any(raw < 0)
+            ):
+                raise ValueError(
+                    "kicks must be a nonnegative finite float32 drive "
+                    "(steps, unique stim)"
+                )
+            stored = np.float64
         self._stim_steps = raw.shape[0]
-        self._kicks = np.zeros((steps, self._stim.size), dtype=np.int64)
+        self._kicks = np.zeros((steps, self._stim.size), dtype=stored)
         self._kicks[: self._stim_steps] = raw
         self._steps, self._per_bin, self._step = steps, per_bin, 0
         self._indptr = W.indptr.astype(np.int64)
@@ -180,6 +213,7 @@ class CpuRuntime:
                 "params": asdict(self._p),
                 "steps": steps,
                 "per_bin": per_bin,
+                "input_encoding": self._input_encoding,
             },
             sort_keys=True,
         )
@@ -217,7 +251,7 @@ class CpuRuntime:
                 digest.update(array.tobytes())
         digest.update(str(self._stim_steps).encode())
         self._identity = digest.hexdigest()
-        self._state["input_counts"] = self._kicks
+        self._state[self._input_key] = self._kicks
         self._scratch = (
             np.zeros(n, dtype=np.float32),
             np.empty(n, dtype=np.int32),
@@ -243,6 +277,11 @@ class CpuRuntime:
     def n_inputs(self) -> int:
         """Columns of an input block: the stimulated neurons, deduplicated."""
         return int(self._stim.size)
+
+    @property
+    def input_encoding(self) -> str:
+        """`counts` or `kick_equivalent`, fixed for this runtime."""
+        return self._input_encoding
 
     def advance_to(self, step: int) -> None:
         if type(step) is not int or not self._step <= step <= self._steps:
@@ -297,24 +336,38 @@ class CpuRuntime:
         self._step = step
 
     def schedule_inputs(self, counts: np.ndarray) -> None:
-        """Replace upcoming Poisson-count inputs at the current exclusive boundary.
+        """Replace upcoming inputs at the current exclusive boundary.
 
-        This is explicit input delivery, not forced output spikes. The existing
-        kernel applies kicks after thresholding, preserving its phase semantics.
+        `counts` accepts nonnegative integers. `kick_equivalent` accepts a
+        nonnegative finite float32 drive and widens it to float64. The kernel
+        applies either after thresholding.
         """
         values = np.asarray(counts)
-        if (
-            values.ndim != 2
-            or values.shape[1] != self._stim.size
-            or values.dtype.kind not in "iu"
-            or np.any(values < 0)
-        ):
-            raise ValueError("inputs must be nonnegative integer counts")
-        end = self._step + values.shape[0]
-        if end > self._steps or (
-            values.dtype.kind == "u" and np.any(values > np.iinfo(np.int64).max)
-        ):
-            raise ValueError("input block exceeds horizon or count range")
+        if self._input_encoding == "counts":
+            if (
+                values.ndim != 2
+                or values.shape[1] != self._stim.size
+                or values.dtype.kind not in "iu"
+                or np.any(values < 0)
+            ):
+                raise ValueError("inputs must be nonnegative integer counts")
+            end = self._step + values.shape[0]
+            if end > self._steps or (
+                values.dtype.kind == "u" and np.any(values > np.iinfo(np.int64).max)
+            ):
+                raise ValueError("input block exceeds horizon or count range")
+        else:
+            if (
+                values.ndim != 2
+                or values.shape[1] != self._stim.size
+                or values.dtype != np.float32
+                or not np.isfinite(values).all()
+                or np.any(values < 0)
+            ):
+                raise ValueError("inputs must be a nonnegative finite float32 drive")
+            end = self._step + values.shape[0]
+            if end > self._steps:
+                raise ValueError("input block exceeds horizon")
         self._kicks[self._step : end] = values
         self._stim_steps = max(self._stim_steps, end)
 
@@ -371,6 +424,7 @@ class CpuRuntime:
                     self._state, self._identity, self._step, self._stim_steps
                 ),
                 "input_end": self._stim_steps,
+                "input_encoding": self._input_encoding,
             },
             sort_keys=True,
         )
@@ -385,11 +439,16 @@ class CpuRuntime:
         """Validate all fields before replacing state; inputs must match exactly."""
         with np.load(path, allow_pickle=False) as document:
             meta = json.loads(str(document["metadata"]))
-            if (
-                meta.get("schema") != SCHEMA
-                or meta.get("semantics") != self._semantics
-                or meta.get("identity") != self._identity
-            ):
+            if meta.get("schema") != SCHEMA or meta.get("semantics") != self._semantics:
+                raise ValueError("incompatible checkpoint")
+            if "input_encoding" not in meta:
+                raise ValueError(
+                    "checkpoint has no input encoding; older checkpoints are not "
+                    "migrated"
+                )
+            if meta["input_encoding"] != self._input_encoding:
+                raise ValueError("checkpoint input encoding mismatch")
+            if meta.get("identity") != self._identity:
                 raise ValueError("incompatible checkpoint")
             step = meta.get("step")
             if type(step) is not int or not 0 <= step <= self._steps:
@@ -422,8 +481,11 @@ class CpuRuntime:
                 or np.any(state["ref_until"] < 0)
             ):
                 raise ValueError("invalid temporal state")
-            if np.any(state["input_counts"] < 0):
-                raise ValueError("invalid input counts")
+            if self._input_encoding == "counts":
+                if np.any(state["input_counts"] < 0):
+                    raise ValueError("invalid input counts")
+            elif np.any(state["input_drive"] < 0):
+                raise ValueError("invalid input drive")
             if "gap_pulse" in state and (
                 np.any(state["gap_pulse"] < 0)
                 or np.any(state["gap_pulse"] > self._gap[5])
@@ -434,5 +496,5 @@ class CpuRuntime:
             ):
                 raise ValueError("checkpoint integrity mismatch")
             self._state, self._step = state, step
-            self._kicks = state["input_counts"]
+            self._kicks = state[self._input_key]
             self._stim_steps = input_end

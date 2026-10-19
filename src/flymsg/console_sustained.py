@@ -127,6 +127,7 @@ class Model:
             kicks=kicks,
             p=self.p,
             per_bin=case["per_bin"],
+            input_encoding="counts",
         )
 
 

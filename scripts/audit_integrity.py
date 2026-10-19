@@ -28,6 +28,7 @@ def main():
         p=p,
         per_bin=1,
         gap=sim.Gap(np.array([0]), np.array([1]), coupling),
+        input_encoding="counts",
     )
     # Cell 1 is clamped at rest for this entire step. Cell 0 is below threshold.
     rt._state["v"][0] = p.v_rest + 5

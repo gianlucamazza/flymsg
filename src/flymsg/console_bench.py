@@ -41,7 +41,15 @@ def oracle(data_dir: Path, steps: int) -> CpuRuntime:
     stim, _ = sensitivity.case_inputs(CASE, neurons)
     stim = np.sort(stim)
     kicks = sim.poisson_kicks(SEED, validate.RATE_HZ, p.dt, steps, stim.size)
-    return CpuRuntime(W, stim, steps=steps, kicks=kicks, p=p, per_bin=100)
+    return CpuRuntime(
+        W,
+        stim,
+        steps=steps,
+        kicks=kicks,
+        p=p,
+        per_bin=100,
+        input_encoding="counts",
+    )
 
 
 def host_python(data_dir: Path, steps: int) -> float:

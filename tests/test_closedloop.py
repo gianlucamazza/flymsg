@@ -80,6 +80,7 @@ def runtime(duration_us=40_000, silence=None):
         per_bin=CLOCK.control_us // CLOCK.neural_us,
         trace=np.array([1]),
         silence=silence,
+        input_encoding="counts",
     )
 
 

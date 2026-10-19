@@ -80,17 +80,31 @@ def test_runtime_in_chunks_matches_run_and_names_the_membrane_in_its_identity():
     steps = 3000
     kicks = sim.poisson_kicks(4, 180, p.dt, steps, STIM.size)
     want = sim.run(W, STIM, duration_ms=300, kicks=kicks, membrane=membrane)
-    rt = CpuRuntime(W, STIM, steps=steps, kicks=kicks, membrane=membrane)
+    rt = CpuRuntime(
+        W,
+        STIM,
+        steps=steps,
+        kicks=kicks,
+        membrane=membrane,
+        input_encoding="counts",
+    )
     for t in (700, 1900, steps):
         rt.advance_to(t)
     np.testing.assert_array_equal(rt.result().counts, want.counts)
-    plain = CpuRuntime(W, STIM, steps=steps, kicks=kicks)
+    plain = CpuRuntime(W, STIM, steps=steps, kicks=kicks, input_encoding="counts")
     assert plain._identity != rt._identity
     assert np.all(plain.snapshot()["v"] == np.float32(p.v_rest))
     rest = (
         rt.snapshot()
     )  # after the run; a fresh runtime starts each neuron at its rest
-    fresh = CpuRuntime(W, STIM, steps=steps, kicks=kicks, membrane=membrane)
+    fresh = CpuRuntime(
+        W,
+        STIM,
+        steps=steps,
+        kicks=kicks,
+        membrane=membrane,
+        input_encoding="counts",
+    )
     np.testing.assert_array_equal(
         fresh.snapshot()["v"][membrane.idx], np.float32(membrane.v_rest)
     )
@@ -151,8 +165,23 @@ def test_coupled_neurons_refuse_a_membrane_and_native_exports_uncoupled(tmp_path
         sim.run(W, STIM, 100, 50, gap=gap, membrane=membrane)
     kicks = np.ones((100, STIM.size), dtype=np.int64)
     with pytest.raises(ValueError, match="electrically coupled"):
-        CpuRuntime(W, STIM, steps=100, kicks=kicks, gap=gap, membrane=membrane)
-    rt = CpuRuntime(W, STIM, steps=100, kicks=kicks, membrane=membrane)
+        CpuRuntime(
+            W,
+            STIM,
+            steps=100,
+            kicks=kicks,
+            gap=gap,
+            membrane=membrane,
+            input_encoding="counts",
+        )
+    rt = CpuRuntime(
+        W,
+        STIM,
+        steps=100,
+        kicks=kicks,
+        membrane=membrane,
+        input_encoding="counts",
+    )
     assert (
         export_fixture(rt, tmp_path / "fixture.bin")["schema"]
         == "flymsg.native_fixture/v4"

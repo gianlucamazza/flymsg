@@ -135,7 +135,15 @@ def respond(W, stim, rates, kcs, pns, seed: int, proto: dict, p: sim.Params) -> 
     kicks = odors.kicks(rates, seed, p.dt, odor_steps)
     # one count bin ends where the odor does, so the window's spikes are whole bins
     per_bin = math.gcd(odor_steps, steps)
-    rt = CpuRuntime(W, stim, steps=steps, kicks=kicks, p=p, per_bin=per_bin)
+    rt = CpuRuntime(
+        W,
+        stim,
+        steps=steps,
+        kicks=kicks,
+        p=p,
+        per_bin=per_bin,
+        input_encoding="counts",
+    )
     # The potential is only exposed at step boundaries, so each KC's potential above rest
     # is read after every step of the window and summed in float64: exact, without storing
     # the (steps x KCs) trace. `read` gathers four arrays of the KCs only, small next to the

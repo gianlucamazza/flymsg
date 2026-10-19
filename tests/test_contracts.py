@@ -81,7 +81,15 @@ def test_b2_runtime_runs_the_same_engine():
     W = sim.weight_matrix(edges, sign, n, p.w_syn)
     kicks = sim.poisson_kicks(3, 150.0, p.dt, 2000, 1)
     ref = sim.run(W, np.array([0]), 150.0, 200.0, None, p, 3, kicks=kicks)
-    rt = CpuRuntime(W, np.array([0]), steps=2000, kicks=kicks, p=p, per_bin=100)
+    rt = CpuRuntime(
+        W,
+        np.array([0]),
+        steps=2000,
+        kicks=kicks,
+        p=p,
+        per_bin=100,
+        input_encoding="counts",
+    )
     rt.advance_to(777)
     rt.advance_to(2000)
     got = rt.result()

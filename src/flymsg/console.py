@@ -378,7 +378,15 @@ def sim_runtime(
     per_bin = max(1, round(10.0 / p.dt))
     if steps % per_bin:
         raise ValueError("duration_ms must be a multiple of the 10 ms bin")
-    return CpuRuntime(W, stim, steps=steps, kicks=kicks, p=p, per_bin=per_bin)
+    return CpuRuntime(
+        W,
+        stim,
+        steps=steps,
+        kicks=kicks,
+        p=p,
+        per_bin=per_bin,
+        input_encoding="counts",
+    )
 
 
 def sim_runs(

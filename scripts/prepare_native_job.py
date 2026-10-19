@@ -29,6 +29,7 @@ def prepare(out: Path, *, shader: Path | None, adapter: str = "SraKmd_arden") ->
         p=p,
         kicks=sim.poisson_kicks(7, 500, p.dt, 700, 1),
         trace=np.arange(3),
+        input_encoding="counts",
     )
     fixture = folder / "fixture.bin"
     metadata = export_fixture(runtime, fixture)

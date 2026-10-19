@@ -736,6 +736,7 @@ def _runtime(setup: Setup, W, *, silence: bool) -> CpuRuntime:
         per_bin=setup.clock.control_us // setup.clock.neural_us,
         trace=setup.traced_rows,
         silence=setup.traced_rows if silence else None,
+        input_encoding="counts",
     )
 
 
