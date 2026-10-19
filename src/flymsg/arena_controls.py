@@ -30,6 +30,7 @@ class ScriptTick:
     state: BodyState
     stimulus: tuple[float, ...]
     stepped: BodyState
+    yaw_rad: float  # unwrapped heading after the step (`Arena.yaw_rad`)
 
 
 @dataclass(frozen=True)
@@ -67,25 +68,30 @@ def script(
     rule: Callable[[int, BodyState, tuple[float, ...]], tuple[Command, ...]],
     stimulus: Callable[[int, BodyState], tuple[float, ...]],
 ) -> ScriptControl:
-    """Drive `arena.step` from a caller-supplied rule. No connectome, no runtime."""
+    """Drive `arena.step` from a caller-supplied rule. No connectome, no runtime.
+
+    Causal order as in `closedloop.run`: the command at a control tick is fixed
+    before that tick's sample, so it is the rule applied to the sample and
+    stimulus of the previous control tick (one control period of latency, the
+    intact loop's minimum). The first control period holds no command.
+    """
     steps = closedloop.schedule(clock, duration_us)
     last = body.reset()
     commands: tuple[Command, ...] = ()
     ticks: list[ScriptTick] = []
-    pending_command = False
+    previous: tuple[int, BodyState, tuple[float, ...]] | None = None
     seen = last
     stim: tuple[float, ...] = ()
     for step in steps:
         t = step.time_us
         if step.phase == "command":
-            pending_command = True
+            commands = rule(*previous) if previous is not None else ()
         elif step.phase == "sample":
             seen = last
         elif step.phase == "stimulus":
             stim = _stimulus(stimulus, seen)
-            if pending_command:
-                commands = rule(t, seen, stim)
-                pending_command = False
+            if t % clock.control_us == 0:
+                previous = (t, seen, stim)
         elif step.phase == "physics":
             state, _contacts = body.step(commands, clock.body_us)
             ticks.append(
@@ -95,6 +101,7 @@ def script(
                     seen,
                     stim,
                     state,
+                    body.yaw_rad,
                 )
             )
             last = state
