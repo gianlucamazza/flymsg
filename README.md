@@ -257,6 +257,9 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 - **Qualitative rates.** Use the model to rank which circuits a stimulus recruits and in what
   order, not to predict exact firing.
 - **Few, short cases.** The validation cases are mostly 1–2-hop feed-forward chains.
+- **Closed loop.** The loop that runs is synthetic. What is measured, what is
+  chosen, and what is not claimed is in
+  [CLAIMS](https://github.com/gianlucamazza/flymsg/blob/main/docs/claims.md).
 
 ## Documentation
 
@@ -289,6 +292,7 @@ under its date.
 | [nulls](docs/nulls.md)                                                                                    | pre-registered null families, scores, draw counts, methods                                                      |
 | [scientific fidelity](docs/scientific-fidelity.md)                                                        | numerical, physiological and behavioral validation gates; evidence records (SF1)                                |
 | [replication](docs/replication.md)                                                                        | rerun an archived result; the replication index; the claims audit                                               |
+| [CLAIMS](https://github.com/gianlucamazza/flymsg/blob/main/docs/claims.md)                                | measured, engineered and not claimed for the closed loop                                                        |
 | [sensorimotor plan](docs/sensorimotor-environment-plan.md)                                                | gates for a headless closed-loop experiment; reuse inventory; no-go rules                                       |
 | [integrity audit](docs/integrity-audit-2026-10-13.md)                                                     | engineering audit of 2026-10-13 and its resolution ledger                                                       |
 | [ADR: gap refractory](docs/adr-gap-refractory.md)                                                         | electrical coupling with refractory clamps; dense and Taylor solvers                                            |
