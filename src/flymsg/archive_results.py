@@ -41,6 +41,7 @@ DIRS = (
     "song/v1",
     "baselines/v1.executions/f89ed1c350b97a63cb5bfa7c483f1837ad81d585bcea19742800f809674bb7f4/output",
     "apl-claws/v1.executions/b914035a1c1a364adec8e0a880373c104287b3e677f39521f76550e5dbadc0fd/output",
+    "dn-arena/v1.executions/df21c26cfbf81240a6c1913f268dfbddabd6b212672efe1dae081b114d14f1a8/output",
 )
 # A guard: results/ holds tables, not raw activity. 250 kB since t4t5 v3, whose per-type
 # medulla table over 25 configurations brings its required artifacts to 202 kB; 450 kB since
@@ -80,6 +81,7 @@ def archive(
             sys.exit(str(exc))
     if not (src / "manifest.json").is_file():
         sys.exit(f"{src} has no manifest.json")
+    # tables only: subdirectories (raw records) stay in runs/, verified whole above
     files = sorted(p for p in src.iterdir() if p.is_file() and ".ckpt" not in p.name)
     size = sum(p.stat().st_size for p in files)
     if size > max_bytes:
@@ -90,7 +92,9 @@ def archive(
     for f in files:
         shutil.copy2(f, staged / f.name)
     if complete is not None:
-        runstore.verify_inventory(staged, complete["artifacts"])
+        runstore.verify_inventory(
+            staged, {k: v for k, v in complete["artifacts"].items() if "/" not in k}
+        )
     manifest = staged / "manifest.json"
     manifest.write_text(
         json.dumps(clean_manifest(json.loads(manifest.read_text()), root), indent=2)
