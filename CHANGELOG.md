@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **T4/T5 version 4 figure.** `docs/img/t4-spikes.svg` (`figures.t4_spikes`, drawn by `scripts/build_figures.py` from the archived version 4 tables): T4 spikes per configuration on a log axis, 0 at every medulla release of 50 Hz, 93, 35,586 and 350,264 at the three 200/200 Hz configurations DN arena version 2 uses. Linked from the eye and DN arena pages; the DN arena v2 lock is recorded as approved (#284) with its run in progress.
+
 - **vee1-4 DN arena v2 lock (draft for owner approval).** Version 2 of `validation/dn_arena.yaml` locks the DN arena on the graded visual pathway of T4/T5 version 4: `kick_equivalent` drive `float32(gain * (1 - coverage))`, three lamina-to-medulla configurations, one decoder cell, a dark anchor on each graph, and wiring-null seeds 7300–7338 that keep the intact photoreceptor rate and drive gain. It replaces version 1's Poisson photoreceptor rates, input dead time and six-cell gain envelope. `content_sha256` and `smoke` remain for the maintainer. No counted run exists.
 
 - **Docs synced with the merged work.** `docs/model.md` and `docs/adr/runtime.md` describe `CpuRuntime`'s `counts` / `kick_equivalent` input encoding; `docs/adr/embodiment.md` and `docs/reference/claims.md` add the `flymsg.closedloop/v2` record and the graded transducer; the graded eye, DN-arena and module-boundaries ADRs gain an implementation status (decisions unchanged); `docs/reference/eye.md` records the shared visual-pathway builder and its parity; README links the DN arena result.

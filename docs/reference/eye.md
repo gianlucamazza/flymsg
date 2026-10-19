@@ -208,7 +208,7 @@ fires only at a medulla release rate of 200 Hz: a few tens of spikes at gains 1 
 nothing), thousands at gain 4 with LMC 200 Hz and at gain
 16 (configurations 7, 9 and 11, up to about 350,000 spikes), where the other polarity fires more
 than the preferred one and the direction selectivity indices lie between −0.15 and 0.18. T5 is
-`neither` in all 12. A larger lamina → medulla step therefore brings the medulla to the order of the measured
+`neither` in all 12 ([T4 spikes per configuration](../img/t4-spikes.svg)). A larger lamina → medulla step therefore brings the medulla to the order of the measured
 amplitudes, not to their shape (the recordings depolarize 12.8–23.9 mV and hyperpolarize
 1.6–7.2 mV), and not T4 to selectivity: the edge reaches T4 without the ON/OFF split or the
 direction the recordings show (by the lock's criterion; T4a and T4d point the measured way in

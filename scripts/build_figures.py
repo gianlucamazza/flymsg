@@ -9,6 +9,7 @@ Reads results/ (tracked; filled from runs/ by scripts/archive_results.py, manife
   results/sensitivity/v1/     flymsg sensitivity --run
   results/kc-sparseness/v1/ … v5/  flymsg kc-sparseness --run
   results/jump3d/v1/          flymsg jump3d --run
+  results/t4t5/v4.executions/  flymsg t4t5 --run (lock v4)
   validation/homology/        flymsg homology
 and reruns one exploratory simulation (the scored ORN_DM1 corner, seed 0) for the Kenyon
 cell persistence figure, which needs the MaleCNS tables. The sparseness and jump figures
@@ -178,6 +179,15 @@ def jump_range() -> str:
     )
 
 
+def t4_spikes() -> str:
+    (folder,) = (RESULTS / "t4t5").glob("v4.executions/*/output")
+    configs = pd.read_csv(folder / "configurations.csv")
+    spikes = pd.read_csv(folder / "spikes.csv")
+    t4 = spikes[spikes["subtype"].str.startswith("T4")].groupby("config")["spikes"]
+    configs["t4_spikes"] = configs["config"].map(t4.sum()).astype(int)
+    return figures.t4_spikes(configs)
+
+
 FIGURES = {
     "looming-jump.svg": looming_jump,
     "silence-scan-v2.svg": lambda: scan(2, "20–22"),
@@ -189,6 +199,7 @@ FIGURES = {
     "jump-range.svg": jump_range,
     "homology-pilot.svg": homology,
     "sensitivity-rate.svg": sens,
+    "t4-spikes.svg": t4_spikes,
 }
 
 
