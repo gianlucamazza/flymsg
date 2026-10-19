@@ -1,6 +1,6 @@
 # Documentation catalog
 
-Inventory of every top-level `docs/*.md` on 2026-10-18. Category describes the
+Inventory of every top-level `docs/*.md` on 2026-10-19. Category describes the
 primary purpose; mixed documents retain their own detailed scope and statuses.
 **Accepted** records an explicit decision/plan acceptance, not successful implementation
 or qualification. **Proposed** awaits acceptance. **Historical** is a dated snapshot;
@@ -24,6 +24,7 @@ Locks and archived artifacts remain authoritative for their own protocols/result
 | [behavior.md](behavior.md)                                                                                                                              | result    | current          | Locked one-bit looming loop and its scored outcome.                           |
 | [benchmarks.md](benchmarks.md)                                                                                                                          | result    | current          | Frozen held-out partition and benchmark outcomes.                             |
 | [catalog.md](catalog.md)                                                                                                                                | index     | current          | Top-level document taxonomy, authority and purpose.                           |
+| [claims.md](https://github.com/gianlucamazza/flymsg/blob/main/docs/claims.md)                                                                           | reference | current          | Closed-loop parts: measured, engineered and not claimed.                      |
 | [comparison.md](comparison.md)                                                                                                                          | result    | current          | Male/female matched-type comparisons and interpretation.                      |
 | [data.md](data.md)                                                                                                                                      | reference | current          | Connectome and auxiliary data sources, acquisition and licences.              |
 | [dimorphism.md](dimorphism.md)                                                                                                                          | result    | current          | Dimorphic-neuron recruitment analysis and outputs.                            |
