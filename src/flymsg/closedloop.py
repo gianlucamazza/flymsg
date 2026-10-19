@@ -194,8 +194,9 @@ class Record:
             ):
                 raise ContractError(f"tick {k} input counts do not fit the tick")
             for row in tick.input_counts:
-                for v in row:
-                    integer(v, "input count")
+                # the per-value check `integer(v, "input count")`, at C speed per row
+                if row and (set(map(type, row)) != {int} or min(row) < 0):
+                    raise ContractError("input count must be an integer >= 0")
             for s in tick.spikes:
                 integer(s.time_us, "spike time")
                 if (
@@ -558,7 +559,7 @@ def run(
                     tuple((a.name, a.mujoco_id, v) for a, v in commands),
                     seen,
                     stim,
-                    tuple(tuple(int(c) for c in row) for row in counts),
+                    tuple(map(tuple, counts.tolist())),
                     tuple(new),
                     state,
                     _contacts(contacts),

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Closed-loop record speed.** `closedloop.Record.validate` checks each tick's input counts per row at C speed (`set(map(type, row))`, `min(row)`) instead of one `integer()` call per value, and recording converts counts with `ndarray.tolist()`. Same rule (an `int` ≥ 0, `bool` refused) and same record bytes. On one full-connectome DN-arena arm (3,903 inputs, 1,000 body ticks, 39M counts): validation 2.7 → 0.9 s, recording 2.3 → 0.2 s, of a 12 s arm.
+
 - **arena-5 DN arena lock.** `validation/dn_arena.yaml` v1 (issue #263) and `flymsg.dn_arena` / `flymsg dn-arena`. The lock fixes the full MaleCNS, the kinematic arena, photoreceptor Poisson drive at 100 Hz full light with the input dead time, a lateral dark sphere, the decoder envelope of 3 yaw × 2 forward gains, five arms, 39 wiring-null seeds 7100-7138, the script control, the inclusive min-max null rule and the no-go. No counted run yet.
 
 - **Closed-loop input dead time.** `closedloop.run` takes a required `input_gap_steps`. The kernel adds an input kick to the potential even while the neuron is refractory, so song and giant-fiber looming already pass their Poisson draws through `stimulus.dead_time`; the closed loop drew raw counts. With a gap > 0 each input keeps at most one kick per step and none within the gap of the previous kept one, across body ticks, on the same Poisson draws (equal to `stimulus.dead_time` over the run). A resumed run rebuilds the last kick from the recorded `input_counts`, and the gap enters the checkpoint identity. 0 keeps raw counts: the synthetic NMF fixture and its archived records are unchanged. Record `flymsg.closedloop/v1` and `closedloop.ARMS` unchanged.
