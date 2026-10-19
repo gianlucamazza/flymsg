@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **vee1-1 visual-pathway builder.** The graded-pathway preparation in `t4t5.protocol` (timing, lamina to medulla gain, graded release, dark anchor, photoreceptor rate and gain) now lives in `flymsg.visual_pathway` (`prepare`, `build`, `config_hash`). `t4t5` calls it. Bit-identity is gated by `scripts/vee1_parity.py` over every version 4 configuration (results stated in the PR). No lock, no run, no change to `validation/t4t5.yaml` or archived results.
+
 - **Module boundaries step 7f: ADRs.** Fourteen `adr` catalog documents move to `docs/adr/`; file names and Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. No lock or archived evidence names these paths.
 
 - **Module boundaries step 7e: result documents.** Nine `result` catalog documents move to `docs/result/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. `docs/validation.md` and `docs/nulls.md` stay: a lock names those paths.

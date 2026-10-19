@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from flymsg import cli, sim, t4t5
+from flymsg import cli, sim, t4t5, visual_pathway
 
 
 def v3_doc() -> dict:
@@ -44,9 +44,9 @@ def test_version_4_scans_gain_and_two_rates_and_sets_behnias_delays():
     assert {c["lamina_medulla_gain"] for c in grid} == set(t4t5.LAMINA_GAIN)
     p = sim.Params()
     for _after, delay in t4t5.DELAYS_MS.values():
-        ts = t4t5.delay_tau_syn(delay, p)
-        shift = t4t5.filter_peak_ms(p.tau_m, ts) - t4t5.filter_peak_ms(
-            p.tau_m, p.tau_syn
+        ts = visual_pathway.delay_tau_syn(delay, p)
+        shift = visual_pathway.filter_peak_ms(p.tau_m, ts) - (
+            visual_pathway.filter_peak_ms(p.tau_m, p.tau_syn)
         )
         assert shift == pytest.approx(delay)
     edited = t4t5.load()
@@ -62,16 +62,18 @@ def test_version_4_scans_gain_and_two_rates_and_sets_behnias_delays():
 def test_timing_keeps_the_steady_gain_and_scale_block_hits_only_its_block():
     p = sim.Params()
     types = np.array(["Mi1", "Tm3", "Tm1", "Tm2"])
-    membrane, per_type = t4t5.timing(types, t4t5.load()["protocol"], p)
+    membrane, per_type = visual_pathway.timing(types, t4t5.load()["protocol"], p)
     assert membrane.idx.tolist() == [0, 2]
     for _cells, ts, scale in per_type.values():
         slow = sim.Params(**{**vars(p), "tau_syn": ts})
-        assert t4t5.steady_gain(slow) * scale == pytest.approx(t4t5.steady_gain(p))
+        assert visual_pathway.steady_gain(slow) * scale == pytest.approx(
+            visual_pathway.steady_gain(p)
+        )
     edges = pd.DataFrame({"pre": [0, 1, 0], "post": [1, 2, 2], "weight": [10, 10, 10]})
     W = sim.weight_matrix(edges, np.ones(3, np.int8), 3, 1.0)
-    W2 = t4t5.scale_block(W, np.array([2]), np.array([1]), 4.0)
+    W2 = visual_pathway.scale_block(W, np.array([2]), np.array([1]), 4.0)
     assert (W2 - W).toarray()[2].tolist() == [0.0, 30.0, 0.0]
-    W3 = t4t5.scale_block(W, np.array([2]), None, 0.5)
+    W3 = visual_pathway.scale_block(W, np.array([2]), None, 0.5)
     assert (W3 - W).toarray()[2].tolist() == [-5.0, -5.0, 0.0]
 
 
@@ -138,7 +140,7 @@ def test_medulla_curve_anchors_the_dark_potential_at_rest():
         "lmc_rate_hz": 100.0,
         "medulla_rate_hz": 50.0,
     }
-    g = t4t5.graded_spec(
+    g = visual_pathway.graded_spec(
         np.array([0]), np.array([1]), cfg, 900.0, p, {"Mi9": np.array([2, 3])}, mv
     )
     assert g.idx.tolist() == [0, 1, 2, 3]
@@ -158,7 +160,7 @@ def test_photoreceptor_gain_holds_the_response_at_steady_state():
 
     p = sim.Params()
     W = sparse.csc_matrix((2, 2), dtype=np.float32)
-    gain = t4t5.photoreceptor_gain(52.5, p)
+    gain = visual_pathway.photoreceptor_gain(52.5, p)
     g = sim.Graded(idx=np.array([0]), v_lo=p.v_rest, span=52.5, rate_hz=100.0)
     r = sim.run(
         W, np.array([0]), duration_ms=300, p=p, kicks=np.full((3000, 1), gain), graded=g
@@ -183,7 +185,7 @@ def test_photoreceptor_rate_hyperpolarizes_the_median_lmc_by_the_target():
     )
     sign = np.array([-1, -1, -1, 1, 1], dtype=np.int8)
     W = sim.weight_matrix(edges, sign, 5, p.w_syn)
-    rate, receiving = t4t5.photoreceptor_rate(
+    rate, receiving = visual_pathway.photoreceptor_rate(
         W, np.arange(3), np.array([3, 4]), 20.0, p
     )
     assert receiving.tolist() == [3, 4]
