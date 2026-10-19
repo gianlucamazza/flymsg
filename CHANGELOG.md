@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **DN arena ADR (proposed).** `docs/adr-dn-arena.md` proposes a synthetic VEE-0 steering milestone: a kinematic planar body behind `closedloop.Body`, full MaleCNS in `CpuRuntime`, a geometric `optics` stimulus, an engineered DNa01/DNa02/oDN1 decoder with per-run gains and no defaults, and script plus wiring-null controls as fixture runs rather than a `closedloop.ARMS` / record bump. No biological claim. Owner acceptance is required before any code. Docs only.
+- **DN arena ADR (proposed).** `docs/adr-dn-arena.md` proposes a synthetic steering fixture behind `closedloop.Body`. It is not the sensorimotor plan's VEE-0 take-off. Commands are `yaw` in `rad/s` and `forward` in `m/s`: `arena-2` would extend the `ActuatorRef` allow-list and leave schema `flymsg.embodiment/v2` unchanged. Synthetic `closedloop._commands` already checks the compiled table and does not call `pose.command`. Gains stay in the future experiment lock, not in `validation/evidence.yaml`. The null is intact yaw inside the wiring-null seed range; the script control is reported and does not decide. Follow-ups are `arena-1` through `arena-6`. Owner acceptance is required before any code. Docs only.
 
 - **G2 landmark placement decided.** The eyemap → head-capsule landmarks will be placed by an algorithm committed with synthetic-volume tests before any volume is processed, with a ±1 voxel / ±10 % threshold sensitivity check against the same 25 µm gate instead of two raters. The measurement is deferred until a head-to-thorax angle source exists. Docs only.
 

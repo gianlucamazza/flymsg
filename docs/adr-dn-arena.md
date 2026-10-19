@@ -2,15 +2,19 @@
 
 Status: **Proposed**, 2026-10-19. No code is authorized. The owner, Gianluca Mazza,
 must accept this ADR before any implementation PR, as for the
-[body-wiring ADR](adr-body-wiring.md) (accepted 2026-10-14). Follow-up PR 3
-(`flymsg.arena`) waits on that acceptance.
+[body-wiring ADR](adr-body-wiring.md) (accepted 2026-10-14). The decisions below
+are closed. Acceptance is still a separate owner act, and merging this draft is
+not that act. Implementation, after acceptance, is `arena-1` through `arena-6`.
+Those names are not the module-boundaries PR numbers.
 
-Scope: a first **synthetic** steering milestone that reuses the existing closed
+Scope: a first **synthetic** steering fixture that reuses the existing closed
 loop. It supplements the accepted [body-wiring](adr-body-wiring.md),
 [embodiment](embodiment.md), [runtime](runtime.md) and
 [module-boundaries](adr-module-boundaries.md) decisions and the proposed
 [sensorimotor plan](sensorimotor-environment-plan.md) without editing them. It
-does not close that plan's VEE-0 exit, G2, G3 or G4.
+is not that plan's VEE-0 take-off (an approaching dark disc through LC4/LPLC2
+to the giant fiber and TTM). It does not close that plan's VEE-0 exit, G2, G3,
+G4 or G5.
 
 ## Context
 
@@ -63,24 +67,31 @@ Adopt a first synthetic milestone, **VEE-0 steering**, with these parts. This
 ADR names them; it does not implement them.
 
 1. **Kinematic planar body `flymsg.arena` behind `closedloop.Body`.** Integrate
-   yaw rate and forward speed on the plane; emit B6 v2 `pose.BodyState` (6-DoF
-   with _z_ and the unused rotations held). SI units at the boundary. No MuJoCo
-   in this loop. The adapter implements `reset` / `step` and, for checkpoints,
-   `snapshot` / `restore` as `FlyGymBody` does (those two methods are required
-   by `closedloop.run` when `checkpoint_dir` is set; they are not on the
-   `Body` protocol itself). Compiled actuators are engineered names of this
-   body. `pose.ActuatorRef` today admits units `N`, `N*m` and `rad` only
-   (`pose.py`); if a kinematic command cannot be named in that set, follow-up
-   PR 3 records an explicit engineered unit extension rather than overloading
-   an existing unit. `pose.command` still refuses every NeuroMechFly motor-map
-   row; a synthetic `closedloop.run` checks commands against the body's
-   compiled actuator table only.
+   yaw rate and forward speed on the plane. Emit B6 v2 `pose.BodyState`: the
+   schema stays `flymsg.embodiment/v2`. _z_, roll and pitch stay at the
+   constants named in the lock. This is not free flight. SI units at the
+   boundary. No MuJoCo in this loop. The adapter implements `reset` / `step`
+   and, for checkpoints, `snapshot` / `restore` as `FlyGymBody` does (those two
+   methods are required by `closedloop.run` when `checkpoint_dir` is set; they
+   are not on the `Body` protocol itself).
+
+   Two compiled actuators, engineered names of this body: `yaw` in `rad/s` and
+   `forward` in `m/s`. `pose.ActuatorRef` today admits only `N`, `N*m` and
+   `rad`. Do not overload those units. `arena-2` extends that allow-list by
+   exactly `m/s` and `rad/s`. Existing records keep parsing. `mujoco_id` stays
+   the id in the body's compiled table. The actuator `source` names this
+   kinematic model, not a MuJoCo XML. `validation/motor_map.yaml` is unchanged.
+   In biological mode, `closedloop._commands` still calls `pose.command`, and
+   the motor map still refuses every row. In synthetic mode, `_commands`
+   already checks only that the name is in the compiled table and does not call
+   `pose.command`. This milestone uses that path. It does not add an exception.
 
 2. **Full MaleCNS in `CpuRuntime`.** The neural model is the existing LIF
    (Shiu et al. 2024, _Nature_, doi:10.1038/s41586-024-07763-9) on the 165,122
    traced neurons of MaleCNS v1.0 (Berg et al. 2026, _Cell_,
    doi:10.1016/j.cell.2026.08.015), VNC included. No second executor, tick or
-   scheduler. Duration on the order of 1–2 s of simulated time, headless.
+   scheduler. Headless. `arena-5` names an exact duration that is a multiple of
+   the control period. This ADR does not choose that duration.
 
 3. **Geometric visual stimulus via `flymsg.optics`.** `optics.sample` already
    projects dark `optics.Sphere` objects onto measured MaleCNS columns (Zhao
@@ -93,37 +104,43 @@ ADR names them; it does not implement them.
 4. **Engineered descending-neuron decoder.** In a declared control window the
    decoder reads spike rates of named descending types and maps them to
    (yaw, forward) commands of the kinematic body: DNa01 / DNa02 for steering,
-   oDN1 for forward speed. Gains are **declared per run in the lock and the
-   record, with no defaults** in code or docs. BodyId and side for those types
-   in MaleCNS are not asserted here; follow-up PR 2 inventories them. MDN
-   (backward walking; Bidaye et al. 2014, _Science_,
-   doi:10.1126/science.1249964) and DNp01 remain listed for a later decoder
-   version, not this milestone. The decoder is not a motor map and does not
-   relabel `validation/motor_map.yaml`. Issue #31: this is an engineered
-   readout, not a connectome-derived controller.
+   oDN1 for forward speed. Gains are declared per run in the experiment lock
+   and the run record, with no defaults in code or in docs. They do not enter
+   `validation/evidence.yaml`. That registry has no `engineered` status, and a
+   gain row would read as an SF1 parameter. No step in `arena-1` … `arena-6`
+   edits `evidence.yaml`. BodyId and side are not asserted here. `arena-1`
+   inventories them in a document. If a type is ambiguous or missing, it stays
+   `unmapped`, no gain is chosen, and the milestone stops. MDN (backward
+   walking; Bidaye et al. 2014, _Science_, doi:10.1126/science.1249964) and
+   DNp01 are listed for a later decoder version, not this milestone. The
+   decoder is not a motor map and does not relabel `validation/motor_map.yaml`.
+   Issue #31: this is an engineered readout, not a connectome-derived
+   controller.
 
 5. **Two extra controls, preferably as fixture runs.** In addition to the five
    `closedloop.ARMS`:
-   - **script:** the same stimulus mapped to (yaw, forward) by a fixed rule,
-     with no connectome and no `CpuRuntime`;
+   - **script:** the same arena integrator, the same stimulus geometry and the
+     same command units, driven by a fixed rule frozen in the lock. No
+     connectome and no `CpuRuntime`. `closedloop.run` requires a runtime, so
+     the script does not call it. It calls `arena.step` on the locked clock.
    - **wiring-null:** the intact loop on a degree-preserving shuffle of the
      traced graph (`wiring.shuffle_targets`; the same permutation family as
-     `flymsg wiring-null` / N1, [related](related.md), [nulls](nulls.md)).
+     `flymsg wiring-null` / N1, [related](related.md), [nulls](nulls.md)),
+     through `closedloop.run`.
 
-   **Preferred:** keep both as separate fixture runs that call `closedloop.run`
-   (or, for the script, a declared non-connectome path) without changing
-   `closedloop.ARMS` or bumping `flymsg.closedloop/v1`. The five-arm record
-   stays parseable; replay parity, silenced-arm rules and existing tests stay
+   **Preferred:** these are separate fixture runs. They do not change
+   `closedloop.ARMS` or bump `flymsg.closedloop/v1`. The five-arm record stays
+   parseable; replay parity, silenced-arm rules and existing tests stay
    intact. The extra runs carry their own arm name in the experiment config
    and lock, not in `closedloop.Record.arm`.
 
    **Alternative, not preferred:** extend `ARMS` and version the record
    (`flymsg.closedloop/v2`). That would touch `closedloop.py`,
    `closedloop_experiment.py` (which currently requires
-   `cfg["arms"] == list(closedloop.ARMS)`), every v1 parser, and the module-
-   boundaries work that still has PRs 4–8 open. Do that only if a single
-   seven-arm record is required to compare ticks; this milestone does not
-   require it.
+   `cfg["arms"] == list(closedloop.ARMS)`) and every v1 parser. Do that only
+   if one seven-arm record is required to compare ticks. This milestone does
+   not require it. Module-boundaries steps 4–8 are a different sequence and
+   are not a reason to version this record.
 
 6. **Protocol lock before the run.** A YAML lock with a canonical content hash
    is committed before any counted run (the existing lock-codec / prereg
@@ -131,12 +148,16 @@ ADR names them; it does not implement them.
    clock, seed, duration, evidence table, arms/fixture runs and the null rule.
    A run whose config does not match the lock refuses.
 
-7. **Pre-registered null rule; nulls are published.** The lock states, before
-   the run, what counts as a null (at least: intact steering indistinguishable
-   from the script, and/or from the wiring-null, under a named metric; intact
-   equal to disconnected, as the body-wiring ADR already requires, is reported
-   as observed). A null, a negative, or an indeterminate outcome is archived
-   and documented. It is not rerun with a new gain to manufacture a difference.
+7. **Pre-registered null rule; nulls are published.** One metric per run: the
+   change in yaw over the locked window. The null verdict uses the wiring-null
+   only. The lock names the shuffle seeds before the run. Intact is a null when
+   its yaw change lies inside the minimum and maximum of those seeds. The
+   script is reported (intact minus script) and does not enter the verdict.
+   Intact equal to disconnected is reported as observed, as the body-wiring ADR
+   requires. It is not a pass. A yaw change outside the shuffle range is a
+   synthetic difference, not a biological or connectome-derived claim. No
+   p-value. A null, a difference, or an indeterminate outcome is archived. It
+   is not rerun with a new gain.
 
 ## Evidence labels
 
@@ -151,8 +172,8 @@ biological run still refuses unless every `closedloop.COMPONENTS` entry is
 | Column geometry (`flymsg.optics`) | measured   | Zhao et al. 2025 directions on MaleCNS columns                                                                               |
 | Eyemap → body registration        | unmapped   | No sourced `pose.Registration` (#179); the fixture may use a declared test-only registration as today's closed-loop tests do |
 | Visual transducer                 | engineered | Coverage → Poisson rates; not a photoreceptor                                                                                |
-| DN identity (bodyId, side)        | unmapped   | Until PR 2 inventories them against MaleCNS types                                                                            |
-| DN decoder and its gains          | engineered | Declared per run; no default                                                                                                 |
+| DN identity (bodyId, side)        | unmapped   | Until `arena-1` inventories them; ambiguous or missing stays unmapped and stops the milestone                                |
+| DN decoder and its gains          | engineered | Per-run lock and record only; not a row in `validation/evidence.yaml`                                                        |
 | Kinematic body `arena`            | synthetic  | Planar integrator, not a physical fly                                                                                        |
 | Muscle → actuator map             | unmapped   | Unused by this milestone; `validation/motor_map.yaml` unchanged                                                              |
 | Script control                    | synthetic  | No connectome                                                                                                                |
@@ -173,10 +194,11 @@ This milestone does not claim that:
 - the decoder, gains, or kinematic body are biological;
 - world→sensory or muscle→actuator maps exist;
 - VEE-0, VEE-1 or VEE-2 of the [sensorimotor plan](sensorimotor-environment-plan.md)
-  is done (G2 registration, G3 transduction and G4 motor map remain open);
-- a motion that appears only in the intact arm is a connectome-derived
-  mechanism, unless the script and wiring-null arms fail to produce it under
-  the locked rule;
+  is done, including that plan's take-off task (G2 registration, G3
+  transduction and G4 motor map remain open);
+- a yaw change outside the wiring-null seed range is a biological or
+  connectome-derived mechanism (it is a synthetic difference); the script
+  control is reported and is not that verdict;
 - Odyssey, Eon, FlyGym 2.1.0's `flygym_demo.complex_terrain.HybridTurningController`,
   or any learned policy is reproduced or endorsed.
 
@@ -217,15 +239,18 @@ steering does not need the connectome.
 
 ## Alternatives
 
-| Alternative                                             | Problem                                                                                                                    | Verdict                                     |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| NeuroMechFly + DN decoder as milestone 1 (option A)     | FlyGym's turning controller can walk without the connectome; more parts to qualify; medium overlap with the G4 / body lane | Deferred as milestone 2, after this fixture |
-| VNC motoneuron → muscle → NeuroMechFly joint (option B) | Muscle → actuator is unmapped (#19, #35); this is the existing G4 lane                                                     | Left to G4; not this ADR                    |
-| World-model / generated RGB closed loop (option D)      | No physically defined stimulus; `optics` samples geometry, not images; a second clock and an external API                  | Rejected                                    |
-| Fill motor-map or registration rows to "see" an effect  | A biological-looking run without evidence; refused by the body-wiring ADR                                                  | Rejected                                    |
-| Learned controller or default DN gains                  | Issue #31; gains that exist only to manufacture steering                                                                   | Rejected                                    |
-| Extend `closedloop.ARMS` / record v2 for the extra arms | Touches the v1 record and in-flight module-boundaries PRs                                                                  | Not preferred; fixture runs first           |
-| Kinematic planar body + engineered DN decoder           | Synthetic only; less spectacle; same evidence limits as A with fewer parts                                                 | Adopted as milestone 1, pending acceptance  |
+| Alternative                                             | Problem                                                                                                                    | Verdict                                      |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| NeuroMechFly + DN decoder as milestone 1 (option A)     | FlyGym's turning controller can walk without the connectome; more parts to qualify; medium overlap with the G4 / body lane | Deferred as milestone 2, after this fixture  |
+| VNC motoneuron → muscle → NeuroMechFly joint (option B) | Muscle → actuator is unmapped (#19, #35); this is the existing G4 lane                                                     | Left to G4; not this ADR                     |
+| World-model / generated RGB closed loop (option D)      | No physically defined stimulus; `optics` samples geometry, not images; a second clock and an external API                  | Rejected                                     |
+| Fill motor-map or registration rows to "see" an effect  | A biological-looking run without evidence; refused by the body-wiring ADR                                                  | Rejected                                     |
+| Learned controller or default DN gains                  | Issue #31; gains that exist only to manufacture steering                                                                   | Rejected                                     |
+| Extend `closedloop.ARMS` / record v2 for the extra arms | Rewrites the v1 record and every parser                                                                                    | Not preferred; fixture runs first            |
+| Overload `rad` or `N` for yaw rate or forward speed     | The unit would name a different quantity                                                                                   | Rejected; add `rad/s` and `m/s` in `arena-2` |
+| Store decoder gains in `validation/evidence.yaml`       | That registry has no `engineered` status; a gain row would read as SF1 evidence                                            | Rejected; gains stay in the experiment lock  |
+| Wait for module-boundaries step 8 before adding `arena` | That step is optional and unstarted; a flat module can move later                                                          | Rejected; default is a flat module           |
+| Kinematic planar body + engineered DN decoder           | Synthetic only; less spectacle; same evidence limits as A with fewer parts                                                 | Adopted as milestone 1, pending acceptance   |
 
 FlyBody (Vaxenburg et al. 2025, _Nature_, doi:10.1038/s41586-025-09029-4)
 stays unselected (#19, #35).
@@ -243,13 +268,15 @@ Rendering still cannot enter the loop
 
 - The honest outcome may be a published null: T4/T5 are neither, so steering
   may not depend on the stimulus or the wiring.
-- DN type → MaleCNS bodyId may be incomplete or ambiguous until PR 2.
-- `pose.ActuatorRef` units may not name kinematic commands without an
-  engineered extension.
-- Putting a new module at `src/flymsg/arena.py` can collide with
-  module-boundaries PR 8 (leaf package moves). See Coordination.
-- Extending `ARMS` or `COMPONENTS` would collide with `closedloop.py` /
-  `closedloop_experiment.py` and with that same PR sequence.
+- DN type → MaleCNS bodyId may be incomplete or ambiguous at `arena-1`. The
+  milestone then stops, with no gain and no run.
+- The `ActuatorRef` allow-list change in `arena-2` must stay additive: `m/s`
+  and `rad/s` only, schema `flymsg.embodiment/v2` unchanged, old records
+  still parsing.
+- If module-boundaries step 8 has already moved the body layer when `arena-2`
+  opens, `arena` is born in that package. Otherwise it is
+  `src/flymsg/arena.py`. See Coordination.
+- Extending `ARMS` or `COMPONENTS` would rewrite `flymsg.closedloop/v1`.
 - A kinematic demo is easy to over-claim in prose. The evidence table and the
   "not claimed" list are the defence.
 
@@ -260,19 +287,21 @@ leave `closedloop.ARMS` and `flymsg.closedloop/v1` in place if the preferred
 fixture-run option was used. A record version, if ever cut, is a new schema
 and does not rewrite v1.
 
-## Planned follow-up (PRs 2–7)
+## Planned follow-up (`arena-1` … `arena-6`)
 
-None of these is authorized by this Proposed ADR. PR 3 and later wait on owner
-acceptance. Each later PR also updates `CHANGELOG.md`.
+None of these is authorized by this Proposed ADR. Each waits on owner
+acceptance, then on the step before it. Each later PR also updates
+`CHANGELOG.md`. These names are not module-boundaries PRs 4–8. No step edits
+`validation/evidence.yaml`.
 
-| #   | Content                                                                                                                                         | Touches                                                                                    |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 2   | DN inventory in MaleCNS: bodyId and side for DNa01, DNa02, oDN1, MDN, DNp01, with sources; `engineered` gain rows in `validation/evidence.yaml` | `docs/leads.md` or a new doc; `validation/evidence.yaml`                                   |
-| 3   | `flymsg.arena`: kinematic body behind `closedloop.Body`, pose v2, SI, tests (rest, analytic steering, checkpoint)                               | `src/flymsg/arena.py` (or the body-layer package; see Coordination), `tests/test_arena.py` |
-| 4   | Engineered DN decoder: windowed rates → (yaw, forward); gains only from the lock/record                                                         | `arena` or `dn_decoder.py` plus tests                                                      |
-| 5   | Script and wiring-null controls as fixture runs (preferred), not an `ARMS` / record bump                                                        | fixture only; `closedloop.py` only if the alternative in Decision 5 is chosen after review |
-| 6   | Lock + experiment config: hash, seed, null rule **before** the run                                                                              | `validation/`, `examples/`, possibly `closedloop_experiment.py`                            |
-| 7   | Run and results, including a null: trajectories per arm, doc page                                                                               | `results/dn-arena/v1/`, `docs/`                                                            |
+| Step    | Content                                                                                                                          | Touches                                                                               |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| arena-1 | DN inventory: bodyId and side for DNa01, DNa02, oDN1; MDN and DNp01 listed only. Stop if a required type is ambiguous or missing | a doc under `docs/`; no `validation/evidence.yaml`                                    |
+| arena-2 | `flymsg.arena`: kinematic body, allow-list `m/s` and `rad/s`, tests (rest, analytic steering, checkpoint). No full CNS           | `src/flymsg/arena.py`, `pose.py` allow-list, `tests/test_arena.py`                    |
+| arena-3 | Engineered DN decoder: windowed rates → (yaw, forward); gains only from the lock and the record                                  | `arena` or `dn_decoder.py`, plus tests                                                |
+| arena-4 | Script and wiring-null as fixture runs, not an `ARMS` or record bump                                                             | fixture only; `closedloop.py` only if Decision 5's alternative is chosen after review |
+| arena-5 | Lock and experiment config: exact duration, seeds, gains, hash, null rule, before any run                                        | `validation/` (not `evidence.yaml`), `examples/`, possibly `closedloop_experiment.py` |
+| arena-6 | Run and results, null included: yaw per arm, doc page                                                                            | `results/dn-arena/v1/`, `docs/`                                                       |
 
 An optional later PR may show the kinematic trajectory next to neural activity
 in the viewer (`viz.py`; H2,
@@ -287,15 +316,16 @@ Milestone 2, only after 1: the same decoder toward FlyGym 2.1.0's
 ## Coordination
 
 The [module-boundaries ADR](adr-module-boundaries.md) is accepted (2026-10-18).
-PRs 2–3 of that sequence have landed (lock codec, stimulus primitive). **PRs
-4–8 are still pending.** PR 8 optionally moves modules into leaf packages with
-flat facades; the target **body** layer already lists `embodiment`, `pose`,
-`closedloop`, `flygym_body`, `jump`, `loop` and `ttm`.
+Steps 2–3 of that sequence have landed (lock codec, stimulus primitive). Steps
+4–8 are still pending and are not a prerequisite of this fixture. Step 8
+optionally moves modules into leaf packages with flat facades; the target
+**body** layer already lists `embodiment`, `pose`, `closedloop`,
+`flygym_body`, `jump`, `loop` and `ttm`. `arena` belongs in that layer
+logically.
 
-Before opening follow-up PR 3, check whether that PR 8 is near. If it is,
-`arena` goes into the destination body-layer package rather than as a new flat
-`src/flymsg/arena.py`. If it is not, a flat module plus a later facade is
-acceptable. This Proposed ADR does not pick a path and does not move files.
+Do not wait for step 8. The default is a flat `src/flymsg/arena.py`. If step 8
+has already moved the body layer when `arena-2` opens, the module is born in
+that package instead. This document does not move files.
 
 Module-boundaries PR 7 reorganises documentation links and Pages stems. This
 file is not added to `pages.PAGES` here (docs-only; no `src/` change). The
@@ -304,10 +334,13 @@ built site pages. Pages registration can follow acceptance.
 
 ## Invariants
 
-- No change to M0 v1, B6 v2, `sim.Params`, `CpuRuntime` numerics, archived
-  protocols and results, `closedloop.ARMS`, `flymsg.closedloop/v1` or
-  `validation/motor_map.yaml` in this PR, and none implied by acceptance
-  without a later reviewed code PR.
+- No change to M0 v1, the `flymsg.embodiment/v2` schema string, `sim.Params`,
+  `CpuRuntime` numerics, archived protocols and results, `closedloop.ARMS`,
+  `flymsg.closedloop/v1`, `validation/motor_map.yaml` or
+  `validation/evidence.yaml` in this PR. Acceptance does not authorize those
+  edits. The only later pose change is the additive `ActuatorRef` allow-list
+  in `arena-2` (`m/s` and `rad/s`). Old records keep parsing. No step of
+  `arena-1` … `arena-6` edits `evidence.yaml`.
 - No artificial gain, default DN gain, learned controller, force boost or
   enlarged motion to manufacture a closed-loop effect.
 - No guessed transfer function, registration or actuator row.
@@ -319,8 +352,9 @@ built site pages. Pages registration can follow acceptance.
 
 - Status remains Proposed until Gianluca Mazza accepts it. Acceptance is an
   explicit owner act, not a merge of this draft PR by itself.
-- After acceptance, implementation still proceeds one PR at a time (2–7),
-  with PR 3 gated on the module-boundaries coordination above.
+- After acceptance, implementation still proceeds one PR at a time
+  (`arena-1` through `arena-6`). `arena-2` does not wait on module-boundaries
+  step 8.
 - The evidence table, the "not claimed" list, the lock-before-run rule and
   the published-null rule are not optional in later PRs.
 - Full CI green on this docs-only change (`tests.yml`: ruff, prettier 3.8.1
