@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **arena-3/4 review fixes.** `dn_decoder.Decoder` takes the loop's `clock`: `closedloop.run` hands it one control period of spikes per call, and it divided that count by the whole declared window (one oDN1 spike in a 1 ms period read as 10 spikes/s instead of 1,000 with a 100 ms window); the window now only gates which spikes count. `arena_controls.script` followed the stimulus sample of the same control tick (zero latency, against the intact loop's command → sample order); its command now comes from the previous control tick's sample, the first period holds none, and each tick records `yaw_rad`. No lock or counted run.
+
 - **arena-2 heading and arc.** `Arena.yaw_rad` is the integrated, unwrapped heading for the yaw-change metric (the `BodyState` quaternion shows heading modulo a full turn). The arc chord is in half-angle form, so a yaw rate near zero still translates the body (the difference-of-sines form moved it by 0 m at 1e-14 rad/s). `Arena.step` refuses an actuator commanded twice. `docs/claims.md` lists DN identity as mapped by `arena-1`.
 
 - **arena-4 fixture controls.** `flymsg.arena_controls` runs the script control (the same `arena` integrator, stimulus geometry and command units, driven by a caller-supplied rule; `arena.step` on the given clock; no connectome and no `CpuRuntime`) and the wiring-null control (the intact loop on a degree-preserving shuffle of the traced graph via `wiring.shuffle_targets`, through `closedloop.run` with the arena body and the decoder; seeds are caller-supplied) as separate fixture runs. Each control names itself in its return value and notes, never in `closedloop.Record.arm`. No lock or counted run.

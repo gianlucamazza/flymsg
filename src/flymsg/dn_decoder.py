@@ -3,7 +3,9 @@
 In a declared control window, spike rates of DNa01 / DNa02 (steering) and oDN1
 (forward; MaleCNS type `DNg97`) map to `(yaw, forward)` commands of
 `flymsg.arena.Arena`. Gains and the window are required caller values (the lock
-and the record will name them; this module invents none). BodyIds are the mapped
+and the record will name them; this module invents none). `closedloop.run` hands
+the decoder one control period of spikes per call, so a rate is that call's count
+over `clock.control_us`; the window only gates which spikes count. BodyIds are the mapped
 rows in `docs/dn-arena-inventory.md`. Not a motor map and not a connectome-derived
 controller.
 """
@@ -13,7 +15,7 @@ from __future__ import annotations
 import math
 
 from flymsg.closedloop import Command
-from flymsg.embodiment import ContractError, SpikeEvent, integer
+from flymsg.embodiment import Clock, ContractError, SpikeEvent, integer
 from flymsg.pose import ActuatorRef
 
 # arena-1 inventory (MaleCNS v1.0). MDN and DNp01 are later-version only.
@@ -44,6 +46,7 @@ class Decoder:
         gains: dict[str, float],
         window: tuple[int, int],
         actuators: dict[str, ActuatorRef],
+        clock: Clock,
     ):
         if set(gains) != set(TYPES):
             raise ContractError("gains must name exactly DNa01, DNa02 and oDN1")
@@ -62,6 +65,10 @@ class Decoder:
             raise ContractError("actuators must name yaw and forward")
         self._yaw = yaw
         self._forward = forward
+        if not isinstance(clock, Clock):
+            raise ContractError("a decoder needs the loop's clock")
+        clock.validate()
+        self.control_us = clock.control_us
 
     def __call__(self, spikes: tuple[SpikeEvent, ...]) -> tuple[Command, ...]:
         counts = dict.fromkeys(
@@ -75,10 +82,10 @@ class Decoder:
                 raise ContractError(f"unknown descending neuron {spike.neuron_id}")
             if self.start_us <= spike.time_us < self.end_us:
                 counts[key] += 1
-        duration_s = (self.end_us - self.start_us) / 1e6
+        period_s = self.control_us / 1e6
 
         def rate(name: str, side: str) -> float:
-            return counts[(name, side)] / duration_s
+            return counts[(name, side)] / period_s
 
         yaw = self.gains["DNa01"] * (
             rate("DNa01", "L") - rate("DNa01", "R")

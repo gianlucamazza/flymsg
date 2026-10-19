@@ -30,7 +30,12 @@ def decoder(body=None):
     from flymsg.dn_decoder import Decoder
 
     body = body or arena()
-    return Decoder(gains=dict(GAINS), window=(0, DURATION), actuators=body.actuators)
+    return Decoder(
+        gains=dict(GAINS),
+        window=(0, DURATION),
+        actuators=body.actuators,
+        clock=CLOCK,
+    )
 
 
 def constant_rule(yaw_rad_s, forward_m_s, body=None):
@@ -136,15 +141,19 @@ def test_script_steps_the_arena_on_the_clock_without_a_runtime(monkeypatch):
         raise AssertionError("script must not call closedloop.run")
 
     monkeypatch.setattr(arena_controls.closedloop, "run", closed)
-    result = run_script(body=body, clock=clock, duration_us=1_000_000, rule=rule)
+    result = run_script(body=body, clock=clock, duration_us=2_000_000, rule=rule)
     assert called == []
-    assert len(result.ticks) == 1
-    state = result.ticks[0].stepped
+    assert len(result.ticks) == 2
+    # one control period of latency: the first period holds no command
+    assert result.ticks[0].commands == ()
+    assert result.ticks[0].stepped.pose.position_m[:2] == (0.0, 0.0)
+    state = result.ticks[1].stepped
     radius = speed / omega
     assert abs(state.pose.position_m[0] - radius) <= 1e-12
     assert abs(state.pose.position_m[1] - radius) <= 1e-12
-    assert result.ticks[0].commands[0][0] == "yaw"
-    assert result.ticks[0].commands[1][0] == "forward"
+    assert result.ticks[1].yaw_rad == omega
+    assert result.ticks[1].commands[0][0] == "yaw"
+    assert result.ticks[1].commands[1][0] == "forward"
 
 
 def test_script_holds_commands_between_control_ticks_and_sees_stimulus():
@@ -160,9 +169,10 @@ def test_script_holds_commands_between_control_ticks_and_sees_stimulus():
         return (0.5 if state.time_us == 0 else 0.0,)
 
     result = run_script(body=body, rule=rule, stimulus=geom)
-    assert seen == [(0, (0.5,)), (1000, (0.0,)), (2000, (0.0,)), (3000, (0.0,))]
-    held = [t.commands[0][2] for t in result.ticks]
-    assert held == [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    # the command at a control tick comes from the previous tick's sample
+    assert seen == [(0, (0.5,)), (1000, (0.0,)), (2000, (0.0,))]
+    held = [t.commands[0][2] if t.commands else None for t in result.ticks]
+    assert held == [None, None, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0]
 
 
 def test_wiring_null_shuffle_preserves_degree_and_is_seed_deterministic():
