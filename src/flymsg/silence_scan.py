@@ -15,8 +15,9 @@ import numpy as np
 import pandas as pd
 
 from flymsg import behavior, data, dimorphism, draws, locks, parallel, prereg, sim
+from flymsg.paths import repository_root
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "silence_scan.yaml"
 
 # sha256 of the canonical JSON of every field except version and content_sha256.

@@ -13,8 +13,9 @@ from pathlib import Path
 import pandas as pd
 
 from flymsg import locks, sensitivity
+from flymsg.paths import repository_root
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "identifiability.yaml"
 
 VERSION_HASHES = {

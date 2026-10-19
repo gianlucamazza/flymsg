@@ -8,12 +8,15 @@ parser and the canonical hash.
 from pathlib import Path
 
 from flymsg import lock_codec
+from flymsg.paths import require_repository_path
 
 content_hash = lock_codec.content_hash
 
 
 def load(path: Path) -> dict:
-    return lock_codec.load_yaml(path.read_text(encoding="utf-8"))
+    return lock_codec.load_yaml(
+        require_repository_path(path).read_text(encoding="utf-8")
+    )
 
 
 def check(doc: dict, hashes: dict, error: type[Exception], label: str) -> dict:

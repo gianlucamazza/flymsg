@@ -29,9 +29,10 @@ import pandas as pd
 from scipy import io, sparse
 
 from flymsg import draws, locks, nulls, parallel, sim
+from flymsg.paths import repository_root
 from flymsg.stimulus import dead_time
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "song.yaml"
 SYN_PARTNERS = "syn-partners-male-cns-v1.0-minconf-0.5-significant-only.feather"
 PACHECO = "median_auditory_responses_wildtype.mat"

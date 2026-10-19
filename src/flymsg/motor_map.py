@@ -10,8 +10,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from flymsg import locks, prereg
+from flymsg.paths import repository_root
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "motor_map.yaml"
 
 # sha256 of the canonical JSON of every field except version and content_sha256.

@@ -27,9 +27,10 @@ from flymsg import (
     plasticity,
     sim,
 )
+from flymsg.paths import repository_root
 from flymsg.runtime import CpuRuntime
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "apl_claws.yaml"
 
 VERSION_HASHES = {

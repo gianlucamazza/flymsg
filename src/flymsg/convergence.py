@@ -16,8 +16,9 @@ from pathlib import Path
 import pandas as pd
 
 from flymsg import draws, locks, parallel, sensitivity, sim, validate
+from flymsg.paths import repository_root
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "convergence.yaml"
 
 VERSION_HASHES = {

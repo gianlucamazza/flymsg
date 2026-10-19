@@ -170,6 +170,7 @@ version = "0.8.48"
 source = { editable = "." }
 dependencies = [
     { name = "flygym" },
+    { name = "markdown" },
     { name = "numba" },
     { name = "numpy" },
     { name = "pandas" },
@@ -180,7 +181,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "markdown" },
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -188,6 +188,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "flygym", specifier = "==2.1.0" },
+    { name = "markdown", specifier = ">=3.11" },
     { name = "numba", specifier = ">=0.67" },
     { name = "numpy", specifier = ">=2.5.3" },
     { name = "pandas", specifier = ">=3.0.6" },
@@ -198,7 +199,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "markdown", specifier = ">=3.11" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "ruff", specifier = ">=0.16.8" },
 ]

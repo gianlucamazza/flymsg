@@ -30,9 +30,10 @@ import pandas as pd
 from scipy import io, signal
 
 from flymsg import draws, eye, locks, parallel, sim, stimulus
+from flymsg.paths import repository_root
 from flymsg.runtime import CpuRuntime
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "gf_looming.yaml"
 GF = ("DNp01(GF)_R", "DNp01(GF)_L")
 REACH = 0.95  # a peak's time: the first sample at 95% of the window maximum

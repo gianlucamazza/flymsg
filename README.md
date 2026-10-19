@@ -145,6 +145,16 @@ recorded on the linked page. Negative results stay in the
 
 ## Quick start
 
+Installed wheels include the viewer assets and Pages CSS and can be imported without
+a checkout. Repository operations (validation locks, documentation, archived results)
+require a checkout containing `pyproject.toml` with project name `flymsg` and
+`validation/`. Set `FLYMSG_ROOT` to its absolute path; otherwise only validated
+source-file ancestry is searched, never the current directory or an installation
+layout. Without a repository, imports work and repository operations refuse with
+a `FLYMSG_ROOT` diagnostic. Public default path aliases bind at import time, so set
+the variable before importing. Connectome data is separate: use `--data` or
+`FLYMSG_DATA` (also for `scripts/build_figures.py`); its default is `data`.
+
 Requires [uv](https://docs.astral.sh/uv/) (Python 3.13) and, for the browser tests, Node ≥ 22 (CI: Node 24).
 
 ```bash
