@@ -1,16 +1,11 @@
 """Independent admission checks over raw, complete A/B/B/A evidence."""
 
 import copy
-import importlib.util
 from pathlib import Path
 
 import pytest
 
-spec = importlib.util.spec_from_file_location(
-    "quest_compare", Path(__file__).resolve().parents[1] / "scripts/quest_compare.py"
-)
-compare = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(compare)
+from flymsg import quest_compare as compare
 
 
 def arm(value):

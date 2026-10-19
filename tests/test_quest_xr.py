@@ -1,20 +1,15 @@
 """Collector boundaries: one selected headset, same-origin evidence, durable records."""
 
-import importlib.util
 import json
 import threading
 import urllib.error
 import urllib.request
 from functools import partial
 from http.server import ThreadingHTTPServer
-from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("quest_xr", ROOT / "scripts/quest_xr.py")
-quest = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(quest)
+from flymsg import quest_xr as quest
 
 
 def test_power_state_is_retained_separately_from_page_visibility(monkeypatch):

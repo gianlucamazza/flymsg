@@ -1,18 +1,11 @@
 """The viewer baseline check compares eligible warm passes with the baseline's range
 (issue #24)."""
 
-import importlib.util
 import json
-from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location(
-    "bench_check", ROOT / "scripts" / "bench_check.py"
-)
-check = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(check)
+from flymsg import bench_check as check
 
 
 def rec(scene, fps, p5, first, cache="warm", eligible=True, renderer="Iris"):

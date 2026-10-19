@@ -1,16 +1,10 @@
 """Raw diagnostic gains cannot turn incomplete experiments into XR qualification."""
 
 import copy
-import importlib.util
-from pathlib import Path
 
 import pytest
 
-spec = importlib.util.spec_from_file_location(
-    "quest_bounded", Path(__file__).resolve().parents[1] / "scripts/quest_bounded.py"
-)
-bounded = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(bounded)
+from flymsg import quest_bounded as bounded
 
 
 def fixture():

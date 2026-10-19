@@ -1,15 +1,8 @@
 """Profiling must never select another device or treat denied counters as zero."""
 
-import importlib.util
-from pathlib import Path
-
 import pytest
 
-spec = importlib.util.spec_from_file_location(
-    "quest_profile", Path(__file__).resolve().parents[1] / "scripts/quest_profile.py"
-)
-profile = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(profile)
+from flymsg import quest_profile as profile
 
 
 def test_refuses_other_device(monkeypatch, tmp_path):
