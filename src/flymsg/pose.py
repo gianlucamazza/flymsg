@@ -345,8 +345,10 @@ class ActuatorRef:
 
     def __post_init__(self) -> None:
         integer(self.mujoco_id, "mujoco_id")
-        if not self.name or self.unit not in ("N", "N*m", "rad"):
-            raise ContractError("an actuator needs a name and a unit in N, N*m or rad")
+        if not self.name or self.unit not in ("N", "N*m", "rad", "m/s", "rad/s"):
+            raise ContractError(
+                "an actuator needs a name and a unit in N, N*m, rad, m/s or rad/s"
+            )
         if not self.source:
             raise ContractError("an actuator needs the model it was compiled from")
 

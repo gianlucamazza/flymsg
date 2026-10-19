@@ -76,8 +76,8 @@ ADR names them; it does not implement them.
    are not on the `Body` protocol itself).
 
    Two compiled actuators, engineered names of this body: `yaw` in `rad/s` and
-   `forward` in `m/s`. `pose.ActuatorRef` today admits only `N`, `N*m` and
-   `rad`. Do not overload those units. `arena-2` extends that allow-list by
+   `forward` in `m/s`. `pose.ActuatorRef` admits `N`, `N*m`, `rad`, `m/s` and
+   `rad/s`. Do not overload those units. `arena-2` extends that allow-list by
    exactly `m/s` and `rad/s`. Existing records keep parsing. `mujoco_id` stays
    the id in the body's compiled table. The actuator `source` names this
    kinematic model, not a MuJoCo XML. `validation/motor_map.yaml` is unchanged.

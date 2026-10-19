@@ -177,6 +177,26 @@ def test_unknown_or_unpublished_actuator_refuses():
         ActuatorRef(name, 3, "mm", "fixture")
 
 
+def test_actuator_ref_admits_linear_and_angular_velocity_units():
+    """arena-2: the allow-list grows by exactly m/s and rad/s; schema stays v2."""
+    forward = ActuatorRef("forward", 0, "m/s", "arena")
+    yaw = ActuatorRef("yaw", 1, "rad/s", "arena")
+    assert (forward.unit, yaw.unit) == ("m/s", "rad/s")
+    assert pose.SCHEMA == "flymsg.embodiment/v2"
+    for unit in ("N", "N*m", "rad"):
+        ActuatorRef("legacy", 2, unit, "fixture")
+    for unit in ("mm", "deg/s", "m/s^2"):
+        with pytest.raises(ContractError):
+            ActuatorRef("bad", 0, unit, "fixture")
+    doc = motor_map.assert_locked()
+    name = doc["actuators"][0]["name"]
+    compiled = {name: 3}
+    with pytest.raises(ContractError, match="unmapped"):
+        pose.command(ActuatorRef(name, 3, "m/s", "fixture"), compiled)
+    with pytest.raises(ContractError, match="unmapped"):
+        pose.command(ActuatorRef(name, 3, "rad/s", "fixture"), compiled)
+
+
 def test_flygym_eye_mounts_are_mirrored_and_off_the_thorax():
     left, right = pose.flygym_eye_mounts()
     # FlyGym 2.1.0: eyes 0.23 mm anterior, 0.38 mm lateral, 0.02 mm dorsal of c_thorax
