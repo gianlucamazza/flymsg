@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **arena-4 fixture controls.** `flymsg.arena_controls` runs the script control (the same `arena` integrator, stimulus geometry and command units, driven by a caller-supplied rule; `arena.step` on the given clock; no connectome and no `CpuRuntime`) and the wiring-null control (the intact loop on a degree-preserving shuffle of the traced graph via `wiring.shuffle_targets`, through `closedloop.run` with the arena body and the decoder; seeds are caller-supplied) as separate fixture runs. Each control names itself in its return value and notes, never in `closedloop.Record.arm`. No lock or counted run.
+
 - **arena-3 DN decoder.** `flymsg.dn_decoder.Decoder` maps windowed DNa01 / DNa02 and oDN1 (`DNg97`) spike rates to `(yaw, forward)` commands of `flymsg.arena.Arena`. Gains and the control window are required caller values; none are chosen here. Not a motor map. No lock or counted run.
 
 - **arena-2 kinematic body.** `flymsg.arena.Arena` is a planar `closedloop.Body`: compiled actuators `yaw` (`rad/s`) and `forward` (`m/s`), B6 v2 `pose.BodyState`, _z_ / roll / pitch as required parameters, `snapshot` / `restore` for checkpoints. Schema stays `flymsg.embodiment/v2`. No decoder, lock, or counted run.
