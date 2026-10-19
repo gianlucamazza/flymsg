@@ -2,9 +2,11 @@ import re
 from html.parser import HTMLParser
 from pathlib import Path
 
-from flymsg.pages import build, slugify
+from flymsg.pages import BLOB, build, rewrite, slugify
 
 ROOT = Path(__file__).resolve().parents[1]
+
+_MD_LINK = re.compile(r"!?\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
 
 def test_slugs_match_the_anchors_already_used_in_the_docs():
@@ -22,6 +24,73 @@ def test_slugs_match_the_anchors_already_used_in_the_docs():
         slugify("N1 — specific checks need the measured partners")
         == "n1-specific-checks-need-the-measured-partners"
     )
+
+
+def test_rewrite_maps_source_paths_to_pages_assets_or_blob():
+    assert rewrite("validation.md", source="docs/architecture.md") == "validation.html"
+    assert rewrite("docs/validation.md", source="README.md") == "validation.html"
+    assert (
+        rewrite("../validation/preregistration.yaml", source="docs/validation.md")
+        == f"{BLOB}/validation/preregistration.yaml"
+    )
+    assert rewrite("LICENSE", source="README.md") == f"{BLOB}/LICENSE"
+    assert rewrite("img/replay.png", source="docs/validation.md") == "img/replay.png"
+    assert rewrite("docs/img/replay.png", source="README.md") == "img/replay.png"
+
+
+def test_rewrite_keeps_fragments():
+    assert (
+        rewrite("validation.md#protocol", source="docs/architecture.md")
+        == "validation.html#protocol"
+    )
+    assert (
+        rewrite("docs/validation.md#findings-log", source="README.md")
+        == "validation.html#findings-log"
+    )
+    assert (
+        rewrite("adr-dn-arena.md#decision", source="docs/catalog.md")
+        == f"{BLOB}/docs/adr-dn-arena.md#decision"
+    )
+
+
+def test_rewrite_sends_unlisted_docs_to_the_blob():
+    assert (
+        rewrite("adr-dn-arena.md", source="docs/catalog.md")
+        == f"{BLOB}/docs/adr-dn-arena.md"
+    )
+    assert rewrite("claims.md", source="docs/catalog.md") == f"{BLOB}/docs/claims.md"
+
+
+def test_rewrite_resolves_images_and_evidence():
+    assert rewrite("img/kc-sparseness.svg", source="docs/model.md") == (
+        "img/kc-sparseness.svg"
+    )
+    evidence = "evidence/quest2-qualification-2026-10-16.json"
+    assert rewrite(evidence, source="docs/quest-paged-pipeline.md") == (
+        f"{BLOB}/docs/{evidence}"
+    )
+
+
+def test_all_markdown_relative_links_in_docs_resolve():
+    broken: list[str] = []
+    for md in sorted((ROOT / "docs").rglob("*.md")):
+        text = md.read_text(encoding="utf-8")
+        for match in _MD_LINK.finditer(text):
+            url = match.group(1)
+            if url.startswith(("http://", "https://", "mailto:", "#")):
+                continue
+            path, _, _ = url.partition("#")
+            if not path:
+                continue
+            target = (md.parent / path).resolve()
+            try:
+                target.relative_to(ROOT)
+            except ValueError:
+                broken.append(f"{md.relative_to(ROOT)} → {url} (escapes repo)")
+                continue
+            if not target.exists():
+                broken.append(f"{md.relative_to(ROOT)} → {url}")
+    assert broken == []
 
 
 class _Refs(HTMLParser):
