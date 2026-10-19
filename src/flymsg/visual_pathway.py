@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import numpy as np
 import pandas as pd
@@ -185,6 +185,9 @@ class Pathway:
     residual: dict
     watch: np.ndarray
     watch_medulla: dict[str, np.ndarray]
+    params: sim.Params
+    lit: np.ndarray
+    dark_passes: int
 
 
 def prepare(
@@ -278,6 +281,9 @@ def build(
         residual=residual,
         watch=watch,
         watch_medulla=watch_medulla,
+        params=p,
+        lit=np.asarray(lit),
+        dark_passes=proto.get("dark_anchor_passes", 0),
     )
 
 
@@ -302,7 +308,9 @@ def config_hash(static: Static, pathway: Pathway) -> str:
     int64 shape and contiguous native-endian bytes; membrane `idx`, `tau_m`,
     `tau_syn`, `v_rest`, `v_th` (empty int64, then four empty float64, when
     `membrane` is None); graded `idx`, `v_lo`, `span`, `rate_hz`; `gain` as
-    float64; `settle_steps` as int64, taken from `static`.
+    float64; `settle_steps` as int64, taken from `static`; every `sim.Params` field in
+    declaration order, its name then its value as float64; the lit photoreceptor
+    indices; the number of dark-anchor passes as int64.
     """
     h = hashlib.sha256()
     W = pathway.W.tocsc()
@@ -333,4 +341,9 @@ def config_hash(static: Static, pathway: Pathway) -> str:
         _feed_array(h, part)
     _feed(h, np.float64(pathway.gain).tobytes())
     _feed(h, np.int64(static.settle_steps).tobytes())
+    for field in fields(pathway.params):
+        _feed(h, field.name.encode("ascii"))
+        _feed(h, np.float64(getattr(pathway.params, field.name)).tobytes())
+    _feed_array(h, pathway.lit)
+    _feed(h, np.int64(pathway.dark_passes).tobytes())
     return h.hexdigest()

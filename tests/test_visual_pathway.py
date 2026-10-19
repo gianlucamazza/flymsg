@@ -88,9 +88,7 @@ def _inline(W, neurons, proto, cfg, lit, p, dark):
         for cells, _ts, scale in per_type.values():
             W_timed = visual_pathway.scale_block(W_timed, cells, None, scale)
     settle_steps = round(proto["settle_ms"] / p.dt)
-    rate_r, receiving = visual_pathway.photoreceptor_rate(
-        W, lit, lmc, cfg["lmc_mv"], p
-    )
+    rate_r, receiving = visual_pathway.photoreceptor_rate(W, lit, lmc, cfg["lmc_mv"], p)
     Wc = W_timed
     if "lamina_medulla_gain" in cfg:
         graded_cells = np.concatenate(list(medulla_cells.values()))
@@ -267,9 +265,7 @@ def test_config_hash_is_stable_and_tracks_each_input():
         }
         bumped = replace(pathway, membrane=sim.Membrane(**fields))
         assert visual_pathway.config_hash(static, bumped) != base
-    assert (
-        visual_pathway.config_hash(static, replace(pathway, membrane=None)) != base
-    )
+    assert visual_pathway.config_hash(static, replace(pathway, membrane=None)) != base
 
     for name in ("idx", "v_lo", "span", "rate_hz"):
         graded = _graded_like(
@@ -286,6 +282,15 @@ def test_config_hash_is_stable_and_tracks_each_input():
     assert visual_pathway.config_hash(static, gained) != base
     stepped = replace(static, settle_steps=static.settle_steps + 1)
     assert visual_pathway.config_hash(stepped, pathway) != base
+    for name, value in vars(p).items():
+        params = sim.Params(**{**vars(p), name: value + 1})
+        assert (
+            visual_pathway.config_hash(static, replace(pathway, params=params)) != base
+        )
+    lit = np.append(pathway.lit, pathway.lit[-1] + 1)
+    assert visual_pathway.config_hash(static, replace(pathway, lit=lit)) != base
+    passes = replace(pathway, dark_passes=pathway.dark_passes + 1)
+    assert visual_pathway.config_hash(static, passes) != base
     untouched = replace(pathway, anchor=None, residual={})
     assert visual_pathway.config_hash(static, untouched) == base
     assert visual_pathway.config_hash(static, pathway) == base
