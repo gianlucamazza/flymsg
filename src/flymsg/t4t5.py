@@ -18,9 +18,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy import optimize, sparse
 
-from flymsg import data, eye, locks, medulla, prereg, progress, sim
+from flymsg import data, eye, locks, medulla, prereg, progress, sim, visual_pathway
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "t4t5.yaml"
@@ -187,131 +186,6 @@ def configurations(doc: dict) -> list[dict]:
     return [{"config": i, **c} for i, c in enumerate(grid)]
 
 
-def steady_gain(p: sim.Params) -> float:
-    """Steady-state potential change (mV) per unit of conductance delivered every step:
-    g = c / (1 - es), v - v_rest = g * gv / (1 - em)."""
-    em, es = np.exp(-p.dt / p.tau_m), np.exp(-p.dt / p.tau_syn)
-    gv = p.tau_syn / (p.tau_syn - p.tau_m) * (es - em)
-    return float(gv / ((1.0 - es) * (1.0 - em)))
-
-
-def filter_peak_ms(tau_m: float, tau_syn: float) -> float:
-    """Time to peak of the potential after one synaptic event (a difference of exponentials)."""
-    return tau_m * tau_syn * np.log(tau_m / tau_syn) / (tau_m - tau_syn)
-
-
-def delay_tau_syn(delay_ms: float, p: sim.Params) -> float:
-    """The synaptic time constant that delays a neuron's filter peak by `delay_ms` over a
-    neuron with the `Params` membrane, membrane time constant unchanged (version 4)."""
-    target = filter_peak_ms(p.tau_m, p.tau_syn) + delay_ms
-    return float(
-        optimize.brentq(
-            lambda ts: filter_peak_ms(p.tau_m, ts) - target,
-            p.tau_m + 1e-3,
-            10.0 * target,
-        )
-    )
-
-
-def timing(types: np.ndarray, proto: dict, p: sim.Params) -> tuple[sim.Membrane, dict]:
-    """Version 4: the slower cell of each measured pair gets the synaptic time constant of its
-    delay; its incoming weights are scaled so its steady gain stays that of `Params`.
-    Returns the membranes and, per type, (cells, tau_syn, weight scale)."""
-    idx, tau_syn, per_type = [], [], {}
-    for name, row in proto["timing"].items():
-        cells = np.flatnonzero(types == name)
-        ts = delay_tau_syn(row["delay_ms"], p)
-        scale = steady_gain(p) / steady_gain(sim.Params(**{**vars(p), "tau_syn": ts}))
-        per_type[name] = (cells, ts, scale)
-        idx.append(cells)
-        tau_syn.append(np.full(cells.size, ts))
-    idx = np.concatenate(idx)
-    return (
-        sim.Membrane(
-            idx=idx,
-            tau_m=np.full(idx.size, p.tau_m),
-            tau_syn=np.concatenate(tau_syn),
-            v_rest=np.full(idx.size, p.v_rest),
-            v_th=np.full(idx.size, p.v_th),
-        ),
-        per_type,
-    )
-
-
-def scale_block(
-    W: sparse.csc_matrix, rows: np.ndarray, cols: np.ndarray | None, factor: float
-) -> sparse.csc_matrix:
-    """W with the synapses onto `rows` (from `cols`, or from every neuron) times `factor`."""
-    W = W.tocsc(copy=True)
-    pre = np.repeat(np.arange(W.shape[1]), np.diff(W.indptr))
-    hit = np.isin(W.indices, rows)
-    if cols is not None:
-        hit &= np.isin(pre, cols)
-    W.data[hit] = (W.data[hit] * factor).astype(W.data.dtype)
-    return W
-
-
-def photoreceptor_gain(response_mv: float, p: sim.Params) -> float:
-    """Kicks per step at full light that hold a photoreceptor `response_mv` above rest."""
-    return response_mv * (1.0 - np.exp(-p.dt / p.tau_m)) / (p.poisson_scale * p.w_syn)
-
-
-def photoreceptor_rate(
-    W: sparse.csc_matrix,
-    lit: np.ndarray,
-    lmc: np.ndarray,
-    hyper_mv: float,
-    p: sim.Params,
-) -> tuple[float, np.ndarray]:
-    """Saturated photoreceptor release rate (Hz) at which full light on `lit` lowers the
-    median LMC receiving their synapses by `hyper_mv` at steady state, photoreceptor input
-    only. Also returns those LMCs."""
-    total = np.asarray(W[:, lit].sum(axis=1)).ravel()[lmc]
-    receiving = lmc[total < 0]
-    if receiving.size == 0:
-        raise T4T5Error("no LMC receives synapses from the lit photoreceptors")
-    per_step = hyper_mv / (steady_gain(p) * float(np.median(-total[total < 0])))
-    return per_step * 1000.0 / p.dt, receiving
-
-
-def graded_spec(
-    receptors_all: np.ndarray,
-    lmc: np.ndarray,
-    cfg: dict,
-    rate_r: float,
-    p: sim.Params,
-    medulla_cells: dict | None = None,
-    medulla_mv: dict | None = None,
-    medulla_v_lo: dict | None = None,
-) -> sim.Graded:
-    """Photoreceptors: no release at rest, saturated `photoreceptor_mv` above. LMCs: half
-    release at rest, none `lmc_mv` below, saturated `lmc_mv` above. Medulla types (version
-    3): rest stands for the measured dark potential; no release at the lowest measured
-    potential, saturated at the highest. Version 4 passes `medulla_v_lo`, each neuron's
-    no-release potential anchored at its own settled potential in darkness."""
-    a, h = cfg["photoreceptor_mv"], cfg["lmc_mv"]
-    nr, nl = receptors_all.size, lmc.size
-    idx = [receptors_all, lmc]
-    v_lo = [np.full(nr, p.v_rest), np.full(nl, p.v_rest - h)]
-    span = [np.full(nr, a), np.full(nl, 2.0 * h)]
-    rate = [np.full(nr, rate_r), np.full(nl, cfg["lmc_rate_hz"])]
-    for name, cells in (medulla_cells or {}).items():
-        r = medulla_mv[name]
-        idx.append(cells)
-        if medulla_v_lo is not None:
-            v_lo.append(medulla_v_lo[name])
-        else:
-            v_lo.append(np.full(cells.size, p.v_rest - (r["dark"] - r["lowest"])))
-        span.append(np.full(cells.size, r["highest"] - r["lowest"]))
-        rate.append(np.full(cells.size, cfg["medulla_rate_hz"]))
-    return sim.Graded(
-        idx=np.concatenate(idx),
-        v_lo=np.concatenate(v_lo),
-        span=np.concatenate(span),
-        rate_hz=np.concatenate(rate),
-    )
-
-
 def window(cols: pd.DataFrame, radius_deg: float) -> pd.DataFrame:
     """Columns within `radius_deg` of their eye's median viewing direction."""
     keep = []
@@ -452,29 +326,21 @@ def protocol(
     p = sim.Params()
     steps = steps or progress.Steps(None, doc["content_sha256"])
     win = window(cols, proto["window_deg"])
-    types = neurons["type"].fillna("").to_numpy()
-    pattern = "|".join(f"(?:{x})" for x in eye.RECEPTORS.values())
-    receptors_all = np.flatnonzero(
-        neurons["type"].fillna("").str.contains(pattern).to_numpy()
-    )
-    lmc = np.flatnonzero(np.isin(types, proto["graded_lmc"]))
-    medulla_cells = {
-        t: np.flatnonzero(types == t) for t in proto.get("graded_medulla", [])
-    }
-    groups = {s: np.flatnonzero(types == s) for s in proto["subtypes"]}
-    path_groups = {t: np.flatnonzero(types == t) for t in PATHWAY}
     stimuli = {
         (direction, polarity): drive(win, receptors, proto, direction, polarity, p.dt)
         for direction in proto["directions"]
         for polarity in proto["polarities"]
     }
     lit_neurons = np.unique(np.concatenate([v[0] for v in stimuli.values()]))
-    membrane, W_timed = None, W
-    if "timing" in proto:
-        membrane, per_type = timing(types, proto, p)
-        for cells, _ts, scale in per_type.values():
-            W_timed = scale_block(W_timed, cells, None, scale)
-    settle_steps = round(proto["settle_ms"] / p.dt)
+    static = visual_pathway.prepare(W, neurons, proto, p)
+    types = static.types
+    receptors_all = static.receptors_all
+    lmc = static.lmc
+    medulla_cells = static.medulla_cells
+    membrane = static.membrane
+    settle_steps = static.settle_steps
+    groups = {s: np.flatnonzero(types == s) for s in proto["subtypes"]}
+    path_groups = {t: np.flatnonzero(types == t) for t in PATHWAY}
 
     def simulate(Wc, stim, n_steps, kicks, graded):
         """Every run of a configuration, in darkness or with an edge, goes through here, so
@@ -496,35 +362,15 @@ def protocol(
         return simulate(Wc, receptors_all[:1], settle_steps, kicks, graded).graded_v[-1]
 
     def configuration(cfg: dict) -> dict[str, pd.DataFrame]:
-        rate_r, receiving = photoreceptor_rate(W, lit_neurons, lmc, cfg["lmc_mv"], p)
-        Wc = W_timed
-        if "lamina_medulla_gain" in cfg:
-            graded_cells = np.concatenate(list(medulla_cells.values()))
-            Wc = scale_block(Wc, graded_cells, lmc, cfg["lamina_medulla_gain"])
-        mv = proto.get("medulla_mv")
-        graded = graded_spec(receptors_all, lmc, cfg, rate_r, p, medulla_cells, mv)
-        order = np.sort(graded.idx)
-        watch = np.searchsorted(order, receiving)
-        watch_medulla = {t: np.searchsorted(order, c) for t, c in medulla_cells.items()}
-        anchor, residual = None, {}
-        if "dark_anchor_passes" in proto:
-            # each neuron's measured range is anchored at its own settled potential in
-            # darkness; a second pass settles with the anchored release
-            previous = None
-            for _ in range(proto["dark_anchor_passes"]):
-                v_dark = dark(Wc, graded)
-                anchor = {t: v_dark[i] for t, i in watch_medulla.items()}
-                v_lo = {t: anchor[t] - (mv[t]["dark"] - mv[t]["lowest"]) for t in mv}
-                graded = graded_spec(
-                    receptors_all, lmc, cfg, rate_r, p, medulla_cells, mv, v_lo
-                )
-                if previous is not None:
-                    residual = {
-                        t: float(np.median(np.abs(anchor[t] - previous[t]))) for t in mv
-                    }
-                previous = anchor
+        try:
+            built = visual_pathway.build(static, cfg, proto, lit_neurons, p, dark)
+        except visual_pathway.PathwayError as err:
+            raise T4T5Error(str(err)) from err
+        Wc, graded = built.W, built.graded
+        watch, watch_medulla = built.watch, built.watch_medulla
+        anchor, residual = built.anchor, built.residual
+        rate_r, gain = built.rate_hz, built.gain
         medulla_rows = []
-        gain = photoreceptor_gain(cfg["photoreceptor_mv"], p)
         spikes, path_rows, lmc_rows = [], [], []
         for (direction, polarity), (stim, lit, n_steps, settle) in stimuli.items():
             kicks = (gain * lit).astype(np.float32)
