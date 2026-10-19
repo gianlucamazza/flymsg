@@ -32,6 +32,11 @@ EVIDENCE = {
 TTM = tuple(
     f"nmf/{side}_coxa-{side}_trochanterfemur-pitch-motor" for side in ("lm", "rm")
 )
+# The fixture's one invented input keeps raw Poisson counts: its archived records
+# (docs/evidence/vee-synthetic-2026-10-15.json) were made before closedloop.run had an input
+# dead time, and an engineering fixture with no biological input has no refractory period
+# to respect.
+INPUT_GAP_STEPS = 0
 NOTE = "Synthetic engineering fixture: two invented neurons, test-only eye registration and torque decoder; no biological claim."
 
 
@@ -165,6 +170,7 @@ def run(cfg: dict, config_path: Path, out: Path) -> Path:
                 provenance=provenance,
                 optics_config_sha256=optical_hash,
                 run_identity_sha256=execution.id,
+                input_gap_steps=INPUT_GAP_STEPS,
                 silenced_ids=(2,) if arm == "silenced" else (),
                 replay=records.get("intact") if arm == "replay" else None,
                 checkpoint_dir=execution.root / "checkpoints" / arm,

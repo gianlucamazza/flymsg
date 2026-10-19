@@ -108,6 +108,7 @@ def run_wiring_null(**kw):
     kw.setdefault("provenance", PROVENANCE)
     kw.setdefault("optics_config_sha256", "c" * 64)
     kw.setdefault("run_identity_sha256", "b" * 64)
+    kw.setdefault("input_gap_steps", 0)
     return wiring_null(body, **kw)
 
 

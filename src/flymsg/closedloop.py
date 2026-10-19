@@ -352,6 +352,7 @@ def run(
     provenance: pose.Provenance,
     optics_config_sha256: str,
     run_identity_sha256: str,
+    input_gap_steps: int,
     silenced_ids: tuple[int, ...] = (),
     replay: Record | None = None,
     checkpoint_dir: Path | None = None,
@@ -369,6 +370,12 @@ def run(
     given; `transducer` returns one rate in Hz per input; `decoder` turns delivered spikes
     into actuator commands.
 
+    The kernel adds an input kick to the potential even while that neuron is refractory,
+    so `input_gap_steps` > 0 keeps at most one kick per step and none within that many
+    neural steps of the previous kept one, per input, across body ticks (the rule of
+    `stimulus.dead_time`, applied to the same Poisson draws). 0 keeps the raw counts. The
+    recorded `input_counts` are the counts delivered.
+
     With `checkpoint_dir`, the loop writes a checkpoint every `checkpoint_every_us` at a
     control tick (runtime, body and loop state, bound by their hashes) and, if the directory
     holds one, resumes from it: the caller passes a fresh runtime and a body of the same
@@ -384,6 +391,7 @@ def run(
     """
     require(evidence, mode)
     provenance.validate()
+    integer(input_gap_steps, "input_gap_steps")
     steps = schedule(clock, duration_us)
     if arm not in ARMS:
         raise ContractError(f"arm must be one of {', '.join(ARMS)}")
@@ -427,6 +435,7 @@ def run(
             "provenance": asdict(provenance),
             "ids": [list(input_ids), list(traced_ids), list(silenced_ids)],
             "hashes": [optics_config_sha256, run_identity_sha256],
+            "input_gap_steps": input_gap_steps,
             "replay": None if replay is None else runstore.digest(replay.to_json()),
         }
     )
@@ -452,6 +461,11 @@ def run(
     else:
         initial, last, spikes, ticks, rng_state, segments, begin = resumed
         rng.bit_generator.state = rng_state
+    # neural step of each input's last delivered kick, rebuilt from the recorded ticks
+    last_kick = np.full(len(input_ids), -input_gap_steps, dtype=np.int64)
+    for j, tick in enumerate(ticks):
+        rows, cols = np.nonzero(np.asarray(tick.input_counts, dtype=np.int64))
+        last_kick[cols] = np.maximum(last_kick[cols], j * per + rows)
     delivered = 0
     commands: tuple[Command, ...] = ()
     tick_start = time.perf_counter()
@@ -519,6 +533,8 @@ def run(
                 counts = rng.poisson(
                     rates * clock.neural_us / 1e6, (per, len(input_ids))
                 )
+                if input_gap_steps:
+                    counts = _dead_time(counts, k * per, last_kick, input_gap_steps)
             _adapter(runtime.schedule_inputs, counts, what="runtime")
         elif step.phase == "neural":
             start = k * per
@@ -693,6 +709,21 @@ def _resume(directory, identity, runtime, body):
         raise
     except (AttributeError, KeyError, TypeError, ValueError, OSError) as err:
         raise ContractError(f"malformed checkpoint: {err!r}") from err
+
+
+def _dead_time(
+    counts: np.ndarray, start: int, last_kick: np.ndarray, gap: int
+) -> np.ndarray:
+    """`stimulus.dead_time` continued across ticks; updates `last_kick` in place."""
+    out = np.zeros(counts.shape, np.int64)
+    for i, j in zip(
+        *np.nonzero(counts), strict=True
+    ):  # row-major: time order per input
+        t = start + int(i)
+        if t - last_kick[j] >= gap:
+            out[i, j] = 1
+            last_kick[j] = t
+    return out
 
 
 def _commands(raw, compiled: dict[str, int], mode: str) -> tuple[Command, ...]:
