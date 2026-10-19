@@ -1,7 +1,9 @@
 """G5 (#180): ADR order, fail-closed evidence, the record and replay parity, on toys only."""
 
 import dataclasses
+import gzip
 import hashlib
+import io
 import json
 
 import numpy as np
@@ -484,7 +486,7 @@ PATHWAY = "d" * 64
 OTHER_PATHWAY = "e" * 64
 
 
-def kick_runtime(duration_us=40_000):
+def kick_runtime(duration_us=40_000, silence=None):
     edges, sign, n = chain([400])
     p = sim.Params()
     return CpuRuntime(
@@ -495,6 +497,7 @@ def kick_runtime(duration_us=40_000):
         p=p,
         per_bin=CLOCK.control_us // CLOCK.neural_us,
         trace=np.array([1]),
+        silence=silence,
         input_encoding="kick_equivalent",
     )
 
@@ -703,3 +706,149 @@ def test_a_resumed_kick_equivalent_run_equals_the_uninterrupted_one(tmp_path):
     resumed = kick_run(checkpoint_dir=tmp_path, checkpoint_every_us=5000)
     assert resumed == whole
     assert resumed.to_json() == whole.to_json()
+
+
+def _oracle(record) -> str:
+    """Previous canonical bytes: `json.dumps(asdict(record), ...)`."""
+    return json.dumps(dataclasses.asdict(record), sort_keys=True, separators=(",", ":"))
+
+
+def _check(record) -> None:
+    text = record.to_json()
+    assert text == _oracle(record)
+    again = closedloop.from_json(text)
+    assert again == record
+    assert again.to_json() == text
+
+
+def _swap(record, value):
+    """Copy `record` with the first drive or count sample replaced."""
+    ticks = list(record.ticks)
+    tick = ticks[0]
+    if type(record) is closedloop.RecordV2:
+        rows = list(tick.input_drive)
+        rows[0] = (value, *rows[0][1:])
+        ticks[0] = dataclasses.replace(tick, input_drive=tuple(rows))
+    else:
+        rows = list(tick.input_counts)
+        rows[0] = (value, *rows[0][1:])
+        ticks[0] = dataclasses.replace(tick, input_counts=tuple(rows))
+    return dataclasses.replace(record, ticks=tuple(ticks))
+
+
+def _counted(record):
+    """Version 2 counts: whole kicks of the same shape, no pathway hash."""
+    ticks = []
+    for tick in record.ticks:
+        rows = tuple(tuple(int(v) for v in row) for row in tick.input_drive)
+        ticks.append(dataclasses.replace(tick, input_drive=rows))
+    return dataclasses.replace(
+        record, ticks=tuple(ticks), input_encoding="counts", pathway_sha256=None
+    )
+
+
+def _unfit(record):
+    ticks = list(record.ticks)
+    tick = ticks[0]
+    if type(record) is closedloop.RecordV2:
+        ticks[0] = dataclasses.replace(tick, input_drive=tick.input_drive[:-1])
+    else:
+        ticks[0] = dataclasses.replace(tick, input_counts=tick.input_counts[:-1])
+    return dataclasses.replace(record, ticks=tuple(ticks))
+
+
+def _raises(record, message):
+    with pytest.raises(ContractError) as err:
+        record.to_json()
+    assert str(err.value) == message
+
+
+def test_to_json_matches_the_asdict_oracle():
+    intact = run()
+    assert any(tick.spikes for tick in intact.ticks)
+    assert any(tick.commands for tick in intact.ticks)
+    assert any(tick.contacts for tick in intact.ticks)
+    shuffled = run("shuffled")
+    silenced = run(
+        "silenced",
+        runtime=runtime(silence=np.array([1])),
+        silenced_ids=TRACED_IDS,
+    )
+    assert shuffled.arm == "shuffled"
+    assert silenced.arm == "silenced" and silenced.silenced_ids == TRACED_IDS
+    assert not any(tick.spikes for tick in silenced.ticks)
+    kick = kick_run()
+    assert any(tick.spikes for tick in kick.ticks)
+    assert any(tick.commands for tick in kick.ticks)
+    assert any(tick.contacts for tick in kick.ticks)
+    kick_shuffled = kick_run("shuffled")
+    kick_silenced = kick_run(
+        "silenced",
+        runtime=kick_runtime(silence=np.array([1])),
+        silenced_ids=TRACED_IDS,
+    )
+    signed = _swap(kick, -0.0)
+    assert kick_shuffled.arm == "shuffled"
+    assert kick_silenced.arm == "silenced" and not any(
+        tick.spikes for tick in kick_silenced.ticks
+    )
+    for record in (
+        intact,
+        shuffled,
+        silenced,
+        kick,
+        kick_shuffled,
+        kick_silenced,
+        signed,
+        _counted(kick),
+    ):
+        assert any(tick.contacts for tick in record.ticks)
+        _check(record)
+    assert "-0.0" in signed.to_json()
+
+
+def test_drive_rejections_keep_their_messages():
+    kick = kick_run()
+    counted = _counted(kick)
+    plain = run()
+    rejected = (
+        1,
+        True,
+        None,
+        "0",
+        np.float64(1.0),
+        np.float32(1.0),
+        -1.0,
+        -0.1,
+        float("nan"),
+        float("inf"),
+        float("-inf"),
+    )
+    for value in rejected:
+        _raises(_swap(kick, value), "input drive must be a nonnegative finite float")
+    _raises(_swap(kick, 0.1), "input drive must be exactly representable as float32")
+    for value in (-1, 1.5, True, None, "0", np.int64(1), np.float64(1.0)):
+        _raises(_swap(counted, value), "input drive must be an integer >= 0")
+        _raises(_swap(plain, value), "input count must be an integer >= 0")
+    _raises(_unfit(kick), "tick 0 input drive does not fit the tick")
+    _raises(_unfit(counted), "tick 0 input drive does not fit the tick")
+    _raises(_unfit(plain), "tick 0 input counts do not fit the tick")
+
+
+def test_store_matches_the_previous_encoding(tmp_path):
+    from flymsg import dn_arena
+
+    def previous(text: str) -> tuple[str, bytes]:
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        buf = io.BytesIO()
+        with gzip.GzipFile(filename="", mode="wb", fileobj=buf, mtime=0) as stream:
+            stream.write(text.encode())
+        return digest, buf.getvalue()
+
+    (tmp_path / "records").mkdir()
+    for name, record in (("v1/intact", run()), ("v2/kick", kick_run())):
+        digest = dn_arena._store(tmp_path, name, record)
+        path = tmp_path / "records" / f"{name.replace('/', '__')}.json.gz"
+        expect, blob = previous(record.to_json())
+        assert digest == expect
+        assert path.read_bytes() == blob
