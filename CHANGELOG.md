@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **arena-3 DN decoder.** `flymsg.dn_decoder.Decoder` maps windowed spike rates of named traced neurons to commands of the kinematic body, sum of gain × rate per actuator, window = control period, stateless, refuses unread neurons; gains have no default and come only from a lock and the run record; not a motor map; no lock, no counted run; `closedloop.ARMS`, `flymsg.closedloop/v1` and `validation/` unchanged.
+
 - **arena-2 kinematic body.** `flymsg.arena.Arena` is a planar `closedloop.Body`: compiled actuators `yaw` (`rad/s`) and `forward` (`m/s`), B6 v2 `pose.BodyState`, _z_ / roll / pitch as required parameters, `snapshot` / `restore` for checkpoints. Schema stays `flymsg.embodiment/v2`. No decoder, lock, or counted run.
 
 - **arena-2 ActuatorRef units.** `pose.ActuatorRef` now admits `m/s` and `rad/s` in addition to `N`, `N*m` and `rad`. Schema stays `flymsg.embodiment/v2`. Existing records keep parsing. `validation/motor_map.yaml` is unchanged; `pose.command` still refuses every row. No arena body, lock, or run.
