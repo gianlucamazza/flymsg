@@ -122,7 +122,7 @@ def run(
 
 
 SILENCING_CASES = ("P1 courtship drive", "pIP10 song pathway", "looming escape")
-# pre-registered confirmatory tests (docs/dimorphism.md, T1); the rest is descriptive
+# pre-registered confirmatory tests (docs/result/dimorphism.md, T1); the rest is descriptive
 T1_CONFIRMATORY = [
     (c, k)
     for c in ("P1 courtship drive", "pIP10 song pathway")
@@ -133,7 +133,7 @@ T1_CONFIRMATORY = [
 def _case_rates(W, neurons, case, stim, p, seeds):
     """A function giving the targets' rates (and, on request, their per-seed rates) under a
     silencing. Runs stop at the end of the stimulus: the rates there are identical to those
-    of the full protocol run (docs/dimorphism.md)."""
+    of the full protocol run (docs/result/dimorphism.md)."""
 
     def rates(silence=None, per_seed: bool = False):
         out, _ = validate.respond(
@@ -386,11 +386,11 @@ def _param_meta(p: sim.Params) -> dict:
     return {"w_syn": p.w_syn, "th_jump": p.th_jump}
 
 
-# the predicted feedback loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1 (docs/dimorphism.md)
+# the predicted feedback loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1 (docs/result/dimorphism.md)
 LOOP_CASES = ("pIP10 song pathway", "P1 courtship drive")
 # T2 (v0.5's predicted loop dPR1 -> dMS9 -> vPR9_a / IN00A038 -> dPR1), T3 (the route the
 # T2 result pointed to, dMS9 -> vMS12 -> IN03B024 -> dPR1) and T4 (AVLP717m relays P1's
-# drive to pIP10). All three are pre-registered in docs/dimorphism.md; the sets not named
+# drive to pIP10). All three are pre-registered in docs/result/dimorphism.md; the sets not named
 # as confirmatory there are descriptive. T4's list was fixed without T3's outcome.
 LOOP_SETS = {
     "dMS9": ("dMS9",),

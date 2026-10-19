@@ -49,7 +49,7 @@ Until 2026-09-21 the engine differed in six points (input into _g_, no reset of
 _g_, _g_ decaying while refractory, stimulated neurons refractory, synaptic input kept while
 refractory, one extra refractory step), which made stimulated neurons fire about twice the
 input rate; see the [findings log](validation.md#findings-log) and
-[comparison](comparison.md#engine-check).
+[comparison](result/comparison.md#engine-check).
 
 ## Parameters
 
@@ -201,7 +201,7 @@ reaches 3 spikes, so some other partner still drives it. A synapse that starts a
 cannot put those spikes back. Which partner is not named in this decision: naming it
 would have been a new measurement. Issue #20 recorded that limit and did not run. The
 scan that later named DNp02 and DNp06 is
-[behavior](behavior.md#residual-partner-scan).
+[behavior](result/behavior.md#residual-partner-scan).
 
 Issue #10 is closed as blocked (v0.8.9). Dopamine, octopamine and serotonin have sign 0.
 The sugar and bitter cases are stimulus identity, not a feeding state. No
@@ -245,7 +245,7 @@ were eligible. In the fly the Kenyon cell code is sparse and the two odors of th
 overlap by 30–33% (Hige et al. 2015, Fig 7I). The rule did what was measured; the model's odor
 representation is not separated enough for it to be odor-specific. This is the same limit as
 the held-out ORN_DM1 failure: excitatory Kenyon cell to Kenyon cell synapses, which a point
-LIF turns into a self-sustaining loop ([benchmarks](benchmarks.md)). Nothing is retuned.
+LIF turns into a self-sustaining loop ([benchmarks](result/benchmarks.md)). Nothing is retuned.
 Outputs: `results/mb-plasticity/v1/`.
 
 ## Kenyon cell sparseness (diagnostic, 2026-10-13)

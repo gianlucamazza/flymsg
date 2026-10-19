@@ -1,4 +1,4 @@
-// Colour classes for the sex-related annotations of MaleCNS (see docs/dimorphism.md).
+// Colour classes for the sex-related annotations of MaleCNS (see docs/result/dimorphism.md).
 // "potentially ..." calls join their class: the field is the release's best current call.
 
 export const DIMORPHISM_COLORS = {

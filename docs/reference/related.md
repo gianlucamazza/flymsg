@@ -20,7 +20,7 @@ system, brain and ventral nerve cord together (BANC). The paper reports **150,84
 brought to backbone-proofread status. That count was read from the article's methods.
 
 flymsg has no BANC loader. Sex comparisons stay on MaleCNS against FlyWire FAFB, as in
-[comparison](../comparison.md).
+[comparison](../result/comparison.md).
 
 ## A body on the same wiring
 
@@ -30,13 +30,13 @@ _Drosophila_ in MuJoCo. FlyBody (TuragaLab) is the open-source model:
 <https://github.com/TuragaLab/flybody>
 
 Issue #8 compares that model with a one-bit body. The selected task is the
-looming jump in [behavior](../behavior.md). FlyBody is not a dependency and stays
+looming jump in [behavior](../result/behavior.md). FlyBody is not a dependency and stays
 unselected (issue #19). The body that ran is FlyGym's NeuroMechFly
 ([embodiment](../embodiment.md#a-ttm-driven-jump-of-neuromechfly-lock-2026-10-13-90-94)).
 The one-bit protocol is frozen, and its closed loop fails the silence check.
 Issue #20 left the residual `TTMn_R` partner unnamed. Silence-scan v2 named
 DNp02 and DNp06, and v3 replicated that naming
-([behavior](../behavior.md#residual-partner-scan)).
+([behavior](../result/behavior.md#residual-partner-scan)).
 
 ## N1: specific checks need the measured partners
 
@@ -80,7 +80,7 @@ are a separate protocol. They do not replace this one-draw comparison. See
 ## Already open
 
 T3 was run on 2026-10-11. The chain is supported; the counts and p-values are in
-[dimorphism](../dimorphism.md). T4 was run the same day: silencing AVLP717m drops pIP10
+[dimorphism](../result/dimorphism.md). T4 was run the same day: silencing AVLP717m drops pIP10
 after P1 (p = 0.001). The held-out case ORN_DM1 → DM1_lPN fails specific and
 stability, and both sensitivity corners fail the same way. The record is in
-[benchmarks](../benchmarks.md). This note does not restate the rules.
+[benchmarks](../result/benchmarks.md). This note does not restate the rules.

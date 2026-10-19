@@ -2,7 +2,7 @@
 
 **Result: exact sampled raster and reported primitive-span checks pass.**
 This is static correctness evidence, not performance admission or physical XR
-qualification. The [exact-fidelity decision](adr-exact-observer-performance.md)
+qualification. The [exact-fidelity decision](../adr-exact-observer-performance.md)
 requires original geometry; no bounded-path candidate is used here.
 
 ## Source and device
@@ -37,7 +37,7 @@ stereo or head-motion test.
 
 ## Reproduction and integrity
 
-Download and extract the [immutable evidence archive](evidence/quest-exact-skeleton-readback-2026-10-16.zip),
+Download and extract the [immutable evidence archive](../evidence/quest-exact-skeleton-readback-2026-10-16.zip),
 then run from its extracted root:
 
 ```bash
@@ -70,6 +70,6 @@ and owned resource cleanup must be verified when that session ends. Intermediate
 verdict.
 
 Complete exact-skeleton and original-surface comparisons under the unchanged
-[Wi-Fi protocol](plan/quest-wifi-trials.md), then physical XR/session/context/thermal
+[Wi-Fi protocol](../plan/quest-wifi-trials.md), then physical XR/session/context/thermal
 qualification remain open in #177. Phone work under #24 is separate. No speed
 gain, hardware-limit verdict or normal-XR qualification is established here.

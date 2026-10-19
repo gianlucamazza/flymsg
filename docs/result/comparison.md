@@ -1,7 +1,7 @@
 # Male vs female
 
 flymsg runs the same model on the male CNS (MaleCNS v1.0) and the female brain (FlyWire FAFB
-v783, `--dataset fafb`, see [data](reference/data.md#female-brain-flywire-fafb-v783---dataset-fafb)).
+v783, `--dataset fafb`, see [data](../reference/data.md#female-brain-flywire-fafb-v783---dataset-fafb)).
 Cell types are matched through MaleCNS `flywireType`. Code: `src/flymsg/compare.py`.
 
 ## Engine check
@@ -22,7 +22,7 @@ MN9 varies by about ±4 Hz between brian2 runs at 200 Hz, so the two engines agr
 noise. The check found six places where flymsg had departed from the published model; the
 last two (synaptic input reaching a refractory neuron is lost; refractory length) were only
 visible at high rates and were isolated on a two-neuron network, which is now a regression
-test (`tests/test_core.py`). Details in the [findings log](validation.md#findings-log).
+test (`tests/test_core.py`). Details in the [findings log](../validation.md#findings-log).
 
 Reproduce: `scripts/shiu_reference.py` runs the brian2 reference (needs a separate
 environment with brian2, see the script); `compare.shiu_rates` gives the flymsg side.
@@ -51,7 +51,7 @@ female `w_syn` by it, so that the same biological connection weighs the same in 
 This also bears on the male model itself: `w_syn` 0.275 was tuned by Shiu et al. on FAFB, and
 in MaleCNS it acts like a ~1.8× stronger synapse. It is why the earlier male model needed an
 adaptive threshold; since v0.5 the default weight is density-scaled and uses none
-([model](model.md)).
+([model](../model.md)).
 
 ## Male vs female (`flymsg compare --sex`, `runs/sex-comparison.csv`)
 
@@ -126,7 +126,7 @@ silent, LB3b+c+d drive it (findings log).
 
 ## Type mapping and a pilot circuit (#29)
 
-`flymsg homology` writes [`validation/homology/`](../validation/homology/mapping.meta.json):
+`flymsg homology` writes [`validation/homology/`](../../validation/homology/mapping.meta.json):
 `mapping.csv`, one row per male cell type and per FAFB type no male neuron names, and
 `mapping.meta.json` with the schema (`flymsg.homology/v1`), the evidence (MaleCNS
 `flywireType`, the release's call of the FAFB type of each male neuron), both datasets'
@@ -161,4 +161,4 @@ synapse detection, the giant fiber's large dendrite may be counted differently i
 one animal per sex leaves no room for individual variation. A sex claim would need those
 ruled out first.
 
-![LC4 share of each giant fiber's input, and raw LC4 → DNp01 synapses with the density-scaled value, in MaleCNS and FAFB.](img/homology-pilot.svg)
+![LC4 share of each giant fiber's input, and raw LC4 → DNp01 synapses with the density-scaled value, in MaleCNS and FAFB.](../img/homology-pilot.svg)

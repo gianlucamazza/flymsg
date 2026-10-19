@@ -88,6 +88,20 @@ def test_rewrite_keeps_old_landing_paths_after_category_move():
     assert (
         rewrite("../model.md#lif", source="docs/reference/data.md") == "model.html#lif"
     )
+    assert rewrite("benchmarks.md", source="docs/catalog.md") == "benchmarks.html"
+    assert (
+        rewrite("result/benchmarks.md", source="docs/catalog.md") == "benchmarks.html"
+    )
+    assert rewrite("docs/benchmarks.md", source="README.md") == "benchmarks.html"
+    assert rewrite("docs/result/benchmarks.md", source="README.md") == "benchmarks.html"
+    assert (
+        rewrite("../validation.md#findings-log", source="docs/result/comparison.md")
+        == "validation.html#findings-log"
+    )
+    assert (
+        rewrite("../img/looming-jump.svg", source="docs/result/behavior.md")
+        == "img/looming-jump.svg"
+    )
 
 
 def test_rewrite_sends_unlisted_docs_to_the_blob():

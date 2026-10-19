@@ -86,7 +86,7 @@ Until that input exists no new version is written and no recorded result is reru
    in the frozen partition, other than song v1. Checked on 2026-10-16: the v1 manifest has
    none left. Its only scored held-out case, ORN_DM1 → DM1_lPN, ran and failed; ORN_V is
    reported and does not decide; no exploratory row is promoted
-   ([benchmarks](../benchmarks.md)). A case therefore needs a new manifest version written
+   ([benchmarks](../result/benchmarks.md)). A case therefore needs a new manifest version written
    before its data, from a source that did not select the model. The Pacheco data are not
    opened to choose the mechanism; a fitted filter and mosquito tuning do not enter. Only a positive outcome
    against unused animal observations closes the project; a documented no-go does not.

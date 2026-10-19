@@ -4,7 +4,7 @@ Runs the scored corner (default parameters, 100 Hz for 300 ms, 600 ms, seed 0), 
 cell types that still fire from 400 to 600 ms, records the states of one neuron of each of
 the most persistent types with flymsg.tracing, and measures how much of each one's
 excitatory input comes from neurons that are themselves persistent. It does not change the
-scored result (docs/benchmarks.md).
+scored result (docs/result/benchmarks.md).
 
     uv run python scripts/orn_persistence.py
 """

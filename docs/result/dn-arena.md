@@ -1,11 +1,11 @@
 # DN arena
 
-Version 1 of the synthetic steering fixture of the [DN-arena ADR](adr-dn-arena.md):
+Version 1 of the synthetic steering fixture of the [DN-arena ADR](../adr-dn-arena.md):
 the full MaleCNS v1.0 connectome in a closed loop with the kinematic planar body
 `flymsg.arena`, an engineered descending-neuron readout (`flymsg.dn_decoder`) and an
 engineered photoreceptor drive from a lateral dark sphere. Lock:
 [`validation/dn_arena.yaml`](https://github.com/gianlucamazza/flymsg/blob/main/validation/dn_arena.yaml)
-v1 (issue #263). Neuron identities: [DN inventory](dn-arena-inventory.md).
+v1 (issue #263). Neuron identities: [DN inventory](../dn-arena-inventory.md).
 
 ## Version 1 result: uninformative
 
@@ -64,7 +64,7 @@ any photoreceptor rate, any gain and any stimulus geometry. The decoder neurons 
 only 2–3 synapses from the inputs, so the distance is not the cause.
 
 This is the blocker T4/T5 version 1 had already shown: contrast stopped at the
-lamina ([eye](reference/eye.md)). The DN-arena ADR kept the Poisson drive for version 1
+lamina ([eye](../reference/eye.md)). The DN-arena ADR kept the Poisson drive for version 1
 (Decision 3), and the lock's no-go turned the outcome into an explicit
 `uninformative` rather than a false null. With hindsight, the T4/T5 version 1 result
 already predicted this outcome before the lock. The lock cites that version only for
@@ -73,7 +73,7 @@ its 100 Hz rate (`transducer.rate_from`), not as a prediction of a silent readou
 ## What follows
 
 - In the fly, photoreceptors hyperpolarize LMCs through graded, sign-inverting
-  transmission. The [graded eye ADR (VEE-1)](adr-vee1-graded-eye.md) replaces the
+  transmission. The [graded eye ADR (VEE-1)](../adr-vee1-graded-eye.md) replaces the
   spiking photoreceptor drive with the graded pathway of T4/T5 versions 2–4
   (`vee1-1` to `vee1-3`).
 - A DN-arena version 2 needs its own lock (`vee1-4`) with owner approval. Version 4 of

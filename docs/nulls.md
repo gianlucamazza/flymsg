@@ -59,7 +59,7 @@ separately, bitter **sum** (lower tail: the real wiring is weaker). Every
 pathway is printed. None is dropped after the draws are seen.
 
 Empirical _p_ uses the same +1 smoothing as the silencing tests
-([dimorphism](dimorphism.md)): _p_ = (1 + number of nulls as or more extreme) /
+([dimorphism](result/dimorphism.md)): _p_ = (1 + number of nulls as or more extreme) /
 (1 + _n_). With _n_ draws the smallest _p_ is 1/(1+_n_). _z_ is (real − null
 mean) / null s.d. (*n*−1); if the nulls have no spread, _z_ is 0 when the real
 value matches them and omitted otherwise.

@@ -28,7 +28,7 @@ not speed, motion cadence, physical eye poses, XR comfort or normal admission.
 Diagnostic state restoration succeeded; the still-active campaign's final
 proximity cleanup is separate from this snapshot.
 
-[Readback archive](evidence/quest-bounded-corrected-readback-2026-10-16.zip):
+[Readback archive](../evidence/quest-bounded-corrected-readback-2026-10-16.zip):
 6,658,327 bytes, 27 entries, SHA-256
 `2f3bd5c1c4a4a68f028b82a16d7d050f51934fbebab19adce1f0eff5df56c1bf`.
 It contains exact source/runtime/verifier provenance and script hashes, native

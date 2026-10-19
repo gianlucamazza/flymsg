@@ -157,7 +157,7 @@ MaleCNS eye frame. [Ache et al. 2019](https://doi.org/10.1016/j.cub.2019.01.079)
 responses from size/velocity terms; those terms do not themselves calibrate a measured
 retinal-column → LC4/LPLC2 spike generator. [Card & Dickinson 2008](https://doi.org/10.1242/jeb.012682)
 is the sourced takeoff-speed comparison already recorded in [leads](../leads.md), not an actuator
-assignment. The existing [eye](../reference/eye.md), [motor](../embodiment.md) and [GF](../benchmarks.md) results
+assignment. The existing [eye](../reference/eye.md), [motor](../embodiment.md) and [GF](../result/benchmarks.md) results
 remain unchanged. These sources and the repository audit supply no newly qualified mapping.
 
 Do not rerun or retune already scored protocols to make these gates green. A new transfer,
