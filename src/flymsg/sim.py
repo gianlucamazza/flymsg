@@ -19,6 +19,7 @@ potentials. Without either, every array and every rounding step is the spiking m
 
 from dataclasses import dataclass
 from itertools import pairwise
+from typing import NamedTuple
 
 import numba
 import numpy as np
@@ -484,6 +485,19 @@ def run(
     )
     gap_gen, gap_keys, gap_clock = electrical.generators(gap, gap_nodes, gap_off, p)
     check_membrane_gap(membrane, gap_nodes)
+    constants = kernel_constants(membrane, n, p)
+    prepared = prepare_kernel(
+        constants[0],
+        constants[1],
+        constants[2],
+        constants[4],
+        constants[5],
+        gap_nodes,
+        gap_off,
+        gap_moff,
+        gap_gen,
+        gap_clock,
+    )
     counts, first, g_vsum = _kernel(
         W.indptr.astype(np.int64),
         W.indices.astype(np.int64),
@@ -498,7 +512,7 @@ def run(
         is_stim,
         silent,
         jump,
-        *kernel_constants(membrane, n, p),
+        *constants,
         trace_col,
         traced,
         g_idx,
@@ -516,6 +530,7 @@ def run(
         gap_gen,
         gap_keys,
         gap_clock,
+        *prepared,
     )
     return Result(
         counts=counts,
@@ -558,6 +573,129 @@ def _constants(p: Params) -> tuple:
     )
 
 
+class KernelPrep(NamedTuple):
+    """What `_advance` takes after the gap mask.
+
+    Built once from the kernel constants and the gap generators. Scratch is
+    written before it is read on every step, so it has no state at a step
+    boundary and is not part of a checkpoint.
+    """
+
+    special: np.ndarray
+    is_special: np.ndarray
+    n_special: int
+    few: bool
+    per_neuron: bool
+    scalars: np.ndarray
+    saved_v: np.ndarray
+    saved_g: np.ndarray
+    t_ptr: np.ndarray
+    t_col: np.ndarray
+    t_a: np.ndarray
+    t_c: np.ndarray
+    t_x: np.ndarray
+    t_g: np.ndarray
+    t_nx: np.ndarray
+    t_ng: np.ndarray
+    t_sum: np.ndarray
+    t_free: np.ndarray
+
+
+def prepare_kernel(
+    em, es, gv, v_rest, v_th, gap_nodes, gap_off, gap_moff, gap_gen, gap_clock
+) -> KernelPrep:
+    """Classify membranes and build the Taylor sparsity and scratch, once.
+
+    Neuron 0 is the scalar class: a neuron is special when any of its five
+    float32 constants differs from neuron 0's. Without a `Membrane` every
+    neuron shares `Params`, so the hot loops read those scalars, as they did
+    before per-neuron membranes. A minority keeps that loop and is recomputed
+    with its own constants (the same operations, so the same values); most of
+    the network reads every neuron's constants. The Taylor nonzeros are each
+    component generator's rows, read from the dense generators once. `run` and
+    `CpuRuntime` both call this; `_advance` does not.
+    """
+    n = em.shape[0]
+    special_buf = np.empty(n, dtype=np.int64)
+    is_special = np.zeros(n, dtype=np.bool_)
+    n_special = 0
+    for i in range(n):
+        if (
+            em[i] != em[0]
+            or es[i] != es[0]
+            or gv[i] != gv[0]
+            or v_rest[i] != v_rest[0]
+            or v_th[i] != v_th[0]
+        ):
+            special_buf[n_special] = i
+            is_special[i] = True
+            n_special += 1
+    few = 0 < 2 * n_special < n
+    per_neuron = n_special > 0 and not few
+    # copies of neuron 0, same float32 bits the scalar loops used to load
+    scalars = np.empty(5, dtype=np.float32)
+    scalars[0] = em[0]
+    scalars[1] = es[0]
+    scalars[2] = gv[0]
+    scalars[3] = v_rest[0]
+    scalars[4] = v_th[0]
+    saved_v = np.empty(n_special, dtype=np.float32)
+    saved_g = np.empty(n_special, dtype=np.float32)
+    # Taylor solver: each component's generator [A | C] as rows of nonzeros
+    # (A's pattern is C's plus the diagonal). The term count is the expression
+    # `_advance` uses.
+    terms = int(gap_clock[4]) if gap_clock.size > 4 else 0
+    n_gap = gap_nodes.size
+    t_ptr = np.zeros(n_gap + 1, dtype=np.int64)
+    if terms > 0:
+        for comp in range(gap_off.size - 1):
+            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
+            start = gap_moff[comp] // 3 * 2
+            for r in range(m):
+                nnz = 0
+                for q in range(m):
+                    if gap_gen[start + r * 2 * m + q] != 0.0:
+                        nnz += 1
+                t_ptr[a + r + 1] = nnz
+        for k in range(n_gap):
+            t_ptr[k + 1] += t_ptr[k]
+    t_col = np.empty(t_ptr[n_gap], dtype=np.int64)
+    t_a = np.empty(t_ptr[n_gap], dtype=np.float64)
+    t_c = np.empty(t_ptr[n_gap], dtype=np.float64)
+    if terms > 0:
+        for comp in range(gap_off.size - 1):
+            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
+            start = gap_moff[comp] // 3 * 2
+            for r in range(m):
+                e = t_ptr[a + r]
+                for q in range(m):
+                    if gap_gen[start + r * 2 * m + q] != 0.0:
+                        t_col[e] = q
+                        t_a[e] = gap_gen[start + r * 2 * m + q]
+                        t_c[e] = gap_gen[start + r * 2 * m + m + q]
+                        e += 1
+    return KernelPrep(
+        special_buf[:n_special].copy(),
+        is_special,
+        n_special,
+        few,
+        per_neuron,
+        scalars,
+        saved_v,
+        saved_g,
+        t_ptr,
+        t_col,
+        t_a,
+        t_c,
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.bool_),
+    )
+
+
 @numba.njit(cache=True)
 def _kernel(
     indptr,
@@ -597,6 +735,24 @@ def _kernel(
     gap_gen,
     gap_keys,
     gap_clock,
+    special,
+    is_special,
+    n_special,
+    few,
+    per_neuron,
+    scalars,
+    saved_v,
+    saved_g,
+    t_ptr,
+    t_col,
+    t_a,
+    t_c,
+    t_x,
+    t_g,
+    t_nx,
+    t_ng,
+    t_sum,
+    t_free,
 ):
     """One simulation. Same operations, order and float32/float64 rounding as the NumPy
     reference (tests/reference_sim.py), so the spikes are identical:
@@ -690,6 +846,24 @@ def _kernel(
         gap_clock,
         gap_current,
         gap_mask,
+        special,
+        is_special,
+        n_special,
+        few,
+        per_neuron,
+        scalars,
+        saved_v,
+        saved_g,
+        t_ptr,
+        t_col,
+        t_a,
+        t_c,
+        t_x,
+        t_g,
+        t_nx,
+        t_ng,
+        t_sum,
+        t_free,
     )
     return counts, first, g_vsum
 
@@ -753,71 +927,35 @@ def _advance(
     gap_clock,
     gap_current,
     gap_mask,
+    special,
+    is_special,
+    n_special,
+    few,
+    per_neuron,
+    scalars,
+    saved_v,
+    saved_g,
+    t_ptr,
+    t_col,
+    t_a,
+    t_c,
+    t_x,
+    t_g,
+    t_nx,
+    t_ng,
+    t_sum,
+    t_free,
 ):
     stim_steps = kicks.shape[0]
-    # without a Membrane every neuron has the Params constants: the hot loops then read
-    # scalars, as before per-neuron membranes existed, with the same float32 values. A
-    # Membrane on a minority of neurons keeps the scalar loops and recomputes only those
-    # neurons with their own constants (same operations, so the same values); one on most
-    # neurons reads every neuron's constants
-    special = np.empty(n, dtype=np.int64)
-    is_special = np.zeros(n, dtype=np.bool_)
-    n_special = 0
-    for i in range(n):
-        if (
-            em[i] != em[0]
-            or es[i] != es[0]
-            or gv[i] != gv[0]
-            or v_rest[i] != v_rest[0]
-            or v_th[i] != v_th[0]
-        ):
-            special[n_special] = i
-            is_special[i] = True
-            n_special += 1
-    few = 0 < 2 * n_special < n
-    per_neuron = n_special > 0 and not few
-    saved_v = np.empty(n_special, dtype=v.dtype)
-    saved_g = np.empty(n_special, dtype=g.dtype)
-    em0, es0, gv0, rest0, th0 = em[0], es[0], gv[0], v_rest[0], v_th[0]
+    # Neuron 0's float32 constants, copied once by prepare_kernel.
+    em0 = scalars[0]
+    es0 = scalars[1]
+    gv0 = scalars[2]
+    rest0 = scalars[3]
+    th0 = scalars[4]
     zero, one = np.float32(0.0), np.float32(1.0)
-    # Taylor solver: each component's generator [A | C] as rows of nonzeros (A's pattern is
-    # C's plus the diagonal), read from the dense generators once per chunk
+    # prepare_kernel counted Taylor terms with this same expression.
     terms = int(gap_clock[4]) if gap_clock.size > 4 else 0
-    n_gap = gap_nodes.size
-    t_ptr = np.zeros(n_gap + 1, dtype=np.int64)
-    if terms > 0:
-        for comp in range(gap_off.size - 1):
-            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
-            start = gap_moff[comp] // 3 * 2
-            for r in range(m):
-                nnz = 0
-                for q in range(m):
-                    if gap_gen[start + r * 2 * m + q] != 0.0:
-                        nnz += 1
-                t_ptr[a + r + 1] = nnz
-        for k in range(n_gap):
-            t_ptr[k + 1] += t_ptr[k]
-    t_col = np.empty(t_ptr[n_gap], dtype=np.int64)
-    t_a = np.empty(t_ptr[n_gap], dtype=np.float64)
-    t_c = np.empty(t_ptr[n_gap], dtype=np.float64)
-    if terms > 0:
-        for comp in range(gap_off.size - 1):
-            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
-            start = gap_moff[comp] // 3 * 2
-            for r in range(m):
-                e = t_ptr[a + r]
-                for q in range(m):
-                    if gap_gen[start + r * 2 * m + q] != 0.0:
-                        t_col[e] = q
-                        t_a[e] = gap_gen[start + r * 2 * m + q]
-                        t_c[e] = gap_gen[start + r * 2 * m + m + q]
-                        e += 1
-    t_x = np.zeros(n_gap, dtype=np.float64)
-    t_g = np.zeros(n_gap, dtype=np.float64)
-    t_nx = np.zeros(n_gap, dtype=np.float64)
-    t_ng = np.zeros(n_gap, dtype=np.float64)
-    t_sum = np.zeros(n_gap, dtype=np.float64)
-    t_free = np.zeros(n_gap, dtype=np.bool_)
     for t in range(start_step, stop_step):
         # The refractory mask is constant for the full neural step.
         for comp in range(gap_off.size - 1):

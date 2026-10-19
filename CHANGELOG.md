@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Runtime: per-run preparation computed once.** Membrane classification, the scalar-class constants, the Taylor sparsity and the kernel scratch are built once from the construction inputs in `CpuRuntime` and in `sim.run`. They stay out of the checkpoint payload and identity. State, spikes, bins and checkpoint bytes stay bit-identical.
+
 - **Module boundaries step 8: explicit repository root.** `FLYMSG_ROOT` or validated source ancestry selects repository inputs; installed packages import without a checkout and refuse unavailable repository operations clearly. CSS and viewer assets use package resources; figure data uses `--data` / `FLYMSG_DATA`. Leaf moves remain deferred.
 
 - **Closed-loop record serialization.** `Record.to_json` and `RecordV2.to_json` project the record to plain dicts and lists instead of recursive `dataclasses.asdict`. The kick-equivalent drive check still requires an exact Python `float`, then checks finiteness, sign and float32 representability on one array per tick. `dn_arena._store` encodes that canonical text once and reuses the bytes for the sha256 and the gzip (mtime 0). The bytes match `json.dumps(dataclasses.asdict(record), sort_keys=True, separators=(",", ":"))`, the test oracle. No format change.
