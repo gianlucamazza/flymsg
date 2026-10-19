@@ -1,11 +1,11 @@
 # VEE and Quest 2 qualification
 
-Execution plan accepted on 2026-10-15. The [WebXR ADR](adr-virtual-experimental-environment.md)
-and [body-wiring ADR](adr-body-wiring.md) remain the decisions. This page records operational
+Execution plan accepted on 2026-10-15. The [WebXR ADR](../adr-virtual-experimental-environment.md)
+and [body-wiring ADR](../adr-body-wiring.md) remain the decisions. This page records operational
 criteria; it does not promote a synthetic experiment to an animal result.
 
-The subsequent accepted [rendering ADR](adr-observer-rendering.md) and
-[implementation status](observer-rendering.md) address the failed Quest workload.
+The subsequent accepted [rendering ADR](../adr-observer-rendering.md) and
+[implementation status](../observer-rendering.md) address the failed Quest workload.
 The collector now requires an explicit representation for diagnostic comparisons;
 its default requests full surfaces and never silently substitutes skeletons.
 
@@ -90,7 +90,7 @@ same across comparisons. USB debugging authorization is persistent; reverse mapp
 trial resources.
 
 Wireless ADB is also usable through an explicitly selected transport; see the
-[issue-resolution procedure](issue-resolution.md#physical-trial-procedure). A transport
+[issue-resolution procedure](../issue-resolution.md#physical-trial-procedure). A transport
 change starts a new trial. Record temporary user-requested keep-awake settings and restore
 their original values; such diagnostic runs must not silently inherit the original
 qualification profile. Page visibility alone does not prove that the headset is awake.
@@ -156,8 +156,8 @@ describes the body as based on a female micro-CT; it does not establish registra
 MaleCNS eye frame. [Ache et al. 2019](https://doi.org/10.1016/j.cub.2019.01.079) models giant-fiber
 responses from size/velocity terms; those terms do not themselves calibrate a measured
 retinal-column → LC4/LPLC2 spike generator. [Card & Dickinson 2008](https://doi.org/10.1242/jeb.012682)
-is the sourced takeoff-speed comparison already recorded in [leads](leads.md), not an actuator
-assignment. The existing [eye](eye.md), [motor](embodiment.md) and [GF](benchmarks.md) results
+is the sourced takeoff-speed comparison already recorded in [leads](../leads.md), not an actuator
+assignment. The existing [eye](../eye.md), [motor](../embodiment.md) and [GF](../benchmarks.md) results
 remain unchanged. These sources and the repository audit supply no newly qualified mapping.
 
 Do not rerun or retune already scored protocols to make these gates green. A new transfer,

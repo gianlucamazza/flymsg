@@ -65,7 +65,7 @@ This fixture intentionally retains the complete trace in memory and scans the mo
 
 `flymsg.pose` (`flymsg.embodiment/v2`) is the type layer a 3D body and a projected eye will
 share ([#178](https://github.com/gianlucamazza/flymsg/issues/178), gate G1 of the
-[sensorimotor plan](sensorimotor-environment-plan.md)). It wires no body and passes no motor
+[sensorimotor plan](plan/sensorimotor-environment-plan.md)). It wires no body and passes no motor
 command; M0 v1 above is frozen, and a v1 record never parses as v2 or the reverse.
 
 - **Frames**, right-handed, SI units: `world` (FlyGym's, +z up), `body` (the `c_thorax` root:

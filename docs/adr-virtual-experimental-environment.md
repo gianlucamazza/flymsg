@@ -2,7 +2,7 @@
 
 Status: accepted as an experimental, opt-in observer, 2026-10-14; unqualified on any headset
 ([#177](https://github.com/gianlucamazza/flymsg/issues/177)). The sensorimotor arena it is kept
-apart from is planned in the [sensorimotor environment plan](sensorimotor-environment-plan.md)
+apart from is planned in the [sensorimotor environment plan](plan/sensorimotor-environment-plan.md)
 ([#176](https://github.com/gianlucamazza/flymsg/issues/176)). No biological claim.
 
 ## Context

@@ -8,11 +8,11 @@ This proposes eligibility for a later manifest, not a new experimental result.
 
 ## Why a v2 is needed
 
-The [v1 manifest](../validation/benchmarks.yaml) has no unused scored case left.
+The [v1 manifest](../../validation/benchmarks.yaml) has no unused scored case left.
 Its only scored held-out case, ORN_DM1 → DM1_lPN, ran and failed specificity and
 stability. ORN_V is reported only and does not decide. No exploratory row in the
-[benchmark inventory](benchmarks.md#inventory) is promoted. A new source must not
-have selected the model. The [completion plan](roadmap.md#completion-plan) requires
+[benchmark inventory](../benchmarks.md#inventory) is promoted. A new source must not
+have selected the model. The [completion plan](../roadmap.md#completion-plan) requires
 a pass against untouched animal observations; a no-go does not close M4.
 
 ## Eligibility rules
@@ -53,7 +53,7 @@ Baker's route is Table S3 root IDs → `flywire_annotations` v3.2.0,
 materialization 783 → exact MaleCNS `flywireType` tokens. Annotation sources:
 [Schlegel et al. 2024](https://doi.org/10.1038/s41586-024-07686-5) and
 [Berg et al. 2026](https://doi.org/10.1016/j.cell.2026.08.015).
-The [CAVE coordinate/lineage audit](baker-crossmatch.md) extends complete named-type
+The [CAVE coordinate/lineage audit](../baker-crossmatch.md) extends complete named-type
 coverage from 2 to 12 of 28 classes: 11 retain unresolved sex compatibility and
 AVLP_pr36 remains excluded for dimorphism. Fourteen classes are partial and two
 (AVLP_pr18 and AVLP_pr24) are absent from Table S3. All 404 coordinate anchors
@@ -113,12 +113,12 @@ before the prospective lock.
 
 ## Blockers and owner decisions
 
-- Obtain protocol 6's JO input under the [measured-input design](jo-measured-input-design.md)
-  and [accepted ADR](adr-measured-jo-input.md). The audited
+- Obtain protocol 6's JO input under the [measured-input design](../jo-measured-input-design.md)
+  and [accepted ADR](../adr-measured-jo-input.md). The audited
   calcium/population sources do not yet supply an eligible absolute JO-A/B/D input.
   No auditory case can be scored until source, identity/sex and numerical gates pass.
 - Resolve the remaining missing FlyWire labels and MaleCNS identities listed in
-  the [completed CAVE audit](baker-crossmatch.md). Token access and the root-ID
+  the [completed CAVE audit](../baker-crossmatch.md). Token access and the root-ID
   update are verified; partial classes remain partial.
 - Apply the documented noncommercial licence scope above; verify source notices
   at acquisition and review actual outputs before publication. Obtain separate

@@ -191,7 +191,7 @@ background tab does not advance the replay. These are layout and input checks in
 ## Optional WebXR observation (experimental)
 
 Quest 2 development setup, the session-wide measurement collector and the qualification
-criteria are in the [VEE qualification runbook](vee-qualification.md). An available headset
+criteria are in the [VEE qualification runbook](plan/vee-qualification.md). An available headset
 is not a passed hardware trial.
 
 The first Quest 2 default-scene trial (2026-10-15) failed the timing gate; the

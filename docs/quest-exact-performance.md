@@ -33,7 +33,7 @@ performance improvement or hardware qualification.
    Re-run independent exact geometry/colour/depth/ID checks before timing. If no
    justified intervention exists, retain the baseline and report that limitation.
 4. Complete 4/16/64 MiB, four-view, three-repeat ABBA admission under the unchanged
-   [Wi-Fi protocol](quest-wifi-trials.md). The mandatory negative veto may stop a
+   [Wi-Fi protocol](plan/quest-wifi-trials.md). The mandatory negative veto may stop a
    rejected candidate; it cannot admit a winner with missing views.
 5. Qualify an admitted exact candidate on physical XR: three 120-second sessions
    per scene, 20 minutes on the heavier scene, ten entry/exit cycles, stereo/head

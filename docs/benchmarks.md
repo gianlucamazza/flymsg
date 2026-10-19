@@ -146,7 +146,7 @@ before any response value of the data was read.
 ## Looming to giant fiber timing (lock, 2026-10-15, #34)
 
 The first scored test of the looming transducer (gate G3 of the
-[sensorimotor plan](sensorimotor-environment-plan.md),
+[sensorimotor plan](plan/sensorimotor-environment-plan.md),
 [#34](https://github.com/gianlucamazza/flymsg/issues/34)): does the connectome's giant fiber
 (DNp01) peak at the right time before a looming disc's collision? Dombrovski et al. 2025
 (doi:10.1038/s41586-025-09037-4) deposited the giant fiber's whole-cell potential to discs at
@@ -270,7 +270,7 @@ choose the test after the olfactory failure and the silence failure. A later cas
 still needs a new version and a source that did not select the model. This note does
 not add that source.
 
-The [M4 v2 proposal](m4-v2-proposal.md) is the prospective path for a new source.
+The [M4 v2 proposal](plan/m4-v2-proposal.md) is the prospective path for a new source.
 Its [Baker identity audit](baker-crossmatch.md) extends anatomical coverage without
 opening responses or creating a new partition. Remaining scientific eligibility
 and publication conditions are recorded there. Neither document changes this

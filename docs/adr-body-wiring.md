@@ -3,7 +3,7 @@
 Status: accepted, 2026-10-14. Accepted by the user before an actual body is wired
 ([#178](https://github.com/gianlucamazza/flymsg/issues/178)).
 Scope: the G5 closed loop ([#180](https://github.com/gianlucamazza/flymsg/issues/180)) of the
-[sensorimotor plan](sensorimotor-environment-plan.md); supplements the accepted
+[sensorimotor plan](plan/sensorimotor-environment-plan.md); supplements the accepted
 [architecture](architecture.md), [runtime](runtime.md) and
 [run integrity](adr-run-integrity.md) decisions without editing them.
 

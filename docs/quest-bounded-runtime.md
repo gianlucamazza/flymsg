@@ -52,7 +52,7 @@ It cannot establish complete-scene device speed or hardware qualification.
 ## Collect device evidence
 
 Run only from clean committed source. Use the existing
-[Wi-Fi protocol](quest-wifi-trials.md), preserving its full-content and quality
+[Wi-Fi protocol](plan/quest-wifi-trials.md), preserving its full-content and quality
 requirements, independent correctness pages and all three repeats of all views:
 
 ```bash
