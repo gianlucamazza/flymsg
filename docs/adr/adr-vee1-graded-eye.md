@@ -153,3 +153,12 @@ records, locks and archived results do not.
 | vee1-4 | A DN-arena version 2 lock on the graded input (separate lock, owner approval)   | Lock before run; envelope over version 4's configurations             |
 
 Implementation goes to the agents named in issue #265; reviews are cross-vendor.
+
+## Implementation status (2026-10-19)
+
+| Step   | State                                                                                                                                            |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| vee1-1 | Merged (#280): `flymsg.visual_pathway`; the 12 version 4 configurations give identical `sim.run` arguments before and after (digest `4844ff67…`) |
+| vee1-2 | Merged (#274): `CpuRuntime(input_encoding=)`; `kick_equivalent` equals `sim.run` bit for bit; the native lane refuses it                         |
+| vee1-3 | Merged (#281): `flymsg.closedloop/v2`; v1 bytes pinned by golden hashes; replay and resume refuse a different encoding or pathway                |
+| vee1-4 | Lock draft (`validation/dn_arena.yaml` version 2) awaiting owner approval; no run                                                                |

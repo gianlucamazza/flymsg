@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Docs synced with the merged work.** `docs/model.md` and `docs/adr/runtime.md` describe `CpuRuntime`'s `counts` / `kick_equivalent` input encoding; `docs/adr/embodiment.md` and `docs/reference/claims.md` add the `flymsg.closedloop/v2` record and the graded transducer; the graded eye, DN-arena and module-boundaries ADRs gain an implementation status (decisions unchanged); `docs/reference/eye.md` records the shared visual-pathway builder and its parity; README links the DN arena result.
+
 - **vee1-3 closed-loop record v2.** `kick_equivalent` runs record `flymsg.closedloop/v2` (`input_encoding`, `pathway_sha256`, and per-tick `input_drive` as the float32 drive widened to float64). Replay feeds that drive and `replay_parity` compares it exactly; replay admission and checkpoint resume refuse before any step when the encoding or the pathway hash differs from the recorded run. `counts` stays `flymsg.closedloop/v1` with the same bytes, the same dead time and the same parser. `closedloop.ARMS` and `COMPONENTS` are unchanged.
 
 - **vee1-1 visual-pathway builder.** The graded-pathway preparation in `t4t5.protocol` (timing, lamina to medulla gain, graded release, dark anchor, photoreceptor rate and gain) now lives in `flymsg.visual_pathway` (`prepare`, `build`, `config_hash`). `t4t5` calls it. Bit-identity is gated by `scripts/vee1_parity.py` over every version 4 configuration (results stated in the PR). No lock, no run, no change to `validation/t4t5.yaml` or archived results.

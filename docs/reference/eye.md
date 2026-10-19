@@ -230,3 +230,18 @@ four subtypes lie between 265° and 345° whatever their measured direction (0°
 and polarity. So T4a and T4d pointing near the measured way
 follows from a bias shared by all four subtypes, not from a tuning of their own. This audit
 describes v4; it selects no mechanism for a version 5, which waits on the release curve.
+
+## The version 4 pathway as a shared builder (vee1-1, 2026-10-19)
+
+The preparation `t4t5.protocol` did inline for each version 4 configuration now lives in
+`flymsg.visual_pathway`:
+
+- **`prepare`:** receptors, LMCs, graded medulla, the measured delays and the settle length.
+- **`build`:** photoreceptor rate and gain, lamina → medulla gain, release curves and the dark-anchor passes through a caller-supplied open-loop `dark` run.
+- **`config_hash`:** the hash a closed loop binds.
+
+`t4t5` calls the builder. On the full connectome, the arguments of every `sim.run` call
+for the 12 version 4 configurations (72 dark passes and the first stimulus run of each)
+are identical before and after the extraction (`scripts/vee1_parity.py`). The version 4
+lock and its archived results are unchanged. The closed loop uses the same builder for
+the graded input of the [graded eye ADR](../adr/adr-vee1-graded-eye.md).
