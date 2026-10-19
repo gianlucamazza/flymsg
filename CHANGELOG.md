@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Module boundaries step 7f: ADRs.** Fourteen `adr` catalog documents move to `docs/adr/`; file names and Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. No lock or archived evidence names these paths.
+
 - **Module boundaries step 7e: result documents.** Nine `result` catalog documents move to `docs/result/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. `docs/validation.md` and `docs/nulls.md` stay: a lock names those paths.
 
 - **Module boundaries step 7d: reference documents.** Nine `reference` catalog documents move to `docs/reference/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. `docs/model.md`, `docs/leads.md`, `docs/dn-arena-inventory.md` and `docs/replication.md` stay: a lock or archived evidence names those paths.
@@ -440,7 +442,7 @@
   roundoff, instead of building a dense map per refractory mask. On the Kenyon cell
   couplings (688 and 726 cells) it gives the dense solver's spikes neuron for neuron in
   3.6–4.9 s against 1,412–1,655 s per 50 ms; a 1,000 ms odor takes 14.7 s. Decided in the
-  [electrical ADR](docs/adr-gap-refractory.md), accepted 2026-10-14; new locks may name it.
+  [electrical ADR](docs/adr/adr-gap-refractory.md), accepted 2026-10-14; new locks may name it.
 
 - **Lock parser, subset 2** (#159): the lock parser cut ` #` inside quoted strings and read
   a quoted list item holding `:` as a one-key map. A lock with the top-level line
@@ -772,7 +774,7 @@
   before the run, and one descriptive output: the other screen pass's spikes in each confirm
   arm. Committed before the run.
 - **Runs start from `main`.** A run a doc cites starts from a merged commit in a clean
-  worktree, since squash merges drop branch commits ([architecture](docs/architecture.md)).
+  worktree, since squash merges drop branch commits ([architecture](docs/adr/architecture.md)).
 
 ### Reproducibility
 

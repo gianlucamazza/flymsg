@@ -1,6 +1,6 @@
 # Native execution lane
 
-This implements the R1 fixture executor and the initial R2 worker source. It builds on the CPU architecture in [runtime.md](../docs/runtime.md). Its GPU lane is qualified on a Series S for the version-1 fixtures; its cancel, suspension with checkpoint and resume pass there on a synthetic fixture.
+This implements the R1 fixture executor and the initial R2 worker source. It builds on the CPU architecture in [runtime.md](../docs/adr/runtime.md). Its GPU lane is qualified on a Series S for the version-1 fixtures; its cancel, suspension with checkpoint and resume pass there on a synthetic fixture.
 
 | Component               | Current evidence                                                                                       |
 | ----------------------- | ------------------------------------------------------------------------------------------------------ |

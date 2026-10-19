@@ -212,7 +212,7 @@ exports and never runs the simulation. It is experimental and qualified on no he
 frame times against the stereo budget (this page's laptop baseline is far below it, see
 [measurements](#measurements)) and the session lifecycle on real hardware are open in
 [#177](https://github.com/gianlucamazza/flymsg/issues/177). The decision is in the
-[ADR](../adr-virtual-experimental-environment.md).
+[ADR](../adr/adr-virtual-experimental-environment.md).
 
 ## Sources
 

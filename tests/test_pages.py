@@ -27,7 +27,10 @@ def test_slugs_match_the_anchors_already_used_in_the_docs():
 
 
 def test_rewrite_maps_source_paths_to_pages_assets_or_blob():
-    assert rewrite("validation.md", source="docs/architecture.md") == "validation.html"
+    assert (
+        rewrite("../validation.md", source="docs/adr/architecture.md")
+        == "validation.html"
+    )
     assert rewrite("docs/validation.md", source="README.md") == "validation.html"
     assert (
         rewrite("../validation/preregistration.yaml", source="docs/validation.md")
@@ -40,7 +43,7 @@ def test_rewrite_maps_source_paths_to_pages_assets_or_blob():
 
 def test_rewrite_keeps_fragments():
     assert (
-        rewrite("validation.md#protocol", source="docs/architecture.md")
+        rewrite("../validation.md#protocol", source="docs/adr/architecture.md")
         == "validation.html#protocol"
     )
     assert (
@@ -48,8 +51,8 @@ def test_rewrite_keeps_fragments():
         == "validation.html#findings-log"
     )
     assert (
-        rewrite("adr-dn-arena.md#decision", source="docs/catalog.md")
-        == f"{BLOB}/docs/adr-dn-arena.md#decision"
+        rewrite("adr/adr-dn-arena.md#decision", source="docs/catalog.md")
+        == f"{BLOB}/docs/adr/adr-dn-arena.md#decision"
     )
 
 
@@ -102,12 +105,28 @@ def test_rewrite_keeps_old_landing_paths_after_category_move():
         rewrite("../img/looming-jump.svg", source="docs/result/behavior.md")
         == "img/looming-jump.svg"
     )
+    assert rewrite("architecture.md", source="docs/catalog.md") == "architecture.html"
+    assert (
+        rewrite("adr/architecture.md", source="docs/catalog.md") == "architecture.html"
+    )
+    assert rewrite("docs/architecture.md", source="README.md") == "architecture.html"
+    assert (
+        rewrite("docs/adr/architecture.md", source="README.md") == "architecture.html"
+    )
+    assert (
+        rewrite("../catalog.md", source="docs/adr/adr-module-boundaries.md")
+        == "catalog.html"
+    )
+    assert (
+        rewrite("../img/jump-range.svg", source="docs/adr/embodiment.md")
+        == "img/jump-range.svg"
+    )
 
 
 def test_rewrite_sends_unlisted_docs_to_the_blob():
     assert (
-        rewrite("adr-dn-arena.md", source="docs/catalog.md")
-        == f"{BLOB}/docs/adr-dn-arena.md"
+        rewrite("adr/adr-dn-arena.md", source="docs/catalog.md")
+        == f"{BLOB}/docs/adr/adr-dn-arena.md"
     )
     assert rewrite("reference/claims.md", source="docs/catalog.md") == (
         f"{BLOB}/docs/reference/claims.md"

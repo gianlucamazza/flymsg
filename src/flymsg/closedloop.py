@@ -1,6 +1,6 @@
 """G5 (#180): the closed-loop schedule, evidence gate and record of the body-wiring ADR.
 
-`docs/adr-body-wiring.md` keeps the B6 v2 / M0 v1 clock order. At each control tick T,
+`docs/adr/adr-body-wiring.md` keeps the B6 v2 / M0 v1 clock order. At each control tick T,
 spikes of earlier ticks whose time + latency <= T become actuator commands, held until the
 next control tick. Then, per body tick [t, t + body):
 

@@ -168,7 +168,7 @@ vetted deterministic key schedule containing asset hash, algorithm version,
 master seed, condition, trial, source/bodyId and absolute bin. Chunk boundaries,
 worker order and checkpoint restart must not change realizations. Source data,
 ordered identities, transform, generated events and numerical semantics enter
-[run identity](adr-run-integrity.md); no historical lock is rewritten.
+[run identity](adr/adr-run-integrity.md); no historical lock is rewritten.
 
 Independent acceptance cases must prove the transformation, not just internally
 consistent hashes. Hand-derived two-source events at zero, bin boundaries and

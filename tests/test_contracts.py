@@ -1,4 +1,4 @@
-"""The boundaries named in docs/architecture.md. One test per boundary; none loads MaleCNS.
+"""The boundaries named in docs/adr/architecture.md. One test per boundary; none loads MaleCNS.
 
 A failure here means a contract between modules changed. Change the ADR with it, or put the
 contract back.

@@ -1,7 +1,7 @@
 # Run integrity and electrical numerical semantics
 
-Implementation of the accepted [electrical](../adr-gap-refractory.md) and
-[run-integrity](../adr-run-integrity.md) ADRs. Historical protocols and archived results
+Implementation of the accepted [electrical](../adr/adr-gap-refractory.md) and
+[run-integrity](../adr/adr-run-integrity.md) ADRs. Historical protocols and archived results
 retain their original source and numerical semantics.
 
 ## Scientific output lifecycle

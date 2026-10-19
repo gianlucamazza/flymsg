@@ -11,7 +11,7 @@ Scope: a first **synthetic** steering fixture that reuses the existing closed
 loop. It supplements the accepted [body-wiring](adr-body-wiring.md),
 [embodiment](embodiment.md), [runtime](runtime.md) and
 [module-boundaries](adr-module-boundaries.md) decisions and the proposed
-[sensorimotor plan](plan/sensorimotor-environment-plan.md) without editing them. It
+[sensorimotor plan](../plan/sensorimotor-environment-plan.md) without editing them. It
 is not that plan's VEE-0 take-off (an approaching dark disc through LC4/LPLC2
 to the giant fiber and TTM). It does not close that plan's VEE-0 exit, G2, G3,
 G4 or G5.
@@ -41,10 +41,10 @@ The maps that would make a run biological are missing:
 - world → sensory: G2 registration of the Zhao et al. 2025 eyemap into a body
   frame is unmeasured
   ([#179](https://github.com/gianlucamazza/flymsg/issues/179);
-  [leads](leads.md), [g2-capsule-rotation](g2-capsule-rotation.md)); G3
+  [leads](../leads.md), [g2-capsule-rotation](../g2-capsule-rotation.md)); G3
   transduction is not a measured photoreceptor or LC4/LPLC2 transfer
   ([#140](https://github.com/gianlucamazza/flymsg/issues/140); T4/T5 v1 is
-  neither and v2–v4 are robust neither, [eye](reference/eye.md)).
+  neither and v2–v4 are robust neither, [eye](../reference/eye.md)).
 - muscle → actuator: MANC names a muscle for 406 of 708 `vnc_motor` neurons
   (Cheong et al. 2024, _eLife_, doi:10.7554/eLife.96084); `validation/motor_map.yaml`
   has every actuator row `unmapped`, so `motor_map.command` and `pose.command`
@@ -125,7 +125,7 @@ ADR names them; it does not implement them.
      the script does not call it. It calls `arena.step` on the locked clock.
    - **wiring-null:** the intact loop on a degree-preserving shuffle of the
      traced graph (`wiring.shuffle_targets`; the same permutation family as
-     `flymsg wiring-null` / N1, [related](reference/related.md), [nulls](nulls.md)),
+     `flymsg wiring-null` / N1, [related](../reference/related.md), [nulls](../nulls.md)),
      through `closedloop.run`.
 
    **Preferred:** these are separate fixture runs. They do not change
@@ -193,7 +193,7 @@ This milestone does not claim that:
 - MaleCNS, T4/T5, LC cells or descending neurons implement the behaviour;
 - the decoder, gains, or kinematic body are biological;
 - world→sensory or muscle→actuator maps exist;
-- VEE-0, VEE-1 or VEE-2 of the [sensorimotor plan](plan/sensorimotor-environment-plan.md)
+- VEE-0, VEE-1 or VEE-2 of the [sensorimotor plan](../plan/sensorimotor-environment-plan.md)
   is done, including that plan's take-off task (G2 registration, G3
   transduction and G4 motor map remain open);
 - a yaw change outside the wiring-null seed range is a biological or

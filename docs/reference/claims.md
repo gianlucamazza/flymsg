@@ -8,7 +8,7 @@ result.
 The scheduler is `flymsg.closedloop`. Each of its four components — registration,
 transducer, motor map and body — carries one of `measured` / `engineered` /
 `unmapped` / `synthetic`
-([body-wiring ADR](../adr-body-wiring.md), [DN-arena ADR](../adr-dn-arena.md)). A
+([body-wiring ADR](../adr/adr-body-wiring.md), [DN-arena ADR](../adr/adr-dn-arena.md)). A
 biological run refuses unless every component is `measured`. A synthetic run is
 allowed, records those statuses and supports no claim about the fly.
 
@@ -18,9 +18,9 @@ The executable fixture is synthetic. `closedloop_experiment` and
 `examples/closedloop-nmf.yaml` run a two-neuron toy circuit, a test-only
 registration, an engineered looming transducer and a synthetic torque decoder.
 That is infrastructure, not a world→sensory or muscle→actuator map
-([DN-arena ADR](../adr-dn-arena.md), [embodiment](../embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)).
+([DN-arena ADR](../adr/adr-dn-arena.md), [embodiment](../adr/embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)).
 
-The accepted [DN-arena ADR](../adr-dn-arena.md) names a kinematic planar body and
+The accepted [DN-arena ADR](../adr/adr-dn-arena.md) names a kinematic planar body and
 an engineered descending-neuron decoder. `flymsg.arena` is that body.
 `flymsg.dn_decoder` is that decoder. `flymsg.arena_controls` is the script
 control and the wiring-null control, as separate fixture runs, not new arms.
@@ -30,7 +30,7 @@ complete.
 
 Earlier one-axis fixtures stay as recorded and are not this loop: the one-bit
 looming cut ([behavior](../result/behavior.md)), M1 `flymsg jump` and M2 `flymsg loop`
-([embodiment](../embodiment.md)).
+([embodiment](../adr/embodiment.md)).
 
 ## Measured
 
@@ -40,36 +40,36 @@ Taken from published data already cited in this repository.
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | MaleCNS wiring    | The traced graph: 165,122 neurons and the connections among them. `flymsg build` keeps `status == "Traced"`. Not a claim that a decoder uses that graph correctly. | [data](data.md); Berg et al., _Cell_ 189, 5504–5526 (2026), doi:10.1016/j.cell.2026.08.015. README and the DN-arena ADR use the same citation. |
 | Column geometry   | Optic-lobe column directions on MaleCNS. `flymsg.optics` projects dark spheres onto those columns. Nothing here is a photoreceptor response.                       | [eye](eye.md); Zhao et al. 2025, _Nature_, doi:10.1038/s41586-025-09276-5. Hex coordinates: Nern et al. 2025, doi:10.1038/s41586-025-08746-0.  |
-| MANC muscle names | MANC names a muscle for 406 of 708 `vnc_motor` neurons. That table is not a motor map.                                                                             | [embodiment](../embodiment.md#muscles-from-manc-phase-c); Cheong et al. 2024, _eLife_, doi:10.7554/eLife.96084.                                |
+| MANC muscle names | MANC names a muscle for 406 of 708 `vnc_motor` neurons. That table is not a motor map.                                                                             | [embodiment](../adr/embodiment.md#muscles-from-manc-phase-c); Cheong et al. 2024, _eLife_, doi:10.7554/eLife.96084.                            |
 
 The default LIF time constants and delay are Shiu et al.'s published values
 ([model](../model.md#parameters); Shiu et al. 2024, _Nature_,
 doi:10.1038/s41586-024-07763-9). The engine is still an engineered model of
 those numbers, not a measurement of this fly. Battery 29/29 at `w_syn` 0.192 is
 a model check, not closed-loop behaviour
-([validation](../validation.md), [DN-arena ADR](../adr-dn-arena.md)).
+([validation](../validation.md), [DN-arena ADR](../adr/adr-dn-arena.md)).
 
 ## Engineered
 
 Chosen in this repository. A gain or decoder is not a connectome-derived
 controller ([#31](https://github.com/gianlucamazza/flymsg/issues/31)).
 
-| Part                       | What was chosen                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Source in this repo                                                                         |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| LIF / `CpuRuntime`         | Point leaky integrate-and-fire on the traced graph, bit-identical to `sim.run`. Optional gap, graded and plasticity stay off unless a lock names them.                                                                                                                                                                                                                                                                                                                                                                                                  | [model](../model.md), [runtime](../runtime.md), [approximations](approximations.md)         |
-| Clock and order            | Integer-microsecond `embodiment.Clock`. Causal order command → sample → stimulus → input → neural → physics. One scheduler; no renderer enters the loop.                                                                                                                                                                                                                                                                                                                                                                                                | [body-wiring ADR](../adr-body-wiring.md)                                                    |
-| Visual transducer          | Coverage → Poisson rates. Not a photoreceptor. The existing fixture's coverage-to-rate function is fixed in fixture source; those numbers are not biological calibrations.                                                                                                                                                                                                                                                                                                                                                                              | [DN-arena ADR](../adr-dn-arena.md), [VEE qualification](../plan/vee-qualification.md)       |
-| Existing body adapter      | `flymsg.flygym_body.FlyGymBody` reports `engineered`: posture gain and torque-driven hinges are chosen. NeuroMechFly (FlyGym 2.1.0; Wang-Chen et al. 2024, _Nat Methods_, doi:10.1038/s41592-024-02497-y) sits behind the adapter.                                                                                                                                                                                                                                                                                                                      | [embodiment](../embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)            |
-| Synthetic closed-loop mode | `mode: synthetic` in `examples/closedloop-nmf.yaml`. Five arms: intact, disconnected, shuffled, replay, silenced. Record `flymsg.closedloop/v1`.                                                                                                                                                                                                                                                                                                                                                                                                        | [VEE qualification](../plan/vee-qualification.md), [body-wiring ADR](../adr-body-wiring.md) |
-| DN identity (bodyId, side) | Mapped by `arena-1` from the MaleCNS v1.0 annotation table: DNa01 10442 L / 10760 R, DNa02 523769 L / 10360 R, oDN1 = MaleCNS type `DNg97` 13805 L / 230783 R. MDN and DNp01 listed only. Identity, not a claim that these neurons steer.                                                                                                                                                                                                                                                                                                               | [DN inventory](../dn-arena-inventory.md)                                                    |
-| DN decoder and its gains   | `flymsg.dn_decoder.Decoder` is engineered: windowed DNa01 / DNa02 and oDN1 (`DNg97`) rates map to `(yaw, forward)` of `flymsg.arena.Arena`. A rate is one control period's spike count over `clock.control_us`; the window only gates which spikes count. Gains and the window are required caller values; bodyIds come from the lock (inventory rows), none in code. They do not enter `validation/evidence.yaml`. Not a motor map. The lock is `validation/dn_arena.yaml` v1; its counted run is `uninformative` ([DN arena](../result/dn-arena.md)). | [DN-arena ADR](../adr-dn-arena.md)                                                          |
-| Kinematic arena body       | `flymsg.arena.Arena` behind `closedloop.Body`: planar integrator of yaw rate (`rad/s`) and forward speed (`m/s`). _z_, roll and pitch are required constructor arguments (the lock names 0; this module invents none). No MuJoCo. Not free flight. Synthetic. The lock is `validation/dn_arena.yaml` v1; its counted run is `uninformative` ([DN arena](../result/dn-arena.md)).                                                                                                                                                                        | [DN-arena ADR](../adr-dn-arena.md)                                                          |
-| Script control             | `flymsg.arena_controls.script` is a synthetic fixture run: the same `arena` integrator, stimulus geometry and command units, driven by a caller-supplied rule with the intact loop's causal order: the command at a control tick comes from the previous control tick's sample (one control period of latency). It records the unwrapped heading. No connectome and no `CpuRuntime`. It does not call `closedloop.run`. The lock is `validation/dn_arena.yaml` v1; its counted run is `uninformative` ([DN arena](../result/dn-arena.md)).              | [DN-arena ADR](../adr-dn-arena.md)                                                          |
-| Wiring-null control        | `flymsg.arena_controls.wiring_null` is a synthetic fixture run: the intact loop on a degree-preserving shuffle of the traced graph (`wiring.shuffle_targets`), through `closedloop.run` with the arena body and the decoder. Seeds are caller-supplied. The control name is in the return notes, not in `closedloop.Record.arm`. The lock is `validation/dn_arena.yaml` v1; its counted run is `uninformative` ([DN arena](../result/dn-arena.md)).                                                                                                     | [DN-arena ADR](../adr-dn-arena.md)                                                          |
+| Part                       | What was chosen                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Source in this repo                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| LIF / `CpuRuntime`         | Point leaky integrate-and-fire on the traced graph, bit-identical to `sim.run`. Optional gap, graded and plasticity stay off unless a lock names them.                                                                                                                                                                                                                                                                                                                                                                                                  | [model](../model.md), [runtime](../adr/runtime.md), [approximations](approximations.md)         |
+| Clock and order            | Integer-microsecond `embodiment.Clock`. Causal order command → sample → stimulus → input → neural → physics. One scheduler; no renderer enters the loop.                                                                                                                                                                                                                                                                                                                                                                                                | [body-wiring ADR](../adr/adr-body-wiring.md)                                                    |
+| Visual transducer          | Coverage → Poisson rates. Not a photoreceptor. The existing fixture's coverage-to-rate function is fixed in fixture source; those numbers are not biological calibrations.                                                                                                                                                                                                                                                                                                                                                                              | [DN-arena ADR](../adr/adr-dn-arena.md), [VEE qualification](../plan/vee-qualification.md)       |
+| Existing body adapter      | `flymsg.flygym_body.FlyGymBody` reports `engineered`: posture gain and torque-driven hinges are chosen. NeuroMechFly (FlyGym 2.1.0; Wang-Chen et al. 2024, _Nat Methods_, doi:10.1038/s41592-024-02497-y) sits behind the adapter.                                                                                                                                                                                                                                                                                                                      | [embodiment](../adr/embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)            |
+| Synthetic closed-loop mode | `mode: synthetic` in `examples/closedloop-nmf.yaml`. Five arms: intact, disconnected, shuffled, replay, silenced. Record `flymsg.closedloop/v1`.                                                                                                                                                                                                                                                                                                                                                                                                        | [VEE qualification](../plan/vee-qualification.md), [body-wiring ADR](../adr/adr-body-wiring.md) |
+| DN identity (bodyId, side) | Mapped by `arena-1` from the MaleCNS v1.0 annotation table: DNa01 10442 L / 10760 R, DNa02 523769 L / 10360 R, oDN1 = MaleCNS type `DNg97` 13805 L / 230783 R. MDN and DNp01 listed only. Identity, not a claim that these neurons steer.                                                                                                                                                                                                                                                                                                               | [DN inventory](../dn-arena-inventory.md)                                                        |
+| DN decoder and its gains   | `flymsg.dn_decoder.Decoder` is engineered: windowed DNa01 / DNa02 and oDN1 (`DNg97`) rates map to `(yaw, forward)` of `flymsg.arena.Arena`. A rate is one control period's spike count over `clock.control_us`; the window only gates which spikes count. Gains and the window are required caller values; bodyIds come from the lock (inventory rows), none in code. They do not enter `validation/evidence.yaml`. Not a motor map. The lock is `validation/dn_arena.yaml` v1; its counted run is `uninformative` ([DN arena](../result/dn-arena.md)). | [DN-arena ADR](../adr/adr-dn-arena.md)                                                          |
+| Kinematic arena body       | `flymsg.arena.Arena` behind `closedloop.Body`: planar integrator of yaw rate (`rad/s`) and forward speed (`m/s`). _z_, roll and pitch are required constructor arguments (the lock names 0; this module invents none). No MuJoCo. Not free flight. Synthetic. The lock is `validation/dn_arena.yaml` v1; its counted run is `uninformative` ([DN arena](../result/dn-arena.md)).                                                                                                                                                                        | [DN-arena ADR](../adr/adr-dn-arena.md)                                                          |
+| Script control             | `flymsg.arena_controls.script` is a synthetic fixture run: the same `arena` integrator, stimulus geometry and command units, driven by a caller-supplied rule with the intact loop's causal order: the command at a control tick comes from the previous control tick's sample (one control period of latency). It records the unwrapped heading. No connectome and no `CpuRuntime`. It does not call `closedloop.run`. The lock is `validation/dn_arena.yaml` v1; its counted run is `uninformative` ([DN arena](../result/dn-arena.md)).              | [DN-arena ADR](../adr/adr-dn-arena.md)                                                          |
+| Wiring-null control        | `flymsg.arena_controls.wiring_null` is a synthetic fixture run: the intact loop on a degree-preserving shuffle of the traced graph (`wiring.shuffle_targets`), through `closedloop.run` with the arena body and the decoder. Seeds are caller-supplied. The control name is in the return notes, not in `closedloop.Record.arm`. The lock is `validation/dn_arena.yaml` v1; its counted run is `uninformative` ([DN arena](../result/dn-arena.md)).                                                                                                     | [DN-arena ADR](../adr/adr-dn-arena.md)                                                          |
 
 M1 `engineered_decoder` and M2's looming transducer are the same kind of choice
 on the earlier one-axis bodies: stated gains, not a motor map
-([embodiment](../embodiment.md#m1-jump-body-v0834-33)).
+([embodiment](../adr/embodiment.md#m1-jump-body-v0834-33)).
 
 ## Unmapped
 
@@ -79,10 +79,10 @@ or refuse. They are not renamed to look measured.
 | Part                       | What is missing                                                                                                                                                                | Source in this repo                                                                                                         |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
 | Eyemap → body registration | No sourced `pose.Registration`. The rotation between the Zhao et al. 2025 micro-CT head and NeuroMechFly's head is not measured. Tests may use a declared identity.            | [eye](eye.md), [#179](https://github.com/gianlucamazza/flymsg/issues/179), [g2-capsule-rotation](../g2-capsule-rotation.md) |
-| Muscle → actuator          | `validation/motor_map.yaml` has every actuator row `unmapped`. `motor_map.command` and `pose.command` refuse every command. MANC names a muscle; it does not name an actuator. | [embodiment](../embodiment.md), README results row "Motor map"                                                              |
+| Muscle → actuator          | `validation/motor_map.yaml` has every actuator row `unmapped`. `motor_map.command` and `pose.command` refuse every command. MANC names a muscle; it does not name an actuator. | [embodiment](../adr/embodiment.md), README results row "Motor map"                                                          |
 
 `closedloop.require` therefore refuses a biological run
-([DN-arena ADR](../adr-dn-arena.md)).
+([DN-arena ADR](../adr/adr-dn-arena.md)).
 
 ## Not claimed
 
@@ -101,14 +101,14 @@ flymsg does not claim that:
   difference);
 - the point LIF on the traced graph is a whole-brain emulation
   ([approximations](approximations.md), README Limits);
-- this loop is free flight ([DN-arena ADR](../adr-dn-arena.md);
+- this loop is free flight ([DN-arena ADR](../adr/adr-dn-arena.md);
   [sensorimotor plan](../plan/sensorimotor-environment-plan.md): free flight, walking
   and real-time whole-CNS execution are out of scope);
 - a learned policy is reproduced or endorsed
   ([#31](https://github.com/gianlucamazza/flymsg/issues/31)).
 
 A synthetic run supports no claim about the fly
-([body-wiring ADR](../adr-body-wiring.md)). Equal closed and disconnected results
+([body-wiring ADR](../adr/adr-body-wiring.md)). Equal closed and disconnected results
 are reported as observed; they are not a pass. Words such as "upload" or
 "living fly" are out of scope.
 
@@ -135,7 +135,7 @@ all five arms, and sets `mode: synthetic`. A biological config refuses before
 constructing the body.
 
 The replay arm must reproduce the intact spikes exactly
-([body-wiring ADR](../adr-body-wiring.md): anything else is a failure, not a
+([body-wiring ADR](../adr/adr-body-wiring.md): anything else is a failure, not a
 tolerance). Repeat the identical `--out` command to resume checkpoints or
 verify completed output. A changed source, config, asset or environment selects
 another execution.
@@ -145,7 +145,7 @@ verifies that all five scientific traces are byte-identical across the original
 run and a fresh clone at source `1223551`; timing differs as expected
 ([VEE qualification](../plan/vee-qualification.md#gate-ledger)).
 
-The unit path already named on [embodiment](../embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)
+The unit path already named on [embodiment](../adr/embodiment.md#g5-groundwork-closed-loop-schedule-and-record-180)
 is:
 
 ```bash

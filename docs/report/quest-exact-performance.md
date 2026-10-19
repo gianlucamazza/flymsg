@@ -1,6 +1,6 @@
 # Exact Quest and desktop performance work
 
-The [accepted exact-fidelity decision](../adr-exact-observer-performance.md) controls
+The [accepted exact-fidelity decision](../adr/adr-exact-observer-performance.md) controls
 this work. Neither bounded geometry nor another representation is a substitute
 for the original selected source. This is an execution ledger, not a claim of
 performance improvement or hardware qualification.

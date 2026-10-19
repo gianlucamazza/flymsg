@@ -8,7 +8,7 @@ Scope: replace the closed loop's spiking photoreceptor drive with the graded vis
 pathway that T4/T5 versions 2–4 already run open loop. It supplements the accepted
 [body-wiring](adr-body-wiring.md), [runtime](runtime.md),
 [module-boundaries](adr-module-boundaries.md) and
-[DN-arena](https://github.com/gianlucamazza/flymsg/blob/main/docs/adr-dn-arena.md)
+[DN-arena](https://github.com/gianlucamazza/flymsg/blob/main/docs/adr/adr-dn-arena.md)
 decisions without editing them. DN-arena Decision 3 (Poisson drive from coverage)
 stays the rule for that milestone's version 1; this ADR is the input of a later
 version.
@@ -25,7 +25,7 @@ photoreceptor drive lowers it in the dark).
 In the one experiment that drove spiking photoreceptors through the eye, T4/T5 version 1,
 contrast did not pass the lamina: in a post-verdict exploratory count the photoreceptors
 fired about 370,000 spikes per sweep and the lamina stayed silent, because the
-photoreceptor → LMC synapses are inhibitory onto spiking LMCs ([eye](reference/eye.md)). Later
+photoreceptor → LMC synapses are inhibitory onto spiking LMCs ([eye](../reference/eye.md)). Later
 versions made the pathway graded:
 
 - photoreceptors receive a real-valued drive in Poisson-kick units, `gain × (1 −
@@ -41,7 +41,7 @@ coverage)` (`eye.photoreceptor_kicks`), with the gain set so full light holds a
 Version 4's result is **robust: neither**. The graded path carries the edge into the
 medulla: swings grow to about ±10 mV at gain 16 with LMC release 200 Hz. T4 fires
 only at medulla release 200 Hz, without the ON/OFF split or the measured direction;
-T5 is silent ([eye](reference/eye.md), version 4). Graded transport is not visual selectivity.
+T5 is silent ([eye](../reference/eye.md), version 4). Graded transport is not visual selectivity.
 
 `CpuRuntime` already runs `Graded` and per-neuron `Membrane`, and its checkpoints
 cover graded state (release ring, voltage sums). What it lacks is a real-valued input;

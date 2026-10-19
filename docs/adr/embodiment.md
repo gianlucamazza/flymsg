@@ -20,7 +20,7 @@ M0 is an executable coupling fixture. It consumes an explicit stream of syntheti
 | `SensorSample` | End-of-step timestamp, unique name, value in metres, `world/+x` frame                                                         |
 | `Trace`        | Provenance, clock, decoder/encoder maps, control commands, every body state, every sensor sample and generated feedback event |
 
-Fixture `bodyId`s are synthetic. A run on MaleCNS would take its motor neurons from [`validation/motor_map.yaml`](../validation/motor_map.yaml), where every row is `unmapped` today, so no real motor command can be issued. The force gain is newtons per event, held for one control interval. It is an engineered decoder, not a neuromuscular inference. The mock sensor encoder emits one event per body tick with positive position; this arbitrary fixture rule is not a biological sensory model. The seed is recorded but the fixture has no random sampling. The supplied dataset digest must match the expected digest; callers are responsible for hashing their actual dataset files.
+Fixture `bodyId`s are synthetic. A run on MaleCNS would take its motor neurons from [`validation/motor_map.yaml`](../../validation/motor_map.yaml), where every row is `unmapped` today, so no real motor command can be issued. The force gain is newtons per event, held for one control interval. It is an engineered decoder, not a neuromuscular inference. The mock sensor encoder emits one event per body tick with positive position; this arbitrary fixture rule is not a biological sensory model. The seed is recorded but the fixture has no random sampling. The supplied dataset digest must match the expected digest; callers are responsible for hashing their actual dataset files.
 
 ## Clock and ordering
 
@@ -65,7 +65,7 @@ This fixture intentionally retains the complete trace in memory and scans the mo
 
 `flymsg.pose` (`flymsg.embodiment/v2`) is the type layer a 3D body and a projected eye will
 share ([#178](https://github.com/gianlucamazza/flymsg/issues/178), gate G1 of the
-[sensorimotor plan](plan/sensorimotor-environment-plan.md)). It wires no body and passes no motor
+[sensorimotor plan](../plan/sensorimotor-environment-plan.md)). It wires no body and passes no motor
 command; M0 v1 above is frozen, and a v1 record never parses as v2 or the reverse.
 
 - **Frames**, right-handed, SI units: `world` (FlyGym's, +z up), `body` (the `c_thorax` root:
@@ -157,15 +157,15 @@ the research workstreams. They overlap, so this table is the one map between the
 research workstreams were filed as R1–R4, which collides with runtime R1–R2 ([#39](https://github.com/gianlucamazza/flymsg/issues/39), [#40](https://github.com/gianlucamazza/flymsg/issues/40));
 here they are research A–D.
 
-| Step                     | Issues                                                                                                                                                                                                                                             | Status                                                                                                                                                                                                                |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Online neural stepping   | E1 [#43](https://github.com/gianlucamazza/flymsg/issues/43), runtime R0 ([runtime](runtime.md))                                                                                                                                                    | done in v0.8.21: `CpuRuntime` runs in blocks through checkpoint and restore and matches `sim.run` bit for bit, also on MaleCNS                                                                                        |
-| Looming stimulus and LC4 | E2 [#44](https://github.com/gianlucamazza/flymsg/issues/44), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34), research A [#49](https://github.com/gianlucamazza/flymsg/issues/49)                                                      | exploratory encoder and runtime bridge in v0.8.23 (below); no LC4 tuning data, no bodyId map. The literature search is in [leads](leads.md); G3 v1 and v2 ran uninformative                                           |
-| Closed loop on the body  | E3 [#45](https://github.com/gianlucamazza/flymsg/issues/45), E5 [#52](https://github.com/gianlucamazza/flymsg/issues/52), M1 [#33](https://github.com/gianlucamazza/flymsg/issues/33), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34) | M1 jump body (v0.8.34) and M2 closed loop with its controls (v0.8.35, below); engineered transducer and decoder; on MaleCNS at realistic scales the feedback changes no input                                         |
-| Motor map                | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research B [#50](https://github.com/gianlucamazza/flymsg/issues/50), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | blocked: `validation/motor_map.yaml` has no mapped row                                                                                                                                                                |
-| Physical body            | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research C [#51](https://github.com/gianlucamazza/flymsg/issues/51), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | NeuroMechFly jump v1 ran and was short; FlyBody stays unselected ([#19](https://github.com/gianlucamazza/flymsg/issues/19)); the motor map stays unmapped                                                             |
-| Falsification            | research D [#53](https://github.com/gianlucamazza/flymsg/issues/53), M4 [#36](https://github.com/gianlucamazza/flymsg/issues/36)                                                                                                                   | song v1 ran uninformative, the no-go ([benchmarks](result/benchmarks.md#pulse-vs-sine-song-across-neuropils-lock-2026-10-14-36)); a version 2 waits on a measured JO band-pass. Calibration results are not that test |
-| Observability            | E6 [#54](https://github.com/gianlucamazza/flymsg/issues/54), workbench [#27](https://github.com/gianlucamazza/flymsg/issues/27)                                                                                                                    | open; run manifests exist (`flymsg.run_manifest/v1`)                                                                                                                                                                  |
+| Step                     | Issues                                                                                                                                                                                                                                             | Status                                                                                                                                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Online neural stepping   | E1 [#43](https://github.com/gianlucamazza/flymsg/issues/43), runtime R0 ([runtime](runtime.md))                                                                                                                                                    | done in v0.8.21: `CpuRuntime` runs in blocks through checkpoint and restore and matches `sim.run` bit for bit, also on MaleCNS                                                                                           |
+| Looming stimulus and LC4 | E2 [#44](https://github.com/gianlucamazza/flymsg/issues/44), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34), research A [#49](https://github.com/gianlucamazza/flymsg/issues/49)                                                      | exploratory encoder and runtime bridge in v0.8.23 (below); no LC4 tuning data, no bodyId map. The literature search is in [leads](../leads.md); G3 v1 and v2 ran uninformative                                           |
+| Closed loop on the body  | E3 [#45](https://github.com/gianlucamazza/flymsg/issues/45), E5 [#52](https://github.com/gianlucamazza/flymsg/issues/52), M1 [#33](https://github.com/gianlucamazza/flymsg/issues/33), M2 [#34](https://github.com/gianlucamazza/flymsg/issues/34) | M1 jump body (v0.8.34) and M2 closed loop with its controls (v0.8.35, below); engineered transducer and decoder; on MaleCNS at realistic scales the feedback changes no input                                            |
+| Motor map                | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research B [#50](https://github.com/gianlucamazza/flymsg/issues/50), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | blocked: `validation/motor_map.yaml` has no mapped row                                                                                                                                                                   |
+| Physical body            | E4 [#46](https://github.com/gianlucamazza/flymsg/issues/46), research C [#51](https://github.com/gianlucamazza/flymsg/issues/51), M3 [#35](https://github.com/gianlucamazza/flymsg/issues/35)                                                      | NeuroMechFly jump v1 ran and was short; FlyBody stays unselected ([#19](https://github.com/gianlucamazza/flymsg/issues/19)); the motor map stays unmapped                                                                |
+| Falsification            | research D [#53](https://github.com/gianlucamazza/flymsg/issues/53), M4 [#36](https://github.com/gianlucamazza/flymsg/issues/36)                                                                                                                   | song v1 ran uninformative, the no-go ([benchmarks](../result/benchmarks.md#pulse-vs-sine-song-across-neuropils-lock-2026-10-14-36)); a version 2 waits on a measured JO band-pass. Calibration results are not that test |
+| Observability            | E6 [#54](https://github.com/gianlucamazza/flymsg/issues/54), workbench [#27](https://github.com/gianlucamazza/flymsg/issues/27)                                                                                                                    | open; run manifests exist (`flymsg.run_manifest/v1`)                                                                                                                                                                     |
 
 ### Objective
 
@@ -238,7 +238,7 @@ failed held-out and silence checks are not evidence for this encoder. Before E2 
 needs LC4/LPLC2 tuning data with uncertainty, a map from samples to MaleCNS sensory bodyIds,
 and a comparison with the constant-rate Poisson drive and a time-shuffled control.
 
-The eye, its column stimuli and the T4/T5 locks are in [eye](reference/eye.md).
+The eye, its column stimuli and the T4/T5 locks are in [eye](../reference/eye.md).
 
 ### A TTM-driven jump of NeuroMechFly (lock, 2026-10-13, #90, #94)
 
@@ -250,7 +250,7 @@ the neutral pose by FlyGym's position actuators except the two mesothoracic coxa
 pitch hinges, which the TTMs drive with a torque equal to the twitch force times a moment
 arm fixed at the stance posture (from the Jacobian at the distal active tarsal segment). The
 body steps at 0.1 ms, the neural step, and the run is open loop.
-[`validation/jump3d.yaml`](../validation/jump3d.yaml), locked before its run, drives LC4 on
+[`validation/jump3d.yaml`](../../validation/jump3d.yaml), locked before its run, drives LC4 on
 both sides, records `TTMn_L` and `TTMn_R`, replays them, and compares the drag-free ballistic
 range at takeoff with Zumstein et al.'s wingless jumps: 28.6 mm (measured, with air) to 37.75
 mm (30.2 mm without the 20% of energy they attribute to air). Six compensations are named;
@@ -264,7 +264,7 @@ leg pushes and the body leaves sideways; one twitch of 101 µN is below the 137 
 on both legs together, that Zumstein et al. compute a jump needs, and the femur-tibia
 extensor is not modelled. The body bridge and the measured actuator work; the jump needs
 both legs together and the TLM, which the model's motor side does not yet have. Outputs:
-`results/jump3d/v1/`. Figure: [drag-free range](img/jump-range.svg).
+`results/jump3d/v1/`. Figure: [drag-free range](../img/jump-range.svg).
 
 **Closed loop (#90).** `jump3d.closed_loop` runs the connectome and the body together under
 the M0 clock rules: integer periods, the body stepping at the neural step (0.1 ms), control
@@ -276,7 +276,7 @@ A test checks that the spikes before the cut equal an open-loop run with the sam
 that none follow the cut. The stimulus is the supplied kicks. Geometric projection from a
 pose onto the columns is `flymsg.optics` (G2): coverage, not a photoreceptor response, and
 the micro-CT → NeuroMechFly registration has no source. T4/T5 v1 is neither and v2–v4 are
-robust neither ([eye](reference/eye.md)).
+robust neither ([eye](../reference/eye.md)).
 
 ### M1 jump body (v0.8.34, #33)
 
@@ -293,7 +293,7 @@ replay.
 `flymsg jump --sim LC4_R --gain-n 2e-5 --mass-kg 1e-6` (seed 0, the battery protocol) gives
 22 `TTMn_R` spikes and takeoff at 18.0 ms; with `--silence DNp01` it gives 7 spikes and
 takeoff at 67.0 ms. Both jump about 10 µm with this arbitrary gain. The body inherits the
-failed silence check of the one-bit protocol ([behavior](result/behavior.md)): silencing the giant
+failed silence check of the one-bit protocol ([behavior](../result/behavior.md)): silencing the giant
 fiber does not stop the jump, and this is not a validated jump mechanism.
 
 ### M2 closed loop (v0.8.35, #34)
@@ -324,14 +324,14 @@ reproduces them; the shuffled input lifts the body at 29 ms. At these scales the
 closed in code and has no measurable effect on the model, and nothing here is a behaviour of
 the fly.
 
-![M1: body height with and without DNp01. M2: input rate, body height and cumulative TTMn_R spikes for the closed, disconnected, replay and shuffled runs; the first three coincide.](img/embodiment.svg)
+![M1: body height with and without DNp01. M2: input rate, body height and cumulative TTMn_R spikes for the closed, disconnected, replay and shuffled runs; the first three coincide.](../img/embodiment.svg)
 
 ### Muscles from MANC (Phase C)
 
 `flymsg muscles` gives each MaleCNS `vnc_motor` neuron the target muscle and match certainty
 that MANC published for its type: Cheong, Eichler, Stürner et al. 2024 (eLife 13:RP96084,
 doi:10.7554/eLife.96084), Supplementary file 3 (see
-[data](reference/data.md#manc-muscles-flymsg-muscles)).
+[data](../reference/data.md#manc-muscles-flymsg-muscles)).
 The join key is the MaleCNS `mancType` annotation, which equals `type` except for `ADNM1 MN`
 and `ADNM2 MN` (MANC `ADNM1`, `ADNM2`). A target that names a body part (`abdomen`,
 `hind leg`, `neck`, `wing`, `haltere` …) is kept as the target but not as a muscle.
@@ -399,13 +399,13 @@ From the research plan of PR #47. A step that lacks its evidence keeps the synth
   back into `CpuRuntime`. Geometric projection from a pose onto the columns is implemented
   (`flymsg.optics`, G2): coverage, not a photoreceptor response. The micro-CT → NeuroMechFly
   head registration has no source, so the real eye stays unqualified. T4/T5 v1 is neither
-  and v2–v4 are robust neither ([eye](reference/eye.md)).
+  and v2–v4 are robust neither ([eye](../reference/eye.md)).
 - `validation/motor_map.yaml`: every real actuator is `unmapped`. 406 of 708 motor neurons
   have a MANC muscle (`flymsg muscles`), but no source maps a muscle to an actuator.
   NeuroMechFly jump v1 ran and was short. FlyBody stays unselected.
-- [behavior](result/behavior.md): the one-bit looming loop cuts the drive and fails the DNp01
+- [behavior](../result/behavior.md): the one-bit looming loop cuts the drive and fails the DNp01
   silence check.
-- [benchmarks](result/benchmarks.md): held-out olfactory specificity and stability fail.
-- [model](model.md): the default model does not gain a mechanism in order to pass a check.
+- [benchmarks](../result/benchmarks.md): held-out olfactory specificity and stability fail.
+- [model](../model.md): the default model does not gain a mechanism in order to pass a check.
   Optional gap junctions, graded release and one plasticity rule stay off unless a lock
   names them.

@@ -4,7 +4,7 @@ Status: experimental implementation merged in #205 on 2026-10-16,
 **not a Quest 2 qualification**. Both complete original surfaces and complete
 original skeletons must pass separately before hardware support is claimed in #177.
 This implements resource scheduling within the accepted
-[observer rendering ADR](../adr-observer-rendering.md); it does not amend that ADR.
+[observer rendering ADR](../adr/adr-observer-rendering.md); it does not amend that ADR.
 
 ## Runtime contract
 
