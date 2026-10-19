@@ -303,3 +303,69 @@ def test_photoreceptor_rate_rejects_a_missing_lmc_target():
             W, np.array([0]), np.array([1, 2]), 20.0, sim.Params()
         )
     assert issubclass(visual_pathway.PathwayError, ValueError)
+
+
+def test_a_supplied_rate_replaces_photoreceptor_rate():
+    W, neurons, lit = _weights(), _neurons(), LIT
+    proto, cfg = _protocol("v4")
+    p = sim.Params()
+    static = visual_pathway.prepare(W, neurons, proto, p)
+    default = visual_pathway.build(static, cfg, proto, lit, p, _dark)
+    same = visual_pathway.build(
+        static,
+        cfg,
+        proto,
+        lit,
+        p,
+        _dark,
+        rate=(default.rate_hz, default.receiving),
+    )
+    _same_graded(same.graded, default.graded)
+    _same_array(same.receiving, default.receiving)
+    assert same.gain == default.gain
+    assert same.residual == default.residual
+    _same_columns(same.anchor, default.anchor)
+    assert visual_pathway.config_hash(static, same) == visual_pathway.config_hash(
+        static, default
+    )
+
+    doubled = default.rate_hz * 2
+    other = visual_pathway.build(
+        static, cfg, proto, lit, p, _dark, rate=(doubled, default.receiving)
+    )
+    n = static.receptors_all.size
+    _same_array(other.graded.rate_hz[:n], np.full(n, doubled))
+    _same_array(other.graded.rate_hz[n:], default.graded.rate_hz[n:])
+    _same_array(other.receiving, default.receiving)
+    assert other.gain == default.gain
+    _same_columns(other.anchor, default.anchor)
+    assert visual_pathway.config_hash(static, other) != visual_pathway.config_hash(
+        static, default
+    )
+
+    bare = sparse.csc_matrix(W.shape, dtype=np.float32)
+    bare_static = visual_pathway.prepare(bare, neurons, proto, p)
+    with pytest.raises(visual_pathway.PathwayError, match="no LMC receives"):
+        visual_pathway.build(bare_static, cfg, proto, lit, p, _dark)
+    supplied = visual_pathway.build(
+        bare_static,
+        cfg,
+        proto,
+        lit,
+        p,
+        _dark,
+        rate=(default.rate_hz, default.receiving),
+    )
+    assert supplied.rate_hz == default.rate_hz
+    _same_array(supplied.receiving, default.receiving)
+    assert supplied.gain == default.gain
+    with pytest.raises(visual_pathway.PathwayError, match="finite"):
+        visual_pathway.build(
+            static,
+            cfg,
+            proto,
+            lit,
+            p,
+            _dark,
+            rate=(float("nan"), default.receiving),
+        )

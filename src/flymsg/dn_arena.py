@@ -1,11 +1,12 @@
 """Synthetic DN arena on the full MaleCNS (issue #263). The YAML file is the lock.
 
 On the full connectome in a closed loop with a kinematic planar body, an engineered
-descending-neuron readout and an engineered photoreceptor drive from a lateral dark
-sphere: whether the intact graph's change in yaw over the locked window lies outside
-the range of 39 degree-preserving shuffles, at every cell of the gain envelope. A
-difference is synthetic, not a biological or connectome-derived mechanism. The run
-builds the loop once, then runs every job.
+descending-neuron readout and the graded visual pathway of T4/T5 version 4, driven
+by a lateral dark sphere: whether the intact graph's change in yaw over the locked
+window lies outside the range of 39 degree-preserving shuffles, at every pathway
+configuration. A difference is synthetic, not a biological or connectome-derived
+mechanism. The run builds the loop once, then runs every job. Version 1 results
+stay with their source commit.
 """
 
 from __future__ import annotations
@@ -33,6 +34,8 @@ from flymsg import (
     pose,
     runstore,
     sim,
+    t4t5,
+    visual_pathway,
 )
 from flymsg.arena import Arena
 from flymsg.dn_decoder import SIDES, TYPES, Decoder
@@ -43,20 +46,16 @@ ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "validation" / "dn_arena.yaml"
 INVENTORY = ROOT / "docs" / "dn-arena-inventory.md"
 
-# version 1 (#263): full MaleCNS, kinematic arena, 3 x 2 gain envelope, 39 wiring-null seeds
-VERSION_HASHES = {1: "9ba9a69c8397fae5c6aa9ee60cd48147d4898110c2dbb22a2d461254b4583aa3"}
+# Version 1 names that source commit (docs/replication.md). The maintainer fills
+# version 2 with the lock's content_sha256; until then the placeholder is not a digest.
+VERSION_HASHES = {
+    1: "9ba9a69c8397fae5c6aa9ee60cd48147d4898110c2dbb22a2d461254b4583aa3",
+    2: "1426386c66041510812bdcd6b3bfebb91d05a0811c5bfe33f9c191f3cd9a3ac7",
+}
 
 _PAIRS = tuple((kind, side) for kind in TYPES for side in SIDES)
 _SETUP = None
-
-
-SHUFFLED = (
-    "closedloop.run's shuffled arm: the open-loop samples of the body held at its reset "
-    "pose, in an order permuted with seed + 1 (7001). With a static sphere every sample "
-    "sees the same scene, so this arm receives the disconnected arm's stimulus and, with "
-    "the shared Poisson seed, its input counts: it is expected to equal the disconnected "
-    "arm, is reported, and does not enter the verdict"
-)
+_HEX = frozenset("0123456789abcdef")
 
 
 class DNArenaError(ValueError):
@@ -74,20 +73,15 @@ def assert_locked(doc: dict | None = None) -> dict:
 
 def assert_matches_code(doc: dict | None = None) -> dict:
     doc = assert_locked() if doc is None else doc
+    if doc["version"] != 2:
+        raise DNArenaError("this module implements DN arena version 2")
     model = doc["model"]
-    for name in (
-        "neural_us",
-        "body_us",
-        "control_us",
-        "latency_us",
-        "duration_us",
-        "input_gap_steps",
-    ):
+    for name in ("neural_us", "body_us", "control_us", "latency_us", "duration_us"):
         if type(model[name]) is not int:
             raise DNArenaError(f"{name} is not an integer")
+    if model["input_encoding"] != "kick_equivalent":
+        raise DNArenaError("input_encoding is not kick_equivalent")
     p = sim.Params()
-    if model["input_gap_steps"] != round(p.t_ref / p.dt):
-        raise DNArenaError("input_gap_steps is not the input dead time")
     if model["neural_us"] != round(p.dt * 1000):
         raise DNArenaError("neural_us is not the model's step")
     if model["params"] != "sim.Params() defaults" or model["dataset"] != "malecns":
@@ -103,41 +97,19 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         raise DNArenaError("duration must be a multiple of the control period")
     _window("score", doc["score"]["window_us"], model["duration_us"], clock.body_us)
     _window("decoder", doc["decoder"]["window_us"], model["duration_us"], clock.body_us)
-    score = doc["score"]
-    if score["metric"] != (
-        "change in unwrapped heading (rad) from 200000 to 1000000 us"
-    ):
-        raise DNArenaError("the heading metric changed")
-    if score["per_cell"] != (
-        "null if the intact change lies within the minimum and maximum of "
-        "the 39 wiring-null changes at that cell (inclusive); difference otherwise"
-    ):
-        raise DNArenaError("the per-cell rule changed")
-    if score["envelope"] != (
-        "robust: <verdict> when every cell has the same verdict; depends otherwise"
-    ):
-        raise DNArenaError("the envelope rule changed")
-    if score["reported"] != (
-        "per cell: intact, disconnected, shuffled, replay, silenced and "
-        "script changes, intact minus script, the wiring-null minimum, "
-        "median and maximum, spikes of the six decoder neurons per arm; "
-        "replay parity is required"
-    ):
-        raise DNArenaError("the reported fields changed")
-    if doc["no_go"] != (
-        "a cell is uninformative when the six decoder neurons fire no spike "
-        "in its intact arm: the readout is then zero and the comparison "
-        "empty. The envelope verdict is uninformative when every cell is"
-    ):
-        raise DNArenaError("the no-go rule changed")
+    _score_ok(doc)
     if doc["arms"] != list(closedloop.ARMS):
         raise DNArenaError("arms are not the closed-loop arms in order")
     wn = doc["controls"]["wiring_null"]
-    if (wn["seed0"], wn["seeds"]) != (7100, 39):
-        raise DNArenaError("wiring-null seeds are not 7100-7138")
+    if (wn["seed0"], wn["seeds"]) != (7300, 39):
+        raise DNArenaError("wiring-null seeds are not 7300-7338")
     if wn["rule"] != (
-        "wiring.shuffle_targets on the MaleCNS edges before building the runtime; "
-        "the intact loop otherwise, at every cell"
+        "wiring.shuffle_targets on the MaleCNS edges, then the intact loop at "
+        "that configuration: the pathway is rebuilt on the shuffled graph by the "
+        "same builder (timing scale and lamina to medulla gain by type, graded "
+        "release by type) and dark-anchored on it; the photoreceptor release rate "
+        "and the drive gain are those of the intact graph, a calibration of the "
+        "stimulus, not of the network"
     ):
         raise DNArenaError("the wiring-null rule changed")
     if doc["controls"]["script"]["rule"] != (
@@ -160,11 +132,8 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     _gains_ok(doc)
     if doc["silenced"] != "the six decoder neurons":
         raise DNArenaError("silenced is not the six decoder neurons")
-    if doc["shuffled"] != SHUFFLED:
-        raise DNArenaError("the shuffled arm's statement changed")
-    if doc["seed"] + 1 != 7001:
-        raise DNArenaError("closedloop permutes the shuffled arm with seed + 1 = 7001")
-    eye_doc, stim, trans = doc["eye"], doc["stimulus"], doc["transducer"]
+    _pathway_ok(doc)
+    eye_doc, stim = doc["eye"], doc["stimulus"]
     if eye_doc["registration"] != (
         "test-only identity, eyemap frame = body frame; "
         "no sourced registration exists (#179)"
@@ -186,14 +155,8 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         raise DNArenaError("the sphere is not static at the fly's left")
     _sphere_ok(stim)
     _body_ok(doc["body"])
-    if trans["rate_full_light_hz"] != 100.0 or trans["rate_rule"] != (
-        "rate = rate_full_light_hz * (1 - coverage of its column); "
-        "a dark sphere lowers it"
-    ):
-        raise DNArenaError("the photoreceptor rate is not 100 Hz full light")
     if (
         eye_doc["registration_evidence"] != "unmapped"
-        or trans["evidence"] != "engineered"
         or stim["evidence"] != "engineered"
         or doc["decoder"]["evidence"] != "engineered"
         or doc["body"]["evidence"] != "synthetic"
@@ -201,7 +164,9 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     ):
         raise DNArenaError("a component status is not the one this loop implements")
     if type(doc["seed"]) is not int:
-        raise DNArenaError("the Poisson seed is not an integer")
+        raise DNArenaError("the seed is not an integer")
+    if type(doc["smoke"]) is not str or not doc["smoke"]:
+        raise DNArenaError("smoke is empty")
     if doc["claim"]["scored"] is not False:
         raise DNArenaError("the claim must not be scored")
     if doc["defaults_changed"] is not False:
@@ -216,19 +181,25 @@ def summary(doc: dict | None = None) -> str:
     model, wn = doc["model"], doc["controls"]["wiring_null"]
     return (
         f"dn_arena v{doc['version']} (issue #{doc['issue']}): "
-        f"{len(cells(doc))} cells, {len(doc['arms'])} arms, {wn['seeds']} nulls, "
-        f"seeds {wn['seed0']}-{wn['seed0'] + wn['seeds'] - 1}, "
-        f"duration {model['duration_us']} us"
+        f"{len(configurations(doc))} configurations, {len(doc['arms'])} arms, "
+        f"{wn['seeds']} nulls, seeds {wn['seed0']}-{wn['seed0'] + wn['seeds'] - 1}, "
+        f"duration {model['duration_us']} us, {model['input_encoding']}"
     )
 
 
-def cells(doc: dict) -> list[dict]:
-    """Gain envelope in lock order: yaw outer, forward inner."""
-    dec = doc["decoder"]
+def configurations(doc: dict) -> list[dict]:
+    """The lock's pathway configurations, in order, in the shape `build` expects."""
+    path = doc["pathway"]
     return [
-        {"yaw_gain_deg_s_per_hz": yaw, "forward_gain_mm_s_per_hz": forward}
-        for yaw in dec["yaw_gain_deg_s_per_hz"]
-        for forward in dec["forward_gain_mm_s_per_hz"]
+        {
+            "index": i,
+            "photoreceptor_mv": path["photoreceptor_response_mv"],
+            "lmc_mv": path["lmc_hyperpolarisation_mv"],
+            "lmc_rate_hz": path["lmc_rate_hz"],
+            "medulla_rate_hz": path["medulla_rate_hz"],
+            "lamina_medulla_gain": gain,
+        }
+        for i, gain in enumerate(path["lamina_medulla_gain"])
     ]
 
 
@@ -249,37 +220,99 @@ def neurons(doc: dict) -> dict[int, tuple[str, str]]:
 
 
 def jobs(doc: dict) -> list[dict]:
-    """Arms jobs (replay last), then each cell's wiring-null jobs, then the script."""
+    """Arms job, then that configuration's wiring-null jobs; the script job is last."""
     order = _arm_order()
-    out = []
     wn = doc["controls"]["wiring_null"]
     seeds = range(wn["seed0"], wn["seed0"] + wn["seeds"])
-    for cell in cells(doc):
+    out = []
+    for cfg in configurations(doc):
+        index = cfg["index"]
         out.append(
             {
-                "key": _key("arms", cell),
+                "key": _key("arms", index),
                 "kind": "arms",
-                "cell": cell,
+                "configuration": cfg,
                 "arms": list(order),
             }
         )
         for seed in seeds:
             out.append(
                 {
-                    "key": _key("wiring-null", cell, seed),
+                    "key": _key("wiring-null", index, seed),
                     "kind": "wiring-null",
-                    "cell": cell,
+                    "configuration": cfg,
                     "seed": seed,
                 }
             )
-    out.append({"key": "script", "kind": "script", "cell": None})
+    out.append({"key": "script", "kind": "script"})
     return out
 
 
-def rates(coverage, column_of_input, rate_full_light_hz) -> np.ndarray:
-    """One rate per input: full light times one minus the column's coverage."""
-    cov = np.asarray(coverage, dtype=float)
-    return float(rate_full_light_hz) * (1.0 - cov[np.asarray(column_of_input)])
+def pathway(W, neurons_df, cfg: dict, lit, proto: dict, p: sim.Params, *, rate=None):
+    """`prepare` then `build` on `W`. `dark` is T4/T5 version 4's.
+
+    Zero float32 kicks of shape `(settle_steps, 1)` land on the first
+    photoreceptor, `sim.run` uses `proto["seed"]`, and the anchor is `graded_v[-1]`.
+    `rate`, when given, is the intact graph's `(rate_hz, receiving)`.
+    """
+    try:
+        static = visual_pathway.prepare(W, neurons_df, proto, p)
+
+        def dark(Wc, graded):
+            kicks = np.zeros((static.settle_steps, 1), dtype=np.float32)
+            return sim.run(
+                Wc,
+                static.receptors_all[:1],
+                duration_ms=static.settle_steps * p.dt,
+                p=p,
+                seed=proto["seed"],
+                kicks=kicks,
+                graded=graded,
+                membrane=static.membrane,
+            ).graded_v[-1]
+
+        built = visual_pathway.build(static, cfg, proto, lit, p, dark, rate=rate)
+    except visual_pathway.PathwayError as err:
+        raise DNArenaError(str(err)) from err
+    return static, built
+
+
+def drive(coverage, column_of_input, gain, steps) -> np.ndarray:
+    """float32(gain * (1 - coverage[column])) on every neural step of one body tick.
+
+    The product is float64, then one cast, as `(gain * lit).astype(np.float32)`.
+    """
+    cov = np.asarray(coverage, dtype=np.float64)
+    lit = np.ravel(1.0 - cov[np.asarray(column_of_input)])
+    row = (gain * lit).astype(np.float32)
+    return np.broadcast_to(row, (steps, row.shape[0])).copy()
+
+
+def cpu_runtime(
+    built,
+    input_rows,
+    *,
+    steps: int,
+    p: sim.Params,
+    per_bin: int,
+    trace,
+    silence: bool,
+) -> CpuRuntime:
+    """A fresh kick-equivalent runtime on one anchored pathway. Kicks start empty."""
+    n = int(np.asarray(input_rows).size)
+    return CpuRuntime(
+        built.W,
+        input_rows,
+        steps=steps,
+        kicks=np.zeros((0, n), np.float32),
+        p=p,
+        per_bin=per_bin,
+        trace=trace,
+        silence=trace if silence else None,
+        graded=built.graded,
+        membrane=built.membrane,
+        input_encoding="kick_equivalent",
+    )
 
 
 def heading_rad(record, clock: Clock) -> np.ndarray:
@@ -343,7 +376,7 @@ def verify_records(out, rows: list[dict]) -> None:
 
 
 def verdict(results: list[dict], doc: dict) -> dict:
-    """Per cell, no-go or the inclusive wiring-null range; then the envelope."""
+    """Per configuration: no-go, or the inclusive null range; then the envelope."""
     by: dict[str, dict] = {}
     for row in results:
         if row["key"] in by:
@@ -356,13 +389,15 @@ def verdict(results: list[dict], doc: dict) -> dict:
     ids = [str(body) for body in sorted(neurons(doc))]
     reported = []
     labels = []
-    for cell in cells(doc):
-        arms_row = _take(by, _key("arms", cell))
+    for cfg in configurations(doc):
+        index = cfg["index"]
+        arms_row = _take(by, _key("arms", index))
         if arms_row.get("replay_parity") is not True:
             raise DNArenaError("replay parity is required")
+        digest = _sha256_hex(arms_row.get("pathway_sha256"))
         nulls = np.array(
             [
-                float(_take(by, _key("wiring-null", cell, seed))["yaw_change"])
+                float(_take(by, _key("wiring-null", index, seed))["yaw_change"])
                 for seed in seeds
             ]
         )
@@ -371,17 +406,22 @@ def verdict(results: list[dict], doc: dict) -> dict:
         spikes = per_arm["intact"]["spikes"]
         if set(spikes) != set(ids):
             raise DNArenaError("intact spikes must name the six decoder neurons")
+        lo, hi = float(nulls.min()), float(nulls.max())
         if sum(spikes.values()) == 0:
             label = "uninformative"
-        elif float(nulls.min()) <= intact <= float(nulls.max()):
+        elif lo <= intact <= hi:
             label = "null"
         else:
             label = "difference"
         labels.append(label)
         reported.append(
             {
-                "yaw_gain_deg_s_per_hz": cell["yaw_gain_deg_s_per_hz"],
-                "forward_gain_mm_s_per_hz": cell["forward_gain_mm_s_per_hz"],
+                "index": index,
+                "photoreceptor_mv": cfg["photoreceptor_mv"],
+                "lmc_mv": cfg["lmc_mv"],
+                "lmc_rate_hz": cfg["lmc_rate_hz"],
+                "medulla_rate_hz": cfg["medulla_rate_hz"],
+                "lamina_medulla_gain": cfg["lamina_medulla_gain"],
                 "verdict": label,
                 "intact": intact,
                 "disconnected": float(per_arm["disconnected"]["yaw_change"]),
@@ -390,10 +430,11 @@ def verdict(results: list[dict], doc: dict) -> dict:
                 "silenced": float(per_arm["silenced"]["yaw_change"]),
                 "script": script_yaw,
                 "intact_minus_script": intact - script_yaw,
-                "wiring_null_minimum": float(nulls.min()),
+                "wiring_null_minimum": lo,
                 "wiring_null_median": float(np.median(nulls)),
-                "wiring_null_maximum": float(nulls.max()),
+                "wiring_null_maximum": hi,
                 "spikes": {arm: per_arm[arm]["spikes"] for arm in _arm_order()},
+                "pathway_sha256": digest,
                 "replay_parity": True,
             }
         )
@@ -403,7 +444,7 @@ def verdict(results: list[dict], doc: dict) -> dict:
         envelope = f"robust: {labels[0]}"
     else:
         envelope = "depends"
-    return {"cells": reported, "envelope": envelope}
+    return {"configurations": reported, "envelope": envelope}
 
 
 def run(data_dir, out, workers: int, checkpoint, execution_id: str) -> dict:
@@ -435,9 +476,8 @@ class Setup:
     doc: dict
     clock: Clock
     duration_us: int
-    input_gap_steps: int
     score_window: tuple[int, int]
-    rate_hz: float
+    proto: dict
     evidence: dict
     provenance: pose.Provenance
     neurons: pd.DataFrame
@@ -454,6 +494,7 @@ class Setup:
     sides: tuple[str, ...]
     out: Path
     execution_id: str
+    intact: dict
 
 
 def build(doc, neurons_df, edges, data_dir, out, execution_id: str) -> Setup:
@@ -548,12 +589,11 @@ def build(doc, neurons_df, edges, data_dir, out, execution_id: str) -> Setup:
         doc,
         clock,
         model["duration_us"],
-        model["input_gap_steps"],
         tuple(doc["score"]["window_us"]),
-        float(doc["transducer"]["rate_full_light_hz"]),
+        _proto(t4t5.assert_locked()),
         {
             "registration": doc["eye"]["registration_evidence"],
-            "transducer": doc["transducer"]["evidence"],
+            "transducer": doc["pathway"]["evidence"],
             "motor_map": "unmapped",
             "body": doc["body"]["evidence"],
         },
@@ -577,19 +617,20 @@ def build(doc, neurons_df, edges, data_dir, out, execution_id: str) -> Setup:
         sides,
         out,
         execution_id,
+        {},
     )
 
 
 def _job(packed: tuple) -> list[dict]:
     setup = _resolve()
-    key, kind, yaw, forward, seed = packed
+    key, kind, index, seed = packed
     if kind == "script":
         return [_script_job(setup)]
-    cell = {"yaw_gain_deg_s_per_hz": yaw, "forward_gain_mm_s_per_hz": forward}
+    cfg = configurations(setup.doc)[index]
     if kind == "arms":
-        return [_arms_job(setup, key, cell)]
+        return [_arms_job(setup, key, cfg)]
     if kind == "wiring-null":
-        return [_null_job(setup, key, cell, seed)]
+        return [_null_job(setup, key, cfg, seed)]
     raise DNArenaError(f"unknown job {kind}")
 
 
@@ -604,11 +645,27 @@ def _resolve() -> Setup:
     return _SETUP
 
 
-def _arms_job(setup: Setup, key: str, cell: dict) -> dict:
+def _intact(setup: Setup, cfg: dict):
+    """The intact graph's anchored pathway, once per configuration in this process."""
+    index = cfg["index"]
+    cached = setup.intact.get(index)
+    if cached is None:
+        static, built = pathway(
+            setup.W, setup.neurons, cfg, setup.input_rows, setup.proto, setup.params
+        )
+        cached = (static, built, visual_pathway.config_hash(static, built))
+        setup.intact[index] = cached
+    return cached
+
+
+def _arms_job(setup: Setup, key: str, cfg: dict) -> dict:
+    _static, built, digest = _intact(setup, cfg)
     intact = None
     per_arm = {}
     for arm in _arm_order():
-        record = _run_arm(setup, cell, arm, intact if arm == "replay" else None)
+        record = _run_arm(
+            setup, built, digest, arm, intact if arm == "replay" else None
+        )
         if arm == "replay":
             closedloop.replay_parity(intact, record)
         per_arm[arm] = _closed_summary(setup, record, f"{key}__{arm}")
@@ -620,35 +677,57 @@ def _arms_job(setup: Setup, key: str, cell: dict) -> dict:
     return _result(
         key=key,
         kind="arms",
-        cell=cell,
+        cfg=cfg,
         seed=None,
         yaw_change=None,
         spikes=None,
         record_sha256=None,
         arms=per_arm,
         replay_parity=True,
+        pathway_sha256=digest,
     )
 
 
-def _null_job(setup: Setup, key: str, cell: dict, seed: int) -> dict:
+def _null_job(setup: Setup, key: str, cfg: dict, seed: int) -> dict:
+    """Intact loop on a shuffled graph. Rate and drive gain stay the intact graph's."""
+    _static, intact, _digest = _intact(setup, cfg)
     arena = _body(setup.doc)
-    decoder = _decoder(setup, arena, cell)
+    rate = (intact.rate_hz, intact.receiving)
+    gain = intact.gain
 
     def runtime_from_edges(shuffled):
-        return _runtime(
-            setup, sim.network(setup.neurons, shuffled, setup.params), silence=False
+        weights = sim.network(setup.neurons, shuffled, setup.params)
+        static, built = pathway(
+            weights,
+            setup.neurons,
+            cfg,
+            setup.input_rows,
+            setup.proto,
+            setup.params,
+            rate=rate,
         )
+        digest = visual_pathway.config_hash(static, built)
+        runtime = cpu_runtime(
+            built,
+            setup.input_rows,
+            steps=setup.duration_us // setup.clock.neural_us,
+            p=setup.params,
+            per_bin=setup.clock.control_us // setup.clock.neural_us,
+            trace=setup.traced_rows,
+            silence=False,
+        )
+        return runtime, digest
 
     control = arena_controls.wiring_null(
         arena,
         edges=setup.edges,
         seed=seed,
         runtime_from_edges=runtime_from_edges,
-        decoder=decoder,
+        decoder=_decoder(setup, arena),
         input_ids=setup.input_ids,
         traced_ids=setup.traced_ids,
         stimulus=setup.stimulus,
-        transducer=_transducer(setup),
+        transducer=_transducer(setup, gain),
         compiled=arena.compiled,
         clock=setup.clock,
         duration_us=setup.duration_us,
@@ -657,20 +736,23 @@ def _null_job(setup: Setup, key: str, cell: dict, seed: int) -> dict:
         provenance=setup.provenance,
         optics_config_sha256=setup.optics_hash,
         run_identity_sha256=setup.execution_id,
-        input_gap_steps=setup.input_gap_steps,
+        input_gap_steps=0,
+        input_encoding="kick_equivalent",
     )
     summary_row = _closed_summary(setup, control.record, key, control)
+    digest = control.record.pathway_sha256
     del control
     return _result(
         key=key,
         kind="wiring-null",
-        cell=cell,
+        cfg=cfg,
         seed=seed,
         yaw_change=summary_row["yaw_change"],
         spikes=summary_row["spikes"],
         record_sha256=summary_row["record_sha256"],
         arms=None,
         replay_parity=None,
+        pathway_sha256=digest,
     )
 
 
@@ -690,26 +772,35 @@ def _script_job(setup: Setup) -> dict:
     return _result(
         key="script",
         kind="script",
-        cell=None,
+        cfg=None,
         seed=None,
         yaw_change=change,
         spikes=None,
         record_sha256=digest,
         arms=None,
         replay_parity=None,
+        pathway_sha256=None,
     )
 
 
-def _run_arm(setup: Setup, cell: dict, arm: str, replay):
+def _run_arm(setup: Setup, built, digest: str, arm: str, replay):
     arena = _body(setup.doc)
     return closedloop.run(
-        _runtime(setup, setup.W, silence=(arm == "silenced")),
+        cpu_runtime(
+            built,
+            setup.input_rows,
+            steps=setup.duration_us // setup.clock.neural_us,
+            p=setup.params,
+            per_bin=setup.clock.control_us // setup.clock.neural_us,
+            trace=setup.traced_rows,
+            silence=(arm == "silenced"),
+        ),
         arena,
         input_ids=setup.input_ids,
         traced_ids=setup.traced_ids,
         stimulus=setup.stimulus,
-        transducer=_transducer(setup),
-        decoder=_decoder(setup, arena, cell),
+        transducer=_transducer(setup, built.gain),
+        decoder=_decoder(setup, arena),
         compiled=arena.compiled,
         clock=setup.clock,
         duration_us=setup.duration_us,
@@ -719,43 +810,30 @@ def _run_arm(setup: Setup, cell: dict, arm: str, replay):
         provenance=setup.provenance,
         optics_config_sha256=setup.optics_hash,
         run_identity_sha256=setup.execution_id,
-        input_gap_steps=setup.input_gap_steps,
-        input_encoding="counts",
-        pathway_sha256=None,
+        input_gap_steps=0,
+        input_encoding="kick_equivalent",
+        pathway_sha256=digest,
         silenced_ids=setup.traced_ids if arm == "silenced" else (),
         replay=replay,
     )
 
 
-def _runtime(setup: Setup, W, *, silence: bool) -> CpuRuntime:
-    n = int(setup.input_rows.size)
-    return CpuRuntime(
-        W,
-        setup.input_rows,
-        steps=setup.duration_us // setup.clock.neural_us,
-        kicks=np.zeros((0, n), np.int64),
-        p=setup.params,
-        per_bin=setup.clock.control_us // setup.clock.neural_us,
-        trace=setup.traced_rows,
-        silence=setup.traced_rows if silence else None,
-        input_encoding="counts",
-    )
-
-
-def _decoder(setup: Setup, arena: Arena, cell: dict) -> Decoder:
-    yaw = math.radians(cell["yaw_gain_deg_s_per_hz"])
-    forward = cell["forward_gain_mm_s_per_hz"] / 1000.0
+def _decoder(setup: Setup, arena: Arena) -> Decoder:
+    dec = setup.doc["decoder"]
+    yaw = math.radians(dec["yaw_gain_deg_s_per_hz"])
+    forward = dec["forward_gain_mm_s_per_hz"] / 1000.0
     return Decoder(
         gains={"DNa01": yaw, "DNa02": yaw, "oDN1": forward},
-        window=tuple(setup.doc["decoder"]["window_us"]),
+        window=tuple(dec["window_us"]),
         actuators=arena.actuators,
         clock=setup.clock,
         neurons=neurons(setup.doc),
     )
 
 
-def _transducer(setup: Setup):
-    return lambda coverage: rates(coverage, setup.column_of_input, setup.rate_hz)
+def _transducer(setup: Setup, gain: float):
+    steps = setup.clock.body_us // setup.clock.neural_us
+    return lambda coverage: drive(coverage, setup.column_of_input, gain, steps)
 
 
 def _script_rule(sides, actuators):
@@ -806,8 +884,7 @@ def _spike_counts(record, body_ids: tuple[int, ...]) -> dict[str, int]:
 
 def _store(out: Path, name: str, record) -> str:
     """Write the record's canonical JSON gzipped (mtime 0, so the bytes are stable) and
-    return the sha256 of that JSON. Input counts are mostly zeros: a record is ~100 MB
-    of text and a few MB compressed."""
+    return the sha256 of that JSON."""
     text = record.to_json()
     digest = hashlib.sha256(text.encode()).hexdigest()
     path = out / "records" / f"{name.replace('/', '__')}.json.gz"
@@ -825,29 +902,31 @@ def _result(
     *,
     key,
     kind,
-    cell,
+    cfg,
     seed,
     yaw_change,
     spikes,
     record_sha256,
     arms,
     replay_parity,
+    pathway_sha256,
 ):
     return {
         "key": key,
         "kind": kind,
-        "yaw_gain_deg_s_per_hz": None
-        if cell is None
-        else cell["yaw_gain_deg_s_per_hz"],
-        "forward_gain_mm_s_per_hz": None
-        if cell is None
-        else cell["forward_gain_mm_s_per_hz"],
+        "index": None if cfg is None else cfg["index"],
+        "photoreceptor_mv": None if cfg is None else cfg["photoreceptor_mv"],
+        "lmc_mv": None if cfg is None else cfg["lmc_mv"],
+        "lmc_rate_hz": None if cfg is None else cfg["lmc_rate_hz"],
+        "medulla_rate_hz": None if cfg is None else cfg["medulla_rate_hz"],
+        "lamina_medulla_gain": None if cfg is None else cfg["lamina_medulla_gain"],
         "seed": seed,
         "yaw_change": yaw_change,
         "spikes": spikes,
         "record_sha256": record_sha256,
         "arms": arms,
         "replay_parity": replay_parity,
+        "pathway_sha256": pathway_sha256,
     }
 
 
@@ -862,25 +941,22 @@ def _body(doc: dict) -> Arena:
 
 
 def _pack(job: dict) -> tuple:
-    cell = job["cell"] or {}
+    cfg = job.get("configuration")
     return (
         job["key"],
         job["kind"],
-        cell.get("yaw_gain_deg_s_per_hz"),
-        cell.get("forward_gain_mm_s_per_hz"),
+        None if cfg is None else cfg["index"],
         job.get("seed"),
     )
 
 
-def _key(kind: str, cell: dict | None = None, seed: int | None = None) -> str:
+def _key(kind: str, index: int | None = None, seed: int | None = None) -> str:
     if kind == "script":
         return "script"
-    y = cell["yaw_gain_deg_s_per_hz"]
-    forward = cell["forward_gain_mm_s_per_hz"]
     if kind == "arms":
-        return f"arms/{y:.6g}/{forward:.6g}"
+        return f"arms/{index}"
     if kind == "wiring-null":
-        return f"wiring-null/{y:.6g}/{forward:.6g}/{seed}"
+        return f"wiring-null/{index}/{seed}"
     raise DNArenaError(f"unknown job {kind}")
 
 
@@ -915,11 +991,125 @@ def _window(name: str, window, duration: int, body_us: int) -> None:
 
 def _gains_ok(doc: dict) -> None:
     dec = doc["decoder"]
-    values = (*dec["yaw_gain_deg_s_per_hz"], *dec["forward_gain_mm_s_per_hz"])
-    if not dec["yaw_gain_deg_s_per_hz"] or not dec["forward_gain_mm_s_per_hz"]:
-        raise DNArenaError("the gain envelope is empty")
-    if any(type(v) not in (int, float) or not math.isfinite(v) for v in values):
-        raise DNArenaError("the gain envelope is not finite")
+    for name in ("yaw_gain_deg_s_per_hz", "forward_gain_mm_s_per_hz"):
+        value = dec[name]
+        if type(value) not in (int, float) or not math.isfinite(value):
+            raise DNArenaError(f"{name} is not one finite scalar")
+
+
+def _score_ok(doc: dict) -> None:
+    score = doc["score"]
+    if score["metric"] != (
+        "change in unwrapped heading (rad) from 200000 to 1000000 us"
+    ):
+        raise DNArenaError("the heading metric changed")
+    if score["per_configuration"] != (
+        "null if the intact change lies within the minimum and maximum of "
+        "the 39 wiring-null changes at that configuration (inclusive); "
+        "difference otherwise"
+    ):
+        raise DNArenaError("the per-configuration rule changed")
+    if score["envelope"] != (
+        "robust: <verdict> when every configuration has the same verdict; "
+        "depends otherwise"
+    ):
+        raise DNArenaError("the envelope rule changed")
+    if score["reported"] != (
+        "per configuration: intact, disconnected, shuffled, replay, silenced "
+        "and script changes, intact minus script, the wiring-null minimum, "
+        "median and maximum, spikes of the six decoder neurons per arm, the "
+        "pathway hash of the intact graph; replay parity is required"
+    ):
+        raise DNArenaError("the reported fields changed")
+    if doc["no_go"] != (
+        "a configuration is uninformative when the six decoder neurons fire "
+        "no spike in its intact arm: the readout is then zero and the "
+        "comparison empty. The envelope verdict is uninformative when every "
+        "configuration is"
+    ):
+        raise DNArenaError("the no-go rule changed")
+
+
+def _pathway_ok(doc: dict) -> None:
+    path = doc["pathway"]
+    try:
+        locked = t4t5.assert_locked()
+    except t4t5.T4T5Error as err:
+        raise DNArenaError(str(err)) from err
+    if locked["version"] != 4:
+        raise DNArenaError("T4/T5 is not version 4")
+    if path["t4t5_version"] != 4 or path["t4t5_sha256"] != t4t5.VERSION_HASHES[4]:
+        raise DNArenaError("the pathway is not T4/T5 version 4")
+    _proto(locked)
+    env = locked["protocol"]["envelope"]
+    photo = env["photoreceptor_response_mv"]
+    hyper = env["lmc_hyperpolarisation_mv"]
+    if (
+        type(photo) is not list
+        or len(photo) < 2
+        or path["photoreceptor_response_mv"] != photo[1]
+    ):
+        raise DNArenaError("photoreceptor_response_mv is not the T4/T5 midpoint")
+    if (
+        type(hyper) is not list
+        or len(hyper) < 2
+        or path["lmc_hyperpolarisation_mv"] != hyper[1]
+    ):
+        raise DNArenaError("lmc_hyperpolarisation_mv is not the T4/T5 midpoint")
+    if (
+        type(env["lmc_rate_hz"]) is not list
+        or path["lmc_rate_hz"] not in env["lmc_rate_hz"]
+    ):
+        raise DNArenaError("lmc_rate_hz is not in the T4/T5 envelope")
+    if (
+        type(env["medulla_rate_hz"]) is not list
+        or path["medulla_rate_hz"] not in env["medulla_rate_hz"]
+    ):
+        raise DNArenaError("medulla_rate_hz is not in the T4/T5 envelope")
+    if path["lamina_medulla_gain"] != env["lamina_medulla_gain"]:
+        raise DNArenaError("lamina_medulla_gain is not the T4/T5 list")
+    if path["drive_rule"] != (
+        "drive per input and neural step = float32(gain * (1 - coverage of "
+        "its column)), gain = visual_pathway.photoreceptor_gain("
+        "photoreceptor_response_mv); constant over a body tick, from that "
+        "tick's stimulus sample"
+    ):
+        raise DNArenaError("the drive rule changed")
+    if path["dark_anchor"] != (
+        "once per configuration and graph, open loop, before any closed-loop "
+        "run on that graph: dark_anchor_passes passes of settle_ms in darkness "
+        "(zero drive) through sim.run, exactly as T4/T5 version 4; the five "
+        "arms share the intact graph's anchored pathway, each wiring-null run "
+        "anchors on its own shuffled graph; every loop starts from a fresh "
+        "state with the anchored release curve"
+    ):
+        raise DNArenaError("the dark anchor changed")
+    if path["evidence"] != "engineered":
+        raise DNArenaError("the pathway is not engineered")
+
+
+def _proto(locked: dict) -> dict:
+    """The T4/T5 version 4 fields the builder and the dark anchor read."""
+    protocol = locked["protocol"]
+    names = (
+        "graded_lmc",
+        "graded_medulla",
+        "medulla_mv",
+        "timing",
+        "dark_anchor_passes",
+        "settle_ms",
+        "seed",
+    )
+    try:
+        return {name: protocol[name] for name in names}
+    except KeyError as err:
+        raise DNArenaError(f"T4/T5 protocol is missing {err.args[0]}") from None
+
+
+def _sha256_hex(value) -> str:
+    if type(value) is not str or len(value) != 64 or any(c not in _HEX for c in value):
+        raise DNArenaError("the pathway hash is not sha256")
+    return value
 
 
 def _sphere_ok(stim: dict) -> None:

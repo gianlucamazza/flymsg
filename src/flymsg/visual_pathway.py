@@ -3,6 +3,10 @@
 `prepare` is the configuration-independent part of `t4t5.protocol`; `build` is one
 configuration, including the dark anchor when the caller supplies `dark`. Neither
 function simulates. `config_hash` names the dynamics those two produce.
+
+`build(..., rate=(rate_hz, receiving))` uses that photoreceptor release rate and
+those receiving LMCs instead of `photoreceptor_rate`. Omitted, `build` calls
+`photoreceptor_rate` as before; the drive gain is `photoreceptor_gain` either way.
 """
 
 from __future__ import annotations
@@ -221,6 +225,22 @@ def prepare(
     )
 
 
+def _supplied_rate(rate) -> tuple[float, np.ndarray]:
+    """`(rate_hz, receiving)` in place of `photoreceptor_rate`."""
+    if type(rate) is not tuple or len(rate) != 2:
+        raise PathwayError("rate must be (rate_hz, receiving)")
+    rate_hz, receiving = rate
+    if isinstance(rate_hz, bool) or not isinstance(rate_hz, (int, float, np.floating)):
+        raise PathwayError("rate_hz must be a finite number")
+    rate_r = float(rate_hz)
+    if not np.isfinite(rate_r):
+        raise PathwayError("rate_hz must be a finite number")
+    neurons = np.asarray(receiving)
+    if neurons.ndim != 1 or neurons.dtype.kind not in "iu":
+        raise PathwayError("receiving neurons must be an integer vector")
+    return rate_r, neurons
+
+
 def build(
     static: Static,
     cfg: dict,
@@ -228,10 +248,21 @@ def build(
     lit: np.ndarray,
     p: sim.Params,
     dark: Callable[[sparse.csc_matrix, sim.Graded], np.ndarray],
+    *,
+    rate: tuple[float, np.ndarray] | None = None,
 ) -> Pathway:
     """One configuration. `lit` is the caller's photoreceptors. `dark(W, graded)` returns
-    each graded neuron's settled potential in darkness; this function does not simulate."""
-    rate_r, receiving = photoreceptor_rate(static.W, lit, static.lmc, cfg["lmc_mv"], p)
+    each graded neuron's settled potential in darkness; this function does not simulate.
+
+    `rate`, when given, is `(rate_hz, receiving)` and replaces the `photoreceptor_rate`
+    call. The drive gain stays `photoreceptor_gain(cfg["photoreceptor_mv"], p)`.
+    Omitted, the rate and the receiving LMCs come from `photoreceptor_rate`."""
+    if rate is None:
+        rate_r, receiving = photoreceptor_rate(
+            static.W, lit, static.lmc, cfg["lmc_mv"], p
+        )
+    else:
+        rate_r, receiving = _supplied_rate(rate)
     Wc = static.W_timed
     if "lamina_medulla_gain" in cfg:
         graded_cells = np.concatenate(list(static.medulla_cells.values()))

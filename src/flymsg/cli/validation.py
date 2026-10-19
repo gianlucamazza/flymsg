@@ -521,7 +521,7 @@ def cmd_dn_arena(a, neurons, edges):
             "duration_us": doc["model"]["duration_us"],
         },
         {
-            "poisson": doc["seed"],
+            "seed": doc["seed"],
             "wiring_null_seed0": wn["seed0"],
             "wiring_null_seeds": wn["seeds"],
         },

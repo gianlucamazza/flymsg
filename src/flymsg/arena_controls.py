@@ -1,8 +1,10 @@
 """Script and wiring-null fixture controls (DN-arena ADR Decision 5).
 
-Separate fixture runs. They do not change `closedloop.ARMS` or
-`flymsg.closedloop/v1`. The control name lives in the return value and notes,
-never in `closedloop.Record.arm`.
+Separate fixture runs. They do not change `closedloop.ARMS`. The control name
+lives in the return value and notes, never in `closedloop.Record.arm`. A
+wiring-null embeds the closed-loop record of the encoding it was given
+(`flymsg.closedloop/v1` for `counts`, `flymsg.closedloop/v2` for
+`kick_equivalent`).
 """
 
 from __future__ import annotations
@@ -98,7 +100,7 @@ class ScriptControl:
 class WiringNullControl:
     control: str
     seed: int
-    record: closedloop.Record
+    record: closedloop.Record | closedloop.RecordV2
     stats: dict[str, int]
     notes: dict[str, object]
     schema: str = WIRING_NULL_SCHEMA
@@ -109,7 +111,7 @@ class WiringNullControl:
         if self.control != WIRING_NULL:
             raise ContractError("control must be wiring-null")
         integer(self.seed, "seed")
-        if type(self.record) is not closedloop.Record:
+        if type(self.record) not in (closedloop.Record, closedloop.RecordV2):
             raise ContractError("wiring-null embeds a closed-loop record")
         self.record.validate()
         _stats(self.stats)
@@ -188,7 +190,7 @@ def wiring_null(
     *,
     edges: pd.DataFrame,
     seed: int,
-    runtime_from_edges: Callable[[pd.DataFrame], CpuRuntime],
+    runtime_from_edges: Callable[[pd.DataFrame], tuple[CpuRuntime, str | None]],
     decoder: Callable,
     input_ids: tuple[int, ...],
     traced_ids: tuple[int, ...],
@@ -203,9 +205,17 @@ def wiring_null(
     optics_config_sha256: str,
     run_identity_sha256: str,
     input_gap_steps: int,
+    input_encoding: str,
     **kwargs,
 ) -> WiringNullControl:
-    """Intact `closedloop.run` on a degree-preserving shuffle of `edges`."""
+    """Intact `closedloop.run` on a degree-preserving shuffle of `edges`.
+
+    `runtime_from_edges(shuffled)` returns `(runtime, pathway_sha256)` for the
+    graph it just built. The shuffled edges do not exist until this function
+    permutes them, so the pathway hash is that return value and not a separate
+    argument. `input_encoding` is required and is forwarded with the hash.
+    `None` is the hash of a `counts` run, which has no pathway.
+    """
     if "arm" in kwargs:
         raise ContractError("wiring-null is not a closedloop.Record.arm")
     integer(seed, "seed")
@@ -214,8 +224,14 @@ def wiring_null(
     ):
         raise ContractError("edges need pre, post and weight")
     shuffled, stats = wiring.shuffle_targets(edges, seed)
+    produced = runtime_from_edges(shuffled)
+    if type(produced) is not tuple or len(produced) != 2:
+        raise ContractError("runtime_from_edges must return (runtime, pathway_sha256)")
+    runtime, pathway_sha256 = produced
+    if type(runtime) is not CpuRuntime:
+        raise ContractError("runtime_from_edges must return a CpuRuntime")
     record = closedloop.run(
-        runtime_from_edges(shuffled),
+        runtime,
         body,
         input_ids=input_ids,
         traced_ids=traced_ids,
@@ -232,8 +248,8 @@ def wiring_null(
         optics_config_sha256=optics_config_sha256,
         run_identity_sha256=run_identity_sha256,
         input_gap_steps=input_gap_steps,
-        input_encoding="counts",
-        pathway_sha256=None,
+        input_encoding=input_encoding,
+        pathway_sha256=pathway_sha256,
         **kwargs,
     )
     return WiringNullControl(
