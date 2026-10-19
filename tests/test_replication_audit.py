@@ -2,7 +2,9 @@
 
 import hashlib
 import importlib.util
+import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -106,3 +108,78 @@ def test_historical_dirty_source_is_an_explicit_exception(archive):
     assert report["records"][0]["exceptions"] == [
         "source_tree_not_reconstructible_from_commit"
     ]
+
+
+def test_package_audit_names_exception_categories(archive, monkeypatch):
+    from flymsg import replication_audit as audit
+
+    _module, root, entry = archive
+    other = root / "wd"
+    other.mkdir()
+    monkeypatch.chdir(other)
+    bare = dict(entry)
+    bare["dirty"] = True
+    bare["lock"] = None
+    bare["command"] = ""
+    bare["config"] = None
+    bare["seeds"] = None
+    bare["inputs_sha256"] = None
+    bare["python"] = None
+    bare["flymsg"] = None
+    report = audit.audit(root, [bare])
+    assert report["integrity_passed"]
+    assert report["records"][0]["errors"] == []
+    assert report["records"][0]["exceptions"] == [
+        "source_tree_not_reconstructible_from_commit",
+        "no_versioned_experiment_lock",
+        "missing_command",
+        "missing_config",
+        "missing_seeds",
+        "missing_inputs_sha256",
+        "missing_python",
+        "missing_flymsg",
+    ]
+    missing = dict(entry)
+    missing["source_commit"] = None
+    failed = audit.audit(root, [missing])
+    assert not failed["integrity_passed"]
+    assert failed["records"][0]["errors"] == ["missing_source_commit"]
+
+
+def test_package_audit_stdout_exit_and_exclusive_out(archive, monkeypatch, capsys):
+    from flymsg import replication_audit as audit
+
+    _module, root, entry = archive
+    other = root / "wd"
+    other.mkdir()
+    monkeypatch.chdir(other)
+    index = root / "index.json"
+    index.write_text(json.dumps({"results": [entry]}))
+    monkeypatch.setattr(sys, "argv", ["replication_audit.py"])
+    capsys.readouterr()
+    with pytest.raises(SystemExit) as caught:
+        audit.main(root, index)
+    assert caught.value.code == 0
+    report = audit.audit(root, [entry])
+    text = json.dumps(report, indent=2, sort_keys=True) + "\n"
+    assert capsys.readouterr().out == text
+    bad = dict(entry)
+    bad["outputs_sha256"] = {"run.txt": "0" * 64}
+    bad_index = root / "bad-index.json"
+    bad_index.write_text(json.dumps({"results": [bad]}))
+    with pytest.raises(SystemExit) as caught:
+        audit.main(root, bad_index)
+    assert caught.value.code == 1
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["external_replication"] == "not_run"
+    assert printed["independent_signoff"] is None
+    assert "output_checksum_differs:run.txt" in printed["records"][0]["errors"]
+    out = root / "audit.json"
+    monkeypatch.setattr(sys, "argv", ["replication_audit.py", "--out", str(out)])
+    with pytest.raises(SystemExit) as caught:
+        audit.main(root, index)
+    assert caught.value.code == 0
+    assert out.read_text() == text
+    assert capsys.readouterr().out == f"1 records -> {out}\n"
+    with pytest.raises(FileExistsError):
+        audit.main(root, index)

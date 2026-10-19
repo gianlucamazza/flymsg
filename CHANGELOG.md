@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Module boundaries step 6: archive and index tooling.** Archive, replication index and replication audit move into `flymsg.archive_results`, `flymsg.replication_index` and `flymsg.replication_audit` (`DIRS` unchanged, in the same order). `scripts/archive_results.py`, `scripts/replication_index.py` and `scripts/replication_audit.py` stay the entry points and facades: they keep their globals (`ROOT`, `RUNS`, `RESULTS`, `INDEX`, `DIRS`, `PROTOCOLS`, `SCHEMA`, `MAX_BYTES`) and pass those current values into the package, which takes the repository root explicitly. Parity of generated index bytes, the committed index `--check`, audit stdout and exception categories is checked in this PR.
+
 - **Module boundaries step 7b: plan documents.** The six `plan` catalog documents move to `docs/plan/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. No locks or archived evidence referenced these paths.
 
 - **Graded eye ADR (VEE-1, accepted).** Gianluca Mazza accepted `docs/adr-vee1-graded-eye.md` on 2026-10-19. It decides a real-valued `kick_equivalent` input encoding in `CpuRuntime`, record `flymsg.closedloop/v2` carrying the drive, a visual-pathway builder extracted bit for bit from `t4t5`, dark anchors computed before the loop, host only. It states T4/T5 version 4's `neither` as the main risk. Acceptance authorizes `vee1-1` to `vee1-3`; the `vee1-4` lock needs separate approval. Docs only.
