@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **arena-3 kinematic body.** `flymsg.arena.Arena` is a planar `closedloop.Body`: compiled actuators `yaw` (`rad/s`) and `forward` (`m/s`), B6 v2 `pose.BodyState`, _z_ / roll / pitch as required parameters, `snapshot` / `restore` for checkpoints. Schema stays `flymsg.embodiment/v2`. No decoder, lock, or counted run.
+
 - **arena-2 ActuatorRef units.** `pose.ActuatorRef` now admits `m/s` and `rad/s` in addition to `N`, `N*m` and `rad`. Schema stays `flymsg.embodiment/v2`. Existing records keep parsing. `validation/motor_map.yaml` is unchanged; `pose.command` still refuses every row. No arena body, lock, or run.
 
 - **arena-1 DN inventory.** `docs/dn-arena-inventory.md` names MaleCNS v1.0 bodyIds and sides for the accepted DN-arena ADR: DNa01 and DNa02 by exact `type`; oDN1 as traced `DNg97` via the official synonym `Sapkal 2024: oDN1`; MDN and DNp01 listed only. No gain is chosen. Required types are mapped, so the milestone does not stop on identity. Docs only.
