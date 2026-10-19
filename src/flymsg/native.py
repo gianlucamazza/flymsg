@@ -44,7 +44,8 @@ def export_fixture(
 ) -> dict:
     """Export a fresh initialized CPU runtime; scientific authority stays Python.
     `input_encoding="sparse"` opts into ordered nonzero kicks; dense is the
-    byte-compatible default. See `fixture_bytes`."""
+    byte-compatible default. See `fixture_bytes`. A `kick_equivalent` runtime
+    is refused."""
     raw, meta = fixture_bytes(runtime, edges, input_encoding=input_encoding)
     Path(path).write_bytes(raw)
     return meta
@@ -61,7 +62,13 @@ def fixture_bytes(
     This qualification format is intentionally separate from the run manifest.
     Kicks are converted to double counts, matching the kernel's kick arithmetic.
     `edges` is `edge_chunks(runtime)` when the caller already has it.
+    `kick_equivalent` inputs are host only and are refused.
     """
+    if runtime.input_encoding != "counts":
+        raise NativeCapabilityError(
+            "kick_equivalent inputs are host only; the native and console lanes "
+            "accept counts"
+        )
     if runtime.step != 0:
         raise ValueError("native fixtures require fresh state")
     coupled = runtime._gap[0]

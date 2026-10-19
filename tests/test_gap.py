@@ -25,6 +25,7 @@ def test_refractory_partner_is_clamped_throughout_the_exact_step(conductance, so
         p=p,
         per_bin=1,
         gap=sim.Gap(np.array([0]), np.array([1]), c, solver=solver),
+        input_encoding="counts",
     )
     rt._state["v"][0] = p.v_rest + 5
     rt._state["g"][:] = [conductance, 99.0]
@@ -53,6 +54,7 @@ def test_all_clamped_cells_and_release_at_integer_boundary():
         p=p,
         per_bin=1,
         gap=sim.Gap(np.array([0, 1]), np.array([1, 2]), 0.4),
+        input_encoding="counts",
     )
     rt._state["ref_until"][:] = 2
     rt._state["g"][:] = 3.0
@@ -74,6 +76,7 @@ def test_old_electrical_semantics_are_refused_without_mutating_state(tmp_path):
         kicks=np.zeros((0, 0), dtype=np.int32),
         per_bin=1,
         gap=sim.Gap(np.array([0]), np.array([1]), 0.4),
+        input_encoding="counts",
     )
     path = tmp_path / "checkpoint.npz"
     rt.checkpoint(path)
@@ -186,19 +189,30 @@ def test_gap_runtime_chunks_and_checkpoints_match_the_run(tmp_path):
         W, np.arange(30), duration_ms=steps * p.dt, p=p, kicks=kicks, gap=_gap()
     )
     kw = {"steps": steps, "kicks": kicks, "p": p, "per_bin": 100, "gap": _gap()}
-    rt = CpuRuntime(W, np.arange(30), **kw)
+    rt = CpuRuntime(W, np.arange(30), input_encoding="counts", **kw)
     rt.advance_to(777)
     rt.checkpoint(tmp_path / "c.npz")
-    resumed = CpuRuntime(W, np.arange(30), **kw)
+    resumed = CpuRuntime(W, np.arange(30), input_encoding="counts", **kw)
     resumed.restore(tmp_path / "c.npz")
     for r in (rt, resumed):
         r.advance_to(steps)
         assert np.array_equal(r.result().counts, ref.counts)
-    plain = CpuRuntime(W, np.arange(30), steps=steps, kicks=kicks, p=p, per_bin=100)
+    plain = CpuRuntime(
+        W,
+        np.arange(30),
+        steps=steps,
+        kicks=kicks,
+        p=p,
+        per_bin=100,
+        input_encoding="counts",
+    )
     with pytest.raises(ValueError, match="incompatible"):
         plain.restore(tmp_path / "c.npz")
     with pytest.raises(native.NativeCapabilityError, match="continuous-clamp"):
-        native.export_fixture(rt.__class__(W, np.arange(30), **kw), tmp_path / "f.bin")
+        native.export_fixture(
+            rt.__class__(W, np.arange(30), input_encoding="counts", **kw),
+            tmp_path / "f.bin",
+        )
 
 
 @pytest.mark.parametrize(
@@ -310,11 +324,11 @@ def test_spikelets_and_asymmetry_match_the_reference_bit_for_bit(tmp_path):
         W, np.arange(30), 150, steps * p.dt, None, p, 9, record=np.arange(400), gap=gap
     )
     kw = {"steps": steps, "kicks": kicks, "p": p, "per_bin": 100, "gap": gap}
-    rt = CpuRuntime(W, np.arange(30), **kw)
+    rt = CpuRuntime(W, np.arange(30), input_encoding="counts", **kw)
     rt.advance_to(733)
     assert rt.snapshot()["gap_pulse"].any()  # a spike term is crossing at the boundary
     rt.checkpoint(tmp_path / "c.npz")
-    resumed = CpuRuntime(W, np.arange(30), **kw)
+    resumed = CpuRuntime(W, np.arange(30), input_encoding="counts", **kw)
     resumed.restore(tmp_path / "c.npz")
     for r in (rt, resumed):
         r.advance_to(steps)
@@ -400,6 +414,7 @@ def test_explicit_historical_boundary_mode_remains_distinct():
         kicks=np.zeros((0, 0), dtype=np.int32),
         per_bin=1,
         gap=sim.Gap(np.array([0]), np.array([1]), 5.0, refractory_mode="boundary"),
+        input_encoding="counts",
     )
     rt._state["v"][0] = sim.Params.v_rest + 5
     rt._state["ref_until"][1] = 100
@@ -452,10 +467,10 @@ def test_taylor_solver_matches_the_dense_reference(tmp_path):
         gap=dense,
     )
     kw = {"steps": steps, "kicks": kicks, "p": p, "per_bin": 100, "gap": gap}
-    rt = CpuRuntime(W, np.arange(30), **kw)
+    rt = CpuRuntime(W, np.arange(30), input_encoding="counts", **kw)
     rt.advance_to(733)
     rt.checkpoint(tmp_path / "c.npz")
-    resumed = CpuRuntime(W, np.arange(30), **kw)
+    resumed = CpuRuntime(W, np.arange(30), input_encoding="counts", **kw)
     resumed.restore(tmp_path / "c.npz")
     assert rt._semantics.endswith("flymsg.gap/continuous-clamp-taylor-v1")
     assert rt._gap[2].size == 0  # no dense step matrix is built
@@ -464,8 +479,16 @@ def test_taylor_solver_matches_the_dense_reference(tmp_path):
         assert ref.counts.sum() > 0
         assert np.array_equal(r.result().counts, ref.counts)
         np.testing.assert_allclose(r.snapshot()["v"], rec["v"][-1], rtol=0, atol=1e-4)
-    plain = CpuRuntime(W, np.arange(30), **{**kw, "gap": dense})
+    plain = CpuRuntime(
+        W,
+        np.arange(30),
+        input_encoding="counts",
+        **{**kw, "gap": dense},
+    )
     with pytest.raises(ValueError, match="incompatible"):
         plain.restore(tmp_path / "c.npz")
     with pytest.raises(native.NativeCapabilityError, match="continuous-clamp"):
-        native.export_fixture(CpuRuntime(W, np.arange(30), **kw), tmp_path / "f.bin")
+        native.export_fixture(
+            CpuRuntime(W, np.arange(30), input_encoding="counts", **kw),
+            tmp_path / "f.bin",
+        )

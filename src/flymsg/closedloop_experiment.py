@@ -121,6 +121,7 @@ def runtime(cfg, silenced=False):
         per_bin=clock.control_us // clock.neural_us,
         trace=np.array([1]),
         silence=np.array([1]) if silenced else None,
+        input_encoding="counts",
     )
 
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **vee1-2 runtime input encoding.** `CpuRuntime` takes a required `input_encoding`: `counts` (nonnegative integer kicks, bit for bit with today, `input_counts` unchanged in the checkpoint state) or `kick_equivalent` (nonnegative finite float32 drive, stored widened to float64 so the kernel matches `sim.run`). The encoding is in the checkpoint identity and payload; a different encoding, or an older checkpoint without the field, is refused. Host only: the native and console lanes refuse `kick_equivalent`. No lock, no run.
+
 - **Module boundaries step 6: archive and index tooling.** Archive, replication index and replication audit move into `flymsg.archive_results`, `flymsg.replication_index` and `flymsg.replication_audit` (`DIRS` unchanged, in the same order). `scripts/archive_results.py`, `scripts/replication_index.py` and `scripts/replication_audit.py` stay the entry points and facades: they keep their globals (`ROOT`, `RUNS`, `RESULTS`, `INDEX`, `DIRS`, `PROTOCOLS`, `SCHEMA`, `MAX_BYTES`) and pass those current values into the package, which takes the repository root explicitly. Parity of generated index bytes, the committed index `--check`, audit stdout and exception categories is checked in this PR.
 
 - **Module boundaries step 7b: plan documents.** The six `plan` catalog documents move to `docs/plan/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. No locks or archived evidence referenced these paths.

@@ -176,6 +176,7 @@ def closed_loop(
         kicks=kicks,
         trace=np.array([motor[s] for s in order]),
         per_bin=block,
+        input_encoding="counts",
     )
     fly, sim = build(cfg)
     model, data = sim.mj_model, sim.mj_data

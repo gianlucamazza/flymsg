@@ -51,7 +51,16 @@ def produce(a, parser):
     W = sim.network(neurons, edges, p)
     stim = data.resolve(neurons, "ORN_DM1")
     kicks = sim.poisson_kicks(1357, 100, p.dt, 300, len(stim))
-    rt = CpuRuntime(W, stim, steps=500, kicks=kicks, p=p, per_bin=100, gap=gap)
+    rt = CpuRuntime(
+        W,
+        stim,
+        steps=500,
+        kicks=kicks,
+        p=p,
+        per_bin=100,
+        gap=gap,
+        input_encoding="counts",
+    )
     rt.advance_to(217)
     rt.advance_to(500)
     state = rt.snapshot()

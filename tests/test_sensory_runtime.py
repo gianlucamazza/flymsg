@@ -17,6 +17,7 @@ def _runtime(steps=100):
         steps=steps,
         kicks=np.zeros((0, 1), dtype=np.int64),
         per_bin=10,
+        input_encoding="counts",
     )
 
 

@@ -54,6 +54,7 @@ def fixtures(extensions=("none",)):
                         per_bin=100,
                         trace=np.arange(8),
                         silence=np.array([3]) if silent else None,
+                        input_encoding="counts",
                         **EXTENSIONS[ext],
                     )
                     yield (seed, adapt, silent, ext), oracle

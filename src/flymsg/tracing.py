@@ -100,6 +100,7 @@ def record(
         per_bin=per_bin,
         silence=silence,
         trace=neurons,
+        input_encoding="counts",
     )
     out = {k: [] for k in ("v", "g", "th", "refractory")}
     for t in range(every, steps + 1, every):

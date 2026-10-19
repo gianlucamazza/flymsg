@@ -82,6 +82,7 @@ def oracle(extension: str = "none") -> CpuRuntime:
         p=p,
         per_bin=1000,
         trace=np.arange(8),
+        input_encoding="counts",
         **EXTENSIONS[extension],
     )
 

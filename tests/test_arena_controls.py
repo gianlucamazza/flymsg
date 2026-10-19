@@ -74,6 +74,7 @@ def runtime_from_edges(edges):
         p=params,
         per_bin=CLOCK.control_us // CLOCK.neural_us,
         trace=np.array([1, 2]),
+        input_encoding="counts",
     )
 
 

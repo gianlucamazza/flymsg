@@ -88,6 +88,7 @@ def test_native_rejects_invalid_contract_before_output(
         steps=100,
         kicks=np.ones((100, 1), dtype=np.int64),
         per_bin=100,
+        input_encoding="counts",
     )
     fixture, output = tmp_path / "fixture.bin", tmp_path / "out.bin"
     export_fixture(runtime, fixture)
@@ -110,6 +111,7 @@ def test_fixture_requires_fresh_state_and_valid_output(tmp_path):
         steps=100,
         kicks=np.ones((100, 1), dtype=np.int64),
         per_bin=100,
+        input_encoding="counts",
     )
     fixture = tmp_path / "fixture.bin"
     export_fixture(runtime, fixture)
@@ -138,6 +140,7 @@ def test_native_rejects_a_corrupt_version_2_extension(native_exe, tmp_path, word
             idx=np.array([1, 2, 3]), v_lo=-60.0, span=10.0, rate_hz=[0.0, 100.0, 0.0]
         ),
         gap=sim.Gap(i=np.array([1]), j=np.array([3]), coupling=0.5),
+        input_encoding="counts",
     )
     fixture, output = tmp_path / "fixture.bin", tmp_path / "out.bin"
     export_fixture(runtime, fixture)
@@ -222,6 +225,7 @@ def test_a_native_run_replays_as_a_simulation_result(tmp_path):
         kicks=sim.poisson_kicks(1, 200.0, p.dt, 600, 1),
         p=p,
         per_bin=100,
+        input_encoding="counts",
     )
     fixture = tmp_path / "fixture.bin"
     native.export_fixture(oracle, fixture)
@@ -270,6 +274,7 @@ def _battery_runtimes():
             p=p,
             per_bin=100,
             trace=np.arange(4),
+            input_encoding="counts",
         )
 
 
@@ -600,6 +605,7 @@ def test_sparse_inputs_match_dense_bytes_and_resume(native_exe, tmp_path, extens
         kicks=kicks,
         per_bin=100,
         trace=np.arange(8),
+        input_encoding="counts",
         **options,
     )
     outputs = []
@@ -639,6 +645,7 @@ def test_sparse_inputs_match_dense_bytes_and_resume(native_exe, tmp_path, extens
             kicks=kicks,
             per_bin=100,
             trace=np.arange(8),
+            input_encoding="counts",
             **options,
         )
     assert outputs[0] == outputs[1]
@@ -654,6 +661,7 @@ def test_sparse_export_over_dense_gpu_budget(tmp_path):
         steps=1,
         kicks=np.zeros((1, n), dtype=np.int64),
         per_bin=1,
+        input_encoding="counts",
     )
     # Exercise export sizing without allocating the hypothetical 547 MiB dense
     # input. A broadcast zero view represents exactly those input counts.
@@ -678,7 +686,10 @@ def test_uniform_membrane_keeps_legacy_fixture_bytes(tmp_path):
     membrane = sim.Membrane(np.arange(4), p.tau_m, p.tau_syn, p.v_rest, p.v_th)
     paths = [tmp_path / "plain", tmp_path / "uniform"]
     for path, m in zip(paths, (None, membrane), strict=True):
-        meta = export_fixture(CpuRuntime(W, np.array([0]), membrane=m, **kwargs), path)
+        meta = export_fixture(
+            CpuRuntime(W, np.array([0]), membrane=m, input_encoding="counts", **kwargs),
+            path,
+        )
         assert meta["schema"] == "flymsg.native_fixture/v1"
     assert paths[0].read_bytes() == paths[1].read_bytes()
 
@@ -696,6 +707,7 @@ def test_native_rejects_corrupt_sparse_membrane(native_exe, tmp_path, field):
         per_bin=10,
         kicks=np.ones((10, 1), dtype=np.int64),
         membrane=sim.Membrane(np.array([1]), 10.0, 3.0, -60.0, -45.0),
+        input_encoding="counts",
     )
     fixture, output = tmp_path / "fixture", tmp_path / "output"
     export_fixture(rt, fixture, input_encoding="sparse")
@@ -745,6 +757,7 @@ def test_nonuniform_membrane_matches_sim_run(native_exe, tmp_path, count, encodi
         p=p,
         per_bin=100,
         membrane=membrane,
+        input_encoding="counts",
     )
     fixture, output = tmp_path / "fixture", tmp_path / "output"
     export_fixture(rt, fixture, input_encoding=encoding)
@@ -783,6 +796,7 @@ def test_sparse_block_planning_preserves_steps_and_resume(native_exe, tmp_path):
         kicks=kicks,
         per_bin=100,
         p=sim.Params(),
+        input_encoding="counts",
     )
     fixture, expected, actual = (
         tmp_path / "fixture",

@@ -96,6 +96,7 @@ def runtime():
         p=p,
         per_bin=CLOCK.control_us // CLOCK.neural_us,
         trace=np.array([1]),
+        input_encoding="counts",
     )
 
 

@@ -182,6 +182,7 @@ def respond(W, lc4, lplc2, gf, rv_ms, g4, g2, seed, doc, p) -> dict:
         per_bin=steps,  # one count bin: the readout is the traced potential, not counts
         trace=gf,
         membrane=passive(gf, doc, p),
+        input_encoding="counts",
     )
     v = np.empty((steps, gf.size))
     for k in range(steps):

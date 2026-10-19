@@ -112,17 +112,25 @@ def test_graded_runtime_chunks_and_checkpoints_match_the_run(tmp_path):
         "per_bin": 100,
         "graded": _graded(idx, p),
     }
-    rt = CpuRuntime(W, np.arange(30), **kw)
+    rt = CpuRuntime(W, np.arange(30), input_encoding="counts", **kw)
     rt.advance_to(1234)
     rt.checkpoint(tmp_path / "c.npz")
-    resumed = CpuRuntime(W, np.arange(30), **kw)
+    resumed = CpuRuntime(W, np.arange(30), input_encoding="counts", **kw)
     resumed.restore(tmp_path / "c.npz")
     for r in (rt, resumed):
         r.advance_to(steps)
         out = r.result()
         assert np.array_equal(out.counts, ref.counts)
         assert np.array_equal(out.graded_v, ref.graded_v)
-    plain = CpuRuntime(W, np.arange(30), steps=steps, kicks=kicks, p=p, per_bin=100)
+    plain = CpuRuntime(
+        W,
+        np.arange(30),
+        steps=steps,
+        kicks=kicks,
+        p=p,
+        per_bin=100,
+        input_encoding="counts",
+    )
     with pytest.raises(ValueError, match="incompatible"):
         plain.restore(tmp_path / "c.npz")
     assert "graded_ring" not in plain.snapshot()
@@ -133,10 +141,16 @@ def test_native_fixtures_carry_graded_neurons_as_version_2(tmp_path):
     p = sim.Params()
     kw = {"steps": 100, "kicks": np.zeros((100, 1), dtype=np.int64), "p": p}
     plain = native.export_fixture(
-        CpuRuntime(W, np.array([0]), **kw), tmp_path / "a.bin"
+        CpuRuntime(W, np.array([0]), input_encoding="counts", **kw), tmp_path / "a.bin"
     )
     graded = native.export_fixture(
-        CpuRuntime(W, np.array([0]), graded=_graded(np.array([3, 4]), p), **kw),
+        CpuRuntime(
+            W,
+            np.array([0]),
+            graded=_graded(np.array([3, 4]), p),
+            input_encoding="counts",
+            **kw,
+        ),
         tmp_path / "b.bin",
     )
     assert plain["schema"].endswith("/v1") and graded["schema"].endswith("/v2")
@@ -185,7 +199,15 @@ def test_every_state_bit_matches_the_reference_with_graded_and_gap():
         gap=gap,
     )
     rt = CpuRuntime(
-        W, np.arange(30), steps=steps, kicks=kicks, p=p, per_bin=100, graded=g, gap=gap
+        W,
+        np.arange(30),
+        steps=steps,
+        kicks=kicks,
+        p=p,
+        per_bin=100,
+        graded=g,
+        gap=gap,
+        input_encoding="counts",
     )
     for stop in (1, 7, 500, steps):
         rt.advance_to(stop)

@@ -211,6 +211,7 @@ def test_managed_steps_neural_workload_matches_uninterrupted_bytes(tmp_path):
                     steps=100,
                     per_bin=10,
                     kicks=np.random.default_rng(5 + arm).poisson(0.3, (100, 1)),
+                    input_encoding="counts",
                 )
                 runtime.advance_to(100)
                 return {"counts": pd.DataFrame(runtime.result().counts)}

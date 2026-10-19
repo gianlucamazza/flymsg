@@ -98,6 +98,7 @@ def run_loop(
         p=p,
         per_bin=per,
         trace=np.array([motor]),
+        input_encoding="counts",
     )
     body = JumpBody(mass_kg=mass_kg)
     rng = np.random.default_rng(seed)

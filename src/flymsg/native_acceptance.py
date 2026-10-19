@@ -182,7 +182,7 @@ def run(executable: Path, out: Path, shader: Path | None = None) -> dict:
                 "silence": np.array([3]) if silent else None,
                 **EXTENSIONS[ext],
             }
-            oracle = CpuRuntime(W, np.array([0, 1]), **kwargs)
+            oracle = CpuRuntime(W, np.array([0, 1]), input_encoding="counts", **kwargs)
             fixture, result, checkpoint = (
                 root / "fixture.bin",
                 root / "output.bin",
