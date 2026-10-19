@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Proposed ADR: motor output and proprioceptive return.** `docs/adr/adr-motor-proprioception.md` proposes a NeuroMechFly control inventory separate from FlyBody's, motor rows that keep anatomy (MANC) apart from dynamics, every dynamic parameter required from a lock, torque only through a versioned implementation, articulated observations as a new record beside B6, and receptor inputs that need identity and a sourced transfer. Steps `mp-1` to `mp-5`; the data each link needs is ranked. Docs only; awaits owner acceptance.
+
 - **Closed-loop record serialization.** `Record.to_json` and `RecordV2.to_json` project the record to plain dicts and lists instead of recursive `dataclasses.asdict`. The kick-equivalent drive check still requires an exact Python `float`, then checks finiteness, sign and float32 representability on one array per tick. `dn_arena._store` encodes that canonical text once and reuses the bytes for the sha256 and the gzip (mtime 0). The bytes match `json.dumps(dataclasses.asdict(record), sort_keys=True, separators=(",", ":"))`, the test oracle. No format change.
 
 - **T4/T5 version 4 figure.** `docs/img/t4-spikes.svg` (`figures.t4_spikes`, drawn by `scripts/build_figures.py` from the archived version 4 tables): T4 spikes per configuration on a log axis, 0 at every medulla release of 50 Hz, 93, 35,586 and 350,264 at the three 200/200 Hz configurations DN arena version 2 uses. Linked from the eye and DN arena pages; the DN arena v2 lock is recorded as approved (#284) with its run in progress.
