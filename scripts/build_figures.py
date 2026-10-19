@@ -16,8 +16,10 @@ cell persistence figure, which needs the MaleCNS tables. The sparseness and jump
 read the archives only. Writes docs/img/*.svg. Nothing here changes a result.
 """
 
+import argparse
 import ast
 import json
+import os
 import re
 from pathlib import Path
 
@@ -89,8 +91,8 @@ def embodiment() -> str:
     return figures.embodiment(jump["intact"], jump["dnp01"], loop)
 
 
-def kc() -> str:
-    neurons, edges = data.load(ROOT / "data")
+def kc(data_dir: Path) -> str:
+    neurons, edges = data.load(data_dir)
     p = sim.Params()
     W = sim.network(neurons, edges, p)
     stim = data.resolve(neurons, "ORN_DM1")
@@ -204,8 +206,16 @@ FIGURES = {
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--data",
+        type=Path,
+        default=Path(os.environ.get("FLYMSG_DATA", "data")),
+        help="data dir (env FLYMSG_DATA)",
+    )
+    args = parser.parse_args()
     for name, draw in FIGURES.items():
-        (IMG / name).write_text(draw() + "\n")
+        (IMG / name).write_text((kc(args.data) if draw is kc else draw()) + "\n")
         print(f"docs/img/{name}")
 
 

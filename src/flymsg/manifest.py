@@ -13,8 +13,9 @@ from importlib import metadata
 from pathlib import Path
 
 from flymsg import lock_codec
+from flymsg.paths import repository_root, require_repository_path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PREREG_PATH = ROOT / "validation" / "preregistration.yaml"
 
 SCHEMA = "flymsg.run_manifest/v1"
@@ -30,7 +31,7 @@ def sha256_file(path: Path) -> str:
 
 
 def git_info(root: Path | None = None) -> dict:
-    root = root or ROOT
+    root = require_repository_path(root or ROOT)
     info = {"commit": None, "dirty": None}
     try:
         commit = subprocess.check_output(
@@ -111,7 +112,9 @@ def write(
     out.mkdir(parents=True, exist_ok=True)
     finished = finished_at or datetime.now(UTC)
     try:
-        doc = lock_codec.load_yaml(PREREG_PATH.read_text(encoding="utf-8"))
+        doc = lock_codec.load_yaml(
+            require_repository_path(PREREG_PATH).read_text(encoding="utf-8")
+        )
         prereg_info = {
             "version": doc["version"],
             "content_sha256": doc["content_sha256"],

@@ -12,13 +12,15 @@ import html
 import posixpath
 import re
 import shutil
+from importlib.resources import files
 from pathlib import Path
 
 import markdown
 
 from flymsg import viz
+from flymsg.paths import repository_root, require_repository_path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 REPO = "https://github.com/gianlucamazza/flymsg"
 BLOB = f"{REPO}/blob/main"
 
@@ -226,10 +228,11 @@ def _title(body: str, label: str) -> str:
 
 def build(out: Path, root: Path = ROOT) -> None:
     """Replace ``out`` with the site. ``root`` is the flymsg checkout."""
+    require_repository_path(root)
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
-    shutil.copy(Path(__file__).with_name("pages.css"), out / "style.css")
+    (out / "style.css").write_bytes(files("flymsg").joinpath("pages.css").read_bytes())
     img = root / "docs" / "img"
     if img.is_dir():
         shutil.copytree(img, out / "img")

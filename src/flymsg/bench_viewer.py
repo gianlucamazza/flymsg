@@ -31,8 +31,9 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from flymsg import pages
+from flymsg.paths import repository_root, require_repository_path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 
 # the gallery scenes and the heaviest comparison pages
 SCENES = (
@@ -122,7 +123,7 @@ def shoot(
     output, an error or None, and the mean cores used outside that session meanwhile."""
     busy0, t0 = busy_ticks(Path("/proc/stat").read_text()), time.monotonic()
     proc = subprocess.Popen(
-        ["node", str(ROOT / "scripts" / "shoot.mjs"), *args],
+        ["node", str(require_repository_path(ROOT) / "scripts" / "shoot.mjs"), *args],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -196,7 +197,7 @@ def main() -> None:
             f"{a.cooldown:.0f} s: not an idle machine"
         )
     gl = os.environ.get("GL", "swiftshader")
-    out = ROOT / "runs" / "viewer-bench"
+    out = require_repository_path(ROOT) / "runs" / "viewer-bench"
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{datetime.now(UTC):%Y%m%dT%H%M%SZ}.jsonl"
     with tempfile.TemporaryDirectory() as tmp:

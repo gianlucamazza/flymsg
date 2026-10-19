@@ -40,9 +40,10 @@ from flymsg import (
 from flymsg.arena import Arena
 from flymsg.dn_decoder import SIDES, TYPES, Decoder
 from flymsg.embodiment import Clock
+from flymsg.paths import repository_root, require_repository_path
 from flymsg.runtime import CpuRuntime
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "dn_arena.yaml"
 INVENTORY = ROOT / "docs" / "dn-arena-inventory.md"
 
@@ -118,7 +119,9 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         "from the previous control tick's sample"
     ):
         raise DNArenaError("the script rule changed")
-    if neurons(doc) != _mapped_inventory(INVENTORY.read_text(encoding="utf-8")):
+    if neurons(doc) != _mapped_inventory(
+        require_repository_path(INVENTORY).read_text(encoding="utf-8")
+    ):
         raise DNArenaError("decoder neurons are not the mapped inventory rows")
     if doc["decoder"]["yaw_rule"] != (
         "yaw rad/s = g_yaw * ((DNa01 L - DNa01 R) + (DNa02 L - DNa02 R)) "

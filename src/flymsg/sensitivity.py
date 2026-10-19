@@ -14,8 +14,9 @@ import numpy as np
 import pandas as pd
 
 from flymsg import draws, figures, locks, parallel, sim, validate
+from flymsg.paths import repository_root
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "sensitivity.yaml"
 
 VERSION_HASHES = {

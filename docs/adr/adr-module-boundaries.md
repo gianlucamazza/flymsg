@@ -29,7 +29,7 @@ Concrete boundaries worth improving:
 - Scripts import scripts: console helpers (`scripts/console_bench.py:29`, `:30`),
   Quest transport (`scripts/quest_compare.py:19`) and a dynamic archive import
   (`scripts/replication_index.py:22`). Reused helpers need explicit homes.
-- Exactly 21 package modules use `parents[2]` for root resolution, including
+- Exactly 26 package modules use `parents[2]` for root resolution, including
   `src/flymsg/song.py:33` and `src/flymsg/pages.py:20`. Moving files changes
   resource lookup; defaults such as `load(path=PATH)` capture their original path.
 - Pages has explicit sources/stems (`src/flymsg/pages.py:54`), a global filename
@@ -149,4 +149,4 @@ without moving or promoting historical material.
 | 5   | Merged (#271): `convergence` and `path-metrics` publish through one helper; outputs byte-identical                                                                                                            |
 | 6   | Merged (#273): archive and index tooling importable with explicit roots; index and audit byte-identical                                                                                                       |
 | 7   | Merged: source-aware links (#267), then `plan` (#272), `report` (#275), `reference` (#277), `result` (#278), `adr` (#279); documents named by a lock stay in place; the two `index` documents stay at the top |
-| 8   | Not started: the package still resolves the repository as `parents[2]`                                                                                                                                        |
+| 8   | Roots implemented in the working tree: explicit `FLYMSG_ROOT` or validated source ancestry, packaged CSS/JS/vendor assets, outside-cwd and isolated-wheel tests; optional leaf moves remain deferred          |
