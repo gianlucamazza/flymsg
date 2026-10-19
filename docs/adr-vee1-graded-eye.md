@@ -17,19 +17,22 @@ version.
 `closedloop.run` turns a transducer's rates into Poisson counts and schedules them as
 integer kicks (`closedloop.py`, input phase; record `flymsg.closedloop/v1`,
 `Tick.input_counts`). `CpuRuntime` accepts only nonnegative integer kicks, at
-construction and in `schedule_inputs` (`runtime.py`). A dark object therefore lowers
-the Poisson rate of spiking photoreceptors.
+construction and in `schedule_inputs` (`runtime.py`). The transducer sets how a
+stimulus moves those rates (the synthetic fixture raises its rate with coverage; a
+photoreceptor drive lowers it in the dark).
 
-That drive is known not to carry contrast past the lamina. T4/T5 version 1 drove
-spiking photoreceptors: they fired about 370,000 spikes per sweep and the lamina stayed
-silent, because the photoreceptor → LMC synapses are inhibitory onto spiking LMCs
-([eye](eye.md)). Versions 2–4 made the pathway graded:
+In the one experiment that drove spiking photoreceptors through the eye, T4/T5 version 1,
+contrast did not pass the lamina: in a post-verdict exploratory count the photoreceptors
+fired about 370,000 spikes per sweep and the lamina stayed silent, because the
+photoreceptor → LMC synapses are inhibitory onto spiking LMCs ([eye](eye.md)). Later
+versions made the pathway graded:
 
 - photoreceptors receive a real-valued drive in Poisson-kick units, `gain × (1 −
 coverage)` (`eye.photoreceptor_kicks`), with the gain set so full light holds a
   photoreceptor at a stated depolarization (`t4t5.photoreceptor_gain`);
-- photoreceptors, L1–L3 and Mi1, Tm3, Mi4, Mi9, C3 release graded transmitter
-  (`sim.Graded`, `t4t5.graded_spec`), at release rates calibrated per lock;
+- from version 2, photoreceptors and L1–L3 release graded transmitter (`sim.Graded`,
+  `t4t5.graded_spec`), at release rates calibrated per lock; from version 3, Mi1, Tm3,
+  Mi4, Mi9 and C3 too (`graded_medulla`);
 - version 4 anchors each medulla type's measured range (Groschner et al. 2022 traces)
   at its own settled dark potential over six 200 ms dark passes, scans a lamina →
   medulla gain and sets Behnia et al. 2014's delays through `sim.Membrane`.
@@ -47,20 +50,27 @@ what the closed loop lacks is a record that can carry one.
 
 1. **Real-valued input drive in `CpuRuntime`.** Add an explicit input encoding:
    `counts` (today's nonnegative integer Poisson counts) or `kick_equivalent`
-   (nonnegative finite float64 per step and input, applied by the existing kernel line
-   `v += kick × drive`). The encoding is a required constructor argument, enters the
-   checkpoint identity, and `schedule_inputs` refuses the other encoding's dtype.
-   `counts` stays bit-identical to today.
+   (nonnegative finite values per step and input, applied by the existing kernel line
+   `v += kick × drive`). The drive is the float32 value version 4 delivers
+   (`(gain × light).astype(float32)`, `t4t5.protocol`), stored and applied as that
+   float32 value widened to float64, so the kernel's rounding matches `sim.run`; a
+   higher-precision transduction would be a separate decision. The encoding is a
+   required constructor argument, enters the checkpoint identity, and `schedule_inputs`
+   refuses the other encoding's dtype. `counts` stays bit-identical to today.
 
 2. **Closed-loop record version 2.** `flymsg.closedloop/v2` carries `input_encoding`
    and `Tick.input_drive` (integers under `counts`, finite floats under
    `kick_equivalent`), and binds the visual pathway's configuration hash (graded
    specification, timing, dark anchors) into the run identity. Replay replays the
-   recorded drive; `replay_parity` compares it exactly. Version 1 records keep parsing
+   recorded drive; `replay_parity` compares it exactly. A replay, and a checkpoint
+   resume, refuse before any step when the encoding or the pathway hash differs from
+   the recorded run's (today replay admission checks only clock, length and input ids),
+   with tests for each refusal. Version 1 records keep parsing
    with the version 1 parser and are never rewritten. `closedloop.ARMS` and
    `COMPONENTS` do not change. The transducer of a `kick_equivalent` run returns drive
    per input and step, not a rate; no Poisson draw is made for it, and the input dead
-   time does not apply to it.
+   time (`input_gap_steps`) does not apply to it, while `counts` keeps its dead-time
+   filtering and its resume reconstruction from the recorded counts.
 
 3. **One visual-pathway builder, extracted from `t4t5`.** The configuration, timing
    and dark-anchor preparation now inside `t4t5.protocol` move into an importable
