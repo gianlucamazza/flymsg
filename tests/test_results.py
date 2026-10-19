@@ -110,6 +110,14 @@ def test_managed_archive_keeps_tables_and_verifies_raw_records_in_place(
         (run.output / "records" / "r.json.gz").write_bytes(b"changed")
         with pytest.raises(SystemExit, match="integrity"):
             archive.archive(rel)
+    with runstore.Run(tmp_path / "runs" / "v2", {"fixture": True}) as run:
+        (run.output / "manifest.json").write_text(
+            json.dumps({"schema": "flymsg.run_manifest/v1"})
+        )
+        (run.output / "summary.ckpt.csv").write_text("a\n1\n")
+        run.finalize()
+        with pytest.raises(ValueError, match="integrity"):
+            archive.archive(str(run.output.relative_to(tmp_path / "runs")))
 
 
 def test_archived_attempts_do_not_expose_absolute_local_paths(tmp_path, monkeypatch):

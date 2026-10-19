@@ -92,9 +92,8 @@ def archive(
     for f in files:
         shutil.copy2(f, staged / f.name)
     if complete is not None:
-        names = {f.name for f in files}
         runstore.verify_inventory(
-            staged, {k: v for k, v in complete["artifacts"].items() if k in names}
+            staged, {k: v for k, v in complete["artifacts"].items() if "/" not in k}
         )
     manifest = staged / "manifest.json"
     manifest.write_text(
