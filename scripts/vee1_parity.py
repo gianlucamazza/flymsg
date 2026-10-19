@@ -100,9 +100,7 @@ def _is_dark(kicks, settle_steps: int) -> bool:
         return False
     k = np.asarray(kicks)
     return (
-        k.shape == (settle_steps, 1)
-        and k.dtype == np.float32
-        and bool(np.all(k == 0))
+        k.shape == (settle_steps, 1) and k.dtype == np.float32 and bool(np.all(k == 0))
     )
 
 
