@@ -5,6 +5,8 @@ import gzip
 import hashlib
 import io
 import json
+import math
+import types
 
 import numpy as np
 import pytest
@@ -852,3 +854,43 @@ def test_store_matches_the_previous_encoding(tmp_path):
         expect, blob = previous(record.to_json())
         assert digest == expect
         assert path.read_bytes() == blob
+
+
+def _previous_drive_check(rows) -> str | None:
+    """The per-row checker before the batched one: the oracle for message order."""
+    for row in rows:
+        if not row:
+            continue
+        if set(map(type, row)) != {float} or any(
+            not math.isfinite(v) or v < 0 for v in row
+        ):
+            return "input drive must be a nonnegative finite float"
+        values = np.asarray(row, dtype=np.float64)
+        if not np.array_equal(values, values.astype(np.float32).astype(np.float64)):
+            return "input drive must be exactly representable as float32"
+    return None
+
+
+@pytest.mark.parametrize(
+    "rows",
+    [
+        ((0.1,), (True,)),
+        ((0.1,), (float("nan"),)),
+        ((float("nan"),), (0.1,)),
+        ((True,), (0.1,)),
+        ((0.5,), ("x",)),
+        ((0.1,), (-1.0,)),
+        ((-0.0,), (0.25,)),
+        ((0.5, 0.1), (1.0, 2.0)),
+    ],
+)
+def test_drive_check_reports_the_first_defect_row_by_row(rows):
+    check = closedloop._drive_checker("kick_equivalent")
+    tick = types.SimpleNamespace(input_drive=rows)
+    expected = _previous_drive_check(rows)
+    if expected is None:
+        check(0, tick, len(rows), len(rows[0]))
+    else:
+        with pytest.raises(ContractError) as caught:
+            check(0, tick, len(rows), len(rows[0]))
+        assert str(caught.value) == expected

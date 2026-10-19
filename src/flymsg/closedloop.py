@@ -363,18 +363,28 @@ def _drive_checker(encoding: str):
                 if row and (set(map(type, row)) != {int} or min(row) < 0):
                     raise ContractError("input drive must be an integer >= 0")
             return
-        # Python float exactly: asarray would coerce other number types.
-        for row in rows:
-            if row and set(map(type, row)) != {float}:
-                raise ContractError("input drive must be a nonnegative finite float")
         if not rows or n_inputs == 0:
             return
-        values = np.asarray(rows, dtype=np.float64)
-        if not np.isfinite(values).all() or (values < 0).any():
+        # row by row, the first defect wins: a type other than Python float, then a
+        # non-finite or negative value, then a value float32 does not hold exactly;
+        # the values of rows before the first mistyped one are checked in one array
+        typed = next(
+            (i for i, row in enumerate(rows) if set(map(type, row)) != {float}),
+            len(rows),
+        )
+        values = np.asarray(rows[:typed], dtype=np.float64).reshape(typed, n_inputs)
+        bad_value = ~np.isfinite(values).all(axis=1) | (values < 0).any(axis=1)
+        widened = values.astype(np.float32).astype(np.float64)
+        bad_f32 = (values != widened).any(axis=1)
+        for value, f32 in zip(bad_value, bad_f32, strict=True):
+            if value:
+                raise ContractError("input drive must be a nonnegative finite float")
+            if f32:
+                raise ContractError(
+                    "input drive must be exactly representable as float32"
+                )
+        if typed < len(rows):
             raise ContractError("input drive must be a nonnegative finite float")
-        cast = values.astype(np.float32).astype(np.float64)
-        if not np.array_equal(values, cast):
-            raise ContractError("input drive must be exactly representable as float32")
 
     return check
 
