@@ -383,36 +383,29 @@ def cmd_baselines(a, neurons, edges):
     print(f"report -> {out / 'report.txt'}")
 
 
-def cmd_convergence(a, neurons, edges):
-    """Run the locked timestep convergence check and write every cell and the judgement."""
-    started = datetime.now(UTC)
-    doc = convergence.assert_matches_code()
-    print(convergence.summary(doc))
-    cells = convergence.run(neurons, edges, a.workers, a.checkpoint)
-    out = managed.output(a, Path("runs/convergence") / f"v{doc['version']}")
+def _publish_grid(a, neurons, edges, mod, name: str, key: str, doc, cells, started):
+    """Write the cells, judgement and report of a locked timestep grid check (convergence,
+    path-metrics) and stamp its manifest; `name` is the command, `key` the config prefix."""
+    out = managed.output(a, Path("runs") / name / f"v{doc['version']}")
     out.mkdir(parents=True, exist_ok=True)
     cells.to_csv(out / "cells.csv", index=False)
-    judged = convergence.judge(cells, doc)
+    judged = mod.judge(cells, doc)
     judged.to_csv(out / "judged.csv", index=False)
-    verdict = convergence.verdict(judged, doc)
+    verdict = mod.verdict(judged, doc)
     text = "\n".join(
-        [
-            convergence.summary(doc),
-            judged.to_string(index=False),
-            f"verdict: {verdict}",
-        ]
+        [mod.summary(doc), judged.to_string(index=False), f"verdict: {verdict}"]
     )
     (out / "report.txt").write_text(text + "\n")
     print(text)
     stamp(
         out,
-        "convergence --run",
+        f"{name} --run",
         a,
         neurons,
         edges,
         {
-            "convergence_version": doc["version"],
-            "convergence_sha256": doc["content_sha256"],
+            f"{key}_version": doc["version"],
+            f"{key}_sha256": doc["content_sha256"],
             "grid": doc["grid"],
         },
         {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
@@ -420,6 +413,25 @@ def cmd_convergence(a, neurons, edges):
         {"verdict": verdict},
     )
     print(f"report -> {out / 'report.txt'}")
+
+
+def cmd_convergence(a, neurons, edges):
+    """Run the locked timestep convergence check and write every cell and the judgement."""
+    started = datetime.now(UTC)
+    doc = convergence.assert_matches_code()
+    print(convergence.summary(doc))
+    cells = convergence.run(neurons, edges, a.workers, a.checkpoint)
+    _publish_grid(
+        a,
+        neurons,
+        edges,
+        convergence,
+        "convergence",
+        "convergence",
+        doc,
+        cells,
+        started,
+    )
 
 
 def cmd_path_metrics(a, neurons, edges):
@@ -428,37 +440,17 @@ def cmd_path_metrics(a, neurons, edges):
     doc = path_metrics.assert_matches_code()
     print(path_metrics.summary(doc))
     cells = path_metrics.run(neurons, edges, a.workers, a.checkpoint)
-    out = managed.output(a, Path("runs/path-metrics") / f"v{doc['version']}")
-    out.mkdir(parents=True, exist_ok=True)
-    cells.to_csv(out / "cells.csv", index=False)
-    judged = path_metrics.judge(cells, doc)
-    judged.to_csv(out / "judged.csv", index=False)
-    verdict = path_metrics.verdict(judged, doc)
-    text = "\n".join(
-        [
-            path_metrics.summary(doc),
-            judged.to_string(index=False),
-            f"verdict: {verdict}",
-        ]
-    )
-    (out / "report.txt").write_text(text + "\n")
-    print(text)
-    stamp(
-        out,
-        "path-metrics --run",
+    _publish_grid(
         a,
         neurons,
         edges,
-        {
-            "path_metrics_version": doc["version"],
-            "path_metrics_sha256": doc["content_sha256"],
-            "grid": doc["grid"],
-        },
-        {"seed0": doc["grid"]["seed0"], "seeds": doc["grid"]["seeds"]},
+        path_metrics,
+        "path-metrics",
+        "path_metrics",
+        doc,
+        cells,
         started,
-        {"verdict": verdict},
     )
-    print(f"report -> {out / 'report.txt'}")
 
 
 def cmd_song(a, neurons, edges):
