@@ -51,6 +51,7 @@ PAGES = (
     ("provenance", "docs/provenance.md", "Provenance"),
     ("comparison", "docs/comparison.md", "Comparison"),
     ("dimorphism", "docs/dimorphism.md", "Dimorphism"),
+    ("dn-arena", "docs/dn-arena.md", "DN arena"),
     ("related", "docs/related.md", "Related"),
     ("viz", "docs/viz.md", "3D view"),
     ("vee-qualification", "docs/plan/vee-qualification.md", "VEE qualification"),

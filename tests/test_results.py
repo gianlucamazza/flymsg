@@ -88,6 +88,30 @@ def test_managed_archive_requires_verified_completion(tmp_path, monkeypatch):
             archive.archive(rel)
 
 
+def test_managed_archive_keeps_tables_and_verifies_raw_records_in_place(
+    tmp_path, monkeypatch
+):
+    from flymsg import runstore
+
+    archive = _load("archive_results")
+    monkeypatch.setattr(archive, "RUNS", tmp_path / "runs")
+    monkeypatch.setattr(archive, "RESULTS", tmp_path / "results")
+    with runstore.Run(tmp_path / "runs" / "v1", {"fixture": True}) as run:
+        (run.output / "manifest.json").write_text(
+            json.dumps({"schema": "flymsg.run_manifest/v1"})
+        )
+        (run.output / "t.csv").write_text("a\n1\n")
+        (run.output / "records").mkdir()
+        (run.output / "records" / "r.json.gz").write_bytes(b"raw")
+        run.finalize()
+        rel = str(run.output.relative_to(tmp_path / "runs"))
+        dst = archive.archive(rel)
+        assert sorted(p.name for p in dst.iterdir()) == ["manifest.json", "t.csv"]
+        (run.output / "records" / "r.json.gz").write_bytes(b"changed")
+        with pytest.raises(SystemExit, match="integrity"):
+            archive.archive(rel)
+
+
 def test_archived_attempts_do_not_expose_absolute_local_paths(tmp_path, monkeypatch):
     archive = _load("archive_results")
     monkeypatch.setattr(archive, "ROOT", tmp_path)
