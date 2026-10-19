@@ -92,7 +92,7 @@ The native lane now supports two opt-in fixture extensions. These implement the
 requested input/membrane contract; the original scientific update order and all
 version-1/version-2 fixture bytes stay unchanged. Earlier per-neuron native
 refusals in this document describe the implementation before this update.
-On 2026-10-18 the Series S passed all 120 parity cases and one 1.5M-step full-connectome sparse looming job ([issue resolution](../docs/issue-resolution.md)).
+On 2026-10-18 the Series S passed all 120 parity cases and one 1.5M-step full-connectome sparse looming job ([issue resolution](../docs/report/issue-resolution.md)).
 
 ```python
 export_fixture(runtime, path, input_encoding="sparse")
@@ -169,5 +169,5 @@ once after submission and Signal, and the existing polling/quarantine path raise
 `GpuFault` with GetDeviceRemovedReason in hex. The worker records failed and exits
 before writing a completed result/output for that advance. Earlier batch outputs
 remain evidence. Restart the process to restore; no persistent device setting is
-changed. Use the prospective [GPU fault protocol](../docs/issue-resolution.md#gpu-device-removal--protocol-2026-10-18)
+changed. Use the prospective [GPU fault protocol](../docs/report/issue-resolution.md#gpu-device-removal--protocol-2026-10-18)
 and `scripts/console_gpufault.py`; hardware results remain unmeasured.

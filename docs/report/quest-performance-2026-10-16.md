@@ -3,7 +3,7 @@
 The accepted bounded-error experiment is complete. It demonstrates a useful
 fixed-view reduction, **not a completed interactive or XR performance fix**.
 The default renderer and scientific outputs are unchanged. See the accepted
-[experiment ADR](adr-observer-screen-error.md) for the different fidelity contract.
+[experiment ADR](../adr-observer-screen-error.md) for the different fidelity contract.
 
 ## Completed work
 
@@ -90,14 +90,14 @@ ANDROID_ADB_SERVER_PORT=5038 uv run python scripts/quest_bounded.py \
 
 ## Reviewable artifacts
 
-The [machine-readable report](evidence/device-trials-wifi-2026-10-16.json) links
+The [machine-readable report](../evidence/device-trials-wifi-2026-10-16.json) links
 its checksummed raw archive and independent verifier. Full-size captured pixels
 are available for visual review:
 
-- Dense: [original](evidence/quest-bounded-dense-original-2026-10-16.png),
-  [bounded](evidence/quest-bounded-dense-bounded-2026-10-16.png).
-- Close: [original](evidence/quest-bounded-close-original-2026-10-16.png),
-  [bounded](evidence/quest-bounded-close-bounded-2026-10-16.png).
+- Dense: [original](../evidence/quest-bounded-dense-original-2026-10-16.png),
+  [bounded](../evidence/quest-bounded-dense-bounded-2026-10-16.png).
+- Close: [original](../evidence/quest-bounded-close-original-2026-10-16.png),
+  [bounded](../evidence/quest-bounded-close-bounded-2026-10-16.png).
 
 The retained visual-artifact run `c2205a1` repeats the gain (dense approximately
 182–184 to 62 ms; close approximately 123 to 63 ms). Tiny frozen-pose differences

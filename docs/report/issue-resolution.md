@@ -23,7 +23,7 @@ Merge, local tests, physical qualification and biological evidence are separate 
 No new scored run or tuning is authorized by an incomplete evidence table. Each new
 protocol must identify primary source/accession, file hash/licence, sex/preparation,
 units, cell mapping, uncertainty and measured/inferred/compensatory/unknown status.
-The [existing literature audit](leads.md) distinguishes inaccessible/not-found inputs
+The [existing literature audit](../leads.md) distinguishes inaccessible/not-found inputs
 from a demonstrated absence of measurements; it is not a substitute for data.
 
 | Issues         | Bounded next deliverable                                                                                                                                                                                  | No-go                                                                                                           |
@@ -37,9 +37,9 @@ from a demonstrated absence of measurements; it is not a substitute for data.
 
 Path-metrics v1 fixed the reference dt, the seed partition, the windows and the
 failure and indeterminate rules before the run from `e6a041e`. The verdict is in
-[validation](validation.md#weak-pathway-timestep-metrics-sf2-a-check-not-a-score). It
+[validation](../validation.md#weak-pathway-timestep-metrics-sf2-a-check-not-a-score). It
 does not rewrite convergence v1. The identifiability re-read
-([validation](validation.md#identifiability-re-read-sf2-post-hoc-not-a-score)) is
+([validation](../validation.md#identifiability-re-read-sf2-post-hoc-not-a-score)) is
 post-hoc and scored false. Sensitivity ranges still have to come from evidence records;
 the ±20% `w_syn` factors stay an engineering envelope. Uncertainty propagation still
 retains correlations and mapping uncertainty; absent distributions block a biological
@@ -78,21 +78,21 @@ Until that input exists no new version is written and no recorded result is reru
    MANC type/neuron disagreement (140 of 623) is resolved before any per-neuron use. Without
    a published muscle → actuator pairing `motor_map.command` keeps refusing; NeuroMechFly's
    short jump does not become the missing force.
-6. **Completion (#36, M4).** Follow the [measured JO input design](jo-measured-input-design.md)
-   and [accepted source-boundary ADR](adr-measured-jo-input.md).
+6. **Completion (#36, M4).** Follow the [measured JO input design](../jo-measured-input-design.md)
+   and [accepted source-boundary ADR](../adr-measured-jo-input.md).
    Source acquisition/calibration and sex compatibility remain blocked; a calcium
    band-pass alone is diagnostic. First, a Johnston's organ input with a measured band-pass, or
    tuned to the carrier, on exactly MaleCNS JO-A, JO-B and JO-D. Then a case still eligible
    in the frozen partition, other than song v1. Checked on 2026-10-16: the v1 manifest has
    none left. Its only scored held-out case, ORN_DM1 → DM1_lPN, ran and failed; ORN_V is
    reported and does not decide; no exploratory row is promoted
-   ([benchmarks](benchmarks.md)). A case therefore needs a new manifest version written
+   ([benchmarks](../benchmarks.md)). A case therefore needs a new manifest version written
    before its data, from a source that did not select the model. The Pacheco data are not
    opened to choose the mechanism; a fitted filter and mosquito tuning do not enter. Only a positive outcome
    against unused animal observations closes the project; a documented no-go does not.
-   The [2026-10-17 Baker audit](baker-crossmatch.md) completes named MaleCNS routes
+   The [2026-10-17 Baker audit](../baker-crossmatch.md) completes named MaleCNS routes
    for 12 of 28 classes (AVLP_pr36 still excluded for dimorphism); 14 remain partial
-   and two absent. Root-ID access/updating is verified. The [v2 proposal](plan/m4-v2-proposal.md)
+   and two absent. Root-ID access/updating is verified. The [v2 proposal](../plan/m4-v2-proposal.md)
    records the noncommercial licence scope; remaining sex/input/readout evidence
    and the prospective partition/lock still block scoring. No responses were opened.
 
@@ -111,7 +111,7 @@ NEW_DIRECTORY`. A selectable mode is instrumentation, not a passed hardware tria
 Retain CPU-vs-console end-to-end latency including preparation/upload/download; the
 existing battery does not establish a console throughput advantage.
 
-Quest trials follow [the accepted profile](plan/vee-qualification.md) and
+Quest trials follow [the accepted profile](../plan/vee-qualification.md) and
 [candidate procedure](quest-paged-pipeline.md): complete content first, actual measured
 refresh, p95 ≤ 1.1 frame budgets, p99 ≤ 2 budgets, estimated missed slots ≤ 1%.
 Keep estimates distinct from compositor drops and UI diagnostics from stereo timing.
@@ -231,7 +231,7 @@ are excluded even when the document reports itself visible.
 
 ### Wi-Fi performance and bounded-path experiment — 2026-10-16
 
-The [Wi-Fi investigation](https://github.com/gianlucamazza/flymsg/blob/main/docs/quest-performance-2026-10-16.md)
+The [Wi-Fi investigation](https://github.com/gianlucamazza/flymsg/blob/main/docs/report/quest-performance-2026-10-16.md)
 retains full-scene 4/16/64 MiB geometric/raster oracles, eligible raw cadence,
 excluded attempts and the corrected Device Portal canaries. Three complete dense
 blocks reject 4 MiB (median paired p95 ratio 2.0498). Remaining 16/64 cadence and

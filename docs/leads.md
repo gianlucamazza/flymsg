@@ -233,7 +233,7 @@ stays the rule.
 
 ## Entry-protocol search (2026-10-16, evening)
 
-Three searches against the [entry protocols](issue-resolution.md#entry-protocols-2026-10-16),
+Three searches against the [entry protocols](report/issue-resolution.md#entry-protocols-2026-10-16),
 then an independent agent re-read the claims below in the primary text or repository record.
 No source is admissible: no protocol's input exists. Each row says what is missing. No response
 file of a candidate benchmark was opened.

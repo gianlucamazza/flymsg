@@ -1,13 +1,13 @@
 # Observer rendering qualification
 
-The owner accepted the [rendering ADR](adr-observer-rendering.md) on 2026-10-15.
+The owner accepted the [rendering ADR](../adr-observer-rendering.md) on 2026-10-15.
 Quest 2 remains unqualified. The initial immersive timing result failed; the
 adaptive-controller fixes did not establish that the original workload fits.
 The [current diagnosis](quest-rendering-diagnosis.md) includes a real-device
 trial with every original skeleton loaded and rejected shader experiments.
 Performance remains unresolved; this work must not be described as a lag fix.
 
-The [2026-10-16 Wi-Fi performance follow-up](https://github.com/gianlucamazza/flymsg/blob/main/docs/quest-performance-2026-10-16.md)
+The [2026-10-16 Wi-Fi performance follow-up](https://github.com/gianlucamazza/flymsg/blob/main/docs/report/quest-performance-2026-10-16.md)
 rejects the measured 4 MiB dense candidate and records the owner-accepted
 half-pixel skeleton experiment. That separate fixed-view experiment improves
 serialized desktop work; it is not production integration or XR qualification.
