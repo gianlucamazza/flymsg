@@ -6,7 +6,8 @@ next control tick. Then, per body tick [t, t + body):
 
 1. sample: the body state at t (the last one stepped, never a later one);
 2. stimulus: the world at t projected onto the columns;
-3. input: seeded counts for the neural steps of the tick, recorded;
+3. input: seeded counts, or a `kick_equivalent` drive, for the neural steps of the tick,
+   recorded;
 4. neural: `CpuRuntime` advances to t + body;
 5. physics: the body steps to t + body under the held command.
 
@@ -38,6 +39,8 @@ from flymsg.embodiment import Clock, ContractError, SpikeEvent, integer
 from flymsg.runtime import CpuRuntime
 
 SCHEMA = "flymsg.closedloop/v1"
+SCHEMA_V2 = "flymsg.closedloop/v2"
+ENCODINGS = ("counts", "kick_equivalent")
 PHASES = ("command", "sample", "stimulus", "input", "neural", "physics")
 STATUSES = ("measured", "engineered", "unmapped", "synthetic")
 COMPONENTS = ("registration", "transducer", "motor_map", "body")
@@ -112,6 +115,20 @@ class Tick:
 
 
 @dataclass(frozen=True)
+class TickV2:
+    """One body tick of a version 2 record. `input_drive` replaces `input_counts`."""
+
+    time_us: int
+    commands: tuple[tuple[str, int, float], ...]
+    state: pose.BodyState
+    stimulus: tuple[float, ...]
+    input_drive: tuple[tuple[int | float, ...], ...]
+    spikes: tuple[SpikeEvent, ...]
+    stepped: pose.BodyState
+    contacts: tuple[Contact, ...]
+
+
+@dataclass(frozen=True)
 class Record:
     provenance: pose.Provenance
     clock: Clock
@@ -131,87 +148,157 @@ class Record:
     def validate(self) -> None:
         if self.schema != SCHEMA:
             raise ContractError(f"not a {SCHEMA} record")
-        self.provenance.validate()
-        self.clock.validate()
-        if self.arm not in ARMS:
-            raise ContractError(f"arm must be one of {', '.join(ARMS)}")
-        if any(len(e) != 2 for e in self.evidence) or len(
-            {e[0] for e in self.evidence}
-        ) != len(self.evidence):
-            raise ContractError("evidence must be unique (component, status) pairs")
-        require(dict(self.evidence), self.mode)
-        for name in ("optics_config_sha256", "run_identity_sha256"):
-            _sha256(getattr(self, name), name)
-        if (self.arm == "silenced") != bool(self.silenced_ids):
-            raise ContractError("only the silenced arm names silenced neurons")
-        if not self.input_ids or not self.traced_ids:
-            raise ContractError("a record needs input and traced bodyIds")
-        for v in (*self.input_ids, *self.traced_ids, *self.silenced_ids):
-            integer(v, "bodyId")
-        if not self.ticks:
-            raise ContractError("a record needs at least one tick")
-        c = self.clock
-        end = len(self.ticks) * c.body_us
-        if end % c.control_us:
-            raise ContractError("the record does not end on a control tick")
-        per = c.body_us // c.neural_us
-        columns = len(self.ticks[0].stimulus)
-        last_spike = -1
-        for k, tick in enumerate(self.ticks):
-            t = k * c.body_us
-            if tick.time_us != t:
-                raise ContractError(f"tick {k} is off the body grid")
-            seen = tick.state.time_us
-            if seen % c.body_us or seen >= end:
-                raise ContractError(f"tick {k} read a state off the run")
-            if self.arm != "shuffled" and seen != t:
-                raise ContractError(f"tick {k} did not read the state at its start")
-            if tick.stepped.time_us != t + c.body_us:
-                raise ContractError(f"tick {k} physics is off the body grid")
-            if (
-                self.arm in ("intact", "silenced")
-                and k
-                and tick.state != self.ticks[k - 1].stepped
-            ):
-                raise ContractError(f"tick {k} did not read the last stepped state")
-            if t % c.control_us and tick.commands != self.ticks[k - 1].commands:
-                raise ContractError(
-                    f"tick {k} changed the command between control ticks"
-                )
-            for command in tick.commands:
-                if len(command) != 3:
-                    raise ContractError(f"tick {k} has a malformed command")
-                name, mujoco_id, value = command
-                integer(mujoco_id, "mujoco_id")
-                if type(name) is not str or not name or not _finite(value):
-                    raise ContractError(f"tick {k} has a malformed command")
-            if not columns or len(tick.stimulus) != columns:
-                raise ContractError(f"tick {k} stimulus needs one value per column")
-            if not all(_finite(v) for v in tick.stimulus):
-                raise ContractError(f"tick {k} stimulus is not finite")
-            if len(tick.input_counts) != per or any(
-                len(row) != len(self.input_ids) for row in tick.input_counts
-            ):
-                raise ContractError(f"tick {k} input counts do not fit the tick")
-            for row in tick.input_counts:
-                # the per-value check `integer(v, "input count")`, at C speed per row
-                if row and (set(map(type, row)) != {int} or min(row) < 0):
-                    raise ContractError("input count must be an integer >= 0")
-            for s in tick.spikes:
-                integer(s.time_us, "spike time")
-                if (
-                    s.neuron_id not in self.traced_ids
-                    or not t <= s.time_us < t + c.body_us
-                    or s.time_us % c.neural_us
-                    or s.time_us < last_spike
-                ):
-                    raise ContractError(f"tick {k} has a spike out of place")
-                last_spike = s.time_us
-            _contacts(tick.contacts)
+        _validate_body(self, _check_input_counts)
 
     def to_json(self) -> str:
         self.validate()
         return json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
+
+
+@dataclass(frozen=True)
+class RecordV2:
+    """`flymsg.closedloop/v2`. Version 1 records stay `Record` and are never rewritten."""
+
+    provenance: pose.Provenance
+    clock: Clock
+    arm: str
+    mode: str
+    evidence: tuple[tuple[str, str], ...]
+    optics_config_sha256: str
+    run_identity_sha256: str
+    input_ids: tuple[int, ...]
+    traced_ids: tuple[int, ...]
+    silenced_ids: tuple[int, ...]
+    ticks: tuple[TickV2, ...]
+    input_encoding: str
+    pathway_sha256: str | None
+    schema: str = SCHEMA_V2
+
+    def validate(self) -> None:
+        if self.schema != SCHEMA_V2:
+            raise ContractError(f"not a {SCHEMA_V2} record")
+        if self.input_encoding not in ENCODINGS:
+            raise ContractError("input_encoding must be 'counts' or 'kick_equivalent'")
+        if self.input_encoding == "kick_equivalent":
+            if type(self.pathway_sha256) is not str:
+                raise ContractError("kick_equivalent needs a pathway_sha256")
+            _sha256(self.pathway_sha256, "pathway_sha256")
+        elif self.pathway_sha256 is not None:
+            raise ContractError("counts takes no pathway_sha256")
+        _validate_body(self, _drive_checker(self.input_encoding))
+
+    def to_json(self) -> str:
+        self.validate()
+        return json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
+
+
+def _validate_body(record, check_inputs) -> None:
+    record.provenance.validate()
+    record.clock.validate()
+    if record.arm not in ARMS:
+        raise ContractError(f"arm must be one of {', '.join(ARMS)}")
+    if any(len(e) != 2 for e in record.evidence) or len(
+        {e[0] for e in record.evidence}
+    ) != len(record.evidence):
+        raise ContractError("evidence must be unique (component, status) pairs")
+    require(dict(record.evidence), record.mode)
+    for name in ("optics_config_sha256", "run_identity_sha256"):
+        _sha256(getattr(record, name), name)
+    if (record.arm == "silenced") != bool(record.silenced_ids):
+        raise ContractError("only the silenced arm names silenced neurons")
+    if not record.input_ids or not record.traced_ids:
+        raise ContractError("a record needs input and traced bodyIds")
+    for v in (*record.input_ids, *record.traced_ids, *record.silenced_ids):
+        integer(v, "bodyId")
+    if not record.ticks:
+        raise ContractError("a record needs at least one tick")
+    c = record.clock
+    end = len(record.ticks) * c.body_us
+    if end % c.control_us:
+        raise ContractError("the record does not end on a control tick")
+    per = c.body_us // c.neural_us
+    columns = len(record.ticks[0].stimulus)
+    last_spike = -1
+    n_inputs = len(record.input_ids)
+    for k, tick in enumerate(record.ticks):
+        t = k * c.body_us
+        if tick.time_us != t:
+            raise ContractError(f"tick {k} is off the body grid")
+        seen = tick.state.time_us
+        if seen % c.body_us or seen >= end:
+            raise ContractError(f"tick {k} read a state off the run")
+        if record.arm != "shuffled" and seen != t:
+            raise ContractError(f"tick {k} did not read the state at its start")
+        if tick.stepped.time_us != t + c.body_us:
+            raise ContractError(f"tick {k} physics is off the body grid")
+        if (
+            record.arm in ("intact", "silenced")
+            and k
+            and tick.state != record.ticks[k - 1].stepped
+        ):
+            raise ContractError(f"tick {k} did not read the last stepped state")
+        if t % c.control_us and tick.commands != record.ticks[k - 1].commands:
+            raise ContractError(f"tick {k} changed the command between control ticks")
+        for command in tick.commands:
+            if len(command) != 3:
+                raise ContractError(f"tick {k} has a malformed command")
+            name, mujoco_id, value = command
+            integer(mujoco_id, "mujoco_id")
+            if type(name) is not str or not name or not _finite(value):
+                raise ContractError(f"tick {k} has a malformed command")
+        if not columns or len(tick.stimulus) != columns:
+            raise ContractError(f"tick {k} stimulus needs one value per column")
+        if not all(_finite(v) for v in tick.stimulus):
+            raise ContractError(f"tick {k} stimulus is not finite")
+        check_inputs(k, tick, per, n_inputs)
+        for s in tick.spikes:
+            integer(s.time_us, "spike time")
+            if (
+                s.neuron_id not in record.traced_ids
+                or not t <= s.time_us < t + c.body_us
+                or s.time_us % c.neural_us
+                or s.time_us < last_spike
+            ):
+                raise ContractError(f"tick {k} has a spike out of place")
+            last_spike = s.time_us
+        _contacts(tick.contacts)
+
+
+def _check_input_counts(k, tick, per, n_inputs) -> None:
+    if len(tick.input_counts) != per or any(
+        len(row) != n_inputs for row in tick.input_counts
+    ):
+        raise ContractError(f"tick {k} input counts do not fit the tick")
+    for row in tick.input_counts:
+        # the per-value check `integer(v, "input count")`, at C speed per row
+        if row and (set(map(type, row)) != {int} or min(row) < 0):
+            raise ContractError("input count must be an integer >= 0")
+
+
+def _drive_checker(encoding: str):
+    def check(k, tick, per, n_inputs) -> None:
+        rows = tick.input_drive
+        if len(rows) != per or any(len(row) != n_inputs for row in rows):
+            raise ContractError(f"tick {k} input drive does not fit the tick")
+        if encoding == "counts":
+            for row in rows:
+                if row and (set(map(type, row)) != {int} or min(row) < 0):
+                    raise ContractError("input drive must be an integer >= 0")
+            return
+        for row in rows:
+            if not row:
+                continue
+            if set(map(type, row)) != {float} or any(
+                not math.isfinite(v) or v < 0 for v in row
+            ):
+                raise ContractError("input drive must be a nonnegative finite float")
+            values = np.asarray(row, dtype=np.float64)
+            if not np.array_equal(values, values.astype(np.float32).astype(np.float64)):
+                raise ContractError(
+                    "input drive must be exactly representable as float32"
+                )
+
+    return check
 
 
 def _finite(value) -> bool:
@@ -258,10 +345,62 @@ def _tick(t: dict) -> Tick:
     )
 
 
-def from_json(text: str) -> Record:
-    """Parse a closed-loop record; another schema, an unknown or missing field refuses."""
+_V2_TICK_FIELDS = {
+    "time_us",
+    "commands",
+    "state",
+    "stimulus",
+    "input_drive",
+    "spikes",
+    "stepped",
+    "contacts",
+}
+
+
+def _tick_v2(t: dict) -> TickV2:
+    if set(t) != _V2_TICK_FIELDS:
+        raise ContractError("unknown or missing tick fields")
+    return TickV2(
+        t["time_us"],
+        tuple(tuple(c) for c in t["commands"]),
+        _state(t["state"]),
+        tuple(t["stimulus"]),
+        tuple(tuple(r) for r in t["input_drive"]),
+        tuple(SpikeEvent(**s) for s in t["spikes"]),
+        _state(t["stepped"]),
+        tuple(tuple(c) for c in t["contacts"]),
+    )
+
+
+def from_json(text: str) -> Record | RecordV2:
+    """Parse a closed-loop record; another schema, an unknown or missing field refuses.
+
+    A `flymsg.closedloop/v1` document stays on the version 1 parser and is never
+    rewritten. `flymsg.closedloop/v2` is a separate parser.
+    """
     try:
         d = json.loads(text)
+        if isinstance(d, dict) and d.get("schema") == SCHEMA_V2:
+            if set(d) != {f.name for f in fields(RecordV2)}:
+                raise ContractError("unknown or missing record fields")
+            record = RecordV2(
+                pose.Provenance(**d["provenance"]),
+                Clock(**d["clock"]),
+                d["arm"],
+                d["mode"],
+                tuple(tuple(e) for e in d["evidence"]),
+                d["optics_config_sha256"],
+                d["run_identity_sha256"],
+                tuple(d["input_ids"]),
+                tuple(d["traced_ids"]),
+                tuple(d["silenced_ids"]),
+                tuple(_tick_v2(t) for t in d["ticks"]),
+                d["input_encoding"],
+                d["pathway_sha256"],
+                d["schema"],
+            )
+            record.validate()
+            return record
         if d.get("schema") != SCHEMA:
             raise ContractError(f"not a {SCHEMA} record")
         if set(d) != {f.name for f in fields(Record)}:
@@ -354,12 +493,14 @@ def run(
     optics_config_sha256: str,
     run_identity_sha256: str,
     input_gap_steps: int,
+    input_encoding: str,
+    pathway_sha256: str | None,
     silenced_ids: tuple[int, ...] = (),
-    replay: Record | None = None,
+    replay: Record | RecordV2 | None = None,
     checkpoint_dir: Path | None = None,
     checkpoint_every_us: int | None = None,
     tick_wall_s: list[float] | None = None,
-) -> Record:
+) -> Record | RecordV2:
     """One arm of a closed loop in the ADR order.
 
     Evidence, clock, arm, replay and runtime shape are checked before the body is reset; a
@@ -368,20 +509,32 @@ def run(
     kicks, its inputs in `input_ids` order and `traced_ids` traced (and, for the silenced
     arm, `silenced_ids` silenced: the runtime does not expose it, so the record states what
     the caller declared). `stimulus` must be a pure function of the time and state it is
-    given; `transducer` returns one rate in Hz per input; `decoder` turns delivered spikes
-    into actuator commands.
+    given. `decoder` turns delivered spikes into actuator commands.
+
+    `input_encoding` selects the record, so the version cannot disagree with the drive.
+    ``counts`` keeps the Poisson transducer (one finite rate in Hz per input), takes no
+    pathway hash, and emits `flymsg.closedloop/v1` with the same bytes as before.
+    ``kick_equivalent`` emits
+    `flymsg.closedloop/v2`: the transducer returns the drive for the body tick, a
+    float32 array of shape (body steps, inputs) and not a rate, no Poisson draw is made,
+    and `pathway_sha256` is required. The recorded drive is the float64 widening of that
+    float32. Replaying a version 2 record emits version 2 again.
 
     The kernel adds an input kick to the potential even while that neuron is refractory,
-    so `input_gap_steps` > 0 keeps at most one kick per step and none within that many
-    neural steps of the previous kept one, per input, across body ticks (the rule of
-    `stimulus.dead_time`, applied to the same Poisson draws). 0 keeps the raw counts. The
-    recorded `input_counts` are the counts delivered.
+    so under ``counts`` `input_gap_steps` > 0 keeps at most one kick per step and none
+    within that many neural steps of the previous kept one, per input, across body ticks
+    (the rule of `stimulus.dead_time`, applied to the same Poisson draws). 0 keeps the
+    raw counts. The recorded `input_counts` are the counts delivered. A nonzero gap
+    under ``kick_equivalent`` refuses before any step; that encoding has no dead time.
 
     With `checkpoint_dir`, the loop writes a checkpoint every `checkpoint_every_us` at a
     control tick (runtime, body and loop state, bound by their hashes) and, if the directory
     holds one, resumes from it: the caller passes a fresh runtime and a body of the same
-    construction, and the arguments must be those of the checkpointed run. A resumed run's
-    record equals the uninterrupted one. The body must offer `snapshot(path)` and
+    construction, and the arguments must be those of the checkpointed run. Replay
+    admission and checkpoint resume both refuse before any step when `input_encoding`
+    or `pathway_sha256` differs from the recorded run (a version 1 record is counts
+    with no pathway hash). A resumed run's record equals the uninterrupted one. The
+    body must offer `snapshot(path)` and
     `restore(path)`. The identity binds the run's arguments, not the callables or
     `compiled`: those must be the same and `transducer` and `decoder` stateless, which only
     the caller can ensure.
@@ -393,6 +546,18 @@ def run(
     require(evidence, mode)
     provenance.validate()
     integer(input_gap_steps, "input_gap_steps")
+    if input_encoding not in ENCODINGS:
+        raise ContractError("input_encoding must be 'counts' or 'kick_equivalent'")
+    if input_encoding == "kick_equivalent":
+        if pathway_sha256 is None:
+            raise ContractError("kick_equivalent needs a pathway_sha256")
+        _sha256(pathway_sha256, "pathway_sha256")
+        if input_gap_steps != 0:
+            raise ContractError("input_gap_steps does not apply under kick_equivalent")
+    elif pathway_sha256 is not None:
+        raise ContractError("counts takes no pathway_sha256")
+    if runtime.input_encoding != input_encoding:
+        raise ContractError("the runtime input encoding does not match the run")
     steps = schedule(clock, duration_us)
     if arm not in ARMS:
         raise ContractError(f"arm must be one of {', '.join(ARMS)}")
@@ -412,6 +577,11 @@ def run(
     n_ticks = duration_us // clock.body_us
     if replay is not None:
         replay.validate()
+        recorded_encoding, recorded_pathway = _recorded_input(replay)
+        if input_encoding != recorded_encoding or pathway_sha256 != recorded_pathway:
+            raise ContractError(
+                "the recorded run's input encoding or pathway hash differs"
+            )
         if (
             replay.arm == "replay"
             or replay.clock != clock
@@ -419,6 +589,8 @@ def run(
             or replay.input_ids != tuple(input_ids)
         ):
             raise ContractError("the recorded run does not fit this replay")
+    emit_v2 = input_encoding == "kick_equivalent" or type(replay) is RecordV2
+    record_schema = SCHEMA_V2 if emit_v2 else SCHEMA
     rng = np.random.default_rng(provenance.seed)
     order = np.arange(n_ticks)
     if arm == "shuffled":
@@ -427,7 +599,7 @@ def run(
 
     identity = runstore.digest(
         {
-            "schema": SCHEMA,
+            "schema": record_schema,
             "clock": asdict(clock),
             "duration_us": duration_us,
             "arm": arm,
@@ -437,6 +609,8 @@ def run(
             "ids": [list(input_ids), list(traced_ids), list(silenced_ids)],
             "hashes": [optics_config_sha256, run_identity_sha256],
             "input_gap_steps": input_gap_steps,
+            "input_encoding": input_encoding,
+            "pathway_sha256": pathway_sha256,
             "replay": None if replay is None else runstore.digest(replay.to_json()),
         }
     )
@@ -448,9 +622,19 @@ def run(
             raise ContractError("checkpoints fall on control ticks")
         checkpoint_dir = Path(checkpoint_dir)
     if checkpoint_dir is not None and (checkpoint_dir / DONE).exists():
-        return _finished(checkpoint_dir, identity)
+        return _finished(
+            checkpoint_dir, identity, record_schema, input_encoding, pathway_sha256
+        )
     resumed = (
-        _resume(checkpoint_dir, identity, runtime, body)
+        _resume(
+            checkpoint_dir,
+            identity,
+            runtime,
+            body,
+            record_schema,
+            input_encoding,
+            pathway_sha256,
+        )
         if checkpoint_dir is not None and (checkpoint_dir / LOOP).exists()
         else None
     )
@@ -462,11 +646,13 @@ def run(
     else:
         initial, last, spikes, ticks, rng_state, segments, begin = resumed
         rng.bit_generator.state = rng_state
-    # neural step of each input's last delivered kick, rebuilt from the recorded ticks
-    last_kick = np.full(len(input_ids), -input_gap_steps, dtype=np.int64)
-    for j, tick in enumerate(ticks):
-        rows, cols = np.nonzero(np.asarray(tick.input_counts, dtype=np.int64))
-        last_kick[cols] = np.maximum(last_kick[cols], j * per + rows)
+    # neural step of each input's last delivered kick, rebuilt from the recorded counts
+    if input_encoding == "counts":
+        last_kick = np.full(len(input_ids), -input_gap_steps, dtype=np.int64)
+        for j, tick in enumerate(ticks):
+            values = tick.input_counts if type(tick) is Tick else tick.input_drive
+            rows, cols = np.nonzero(np.asarray(values, dtype=np.int64))
+            last_kick[cols] = np.maximum(last_kick[cols], j * per + rows)
     delivered = 0
     commands: tuple[Command, ...] = ()
     tick_start = time.perf_counter()
@@ -491,6 +677,9 @@ def run(
                     body,
                     t,
                     (initial, last, spikes, ticks, rng.bit_generator.state, segments),
+                    record_schema,
+                    input_encoding,
+                    pathway_sha256,
                 )
             eligible = delivered
             while (
@@ -521,22 +710,47 @@ def run(
                         "the stimulus needs one finite value per column"
                     )
         elif step.phase == "input":
-            if replay is not None:
-                counts = np.asarray(replay.ticks[k].input_counts, dtype=np.int64)
+            if input_encoding == "kick_equivalent":
+                if replay is not None:
+                    drive = _as_float32(replay.ticks[k].input_drive)
+                else:
+                    drive = np.asarray(transducer(stim))
+                    if (
+                        drive.dtype != np.float32
+                        or drive.shape != (per, len(input_ids))
+                        or not np.isfinite(drive).all()
+                        or bool((drive < 0).any())
+                    ):
+                        raise ContractError(
+                            "the transducer must give a nonnegative finite float32 "
+                            "drive per step and input"
+                        )
+                drive_rows = _float_rows(drive)
+                _adapter(runtime.schedule_inputs, drive, what="runtime")
             else:
-                rates = np.asarray(transducer(stim), dtype=float)
-                if rates.shape != (len(input_ids),) or not (
-                    np.isfinite(rates).all() and (rates >= 0).all()
-                ):
-                    raise ContractError(
-                        "the transducer must give one finite rate >= 0 per input"
+                if replay is not None:
+                    rows = (
+                        replay.ticks[k].input_drive
+                        if type(replay) is RecordV2
+                        else replay.ticks[k].input_counts
                     )
-                counts = rng.poisson(
-                    rates * clock.neural_us / 1e6, (per, len(input_ids))
-                )
-                if input_gap_steps:
-                    counts = _dead_time(counts, k * per, last_kick, input_gap_steps)
-            _adapter(runtime.schedule_inputs, counts, what="runtime")
+                    counts = np.asarray(rows, dtype=np.int64)
+                else:
+                    rates = np.asarray(transducer(stim), dtype=float)
+                    if rates.shape != (len(input_ids),) or not (
+                        np.isfinite(rates).all() and (rates >= 0).all()
+                    ):
+                        raise ContractError(
+                            "the transducer must give one finite rate >= 0 per input"
+                        )
+                    counts = rng.poisson(
+                        rates * clock.neural_us / 1e6, (per, len(input_ids))
+                    )
+                    if input_gap_steps:
+                        counts = _dead_time(counts, k * per, last_kick, input_gap_steps)
+                if emit_v2:
+                    drive_rows = tuple(map(tuple, counts.tolist()))
+                _adapter(runtime.schedule_inputs, counts, what="runtime")
         elif step.phase == "neural":
             start = k * per
             _adapter(runtime.advance_to, start + per, what="runtime")
@@ -553,34 +767,58 @@ def run(
                 or state.time_us != t + clock.body_us
             ):
                 raise ContractError("the body returned a state off the body grid")
-            ticks.append(
-                Tick(
-                    t,
-                    tuple((a.name, a.mujoco_id, v) for a, v in commands),
-                    seen,
-                    stim,
-                    tuple(map(tuple, counts.tolist())),
-                    tuple(new),
-                    state,
-                    _contacts(contacts),
+            held = tuple((a.name, a.mujoco_id, v) for a, v in commands)
+            touched = _contacts(contacts)
+            if emit_v2:
+                ticks.append(
+                    TickV2(t, held, seen, stim, drive_rows, tuple(new), state, touched)
                 )
-            )
+            else:
+                ticks.append(
+                    Tick(
+                        t,
+                        held,
+                        seen,
+                        stim,
+                        tuple(map(tuple, counts.tolist())),
+                        tuple(new),
+                        state,
+                        touched,
+                    )
+                )
             last = state
             if tick_wall_s is not None:
                 tick_wall_s.append(time.perf_counter() - tick_start)
-    record = Record(
-        provenance,
-        clock,
-        arm,
-        mode,
-        tuple(sorted(evidence.items())),
-        optics_config_sha256,
-        run_identity_sha256,
-        tuple(input_ids),
-        tuple(traced_ids),
-        tuple(silenced_ids),
-        tuple(ticks),
-    )
+    if emit_v2:
+        record = RecordV2(
+            provenance,
+            clock,
+            arm,
+            mode,
+            tuple(sorted(evidence.items())),
+            optics_config_sha256,
+            run_identity_sha256,
+            tuple(input_ids),
+            tuple(traced_ids),
+            tuple(silenced_ids),
+            tuple(ticks),
+            input_encoding,
+            pathway_sha256,
+        )
+    else:
+        record = Record(
+            provenance,
+            clock,
+            arm,
+            mode,
+            tuple(sorted(evidence.items())),
+            optics_config_sha256,
+            run_identity_sha256,
+            tuple(input_ids),
+            tuple(traced_ids),
+            tuple(silenced_ids),
+            tuple(ticks),
+        )
     record.validate()
     if checkpoint_dir is not None:
         # a finished run answers a rerun with its record, never by computing again
@@ -588,8 +826,10 @@ def run(
         runstore.atomic_json(
             checkpoint_dir / DONE,
             {
-                "schema": SCHEMA + "/done",
+                "schema": record_schema + "/done",
                 "identity": identity,
+                "input_encoding": input_encoding,
+                "pathway_sha256": pathway_sha256,
                 "record": json.loads(record.to_json()),
             },
         )
@@ -611,7 +851,9 @@ def _fsync(path: Path) -> None:
         os.fsync(stream.fileno())
 
 
-def _checkpoint(directory, identity, runtime, body, time_us, loop) -> list:
+def _checkpoint(
+    directory, identity, runtime, body, time_us, loop, record_schema, encoding, pathway
+) -> list:
     """Write the runtime, the body and the ticks since the previous checkpoint under names
     of this tick, flush them, then the loop state that binds them by hash; files no loop
     state names go only after the new one is in place. Returns the tick segments so far."""
@@ -634,8 +876,10 @@ def _checkpoint(directory, identity, runtime, body, time_us, loop) -> list:
     runstore.atomic_json(
         directory / LOOP,
         {
-            "schema": SCHEMA + "/checkpoint",
+            "schema": record_schema + "/checkpoint",
             "identity": identity,
+            "input_encoding": encoding,
+            "pathway_sha256": pathway,
             "time_us": time_us,
             "files": {
                 "neural": [neural.name, _sha256_file(neural)],
@@ -655,10 +899,21 @@ def _checkpoint(directory, identity, runtime, body, time_us, loop) -> list:
     return segments
 
 
-def _finished(directory: Path, identity: str) -> Record:
+def _binding_differs(document, encoding, pathway) -> bool:
+    return (
+        document.get("input_encoding") != encoding
+        or document.get("pathway_sha256") != pathway
+    )
+
+
+def _finished(directory, identity, record_schema, encoding, pathway):
     try:
         d = json.loads((directory / DONE).read_text())
-        if d.get("schema") != SCHEMA + "/done" or d.get("identity") != identity:
+        if _binding_differs(d, encoding, pathway):
+            raise ContractError(
+                "the checkpoint's input encoding or pathway hash differs"
+            )
+        if d.get("schema") != record_schema + "/done" or d.get("identity") != identity:
             raise ContractError("the finished record belongs to another run")
         text = json.dumps(d["record"], sort_keys=True, separators=(",", ":"))
     except ContractError:
@@ -668,16 +923,24 @@ def _finished(directory: Path, identity: str) -> Record:
     return from_json(text)
 
 
-def _resume(directory, identity, runtime, body):
+def _resume(directory, identity, runtime, body, record_schema, encoding, pathway):
     try:
         d = json.loads((directory / LOOP).read_text())
-        if d.get("schema") != SCHEMA + "/checkpoint" or d.get("identity") != identity:
+        if _binding_differs(d, encoding, pathway):
+            raise ContractError(
+                "the checkpoint's input encoding or pathway hash differs"
+            )
+        if (
+            d.get("schema") != record_schema + "/checkpoint"
+            or d.get("identity") != identity
+        ):
             raise ContractError("the checkpoint belongs to another run")
         paths = {}
         for key, (name, digest) in d["files"].items():
             paths[key] = directory / name
             if _sha256_file(paths[key]) != digest:
                 raise ContractError(f"the {key} checkpoint does not match its hash")
+        parse = _tick_v2 if record_schema == SCHEMA_V2 else _tick
         ticks = []
         for name, digest, count in d["segments"]:
             if _sha256_file(directory / name) != digest:
@@ -685,7 +948,7 @@ def _resume(directory, identity, runtime, body):
             part = json.loads((directory / name).read_text())
             if len(part) != count:
                 raise ContractError(f"the tick segment {name} has the wrong length")
-            ticks += [_tick(t) for t in part]
+            ticks += [parse(t) for t in part]
         _adapter(runtime.restore, paths["neural"], what="runtime")
         _adapter(body.restore, paths["body"])
         last = _state(d["last"])
@@ -756,14 +1019,53 @@ def _contacts(raw) -> tuple[Contact, ...]:
     return tuple((name, float(force)) for name, force in out)
 
 
-def replay_parity(original: Record, replayed: Record) -> None:
-    """Refuse unless the replay fed the same counts and produced the same spikes."""
+def _recorded_input(record: Record | RecordV2) -> tuple[str, str | None]:
+    """Version 1 is counts with no pathway hash. Version 2 stores both."""
+    if type(record) is Record:
+        return "counts", None
+    return record.input_encoding, record.pathway_sha256
+
+
+def _float_rows(drive: np.ndarray) -> tuple[tuple[float, ...], ...]:
+    """Float64 widening of a float32 drive. JSON round-trips those values."""
+    return tuple(tuple(row) for row in drive.astype(np.float64).tolist())
+
+
+def _as_float32(rows) -> np.ndarray:
+    return np.asarray(rows, dtype=np.float64).astype(np.float32)
+
+
+def _same_drive(left, right) -> bool:
+    if len(left) != len(right):
+        return False
+    for a, b in zip(left, right, strict=True):
+        if len(a) != len(b):
+            return False
+        for x, y in zip(a, b, strict=True):
+            if type(x) is not type(y):
+                return False
+            if type(x) is float:
+                if x != y or math.copysign(1.0, x) != math.copysign(1.0, y):
+                    return False
+            elif x != y:
+                return False
+    return True
+
+
+def replay_parity(original: Record | RecordV2, replayed: Record | RecordV2) -> None:
+    """Refuse unless the replay fed the same drive and produced the same spikes."""
     if replayed.arm != "replay" or original.arm == "replay":
         raise ContractError("compare a recorded arm with its replay")
+    if type(original) is not type(replayed):
+        raise ContractError("the replay used another record version")
     if len(original.ticks) != len(replayed.ticks):
         raise ContractError("the replay has a different length")
+    v2 = type(original) is RecordV2
     for a, b in zip(original.ticks, replayed.ticks, strict=True):
-        if a.input_counts != b.input_counts:
+        if v2:
+            if not _same_drive(a.input_drive, b.input_drive):
+                raise ContractError(f"input drive differs at {a.time_us} us")
+        elif a.input_counts != b.input_counts:
             raise ContractError(f"input counts differ at {a.time_us} us")
         if a.spikes != b.spikes:
             raise ContractError(f"spikes differ at {a.time_us} us")

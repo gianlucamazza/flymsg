@@ -720,6 +720,8 @@ def _run_arm(setup: Setup, cell: dict, arm: str, replay):
         optics_config_sha256=setup.optics_hash,
         run_identity_sha256=setup.execution_id,
         input_gap_steps=setup.input_gap_steps,
+        input_encoding="counts",
+        pathway_sha256=None,
         silenced_ids=setup.traced_ids if arm == "silenced" else (),
         replay=replay,
     )
