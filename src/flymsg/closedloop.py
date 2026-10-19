@@ -152,7 +152,7 @@ class Record:
 
     def to_json(self) -> str:
         self.validate()
-        return json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
+        return json.dumps(_record_dict(self), sort_keys=True, separators=(",", ":"))
 
 
 @dataclass(frozen=True)
@@ -189,7 +189,85 @@ class RecordV2:
 
     def to_json(self) -> str:
         self.validate()
-        return json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
+        return json.dumps(_record_dict(self), sort_keys=True, separators=(",", ":"))
+
+
+def _clock_dict(clock: Clock) -> dict:
+    return {
+        "neural_us": clock.neural_us,
+        "body_us": clock.body_us,
+        "control_us": clock.control_us,
+        "latency_us": clock.latency_us,
+    }
+
+
+def _provenance_dict(provenance: pose.Provenance) -> dict:
+    return {
+        "dataset": provenance.dataset,
+        "dataset_sha256": provenance.dataset_sha256,
+        "commit": provenance.commit,
+        "seed": provenance.seed,
+        "schema": provenance.schema,
+        "clock": provenance.clock,
+    }
+
+
+def _body_dict(state: pose.BodyState) -> dict:
+    frame = state.pose
+    quat = frame.orientation
+    return {
+        "time_us": state.time_us,
+        "pose": {
+            "parent": frame.parent,
+            "child": frame.child,
+            "position_m": list(frame.position_m),
+            "orientation": {"w": quat.w, "x": quat.x, "y": quat.y, "z": quat.z},
+        },
+        "linear_velocity_m_s": list(state.linear_velocity_m_s),
+        "angular_velocity_rad_s": list(state.angular_velocity_rad_s),
+    }
+
+
+def _tick_dict(tick: Tick | TickV2) -> dict:
+    projected = {
+        "time_us": tick.time_us,
+        "commands": list(map(list, tick.commands)),
+        "state": _body_dict(tick.state),
+        "stimulus": list(tick.stimulus),
+        "spikes": [
+            {"neuron_id": spike.neuron_id, "time_us": spike.time_us}
+            for spike in tick.spikes
+        ],
+        "stepped": _body_dict(tick.stepped),
+        "contacts": list(map(list, tick.contacts)),
+    }
+    if type(tick) is TickV2:
+        projected["input_drive"] = list(map(list, tick.input_drive))
+    else:
+        projected["input_counts"] = list(map(list, tick.input_counts))
+    return projected
+
+
+def _record_dict(record: Record | RecordV2) -> dict:
+    """Canonical record structure: dataclasses as dicts, tuples as lists."""
+    projected = {
+        "provenance": _provenance_dict(record.provenance),
+        "clock": _clock_dict(record.clock),
+        "arm": record.arm,
+        "mode": record.mode,
+        "evidence": list(map(list, record.evidence)),
+        "optics_config_sha256": record.optics_config_sha256,
+        "run_identity_sha256": record.run_identity_sha256,
+        "input_ids": list(record.input_ids),
+        "traced_ids": list(record.traced_ids),
+        "silenced_ids": list(record.silenced_ids),
+        "ticks": [_tick_dict(tick) for tick in record.ticks],
+        "schema": record.schema,
+    }
+    if type(record) is RecordV2:
+        projected["input_encoding"] = record.input_encoding
+        projected["pathway_sha256"] = record.pathway_sha256
+    return projected
 
 
 def _validate_body(record, check_inputs) -> None:
@@ -285,18 +363,28 @@ def _drive_checker(encoding: str):
                 if row and (set(map(type, row)) != {int} or min(row) < 0):
                     raise ContractError("input drive must be an integer >= 0")
             return
-        for row in rows:
-            if not row:
-                continue
-            if set(map(type, row)) != {float} or any(
-                not math.isfinite(v) or v < 0 for v in row
-            ):
+        if not rows or n_inputs == 0:
+            return
+        # row by row, the first defect wins: a type other than Python float, then a
+        # non-finite or negative value, then a value float32 does not hold exactly;
+        # the values of rows before the first mistyped one are checked in one array
+        typed = next(
+            (i for i, row in enumerate(rows) if set(map(type, row)) != {float}),
+            len(rows),
+        )
+        values = np.asarray(rows[:typed], dtype=np.float64).reshape(typed, n_inputs)
+        bad_value = ~np.isfinite(values).all(axis=1) | (values < 0).any(axis=1)
+        widened = values.astype(np.float32).astype(np.float64)
+        bad_f32 = (values != widened).any(axis=1)
+        for value, f32 in zip(bad_value, bad_f32, strict=True):
+            if value:
                 raise ContractError("input drive must be a nonnegative finite float")
-            values = np.asarray(row, dtype=np.float64)
-            if not np.array_equal(values, values.astype(np.float32).astype(np.float64)):
+            if f32:
                 raise ContractError(
                     "input drive must be exactly representable as float32"
                 )
+        if typed < len(rows):
+            raise ContractError("input drive must be a nonnegative finite float")
 
     return check
 

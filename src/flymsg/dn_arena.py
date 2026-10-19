@@ -885,15 +885,15 @@ def _spike_counts(record, body_ids: tuple[int, ...]) -> dict[str, int]:
 def _store(out: Path, name: str, record) -> str:
     """Write the record's canonical JSON gzipped (mtime 0, so the bytes are stable) and
     return the sha256 of that JSON."""
-    text = record.to_json()
-    digest = hashlib.sha256(text.encode()).hexdigest()
+    encoded = record.to_json().encode()
+    digest = hashlib.sha256(encoded).hexdigest()
     path = out / "records" / f"{name.replace('/', '__')}.json.gz"
     temporary = path.with_name(path.name + ".tmp")
     with (
         temporary.open("wb") as raw,
         gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as stream,
     ):
-        stream.write(text.encode())
+        stream.write(encoded)
     temporary.replace(path)
     return digest
 
