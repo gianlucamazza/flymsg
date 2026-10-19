@@ -115,6 +115,7 @@ def run(arm="intact", mode="synthetic", evidence=None, body=None, **kw):
         provenance=PROVENANCE,
         optics_config_sha256="c" * 64,
         run_identity_sha256="b" * 64,
+        input_gap_steps=kw.pop("input_gap_steps", 0),
         **kw,
     )
 
@@ -392,3 +393,59 @@ def test_a_resumed_run_equals_the_uninterrupted_one(tmp_path):
         run(checkpoint_dir=tmp_path)
     with pytest.raises(ContractError, match="control ticks"):
         run(checkpoint_dir=tmp_path / "x", checkpoint_every_us=1500)
+
+
+def _fast(_stim):
+    return np.array([3000.0])  # many kicks within one gap
+
+
+GAP = 7  # neural steps, longer than a body tick, so it crosses tick boundaries
+
+
+def test_the_input_dead_time_is_stimulus_dead_time_across_ticks():
+    from flymsg.stimulus import dead_time
+
+    record = run(transducer=_fast, input_gap_steps=GAP)
+    per = CLOCK.body_us // CLOCK.neural_us
+    rng = np.random.default_rng(PROVENANCE.seed)
+    draws = np.concatenate(
+        [
+            rng.poisson(3000.0 * CLOCK.neural_us / 1e6, (per, len(INPUT_IDS)))
+            for _ in record.ticks
+        ]
+    )
+    delivered = np.concatenate([np.asarray(t.input_counts) for t in record.ticks])
+    assert not np.array_equal(delivered, draws)  # the gap removed kicks
+    assert np.array_equal(delivered, dead_time(draws, GAP))
+
+
+def test_a_zero_gap_keeps_the_raw_counts_and_a_negative_one_refuses():
+    assert run(input_gap_steps=0) == run()
+    with pytest.raises(ContractError, match="input_gap_steps"):
+        run(input_gap_steps=-1)
+
+
+def test_a_resumed_run_keeps_the_dead_time_across_the_break(tmp_path):
+    whole = run(transducer=_fast, input_gap_steps=GAP)
+    with pytest.raises(ContractError, match="killed"):
+        run(
+            body=Crash(23_500),
+            transducer=_fast,
+            input_gap_steps=GAP,
+            checkpoint_dir=tmp_path,
+            checkpoint_every_us=5000,
+        )
+    with pytest.raises(ContractError, match="another run"):
+        run(
+            transducer=_fast,
+            input_gap_steps=GAP + 1,
+            checkpoint_dir=tmp_path,
+            checkpoint_every_us=5000,
+        )
+    resumed = run(
+        transducer=_fast,
+        input_gap_steps=GAP,
+        checkpoint_dir=tmp_path,
+        checkpoint_every_us=5000,
+    )
+    assert resumed == whole

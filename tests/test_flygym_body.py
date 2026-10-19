@@ -124,6 +124,7 @@ def loop(body, arm="intact", replay=None, gain=TORQUE_N_M, **kw):
         provenance=PROVENANCE,
         optics_config_sha256=config,
         run_identity_sha256="c" * 64,
+        input_gap_steps=0,
         replay=replay,
         **kw,
     )
