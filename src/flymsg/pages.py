@@ -9,6 +9,7 @@ so the links already written in the markdown still resolve.
 from __future__ import annotations
 
 import html
+import posixpath
 import re
 import shutil
 from pathlib import Path
@@ -21,34 +22,8 @@ ROOT = Path(__file__).resolve().parents[2]
 REPO = "https://github.com/gianlucamazza/flymsg"
 BLOB = f"{REPO}/blob/main"
 
-# Files that are not prose pages. The site links to them on GitHub.
-EXTERNAL = {
-    "LICENSE": f"{BLOB}/LICENSE",
-    "NOTICE": f"{BLOB}/NOTICE",
-    "CITATION.cff": f"{BLOB}/CITATION.cff",
-    "validation/preregistration.yaml": f"{BLOB}/validation/preregistration.yaml",
-    "../validation/preregistration.yaml": f"{BLOB}/validation/preregistration.yaml",
-    "validation/benchmarks.yaml": f"{BLOB}/validation/benchmarks.yaml",
-    "../validation/benchmarks.yaml": f"{BLOB}/validation/benchmarks.yaml",
-    "validation/behavior.yaml": f"{BLOB}/validation/behavior.yaml",
-    "../validation/behavior.yaml": f"{BLOB}/validation/behavior.yaml",
-    "validation/motor_map.yaml": f"{BLOB}/validation/motor_map.yaml",
-    "../validation/motor_map.yaml": f"{BLOB}/validation/motor_map.yaml",
-    "validation/silence_scan.yaml": f"{BLOB}/validation/silence_scan.yaml",
-    "validation/sensitivity.yaml": f"{BLOB}/validation/sensitivity.yaml",
-    "../validation/homology/mapping.meta.json": f"{BLOB}/validation/homology/mapping.meta.json",
-    "../validation/sensitivity.yaml": f"{BLOB}/validation/sensitivity.yaml",
-    "../validation/silence_scan.yaml": f"{BLOB}/validation/silence_scan.yaml",
-    "../validation/partner_followup.yaml": f"{BLOB}/validation/partner_followup.yaml",
-    "../results/README.md": f"{BLOB}/results/README.md",
-    "../validation/mb_plasticity.yaml": f"{BLOB}/validation/mb_plasticity.yaml",
-    "../validation/kc_sparseness.yaml": f"{BLOB}/validation/kc_sparseness.yaml",
-    "../validation/t4t5.yaml": f"{BLOB}/validation/t4t5.yaml",
-    "../validation/jump3d.yaml": f"{BLOB}/validation/jump3d.yaml",
-    "../validation/song.yaml": f"{BLOB}/validation/song.yaml",
-    "../validation/gf_looming.yaml": f"{BLOB}/validation/gf_looming.yaml",
-    "../validation/apl_claws.yaml": f"{BLOB}/validation/apl_claws.yaml",
-}
+# Copied into the Pages output next to the HTML; everything else is a blob link.
+_SITE_PREFIXES = ("docs/img/", "docs/live/")
 
 # (output stem, source path, nav label). Order is the site nav.
 PAGES = (
@@ -119,8 +94,8 @@ PAGES = (
     ("changelog", "CHANGELOG.md", "Changelog"),
 )
 
-# Markdown file name → built page. README.md and CHANGELOG.md differ in case from the stem.
-_HTML = {Path(rel).name: f"{stem}.html" for stem, rel, _ in PAGES}
+# Repo-relative source path → built page. Stems stay stable when sources move later.
+_PAGE_HTML = {rel: f"{stem}.html" for stem, rel, _ in PAGES}
 
 _AUTOLINK = re.compile(r"<(https?://[^>\s]+)>")
 _ATTR = re.compile(r'\b(href|src)="([^"]*)"')
@@ -152,27 +127,41 @@ def _ids(body: str) -> str:
     return _HEADING.sub(one, body)
 
 
-def rewrite(url: str) -> str:
-    """Point a markdown URL at a built page, an image, or the GitHub blob."""
+def rewrite(url: str, *, source: str) -> str:
+    """Resolve ``url`` against the Markdown source path, then retarget for Pages.
+
+    Links stay written relative to the source tree (``adr-dn-arena.md``,
+    ``../validation/x.yaml``). Built pages become ``stem.html``; ``docs/img`` and
+    ``docs/live`` stay site-relative; everything else becomes a GitHub blob URL.
+    """
     if url.startswith(("http://", "https://", "mailto:", "#")):
         return url
     path, _, frag = url.partition("#")
-    if path in EXTERNAL:
-        return EXTERNAL[path]
-    if path.startswith("docs/"):
-        path = path.removeprefix("docs/")
-    path = _HTML.get(path, path)
-    return path + (f"#{frag}" if frag else "")
+    suffix = f"#{frag}" if frag else ""
+    if not path:
+        return suffix
+    base = Path(source).parent.as_posix()
+    resolved = posixpath.normpath(path if base in ("", ".") else f"{base}/{path}")
+    if resolved.startswith("../") or resolved == "..":
+        return url
+    if resolved in _PAGE_HTML:
+        return _PAGE_HTML[resolved] + suffix
+    if resolved.startswith(_SITE_PREFIXES):
+        return resolved.removeprefix("docs/") + suffix
+    return f"{BLOB}/{resolved}" + suffix
 
 
-def _rewrite_attrs(body: str) -> str:
-    return _ATTR.sub(lambda m: f'{m.group(1)}="{rewrite(m.group(2))}"', body)
+def _rewrite_attrs(body: str, *, source: str) -> str:
+    return _ATTR.sub(
+        lambda m: f'{m.group(1)}="{rewrite(m.group(2), source=source)}"',
+        body,
+    )
 
 
-def render(source: str) -> str:
-    text = _AUTOLINK.sub(r"[\1](\1)", source)
+def render(text: str, *, source: str) -> str:
+    text = _AUTOLINK.sub(r"[\1](\1)", text)
     _MD.reset()
-    return _rewrite_attrs(_ids(_MD.convert(text)))
+    return _rewrite_attrs(_ids(_MD.convert(text)), source=source)
 
 
 def _page(stem: str, body: str, title: str) -> str:
@@ -228,7 +217,7 @@ def build(out: Path, root: Path = ROOT) -> None:
         if (scene / "scene.json").is_file():  # cns/ holds shared layers, not a scene
             viz.copy_page(dst)
     for stem, rel, label in PAGES:
-        body = render((root / rel).read_text(encoding="utf-8"))
+        body = render((root / rel).read_text(encoding="utf-8"), source=rel)
         heading = _title(body, label)
         title = "flymsg" if stem == "index" else f"{heading} — flymsg"
         (out / f"{stem}.html").write_text(_page(stem, body, title), encoding="utf-8")
