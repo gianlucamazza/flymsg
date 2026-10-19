@@ -33,6 +33,10 @@ def _edit(name: str) -> dict:
         doc["claim"]["scored"] = True
     elif name == "defaults":
         doc["defaults_changed"] = True
+    elif name == "shuffled":
+        doc["shuffled"] = "a permuted shuffled arm"
+    elif name == "seed":
+        doc["seed"] = 7001
     return doc
 
 
@@ -128,7 +132,17 @@ def test_the_lock_matches_the_code():
 
 @pytest.mark.parametrize(
     "name",
-    ["seeds", "arms", "gap", "window", "neuron", "scored", "defaults"],
+    [
+        "seeds",
+        "arms",
+        "gap",
+        "window",
+        "neuron",
+        "scored",
+        "defaults",
+        "shuffled",
+        "seed",
+    ],
 )
 def test_a_drifted_lock_is_refused(name):
     with pytest.raises(dn_arena.DNArenaError):
@@ -292,3 +306,49 @@ def test_verdict_uses_the_inclusive_null_and_the_no_go():
     assert [row["verdict"] for row in shifted["cells"]] == ["null"] * n
     assert shifted["cells"][0]["script"] == 9.0
     assert shifted["cells"][0]["intact_minus_script"] == -9.0
+
+
+class _Text:
+    def __init__(self, text):
+        self.text = text
+
+    def to_json(self):
+        return self.text
+
+
+def test_stored_records_are_verified_and_damage_refuses(tmp_path):
+    import gzip
+
+    from flymsg import dn_arena
+
+    (tmp_path / "records").mkdir()
+    arms = {
+        arm: {
+            "record_sha256": dn_arena._store(tmp_path, f"arms/1/2__{arm}", _Text(arm))
+        }
+        for arm in ("intact", "replay")
+    }
+    null = dn_arena._store(tmp_path, "wiring-null/1/2/7100", _Text("null"))
+    rows = [
+        {"kind": "arms", "key": "arms/1/2", "arms": arms},
+        {"kind": "wiring-null", "key": "wiring-null/1/2/7100", "record_sha256": null},
+    ]
+    dn_arena.verify_records(tmp_path, rows)
+    stored = tmp_path / "records" / "arms__1__2__replay.json.gz"
+    with gzip.open(stored, "wb") as stream:
+        stream.write(b"tampered")
+    with pytest.raises(dn_arena.DNArenaError, match="does not match"):
+        dn_arena.verify_records(tmp_path, rows)
+    stored.unlink()
+    with pytest.raises(dn_arena.DNArenaError, match="missing"):
+        dn_arena.verify_records(tmp_path, rows)
+
+
+def test_stored_records_are_byte_stable(tmp_path):
+    from flymsg import dn_arena
+
+    (tmp_path / "records").mkdir()
+    first = dn_arena._store(tmp_path, "script", _Text("same"))
+    data = (tmp_path / "records" / "script.json.gz").read_bytes()
+    assert dn_arena._store(tmp_path, "script", _Text("same")) == first
+    assert (tmp_path / "records" / "script.json.gz").read_bytes() == data

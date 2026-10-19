@@ -121,7 +121,7 @@ def prepare(a):
     if a.cmd == "weight-rule":
         # measured before the run by `flymsg weight-rule --areas`, frozen with the tables
         paths[weight_rule.AREAS] = a.data / weight_rule.AREAS
-    if a.cmd == "jump3d":
+    if a.cmd in ("jump3d", "dn-arena"):  # dn-arena reads its eye mounts from FlyGym
         distribution = metadata.distribution("flygym")
         paths.update(
             {

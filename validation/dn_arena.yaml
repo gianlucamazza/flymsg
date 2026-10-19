@@ -1,5 +1,5 @@
 version: 1
-content_sha256: "a3feda5ad25870c1036a79a6f44d6d81841a146311be397380ffbc77baba4dd9"
+content_sha256: "9ba9a69c8397fae5c6aa9ee60cd48147d4898110c2dbb22a2d461254b4583aa3"
 yaml_subset: 2
 evidence: none
 evidence_none: "A synthetic milestone (DN-arena ADR): no recording is scored and validation/evidence.yaml is not edited by any arena step. The sources behind the decoder's sign and the gain envelope are cited under decoder.sources and in docs/leads.md."
@@ -63,6 +63,7 @@ decoder:
   evidence: engineered
 arms: [intact, disconnected, shuffled, replay, silenced]
 silenced: "the six decoder neurons"
+shuffled: "closedloop.run's shuffled arm: the open-loop samples of the body held at its reset pose, in an order permuted with seed + 1 (7001). With a static sphere every sample sees the same scene, so this arm receives the disconnected arm's stimulus and, with the shared Poisson seed, its input counts: it is expected to equal the disconnected arm, is reported, and does not enter the verdict"
 controls:
   wiring_null:
     seed0: 7100

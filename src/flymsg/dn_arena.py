@@ -44,10 +44,19 @@ PATH = ROOT / "validation" / "dn_arena.yaml"
 INVENTORY = ROOT / "docs" / "dn-arena-inventory.md"
 
 # version 1 (#263): full MaleCNS, kinematic arena, 3 x 2 gain envelope, 39 wiring-null seeds
-VERSION_HASHES = {1: "a3feda5ad25870c1036a79a6f44d6d81841a146311be397380ffbc77baba4dd9"}
+VERSION_HASHES = {1: "9ba9a69c8397fae5c6aa9ee60cd48147d4898110c2dbb22a2d461254b4583aa3"}
 
 _PAIRS = tuple((kind, side) for kind in TYPES for side in SIDES)
 _SETUP = None
+
+
+SHUFFLED = (
+    "closedloop.run's shuffled arm: the open-loop samples of the body held at its reset "
+    "pose, in an order permuted with seed + 1 (7001). With a static sphere every sample "
+    "sees the same scene, so this arm receives the disconnected arm's stimulus and, with "
+    "the shared Poisson seed, its input counts: it is expected to equal the disconnected "
+    "arm, is reported, and does not enter the verdict"
+)
 
 
 class DNArenaError(ValueError):
@@ -151,6 +160,10 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     _gains_ok(doc)
     if doc["silenced"] != "the six decoder neurons":
         raise DNArenaError("silenced is not the six decoder neurons")
+    if doc["shuffled"] != SHUFFLED:
+        raise DNArenaError("the shuffled arm's statement changed")
+    if doc["seed"] + 1 != 7001:
+        raise DNArenaError("closedloop permutes the shuffled arm with seed + 1 = 7001")
     eye_doc, stim, trans = doc["eye"], doc["stimulus"], doc["transducer"]
     if eye_doc["registration"] != (
         "test-only identity, eyemap frame = body frame; "
@@ -305,6 +318,30 @@ def yaw_change(heading, clock: Clock, window_us) -> float:
     return at(end) - at(start)
 
 
+def record_names(row: dict) -> dict[str, str]:
+    """The stored record name and canonical-JSON sha256 behind one job's result."""
+    if row["kind"] == "arms":
+        return {
+            f"{row['key']}__{arm}": summary["record_sha256"]
+            for arm, summary in row["arms"].items()
+        }
+    return {row["key"]: row["record_sha256"]}
+
+
+def verify_records(out, rows: list[dict]) -> None:
+    """Every result's record exists and decompresses to the JSON its sha256 names, also
+    for jobs a checkpoint resumed: damaged evidence refuses, it is never recomputed."""
+    for row in rows:
+        for name, digest in record_names(row).items():
+            path = Path(out) / "records" / f"{name.replace('/', '__')}.json.gz"
+            if not path.is_file():
+                raise DNArenaError(f"the record of {name} is missing")
+            with gzip.open(path, "rb") as stream:
+                text = stream.read().decode()
+            if hashlib.sha256(text.encode()).hexdigest() != digest:
+                raise DNArenaError(f"the record of {name} does not match its sha256")
+
+
 def verdict(results: list[dict], doc: dict) -> dict:
     """Per cell, no-go or the inclusive wiring-null range; then the envelope."""
     by: dict[str, dict] = {}
@@ -385,6 +422,7 @@ def run(data_dir, out, workers: int, checkpoint, execution_id: str) -> dict:
         else (doc, neurons_df, edges, data_dir, out, execution_id)
     )
     rows = draws.map_jobs(_job, packed, workers, ctx, checkpoint, meta)
+    verify_records(out, rows)
     frame = pd.DataFrame([{k: _csv_value(v) for k, v in row.items()} for row in rows])
     frame.to_csv(out / "results.csv", index=False)
     found = verdict(rows, doc)
