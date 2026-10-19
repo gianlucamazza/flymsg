@@ -43,7 +43,7 @@ neurons must use `bodyId` or the MaleCNS `type` token (`DNg97` for oDN1).
 ## Source
 
 BodyIds come from the public MaleCNS v1.0 body-annotation table that
-`flymsg fetch` writes, the same file [data](data.md) names:
+`flymsg fetch` writes, the same file [data](reference/data.md) names:
 
 <https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/body-annotations-male-cns-v1.0-minconf-0.5.feather>
 

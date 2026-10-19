@@ -3,7 +3,7 @@
 MaleCNS optic-lobe columns, their measured viewing directions, and the T4/T5 locks that
 use them. The fetch, the licence and the files are in
 [data](data.md#eye-map-flymsg-eye). The body and the jump are in
-[embodiment](embodiment.md).
+[embodiment](../embodiment.md).
 
 ## Eye geometry (#84)
 
@@ -44,11 +44,11 @@ radius of 5°, 138 at 30° and 462 at 60°, and no left-eye column.
 column: `gain` times the light left (1 − coverage), in units of the Poisson kick; the gain has
 no measured value and is stated by the lock. That lock is the T4/T5 test below.
 The giant fiber's size/velocity split (Ache et al. 2019) is a separate test on the
-[roadmap](roadmap.md) and is not part of this lock.
+[roadmap](../roadmap.md) and is not part of this lock.
 
 **Geometric optics from a 6-DoF pose (G2, [#179](https://github.com/gianlucamazza/flymsg/issues/179)).**
 `flymsg.optics` measures dark spheres in the world from every column, given a B6 v2 body
-state and eye mounts (`flymsg.pose`, [embodiment](embodiment.md#b6-v2-6-dof-body-and-eye-pose-g1-178)):
+state and eye mounts (`flymsg.pose`, [embodiment](../embodiment.md#b6-v2-6-dof-body-and-eye-pose-g1-178)):
 the angle from the column's axis to each sphere, the sphere's angular radius asin(r/d) and its
 rate, its angular velocity relative to the eye (so a turning fly sees the world turn the other
 way), the covered share of the acceptance profile and which sphere the column's axis meets
@@ -86,7 +86,7 @@ camera cases, not the missing MaleCNS-head registration or a physiological trans
 
 `eye.edge_coverage` moves a straight edge across each eye's measured columns (direction per
 eye, so front-to-back points away from the midline on both sides).
-[`validation/t4t5.yaml`](../validation/t4t5.yaml), locked before its run, drives the 640
+[`validation/t4t5.yaml`](../../validation/t4t5.yaml), locked before its run, drives the 640
 photoreceptors of the 336 columns within 30° of each eye's centre with ON and OFF edges in
 the four cardinal directions at 30°/s (Haag et al. 2017), acceptance 8.23° (Gonzalez-Bellido
 et al. 2011), and a gain equal to the mean input of every flymsg protocol (a named
@@ -112,8 +112,8 @@ Outputs: `results/t4t5/v1/`.
 
 ## T4/T5 version 2: graded photoreceptors and lamina (lock, 2026-10-13, #84, #97)
 
-Version 2 of [`validation/t4t5.yaml`](../validation/t4t5.yaml), locked after the v1 run and
-before any v2 run, makes photoreceptors and L1–L3 graded ([model](model.md#graded-non-spiking-neurons-optional-2026-10-13)).
+Version 2 of [`validation/t4t5.yaml`](../../validation/t4t5.yaml), locked after the v1 run and
+before any v2 run, makes photoreceptors and L1–L3 graded ([model](../model.md#graded-non-spiking-neurons-optional-2026-10-13)).
 Photoreceptors release nothing at rest and saturate at their light response; L1–L3 release
 half their maximum at rest, nothing at the measured maximal hyperpolarization and saturate
 as far above rest. The light gain holds a fully lit photoreceptor at its response, and the
@@ -137,7 +137,7 @@ range is 20–45 mV; the 20 mV configurations stay below it). It stops in the me
 inputs of T4 (Mi1, Tm3, Mi4) fire in no configuration. The OFF inputs (Tm1, Tm2, Tm4, Mi9)
 fire only when the LMC release rate is 200 or 400 Hz, with 7 to about 560,000 spikes per type
 over the eight stimuli; at 25–100 Hz the whole medulla stage is silent. In the fly Mi1 and Tm3
-are graded and the medulla inputs differ in timing (Behnia et al. 2014; [leads](leads.md));
+are graded and the medulla inputs differ in timing (Behnia et al. 2014; [leads](../leads.md));
 here they are spiking point neurons at rest, which disinhibition from the lamina does not
 lift, the outcome the lock's prior names. Outputs: `results/t4t5/v2/`.
 

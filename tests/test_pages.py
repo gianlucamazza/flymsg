@@ -81,6 +81,13 @@ def test_rewrite_keeps_old_landing_paths_after_category_move():
         )
         == "validation.html#protocol"
     )
+    assert rewrite("data.md", source="docs/catalog.md") == "data.html"
+    assert rewrite("reference/data.md", source="docs/catalog.md") == "data.html"
+    assert rewrite("docs/data.md", source="README.md") == "data.html"
+    assert rewrite("docs/reference/data.md", source="README.md") == "data.html"
+    assert (
+        rewrite("../model.md#lif", source="docs/reference/data.md") == "model.html#lif"
+    )
 
 
 def test_rewrite_sends_unlisted_docs_to_the_blob():
@@ -88,7 +95,9 @@ def test_rewrite_sends_unlisted_docs_to_the_blob():
         rewrite("adr-dn-arena.md", source="docs/catalog.md")
         == f"{BLOB}/docs/adr-dn-arena.md"
     )
-    assert rewrite("claims.md", source="docs/catalog.md") == f"{BLOB}/docs/claims.md"
+    assert rewrite("reference/claims.md", source="docs/catalog.md") == (
+        f"{BLOB}/docs/reference/claims.md"
+    )
 
 
 def test_rewrite_resolves_images_and_evidence():

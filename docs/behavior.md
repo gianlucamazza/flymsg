@@ -262,7 +262,7 @@ used.
 No new shuffle is drawn. N1 already ran looming escape on one
 degree-preserving shuffle of `post`, seed 0. Every specific check that passes
 on the real graph fails on that shuffle, and the looming specific check is one
-of them ([related](related.md)). A further wiring arm would be a second draw
+of them ([related](reference/related.md)). A further wiring arm would be a second draw
 after that result. `wiring.draw` is false.
 
 ## Prediction

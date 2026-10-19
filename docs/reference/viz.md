@@ -107,7 +107,7 @@ grey when one export lacks them; a selected neuron lists its spikes and first bi
 run. Two identical runs give zero difference in every bin (tested in Python and in node).
 
 The site serves four pairs; the fourth, right against left, is described under **Sides**. [LC4_R against LC4_R with both DNp01 silenced](https://gianlucamazza.github.io/flymsg/live/looming-vs-dnp01/?run=difference&t=60&paused&select=800146)
-is the failed silence check of the one-bit protocol ([behavior](behavior.md)): `TTMn_R`
+is the failed silence check of the one-bit protocol ([behavior](../behavior.md)): `TTMn_R`
 fires 22 times in A, first in the 10–20 ms bin, and still 7 times in B, first in the
 60–70 ms bin. [DNp01 against DNp01 + DNp02](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp02/?run=difference&t=60&paused&select=800146)
 and [DNp01 against DNp01 + DNp06](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp06/?run=difference&t=60&paused&select=800146)
@@ -191,7 +191,7 @@ background tab does not advance the replay. These are layout and input checks in
 ## Optional WebXR observation (experimental)
 
 Quest 2 development setup, the session-wide measurement collector and the qualification
-criteria are in the [VEE qualification runbook](plan/vee-qualification.md). An available headset
+criteria are in the [VEE qualification runbook](../plan/vee-qualification.md). An available headset
 is not a passed hardware trial.
 
 The first Quest 2 default-scene trial (2026-10-15) failed the timing gate; the
@@ -212,7 +212,7 @@ exports and never runs the simulation. It is experimental and qualified on no he
 frame times against the stereo budget (this page's laptop baseline is far below it, see
 [measurements](#measurements)) and the session lifecycle on real hardware are open in
 [#177](https://github.com/gianlucamazza/flymsg/issues/177). The decision is in the
-[ADR](adr-virtual-experimental-environment.md).
+[ADR](../adr-virtual-experimental-environment.md).
 
 ## Sources
 

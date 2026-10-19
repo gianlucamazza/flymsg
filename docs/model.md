@@ -462,7 +462,7 @@ reduced exponential per new refractory mask; the Taylor solver builds none), and
 everywhere in the model, discrete events act at step boundaries: spikes, resets,
 deliveries, kicks, the start and end of a spike term, and the refractory hold. Refractory membranes are continuously clamped at rest, with frozen
 chemical conductance; free partners retain the sink from their contacts. The accepted
-[electrical ADR](adr-gap-refractory.md) and [run integrity](run-integrity.md) document the
+[electrical ADR](adr-gap-refractory.md) and [run integrity](reference/run-integrity.md) document the
 reduced operators and execution identity. The dense solver builds one reduced exponential
 per new refractory mask, which on a component of hundreds of cells costs about a second per
 mask (#155). `Gap(solver="taylor")` (`flymsg.gap/continuous-clamp-taylor-v1`) applies the
@@ -520,7 +520,7 @@ a `Membrane` names it in its checkpoint identity. A `Membrane` on an electricall
 neuron is refused (`sim.Gap` integrates with the `Params` membrane), and the native executor
 refuses any `Membrane` until it is qualified. Sources that could fill it are in
 [leads](leads.md); the only lock using one is T4/T5 v4 (τ_syn of Mi1 and Tm1 from Behnia et al.
-2014's delays, [eye](eye.md)). With a `Membrane` on a minority of neurons the kernel keeps its
+2014's delays, [eye](reference/eye.md)). With a `Membrane` on a minority of neurons the kernel keeps its
 scalar loops and recomputes only those neurons, with bit-identical results (#182).
 
 ## Recording neuron states

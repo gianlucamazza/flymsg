@@ -76,7 +76,7 @@ all annotated `isomorphic`; processed female parquet has 411, including no
 root `720575940616042508`, and includes JO-A5 absent from the male selection.
 The processing discrepancy needs provenance resolution before any female
 coverage denominator. Female anatomical isomorphism does not establish male
-physiological equivalence. [Dataset provenance](data.md) remains authoritative
+physiological equivalence. [Dataset provenance](reference/data.md) remains authoritative
 for source versions.
 
 A/B/D projection zones, overlapping genetic drivers, calcium clusters and modern

@@ -238,7 +238,7 @@ failed held-out and silence checks are not evidence for this encoder. Before E2 
 needs LC4/LPLC2 tuning data with uncertainty, a map from samples to MaleCNS sensory bodyIds,
 and a comparison with the constant-rate Poisson drive and a time-shuffled control.
 
-The eye, its column stimuli and the T4/T5 locks are in [eye](eye.md).
+The eye, its column stimuli and the T4/T5 locks are in [eye](reference/eye.md).
 
 ### A TTM-driven jump of NeuroMechFly (lock, 2026-10-13, #90, #94)
 
@@ -276,7 +276,7 @@ A test checks that the spikes before the cut equal an open-loop run with the sam
 that none follow the cut. The stimulus is the supplied kicks. Geometric projection from a
 pose onto the columns is `flymsg.optics` (G2): coverage, not a photoreceptor response, and
 the micro-CT → NeuroMechFly registration has no source. T4/T5 v1 is neither and v2–v4 are
-robust neither ([eye](eye.md)).
+robust neither ([eye](reference/eye.md)).
 
 ### M1 jump body (v0.8.34, #33)
 
@@ -331,7 +331,7 @@ the fly.
 `flymsg muscles` gives each MaleCNS `vnc_motor` neuron the target muscle and match certainty
 that MANC published for its type: Cheong, Eichler, Stürner et al. 2024 (eLife 13:RP96084,
 doi:10.7554/eLife.96084), Supplementary file 3 (see
-[data](data.md#manc-muscles-flymsg-muscles)).
+[data](reference/data.md#manc-muscles-flymsg-muscles)).
 The join key is the MaleCNS `mancType` annotation, which equals `type` except for `ADNM1 MN`
 and `ADNM2 MN` (MANC `ADNM1`, `ADNM2`). A target that names a body part (`abdomen`,
 `hind leg`, `neck`, `wing`, `haltere` …) is kept as the target but not as a muscle.
@@ -399,7 +399,7 @@ From the research plan of PR #47. A step that lacks its evidence keeps the synth
   back into `CpuRuntime`. Geometric projection from a pose onto the columns is implemented
   (`flymsg.optics`, G2): coverage, not a photoreceptor response. The micro-CT → NeuroMechFly
   head registration has no source, so the real eye stays unqualified. T4/T5 v1 is neither
-  and v2–v4 are robust neither ([eye](eye.md)).
+  and v2–v4 are robust neither ([eye](reference/eye.md)).
 - `validation/motor_map.yaml`: every real actuator is `unmapped`. 406 of 708 motor neurons
   have a MANC muscle (`flymsg muscles`), but no source maps a muscle to an actuator.
   NeuroMechFly jump v1 ran and was short. FlyBody stays unselected.

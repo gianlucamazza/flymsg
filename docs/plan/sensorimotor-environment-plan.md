@@ -44,7 +44,7 @@ walking and real-time whole-CNS execution are out of scope.
   and `MotorCommand` are scalar, point-mass contracts, not 6-DoF ones.
 - **Vision:** `flymsg.eye` (`columns`, `photoreceptors`, `angular_distance_deg`,
   `disk_coverage`) over the measured column directions; `eye.photoreceptor_kicks` takes an
-  unmeasured gain. T4/T5 status is on [eye](../eye.md): v1 neither, v2–v4 robust neither. No vision path
+  unmeasured gain. T4/T5 status is on [eye](../reference/eye.md): v1 neither, v2–v4 robust neither. No vision path
   from the body pose exists yet ([embodiment](../embodiment.md)).
 - **Stimuli:** `flymsg.sensory` and `sensory_runtime` are exploratory Poisson drive, kept as a
   named circuit-only baseline, never as a retina.
@@ -52,11 +52,11 @@ walking and real-time whole-CNS execution are out of scope.
   jump3d is a separate, sourced experimental path. jump3d v1 left the ground at a speed of 0.06–0.07 m/s
   with the TTM alone; Card & Dickinson 2008 measured 0.48 ± 0.01 m/s for escape take-offs
   ([leads](../leads.md)).
-- **Experiments and evidence:** locks, manifests, the run store ([run integrity](../run-integrity.md)),
+- **Experiments and evidence:** locks, manifests, the run store ([run integrity](../reference/run-integrity.md)),
   `validation/evidence.yaml`, the [replication](../replication.md) package and the
   [scientific fidelity](scientific-fidelity.md) stages SF2–SF5. Versioned, never duplicated.
 - **Presentation:** the existing viewer, including graded potentials
-  ([viz](../viz.md#graded-neurons)); XR is not a sensor.
+  ([viz](../reference/viz.md#graded-neurons)); XR is not a sensor.
 
 Earlier embodiment work (#43–#54, issues and pull requests) delivered infrastructure or
 recorded negative and blocking outcomes; it is not reopened to rename it.
@@ -95,7 +95,7 @@ looming-escape benchmark is a later candidate, blocked until G0 finds eligible d
 
 ## References
 
-- von Reyn et al. 2014, doi:10.1038/nn.3741 (looming coverage; [provenance](../provenance.md));
+- von Reyn et al. 2014, doi:10.1038/nn.3741 (looming coverage; [provenance](../reference/provenance.md));
   von Reyn et al. 2017 and Ache et al. 2019, doi:10.1016/j.cub.2019.01.079 (LC4 and LPLC2
   inputs to the giant fiber; [leads](../leads.md)).
 - Card & Dickinson 2008, doi:10.1242/jeb.012682 (escape take-off velocity; [leads](../leads.md)).

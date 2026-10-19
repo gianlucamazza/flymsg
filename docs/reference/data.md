@@ -69,7 +69,7 @@ Neurons are sorted by `bodyId`.
 | `fruDsx`              | fruitless/doublesex expression class                                                                |
 | `synonyms`            | names used in earlier literature (used to select P1 neurons, see validation)                        |
 | `nt`                  | `consensus_nt`: acetylcholine, glutamate, gaba, histamine, dopamine, octopamine, serotonin, unclear |
-| `sign`                | +1 excitatory, −1 inhibitory, 0 no fast effect (see [model](model.md#synapse-sign))                 |
+| `sign`                | +1 excitatory, −1 inhibitory, 0 no fast effect (see [model](../model.md#synapse-sign))              |
 
 `data/edges.parquet`: `pre`, `post` (neuron indices, int32), `weight` (synapse count, int32).
 
@@ -147,12 +147,12 @@ in MANC", 834 rows) from
 `data/motor/manc_types.parquet` (one row per MANC type: targets, muscle, certainty range,
 publications, source) and `data/motor/muscles.parquet` (one row per MaleCNS `vnc_motor`
 neuron, joined on the `mancType` annotation of the raw body annotations). See
-[embodiment](embodiment.md#muscles-from-manc-phase-c) for the match counts.
+[embodiment](../embodiment.md#muscles-from-manc-phase-c) for the match counts.
 
 ## Female brain: FlyWire FAFB v783 (`--dataset fafb`)
 
 `flymsg --dataset fafb fetch` and `build` write the female brain to `data/fafb/` in the same
-schema, for the comparisons in [comparison.md](comparison.md). Sources, pinned to commits:
+schema, for the comparisons in [comparison.md](../comparison.md). Sources, pinned to commits:
 
 | File                                        |   Size | Source                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -190,5 +190,5 @@ For `--dataset fafb` (FlyWire), as the sources ask, also cite:
 - Matsliah, A. et al. Neuronal parts list and wiring diagram for a visual system. _Nature_
   634, 166–180 (2024). doi:10.1038/s41586-024-07981-1
 - Shiu, P. K. et al. (2024), for the model's connectivity and signs (see
-  [validation](validation.md#references)).
+  [validation](../validation.md#references)).
 - Berg et al., the MaleCNS paper above, for the `dimorphism` and `fru_dsx` annotations.

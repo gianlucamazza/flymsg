@@ -1,6 +1,6 @@
 # Evidence leads: sources that could lift an approximation
 
-Literature and data search of 2026-10-13, ordered by the [approximation](approximations.md)
+Literature and data search of 2026-10-13, ordered by the [approximation](reference/approximations.md)
 each source could lift, with the open rows re-read on 2026-10-16. A lead is not a result and
 changes nothing in the model: using one needs an issue and a lock committed before any run, as
 for every claim here.

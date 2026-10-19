@@ -17,7 +17,7 @@ validation battery: its protocol, how the defaults were chosen, and the
   (replication).
 
 - **N1** drops the same battery to 5/29 on one degree-preserving shuffle
-  ([related](related.md#n1-specific-checks-need-the-measured-partners)).
+  ([related](reference/related.md#n1-specific-checks-need-the-measured-partners)).
 - **Held-out** ORN_DM1 → DM1_lPN fails specific and stability
   ([benchmarks](benchmarks.md)).
 - **One-bit looming jump** fails the DNp01 silence check. The residual drive is DNp02 and
@@ -37,7 +37,7 @@ validation battery: its protocol, how the defaults were chosen, and the
 
 These notes stay in the order they were added.
 
-- **N1** (2026-10-11, [related](related.md#n1-specific-checks-need-the-measured-partners)).
+- **N1** (2026-10-11, [related](reference/related.md#n1-specific-checks-need-the-measured-partners)).
   One degree-preserving shuffle of `post`, seed 0, the same defaults and criterion v4,
   seeds 0–2. The traced graph passes 29/29. The shuffle passes 5/29, and those five are
   the `stability` check of every case: activity still dies out. All 7 `specific` checks

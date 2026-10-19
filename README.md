@@ -25,7 +25,7 @@ and draws the neuropil shells around the somata in `docs/live/cns/`. An anatomy 
 the shells and does not replay spikes. Rebuild the scenes with `flymsg viz --sim LC4_R`,
 `--sim pIP10` and `--types pIP10 dPR1 dMS9`. The page takes `?t=`, `?paused`, `?color=`,
 `?chrome=`, `?neuropils=`, `?somata=` and `?select=<bodyId>`; clicking a neuron lists its
-partners. Rendering is described in [viz](docs/viz.md).
+partners. Rendering is described in [viz](docs/reference/viz.md).
 
 Each scene also runs live in the browser on the published site: the page streams the
 neuron surfaces from the public MaleCNS volumes, and the scenes are the committed exports
@@ -74,7 +74,7 @@ locked T4/T5 v4 protocol at its strongest lamina gain (configuration 11). Photor
 L1–L3 and the graded medulla glow by their potential, violet where they hyperpolarize, so the
 lamina's inversion of contrast is visible; spiking neurons of the T4/T5 pathway glow by spikes.
 A replay of one configuration, not the verdict, which is the locked run's
-([eye](docs/eye.md)). [Open live](https://gianlucamazza.github.io/flymsg/live/eye-on/?t=600&paused).
+([eye](docs/reference/eye.md)). [Open live](https://gianlucamazza.github.io/flymsg/live/eye-on/?t=600&paused).
 
 **Left eye and both eyes.** The same looming drive from the left (`LC4_L`) or from both
 sides. MaleCNS is one animal, not a symmetric template: `TTMn_L` fires about half as often as
@@ -114,7 +114,7 @@ recorded on the linked page. Negative results stay in the
 | Result                                     | Verdict                                                        | Record                                                                                                 |
 | ------------------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Validation battery, criterion v4           | 29/29 at `w_syn` 0.192, replicated                             | [validation](docs/validation.md)                                                                       |
-| N1, one degree-preserving shuffle          | 5/29, all of them `stability`                                  | [related](docs/related.md#n1-specific-checks-need-the-measured-partners)                               |
+| N1, one degree-preserving shuffle          | 5/29, all of them `stability`                                  | [related](docs/reference/related.md#n1-specific-checks-need-the-measured-partners)                     |
 | Four null families, 20 draws               | the one-hop headline sits above every draw                     | [nulls](docs/nulls.md)                                                                                 |
 | Engine against Shiu et al. brian2          | agrees within noise (r ≥ 0.998)                                | [comparison](docs/comparison.md#engine-check)                                                          |
 | Dimorphism T1–T4                           | courtship runs through fru/dsx; escape and feeding do not      | [dimorphism](docs/dimorphism.md)                                                                       |
@@ -135,8 +135,8 @@ recorded on the linked page. Negative results stay in the
 | One-bit looming jump                       | silence fails                                                  | [behavior](docs/behavior.md#result-2026-10-11)                                                         |
 | Residual partner scan v2, replicated as v3 | DNp02 and DNp06                                                | [behavior](docs/behavior.md#residual-partner-scan)                                                     |
 | Partner follow-up v1                       | the left mirror replicates; DNp06 alone reaches the jump bit   | [behavior](docs/behavior.md#residual-partner-follow-up)                                                |
-| T4/T5 through the eye v1                   | neither                                                        | [eye](docs/eye.md)                                                                                     |
-| T4/T5 v2, v3 and v4                        | robust: neither                                                | [eye](docs/eye.md)                                                                                     |
+| T4/T5 through the eye v1                   | neither                                                        | [eye](docs/reference/eye.md)                                                                           |
+| T4/T5 v2, v3 and v4                        | robust: neither                                                | [eye](docs/reference/eye.md)                                                                           |
 | NeuroMechFly jump v1                       | short                                                          | [embodiment](docs/embodiment.md)                                                                       |
 | Male vs female synapse counts              | median 1.81× over matched types, a reconstruction difference   | [comparison](docs/comparison.md)                                                                       |
 | Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                          | [comparison](docs/comparison.md)                                                                       |
@@ -163,7 +163,7 @@ directory defaults to `./data` (`--data DIR` or `FLYMSG_DATA` to change it).
 
 Scientific outputs use execution-bound directories and automatic resume; the CLI prints
 the final path. A clean committed worktree is required. See
-[run integrity](docs/run-integrity.md) for output paths, checkpoints and historical locks.
+[run integrity](docs/reference/run-integrity.md) for output paths, checkpoints and historical locks.
 
 ## Commands
 
@@ -212,14 +212,14 @@ the final path. A clean committed worktree is required. See
 The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?detail=`,
 `?adaptive=0`,
 `?neuropils=0|1`, `?somata=0` (hide the whole-CNS soma layer), `?budget=<M triangles>`,
-`?bench=<s>` and `?xr=1` (experimental WebXR observer) ([viz](docs/viz.md)).
+`?bench=<s>` and `?xr=1` (experimental WebXR observer) ([viz](docs/reference/viz.md)).
 
 ## How it works
 
 1. **Data.** The MaleCNS tables list every traced neuron with its annotations (cell type,
    predicted transmitter, sex-related labels) and every connection with its synapse count.
    flymsg keeps the 165,122 traced neurons and the connections among them
-   ([data](docs/data.md)).
+   ([data](docs/reference/data.md)).
 2. **Model.** Each neuron is a leaky integrate-and-fire unit. A connection of _n_ synapses
    adds ±*n* · `w_syn` to its target after 1.8 ms. The sign follows the presynaptic
    transmitter: acetylcholine excites; GABA, glutamate and histamine inhibit; modulators have
@@ -239,7 +239,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
    in `validation/evidence.yaml` that hold the source, units and uncertainty of its parameters.
 5. **3D view.** The export holds only metadata and activity. The page reads the public
    multi-resolution meshes and skeletons directly from Google Cloud Storage, refining detail
-   near the camera within a triangle budget ([viz](docs/viz.md)).
+   near the camera within a triangle budget ([viz](docs/reference/viz.md)).
 
 ## Limits
 
@@ -259,7 +259,7 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 - **Few, short cases.** The validation cases are mostly 1–2-hop feed-forward chains.
 - **Closed loop.** The loop that runs is synthetic. What is measured, what is
   chosen, and what is not claimed is in
-  [CLAIMS](https://github.com/gianlucamazza/flymsg/blob/main/docs/claims.md).
+  [CLAIMS](https://github.com/gianlucamazza/flymsg/blob/main/docs/reference/claims.md).
 
 ## Documentation
 
@@ -270,15 +270,15 @@ The 3D page takes URL options such as `?t=<ms>&paused`, `?color=dimorphism`, `?d
 A fact has one home. The [roadmap](docs/roadmap.md#results) is the index of verdicts. A
 protocol stays in its own page and in `validation/*.yaml`. A negative result is one line in
 the [findings log](docs/validation.md#findings-log). A public source enters
-[provenance](docs/provenance.md) when its commit is on `main`. The changelog is the release
+[provenance](docs/reference/provenance.md) when its commit is on `main`. The changelog is the release
 note. A present-tense sentence describes the default model today. A dated sentence stays
 under its date.
 
 | Document                                                                                                                              | Content                                                                                                         |
 | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| [data](docs/data.md)                                                                                                                  | sources, files, filtering, schema, the female FAFB dataset, citations                                           |
+| [data](docs/reference/data.md)                                                                                                        | sources, files, filtering, schema, the female FAFB dataset, citations                                           |
 | [model](docs/model.md)                                                                                                                | equations, parameters, the 2026-10-11 default, optional Gap, Graded, Membrane, weight scale and KC→MBON11       |
-| [approximations](docs/approximations.md)                                                                                              | every simplification of the model, its status and what would remove it                                          |
+| [approximations](docs/reference/approximations.md)                                                                                    | every simplification of the model, its status and what would remove it                                          |
 | [leads](docs/leads.md)                                                                                                                | sources that could lift an approximation; none used without a lock                                              |
 | [validation](docs/validation.md)                                                                                                      | battery status, the dated status log, protocol, calibration, findings log                                       |
 | [benchmarks](docs/benchmarks.md)                                                                                                      | held-out partition, the ORN_DM1 failure, both corners fail                                                      |
@@ -287,12 +287,12 @@ under its date.
 | [behavior](docs/behavior.md)                                                                                                          | one-bit looming jump; silence fails; residual partner DNp02/DNp06 replicated                                    |
 | [architecture](docs/architecture.md)                                                                                                  | module layers, the six contracts and their tests, migration order                                               |
 | [embodiment](docs/embodiment.md)                                                                                                      | M0 contract, B6 v2 pose types, M1/M2 engineering bodies, NeuroMechFly jump v1 (short); FlyBody unselected       |
-| [eye](docs/eye.md)                                                                                                                    | column directions, column stimuli, T4/T5 v1–v4 (neither)                                                        |
+| [eye](docs/reference/eye.md)                                                                                                          | column directions, column stimuli, T4/T5 v1–v4 (neither)                                                        |
 | [runtime](docs/runtime.md)                                                                                                            | incremental CPU runtime, checkpoints, backend ADR; GPU lane planned                                             |
 | [nulls](docs/nulls.md)                                                                                                                | pre-registered null families, scores, draw counts, methods                                                      |
 | [scientific fidelity](docs/plan/scientific-fidelity.md)                                                                               | numerical, physiological and behavioral validation gates; evidence records (SF1)                                |
 | [replication](docs/replication.md)                                                                                                    | rerun an archived result; the replication index; the claims audit                                               |
-| [CLAIMS](https://github.com/gianlucamazza/flymsg/blob/main/docs/claims.md)                                                            | measured, engineered and not claimed for the closed loop                                                        |
+| [CLAIMS](https://github.com/gianlucamazza/flymsg/blob/main/docs/reference/claims.md)                                                  | measured, engineered and not claimed for the closed loop                                                        |
 | [sensorimotor plan](docs/plan/sensorimotor-environment-plan.md)                                                                       | gates for a headless closed-loop experiment; reuse inventory; no-go rules                                       |
 | [integrity audit](docs/report/integrity-audit-2026-10-13.md)                                                                          | engineering audit of 2026-10-13 and its resolution ledger                                                       |
 | [ADR: gap refractory](docs/adr-gap-refractory.md)                                                                                     | electrical coupling with refractory clamps; dense and Taylor solvers                                            |
@@ -304,12 +304,12 @@ under its date.
 | [ADR: DN arena (VEE-0), accepted](https://github.com/gianlucamazza/flymsg/blob/main/docs/adr-dn-arena.md)                             | kinematic planar body and engineered DN readout; accepted, code is still one PR at a time                       |
 | [ADR: graded eye in the closed loop (VEE-1), accepted](https://github.com/gianlucamazza/flymsg/blob/main/docs/adr-vee1-graded-eye.md) | real-valued graded photoreceptor drive and closed-loop record v2; accepted, no code yet                         |
 | [arena-1 DN inventory](https://github.com/gianlucamazza/flymsg/blob/main/docs/dn-arena-inventory.md)                                  | MaleCNS bodyId and side for DNa01, DNa02, oDN1; MDN and DNp01 listed only                                       |
-| [run integrity](docs/run-integrity.md)                                                                                                | output paths, execution directories, checkpoints and historical locks                                           |
-| [provenance](docs/provenance.md)                                                                                                      | date, public source and introducing commit for each idea on `main`                                              |
+| [run integrity](docs/reference/run-integrity.md)                                                                                      | output paths, execution directories, checkpoints and historical locks                                           |
+| [provenance](docs/reference/provenance.md)                                                                                            | date, public source and introducing commit for each idea on `main`                                              |
 | [comparison](docs/comparison.md)                                                                                                      | engine check against the published model, male vs female, the LB3 split                                         |
 | [dimorphism](docs/dimorphism.md)                                                                                                      | dimorphic neurons among responders, silencing                                                                   |
-| [related](docs/related.md)                                                                                                            | adjacent whole-CNS models, the raw 211,577 count, wiring null N1                                                |
-| [viz](docs/viz.md)                                                                                                                    | 3D pipeline, whole-CNS soma layer, graded potentials, sides, optional WebXR, levels of detail, GPU measurements |
+| [related](docs/reference/related.md)                                                                                                  | adjacent whole-CNS models, the raw 211,577 count, wiring null N1                                                |
+| [viz](docs/reference/viz.md)                                                                                                          | 3D pipeline, whole-CNS soma layer, graded potentials, sides, optional WebXR, levels of detail, GPU measurements |
 | [roadmap](docs/roadmap.md)                                                                                                            | the results index; brain coverage; what is blocked on evidence, hardware, or an unrun lock                      |
 | [CHANGELOG](CHANGELOG.md)                                                                                                             | what changed in each version                                                                                    |
 
@@ -346,7 +346,7 @@ If you use flymsg, cite the data and the model it builds on (see also
 - Model: Shiu, P. K. et al. A _Drosophila_ computational brain model reveals sensorimotor
   processing. _Nature_ 634, 210–219 (2024). doi:10.1038/s41586-024-07763-9
 - For `--dataset fafb`: FlyWire (Dorkenwald et al. 2024; Schlegel et al. 2024; Matsliah et
-  al. 2024; Berg et al., the MaleCNS paper above), as listed in [data](docs/data.md).
+  al. 2024; Berg et al., the MaleCNS paper above), as listed in [data](docs/reference/data.md).
 
 ## License
 
