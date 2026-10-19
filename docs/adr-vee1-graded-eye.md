@@ -1,7 +1,8 @@
 # ADR: graded eye in the closed loop (VEE-1 visual input)
 
-Status: **proposed**, 2026-10-19. Awaiting owner acceptance. It changes no code in
-this commit and authorizes no lock or run.
+Status: **accepted** by Gianluca Mazza, 2026-10-19 (proposed the same day).
+Acceptance authorizes `vee1-1` through `vee1-3`, one reviewed PR at a time. It changes
+no code in this commit and authorizes no lock or run: `vee1-4` needs its own approval.
 
 Scope: replace the closed loop's spiking photoreceptor drive with the graded visual
 pathway that T4/T5 versions 2–4 already run open loop. It supplements the accepted

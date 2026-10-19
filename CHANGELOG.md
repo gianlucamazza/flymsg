@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Proposed ADR: graded eye in the closed loop (VEE-1).** `docs/adr-vee1-graded-eye.md` proposes a real-valued `kick_equivalent` input encoding in `CpuRuntime`, record `flymsg.closedloop/v2` carrying the drive, a visual-pathway builder extracted bit for bit from `t4t5`, dark anchors computed before the loop, host only. It states T4/T5 version 4's `neither` as the main risk. Docs only; awaits owner acceptance.
+- **Graded eye ADR (VEE-1, accepted).** Gianluca Mazza accepted `docs/adr-vee1-graded-eye.md` on 2026-10-19. It decides a real-valued `kick_equivalent` input encoding in `CpuRuntime`, record `flymsg.closedloop/v2` carrying the drive, a visual-pathway builder extracted bit for bit from `t4t5`, dark anchors computed before the loop, host only. It states T4/T5 version 4's `neither` as the main risk. Acceptance authorizes `vee1-1` to `vee1-3`; the `vee1-4` lock needs separate approval. Docs only.
 
 - **Module boundaries step 5: grid-check publication.** `flymsg convergence --run` and `flymsg path-metrics --run` publish through one private helper in `cli/validation.py` (`_publish_grid`: cells, judgement, report, manifest stamp); each command keeps its lock check, summary and run. Net 8 lines fewer; no registry, no new lifecycle. Outputs at the base and the new commit (both commands, workers 1 and 2, a non-converged grid) are byte-identical for `cells.csv`, `judged.csv` and `report.txt`, and the manifests differ only in timestamps, temporary paths and the attempt id, with the same execution hash. A test covers publication and no recompute on replay.
 
