@@ -88,6 +88,18 @@ for operation in (prereg.load, behavior.load, lambda: pages.build(Path('site')))
     else:
         raise AssertionError('repository operation did not refuse')
 assert not Path('site').exists()
+import json
+from datetime import UTC, datetime
+from flymsg import manifest
+manifest.mark_start()
+assert manifest.git_info() == {'commit': None, 'dirty': None}
+written = manifest.write(
+    Path('out'), command='probe', config={}, seeds={}, dataset={},
+    started_at=datetime.now(UTC),
+)
+doc = json.loads(written.read_text())
+assert doc['git'] == {'commit': None, 'dirty': None}
+assert doc['preregistration'] is None
 """
 
 

@@ -13,7 +13,11 @@ from importlib import metadata
 from pathlib import Path
 
 from flymsg import lock_codec
-from flymsg.paths import repository_root, require_repository_path
+from flymsg.paths import (
+    RepositoryUnavailableError,
+    repository_root,
+    require_repository_path,
+)
 
 ROOT = repository_root()
 PREREG_PATH = ROOT / "validation" / "preregistration.yaml"
@@ -31,9 +35,10 @@ def sha256_file(path: Path) -> str:
 
 
 def git_info(root: Path | None = None) -> dict:
-    root = require_repository_path(root or ROOT)
+    """Commit and dirty flag of the checkout; both None without git or a checkout."""
     info = {"commit": None, "dirty": None}
     try:
+        root = require_repository_path(root or ROOT)
         commit = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=root, text=True, stderr=subprocess.DEVNULL
         ).strip()
@@ -45,7 +50,7 @@ def git_info(root: Path | None = None) -> dict:
         )
         info["commit"] = commit
         info["dirty"] = bool(status.strip())
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, subprocess.CalledProcessError, RepositoryUnavailableError):
         pass
     return info
 
@@ -119,7 +124,7 @@ def write(
             "version": doc["version"],
             "content_sha256": doc["content_sha256"],
         }
-    except (OSError, lock_codec.PreregistrationError):
+    except (OSError, lock_codec.PreregistrationError, RepositoryUnavailableError):
         prereg_info = None
     payload = {
         "schema": SCHEMA,
