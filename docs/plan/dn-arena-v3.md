@@ -1,8 +1,9 @@
 # DN arena version 3: design proposal
 
-Status: **proposed**, 2026-10-20. It is a design for owner review, not a lock. It
-authorizes no run. Version 2's verdict (`depends`, [DN arena](../result/dn-arena.md))
-stands. This would be a new lock version, not a rerun of version 2.
+Status: **accepted** by the owner on 2026-10-20 (#293), with the sensitivity run at both
+gains. It is a design, not a lock, and it authorizes no run. Version 2's verdict
+(`depends`, [DN arena](../result/dn-arena.md)) stands. This would be a new lock version,
+not a rerun of version 2.
 
 ## Why a version 3
 
