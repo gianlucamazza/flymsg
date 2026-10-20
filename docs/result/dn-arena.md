@@ -50,14 +50,15 @@ it is and will not be rerun with new configurations, gains, geometry or seeds.
 
 This reading uses only the archived `results.csv`. It does not change the verdict.
 
-In each configuration, 30 or 31 of the 39 shuffles give a heading change of 0, and the
-range's ends come from the same six seeds in all three configurations (7308, 7316,
-7317, 7323, 7327, 7333). In each of them a single decoder neuron fires 24 to 71 spikes,
-almost the same count at gains 1, 4 and 16. That activity belongs to the shuffled graph
-and barely depends on the visual gain. The test asks whether the intact turn falls
-outside that band, and the intact readout is weaker than the band's ends. With one
-stimulus, one decoder cell and 39 nulls, this fixture cannot separate a small
-connectome-dependent turn from the shuffled graphs' own activity.
+In each configuration, 30 or 31 of the 39 shuffles give a heading change of 0. The
+same six seeds give every change larger than 0.5 rad in all three configurations (7308,
+7316, 7317, 7323, 7327, 7333), and seed 7323 sets the minimum at every gain. In each of
+them one decoder neuron dominates with 24 to 71 spikes; oDN1 L adds at most 2. The
+dominant neuron's count changes by at most 4 spikes between gains 1, 4 and 16, so that
+activity belongs to the shuffled graph more than to the visual gain. The test asks
+whether the intact turn falls outside that band, and the intact readout is weaker than
+the band's ends. With one stimulus, one decoder cell and 39 nulls, this fixture cannot
+separate a small connectome-dependent turn from the shuffled graphs' own activity.
 
 ## Version 1 result: uninformative
 
