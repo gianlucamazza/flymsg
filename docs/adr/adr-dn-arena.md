@@ -361,12 +361,14 @@ built site pages. Pages registration can follow in a later docs PR.
 - Full CI green on this docs-only change (`tests.yml`: ruff, prettier 3.8.1
   on all `.md`, non-slow pytest).
 
-## Implementation status (2026-10-19)
+## Implementation status (2026-10-20)
 
 `arena-1` through `arena-6` are merged: inventory #253, body #255 and #256, decoder
 #258, controls #259, review fixes #257, #261 and #264, the lock and `flymsg dn-arena`
 #270 (with the closed loop's input dead time), the run and its archive #276. The counted run of
 `validation/dn_arena.yaml` version 1 is `uninformative` (#276,
 [DN arena](../result/dn-arena.md)): every input photoreceptor's output synapse is
-inhibitory, so no spike passes the lamina. Version 2 of the lock moves to the graded
-input of the [graded eye ADR](adr-vee1-graded-eye.md).
+inhibitory, so no spike passes the lamina. Version 2 of the lock (#284) moves to the
+graded input of the [graded eye ADR](adr-vee1-graded-eye.md); its counted run is
+`depends`: `uninformative` at lamina-to-medulla gain 1, `null` at gains 4 and 16, inside
+the range of 39 wiring-null shuffles.

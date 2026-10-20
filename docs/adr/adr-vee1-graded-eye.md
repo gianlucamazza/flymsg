@@ -154,11 +154,11 @@ records, locks and archived results do not.
 
 Implementation goes to the agents named in issue #265; reviews are cross-vendor.
 
-## Implementation status (2026-10-19)
+## Implementation status (2026-10-20)
 
-| Step   | State                                                                                                                                            |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| vee1-1 | Merged (#280): `flymsg.visual_pathway`; the 12 version 4 configurations give identical `sim.run` arguments before and after (digest `4844ff67…`) |
-| vee1-2 | Merged (#274): `CpuRuntime(input_encoding=)`; `kick_equivalent` equals `sim.run` bit for bit; the native lane refuses it                         |
-| vee1-3 | Merged (#281): `flymsg.closedloop/v2`; v1 bytes pinned by golden hashes; replay and resume refuse a different encoding or pathway                |
-| vee1-4 | Lock merged (#284, owner approval 2026-10-20); counted run started from `ec3d080`, no result yet                                                 |
+| Step   | State                                                                                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| vee1-1 | Merged (#280): `flymsg.visual_pathway`; the 12 version 4 configurations give identical `sim.run` arguments before and after (digest `4844ff67…`)                    |
+| vee1-2 | Merged (#274): `CpuRuntime(input_encoding=)`; `kick_equivalent` equals `sim.run` bit for bit; the native lane refuses it                                            |
+| vee1-3 | Merged (#281): `flymsg.closedloop/v2`; v1 bytes pinned by golden hashes; replay and resume refuse a different encoding or pathway                                   |
+| vee1-4 | Lock merged (#284, owner approval 2026-10-20); counted run from `ec3d080`: `depends` (gain 1 uninformative, gains 4 and 16 null), [DN arena](../result/dn-arena.md) |
