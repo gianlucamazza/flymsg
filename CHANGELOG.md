@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Runtime: contiguous graded delivery.** Each graded source's outgoing CSC column is copied once, in stored order, into contiguous index and weight arrays (`prepare_kernel`, shared by `CpuRuntime` and `sim.run`). Delivery adds those products in that same order and still does not apply a release of exactly 0. The slices stay out of the checkpoint payload and identity. State, spikes, bins and checkpoint bytes stay bit-identical.
+
 - **Runtime: per-run preparation computed once.** Membrane classification, the scalar-class constants, the Taylor sparsity and the kernel scratch are built once from the construction inputs in `CpuRuntime` and in `sim.run`. They stay out of the checkpoint payload and identity. State, spikes, bins and checkpoint bytes stay bit-identical.
 
 - **Module boundaries step 8: explicit repository root.** `FLYMSG_ROOT` or validated source ancestry selects repository inputs; installed packages import without a checkout and refuse unavailable repository operations clearly. CSS and viewer assets use package resources; figure data uses `--data` / `FLYMSG_DATA`. Leaf moves remain deferred.
