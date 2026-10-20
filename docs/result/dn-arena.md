@@ -93,8 +93,10 @@ left, +0.73 mV right) and the spikes of each stage from the medulla to the DN ty
 
 **Input balance** (same setup). The arena's input photoreceptors are those MaleCNS v1.0
 assigns to a column with a lens: 2,251 in the right eye (747 columns) and 1,652 in the
-left (651 columns), whose summed synaptic weight onto L1–L3 is 16,233 against 12,164
-(+33% on the right). Neuron counts per side are balanced downstream (L1–L5 4,466 and
+left (651 columns), with 84,411 against 63,251 synapses onto L1–L3 (+33% on the right).
+The imbalance is in the reconstruction before our selection: 2,474 traced right-eye
+photoreceptors against 1,733 left, of which 201 and 70 receive no column; no side-dependent
+filter in `flymsg.eye` or `dn_arena` adds to it. Neuron counts per side are balanced downstream (L1–L5 4,466 and
 4,417; T4/T5 6,795 and 6,790). Under uniform light the right lamina therefore receives
 a third more drive. At gain 4 this matches the readout's rightward bias, which the
 mirror does not reverse; at gain 16 the mirror does reverse it (+4 to −6), so there the
