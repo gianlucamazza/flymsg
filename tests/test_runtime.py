@@ -867,3 +867,231 @@ def test_mixed_cases_equal_the_code_before_the_preparation_moved(
     arrays = {k: v for k, v in vars(result).items() if isinstance(v, np.ndarray)}
     expected = _GOLDEN[f"{encoding}-{branch}-{solver}"]
     assert (_digest(rt.snapshot()), _digest(arrays)) == expected
+
+
+# Snapshot and sim.run digests of each graded-heavy case, from the code before
+# graded edges were packed. The maintainer fills these from that base commit.
+# digests from the code before contiguous graded delivery (main e79362b)
+_GRADED_GOLDEN = {
+    "counts-0.0": (
+        "c5693c6bb42b6fa26caf759f30547e58d13d58006355f03b574a30b60c520247",
+        "008d9a1dd14b15795b4894e20364e48fc5aeb60fb43e5a051a5faf08b5b8c9e6",
+    ),
+    "counts-0.8": (
+        "389b9ce554f69d815a442af7231af519ec597ec84fcc5ae6a6264436210e983d",
+        "8bccace4b9f909e216cff2257fe0a875371e9206d1609cc254b302dc30c777bd",
+    ),
+    "counts-1.8": (
+        "fc099afaa7e41856fa18a6989a94741817e5eac37c85f45b3acc5f8e217f7064",
+        "3300cd6c05de98b6cfb435027a42f2820f70a5eff0071871adcc11cc8c91d8e2",
+    ),
+    "kick_equivalent-0.0": (
+        "36a2de345f646a8324a5913ee3852a9881376c0ea821a697e40632aecd855b5c",
+        "a111a204edfd2ea73643acb7d5291f57229c6710ea06814d5efbce4448edd0ef",
+    ),
+    "kick_equivalent-0.8": (
+        "77525706c8b5f80880c2c860580593a383ce28d322bfc32cea51c72fd267ab62",
+        "370a3363aa04da8808f0b279dcb11ecd801fbc3f4f1400e811d2223ecb9dd641",
+    ),
+    "kick_equivalent-1.8": (
+        "621a69d46e4f0306e5d468490a1cbbf1c7102356fa10abe7f7fb705378a1967a",
+        "1dabf7bbcac8507a2ac5f11987e95f3b3d237dd516f977ee9313c5a1b6df5eb8",
+    ),
+}
+
+_GH_N = 40
+_GH_STEPS = 96
+_GH_PER_BIN = 8
+_GH_STOPS = (1, 2, 5, 8, 17, 18, 19, 48, 49, _GH_STEPS)
+_GH_MID = 48
+
+
+def _graded_heavy_network():
+    """CSC with repeated targets, an explicit zero weight and an empty column."""
+    n = _GH_N
+    columns = [[] for _ in range(n)]
+    for src in range(30):
+        for edge in range(12):
+            post = (src * 3 + edge * 7) % n
+            weight = float((edge % 5) - 2)
+            columns[src].append((post, weight * (1 + src % 3)))
+    columns[3] = []
+    columns[9] = [(5, 1.25), (1, -2.0), (5, 1.25), (20, 0.0), (4, -0.5)]
+    for src in range(30, n):
+        for edge in range(6):
+            columns[src].append(((src + edge * 3) % n, float(edge + 1)))
+    indptr = np.zeros(n + 1, dtype=np.int64)
+    posts, weights = [], []
+    for src, column in enumerate(columns):
+        for post, weight in column:
+            posts.append(post)
+            weights.append(weight)
+        indptr[src + 1] = len(posts)
+    return sparse.csc_matrix(
+        (
+            np.asarray(weights, dtype=np.float32),
+            np.asarray(posts, dtype=np.int64),
+            indptr,
+        ),
+        shape=(n, n),
+    )
+
+
+def _graded_heavy_graded(p):
+    """Most neurons graded, tonic at rest, plus sources whose release is 0."""
+    order = np.random.default_rng(1).permutation(30)
+    v_lo = np.full(30, p.v_rest - 12.0)
+    v_lo[4] = p.v_rest + 30.0
+    v_lo[11] = p.v_rest - 40.0
+    span = np.full(30, 24.0)
+    span[6] = 8.0
+    rate = np.linspace(0.0, 250.0, 30)
+    rate[14] = 500.0
+    return sim.Graded(
+        idx=order,
+        v_lo=v_lo[order],
+        span=span[order],
+        rate_hz=rate[order],
+    )
+
+
+def _graded_heavy_case(encoding, delay):
+    p = sim.Params(delay=delay, th_jump=1.5)
+    stim = np.array([1, 8, 31, 36])
+    if encoding == "counts":
+        kicks = np.zeros((_GH_STEPS, stim.size), dtype=np.int64)
+        kicks[::7, 0] = 1
+        kicks[::5, 1] = 2
+        kicks[::11, 2] = 1
+        kicks[3::9, 3] = 1
+    else:
+        kicks = np.linspace(0.0, 1.25, _GH_STEPS * stim.size, dtype=np.float32)
+        kicks = kicks.reshape(_GH_STEPS, stim.size)
+    return {
+        "W": _graded_heavy_network(),
+        "stim": stim,
+        "p": p,
+        "kicks": kicks,
+        "encoding": encoding,
+        "silence": np.array([2, 7, 15, 28, 35]),
+        "trace": np.array([31, 33, 36, 39]),
+        "graded": _graded_heavy_graded(p),
+    }
+
+
+def _graded_heavy_runtime(case):
+    return CpuRuntime(
+        case["W"],
+        case["stim"],
+        steps=_GH_STEPS,
+        kicks=case["kicks"],
+        input_encoding=case["encoding"],
+        p=case["p"],
+        per_bin=_GH_PER_BIN,
+        silence=case["silence"],
+        trace=case["trace"],
+        graded=case["graded"],
+    )
+
+
+def _graded_heavy_run(case):
+    p = case["p"]
+    return sim.run(
+        case["W"],
+        case["stim"],
+        duration_ms=_GH_STEPS * p.dt,
+        kicks=case["kicks"],
+        p=p,
+        bin_ms=_GH_PER_BIN * p.dt,
+        silence=case["silence"],
+        trace=case["trace"],
+        graded=case["graded"],
+    )
+
+
+def _assert_graded_edges_are_csc_columns(runtime):
+    """Packed slices are the CSC columns, in graded-source order, bit for bit."""
+    prep = runtime._prepared
+    g_idx = runtime._graded[0]
+    indptr, indices, data = runtime._indptr, runtime._indices, runtime._data
+    assert prep.g_ptr.dtype == np.int64
+    assert prep.g_post.dtype == np.int64
+    assert prep.g_w.dtype == np.float32
+    assert prep.g_ptr.flags.c_contiguous
+    assert prep.g_post.flags.c_contiguous
+    assert prep.g_w.flags.c_contiguous
+    assert prep.g_ptr.shape == (g_idx.size + 1,)
+    assert int(prep.g_ptr[0]) == 0
+    for k in range(g_idx.size):
+        j = int(g_idx[k])
+        a, b = int(indptr[j]), int(indptr[j + 1])
+        lo, hi = int(prep.g_ptr[k]), int(prep.g_ptr[k + 1])
+        assert indices[a:b].tobytes() == prep.g_post[lo:hi].tobytes()
+        assert data[a:b].tobytes() == prep.g_w[lo:hi].tobytes()
+    assert int(prep.g_ptr[-1]) == prep.g_post.size == prep.g_w.size
+
+
+@pytest.mark.parametrize("encoding", ["counts", "kick_equivalent"])
+@pytest.mark.parametrize("delay", [0.0, 0.8, 1.8])
+def test_graded_heavy_cases_equal_the_code_before_contiguous_delivery(
+    tmp_path, encoding, delay
+):
+    """Tonic graded delivery, chunked and restored, pinned to the base commit."""
+    case = _graded_heavy_case(encoding, delay)
+    expected = _graded_heavy_run(case)
+    assert expected.counts.sum() > 0
+    assert expected.counts[:, case["graded"].idx].sum() == 0
+    assert expected.graded_v is not None
+    assert np.isfinite(expected.graded_v).all()
+    assert np.ptp(expected.graded_v) > 0
+
+    whole = _graded_heavy_runtime(case)
+    _assert_graded_edges_are_csc_columns(whole)
+    whole.advance_to(_GH_STEPS)
+
+    parts = _graded_heavy_runtime(case)
+    for stop in _GH_STOPS:
+        parts.advance_to(stop)
+
+    live = _graded_heavy_runtime(case)
+    resumed = None
+    mid = tmp_path / "mid.npz"
+    for stop in _GH_STOPS:
+        live.advance_to(stop)
+        if stop != _GH_MID:
+            if resumed is not None:
+                resumed.advance_to(stop)
+            continue
+        live.checkpoint(mid)
+        resumed = _graded_heavy_runtime(case)
+        resumed.restore(mid)
+        _same_snapshot(live.snapshot(), resumed.snapshot())
+    assert resumed is not None
+
+    for runtime in (whole, parts, live, resumed):
+        _result_bytes(runtime.result(), expected)
+    for runtime in (parts, live, resumed):
+        _same_snapshot(whole.snapshot(), runtime.snapshot())
+
+    payloads = []
+    for name, runtime in (("whole", whole), ("parts", parts), ("resumed", resumed)):
+        path = tmp_path / f"{name}.npz"
+        runtime.checkpoint(path)
+        payloads.append(_checkpoint_payload(path))
+    for meta, arrays in payloads:
+        assert meta == payloads[0][0]
+        assert arrays == payloads[0][1]
+
+    key = f"{encoding}-{delay:.1f}"
+    if key not in _GRADED_GOLDEN:
+        pytest.fail(
+            f"fill _GRADED_GOLDEN[{key!r}] from the base commit, before "
+            "contiguous graded delivery, with "
+            "(_digest(full-horizon snapshot), _digest(sim.run result arrays))"
+        )
+    result_arrays = {
+        name: value
+        for name, value in vars(expected).items()
+        if isinstance(value, np.ndarray)
+    }
+    assert (_digest(whole.snapshot()), _digest(result_arrays)) == _GRADED_GOLDEN[key]

@@ -486,6 +486,9 @@ def run(
     gap_gen, gap_keys, gap_clock = electrical.generators(gap, gap_nodes, gap_off, p)
     check_membrane_gap(membrane, gap_nodes)
     constants = kernel_constants(membrane, n, p)
+    indptr = W.indptr.astype(np.int64)
+    indices = W.indices.astype(np.int64)
+    data = W.data.astype(np.float32)
     prepared = prepare_kernel(
         constants[0],
         constants[1],
@@ -497,11 +500,15 @@ def run(
         gap_moff,
         gap_gen,
         gap_clock,
+        indptr,
+        indices,
+        data,
+        g_idx,
     )
     counts, first, g_vsum = _kernel(
-        W.indptr.astype(np.int64),
-        W.indices.astype(np.int64),
-        W.data.astype(np.float32),
+        indptr,
+        indices,
+        data,
         n,
         steps,
         per_bin,
@@ -576,9 +583,10 @@ def _constants(p: Params) -> tuple:
 class KernelPrep(NamedTuple):
     """What `_advance` takes after the gap mask.
 
-    Built once from the kernel constants and the gap generators. Scratch is
-    written before it is read on every step, so it has no state at a step
-    boundary and is not part of a checkpoint.
+    Built once from the kernel constants, the gap generators and the graded
+    columns of `W`. Scratch is written before it is read on every step, so
+    it has no state at a step boundary and is not part of a checkpoint. The
+    graded slices are a packed copy of those CSC columns, not extra state.
     """
 
     special: np.ndarray
@@ -599,12 +607,51 @@ class KernelPrep(NamedTuple):
     t_ng: np.ndarray
     t_sum: np.ndarray
     t_free: np.ndarray
+    g_ptr: np.ndarray
+    g_post: np.ndarray
+    g_w: np.ndarray
+
+
+def _graded_edges(indptr, indices, data, g_idx):
+    """Contiguous CSC columns of the graded sources, in `g_idx` order.
+
+    Source `k` keeps `indices[indptr[j]:indptr[j + 1]]` and the matching
+    weights, including explicit zeros and repeated targets. Delivery then adds
+    the same products, to the same accumulators, in that order.
+    """
+    n_g = int(g_idx.size)
+    g_ptr = np.zeros(n_g + 1, dtype=np.int64)
+    if n_g:
+        g_ptr[1:] = np.cumsum(indptr[g_idx + 1] - indptr[g_idx], dtype=np.int64)
+    total = int(g_ptr[n_g])
+    g_post = np.empty(total, dtype=np.int64)
+    g_w = np.empty(total, dtype=np.float32)
+    for k in range(n_g):
+        j = int(g_idx[k])
+        a, b = int(indptr[j]), int(indptr[j + 1])
+        lo, hi = int(g_ptr[k]), int(g_ptr[k + 1])
+        np.copyto(g_post[lo:hi], indices[a:b], casting="no")
+        np.copyto(g_w[lo:hi], data[a:b], casting="no")
+    return g_ptr, g_post, g_w
 
 
 def prepare_kernel(
-    em, es, gv, v_rest, v_th, gap_nodes, gap_off, gap_moff, gap_gen, gap_clock
+    em,
+    es,
+    gv,
+    v_rest,
+    v_th,
+    gap_nodes,
+    gap_off,
+    gap_moff,
+    gap_gen,
+    gap_clock,
+    indptr,
+    indices,
+    data,
+    g_idx,
 ) -> KernelPrep:
-    """Classify membranes and build the Taylor sparsity and scratch, once.
+    """Classify membranes, pack graded edges, and build the Taylor sparsity, once.
 
     Neuron 0 is the scalar class: a neuron is special when any of its five
     float32 constants differs from neuron 0's. Without a `Membrane` every
@@ -612,8 +659,10 @@ def prepare_kernel(
     before per-neuron membranes. A minority keeps that loop and is recomputed
     with its own constants (the same operations, so the same values); most of
     the network reads every neuron's constants. The Taylor nonzeros are each
-    component generator's rows, read from the dense generators once. `run` and
-    `CpuRuntime` both call this; `_advance` does not.
+    component generator's rows, read from the dense generators once. Graded
+    delivery walks every graded source whose delayed release is not exactly 0;
+    those CSC columns are copied here so that walk reads contiguous memory.
+    `run` and `CpuRuntime` both call this; `_advance` does not.
     """
     n = em.shape[0]
     special_buf = np.empty(n, dtype=np.int64)
@@ -693,6 +742,7 @@ def prepare_kernel(
         np.zeros(n_gap, dtype=np.float64),
         np.zeros(n_gap, dtype=np.float64),
         np.zeros(n_gap, dtype=np.bool_),
+        *_graded_edges(indptr, indices, data, g_idx),
     )
 
 
@@ -753,6 +803,9 @@ def _kernel(
     t_ng,
     t_sum,
     t_free,
+    g_ptr,
+    g_post,
+    g_w,
 ):
     """One simulation. Same operations, order and float32/float64 rounding as the NumPy
     reference (tests/reference_sim.py), so the spikes are identical:
@@ -763,12 +816,12 @@ def _kernel(
        column (as scipy's CSC product), lost on refractory targets; Poisson input into v;
     4. reset of v and g, threshold jump.
     Graded neurons skip 2 and 4; their release, computed at 2 from v, is delivered d steps
-    later at 3, after the spikes, summed per target column by column (as scipy's CSC
-    matrix-vector product). Electrically coupled neurons replace the update of 1 by their
-    component's exact step [P | Q | S] applied to the state before it (potentials relative
-    to rest, conductances of non-refractory neurons, then the spike term of members whose
-    spike is still crossing), summed in float64 in that order; a member's spike at 4 makes
-    its spike term its `gap_amp` for the next `gap_width` steps."""
+    later at 3, after the spikes, summed per target in CSC column order from the graded
+    edge slices packed once by prepare_kernel. Electrically coupled neurons replace the
+    update of 1 by their component's exact step [P | Q | S] applied to the state before it
+    (potentials relative to rest, conductances of non-refractory neurons, then the spike
+    term of members whose spike is still crossing), summed in float64 in that order; a
+    member's spike at 4 makes its spike term its `gap_amp` for the next `gap_width` steps."""
     v = v_rest.copy()
     g = np.zeros(n, dtype=np.float32)
     th = np.zeros(n, dtype=np.float32)
@@ -864,6 +917,9 @@ def _kernel(
         t_ng,
         t_sum,
         t_free,
+        g_ptr,
+        g_post,
+        g_w,
     )
     return counts, first, g_vsum
 
@@ -945,6 +1001,9 @@ def _advance(
     t_ng,
     t_sum,
     t_free,
+    g_ptr,
+    g_post,
+    g_w,
 ):
     stim_steps = kicks.shape[0]
     # Neuron 0's float32 constants, copied once by prepare_kernel.
@@ -1106,15 +1165,17 @@ def _advance(
                 g[r] = g[r] + c[r]
             c[r] = 0.0
             hit[r] = False
+        # g_post/g_w are those CSC columns in g_idx order. Exact 0 release stays
+        # unapplied: decay of a negative g can underflow to -0, and g + 0 would
+        # turn that into +0.
         nt = 0
         for k in range(g_idx.size):
             a = g_ring[slot, k]
             if a == zero:
                 continue
-            j = g_idx[k]
-            for q in range(indptr[j], indptr[j + 1]):
-                r = indices[q]
-                c[r] += data[q] * a
+            for q in range(g_ptr[k], g_ptr[k + 1]):
+                r = g_post[q]
+                c[r] += g_w[q] * a
                 if not hit[r]:
                     hit[r] = True
                     touched[nt] = r

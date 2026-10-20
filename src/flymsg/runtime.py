@@ -57,9 +57,10 @@ class CpuRuntime:
     copies a nonnegative finite float32 drive and widens it to float64, the value
     `sim.run` applies. RNG is owned by the caller: checkpoint identity includes
     the encoding and the complete input schedule. All arrays are private.
-    Membrane classes, the scalar-class constants, Taylor sparsity and scratch
-    are computed once from these inputs. They are derived, not state: a
-    checkpoint does not carry them, and restore leaves them in place.
+    Membrane classes, the scalar-class constants, Taylor sparsity, the graded
+    edge slices and scratch are computed once from these inputs. They are
+    derived, not state: a checkpoint does not carry them, and restore leaves
+    them in place.
     """
 
     def __init__(
@@ -271,6 +272,10 @@ class CpuRuntime:
             gap[3],
             generators,
             clock,
+            self._indptr,
+            self._indices,
+            self._data,
+            self._graded[0],
         )
         self._scratch = (
             np.zeros(n, dtype=np.float32),
@@ -516,9 +521,10 @@ class CpuRuntime:
                 state, self._identity, step, input_end
             ):
                 raise ValueError("checkpoint integrity mismatch")
-            # `_prepared` was built from the membrane constants and the gap
-            # generators. Those construction arrays are not in the checkpoint,
-            # so the same preparation stays valid.
+            # `_prepared` was built from the membrane constants, the gap
+            # generators and the graded columns of W. Those construction
+            # arrays are not in the checkpoint, so the same preparation stays
+            # valid.
             self._state, self._step = state, step
             self._kicks = state[self._input_key]
             self._stim_steps = input_end
