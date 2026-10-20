@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **DN arena v3-2/v3-3: code and lock draft.** Version 3 of `validation/dn_arena.yaml` and `flymsg.dn_arena` replaces the static sphere with the moving dark bar of Collie et al. (`optics.Bar`, sides `left` and `mirror`, width 10.5°, sweep 22.5° at 25°/s), scores the mirrored contrast against 39 wiring-null seeds 7400–7438, and keeps lamina-to-medulla gains 4 and 16. The `all` input set is the claim; the `paired` column set is a sensitivity reported outside it. One shuffled pathway is dark-anchored once and serves both sides. `content_sha256` `7ed0e04de84b9a584080021da2c5d4748d062e5af92327deab049b15ffbbea1c`. The lock awaits a timing smoke and owner approval. No counted run.
+
 - **DN arena v3-1: optics bar primitive.** `optics.Bar` is a dark vertical bar on a cylindrical screen. `bar_coverage` integrates each column's spherical-Gaussian acceptance on a polar midpoint grid and returns the share whose rays hit the bar; `bar_config_sha256` names that configuration (`flymsg.optics.bar/v1`). `closedloop.optical_bars` is the stimulus step: per column with a lens, the largest single-bar coverage. `Sphere`, `sample`, `config_sha256` and `closedloop.optical` are unchanged. No lock, no run.
 
 - **DN arena v3 design proposal.** `docs/plan/dn-arena-v3.md` (accepted by the owner, #293; no lock). The score becomes a mirrored contrast on every graph, which cancels the eye imbalance and the shuffled graphs' tonic turning. The stimulus becomes the sourced moving dark bar of Collie et al. 2025 (male flies walking; DNa02 right−left asymmetry predicts rotational velocity), which needs a new `optics` bar primitive. The reconstruction stays uncompensated, with a declared paired-column sensitivity run. Gains 4 and 16; ~7 h primary plus ~7 h sensitivity.

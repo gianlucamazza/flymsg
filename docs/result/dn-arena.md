@@ -4,7 +4,8 @@ The synthetic steering fixture of the [DN-arena ADR](../adr/adr-dn-arena.md): th
 MaleCNS v1.0 connectome in a closed loop with the kinematic planar body `flymsg.arena`,
 an engineered descending-neuron readout (`flymsg.dn_decoder`) and a lateral dark
 sphere. Version 1 drives the photoreceptors with Poisson rates; version 2 drives the
-graded visual pathway of T4/T5 version 4. Lock:
+graded visual pathway of T4/T5 version 4. Version 3 is a draft lock and has not run;
+it is described below. Lock:
 [`validation/dn_arena.yaml`](https://github.com/gianlucamazza/flymsg/blob/main/validation/dn_arena.yaml)
 (issue #263). Neuron identities: [DN inventory](../dn-arena-inventory.md).
 
@@ -203,10 +204,31 @@ wiring null (seeds 7300–7338) keeps the intact photoreceptor release rate and 
 and anchors on its own shuffled graph. A timing-only smoke (no spike, command or heading
 read) estimated about 3 h for the run with 4 workers; under load it took 5 h 23 min.
 
+## Version 3 (draft lock, not run)
+
+`validation/dn_arena.yaml` version 3 is a draft (`content_sha256` `7ed0e04d…`). It has
+no counted run and no results. The stimulus replaces version 2's static sphere with a
+moving dark bar (`optics.Bar` through `closedloop.optical_bars`): width 10.5°, height
+48°, a 22.5° sweep at 25°/s, visible from 100000 to 1000000 µs, on a cylinder of
+radius 0.1 m whose axis passes through the body's reset position. The left bar's
+centre moves from body azimuth −56.25° to −33.75° (rightward, toward the midline); the
+mirror is that sweep reflected, from +56.25° to +33.75°. The score, per configuration
+and input set, is the mirrored contrast: half the left-minus-mirror change in heading.
+It is `null` when that contrast lies inside the 39 wiring-null contrasts (seeds
+7400–7438, inclusive) and `difference` otherwise. A negative contrast outside the range
+is reported as `difference (wrong sign)`. A configuration is `uninformative` when the
+six decoder neurons fire no spike in the intact arm on both sides. The claim's envelope
+reads only the `all` input set (`robust: <verdict>`, `depends`, or `uninformative`).
+The `paired` set — inputs whose column has a mirror column with a viewing direction
+and at least one input — gets the same verdicts, reported as sensitivity outside the
+claim. Configurations are lamina-to-medulla gains 4 and 16. One shuffled pathway is
+dark-anchored once and serves both sides. `smoke` is still pending a timing run and
+owner approval.
+
 ## What follows
 
-- No further version of this lock is planned. A different stimulus, decoder or null
-  count would be a new lock with its own approval, not a rerun of version 2.
+- Version 3 is a draft and has not run. A different stimulus, decoder or null count
+  would be a new lock with its own approval, not a rerun of version 2.
 - Steering by the connectome needs a readout that the shuffled graphs do not match.
   This fixture's six neurons and one second do not give one. The diagnostics above name
   what a further version would have to change: a mirrored-stimulus contrast scored on

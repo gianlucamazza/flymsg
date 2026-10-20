@@ -2,11 +2,11 @@
 
 On the full connectome in a closed loop with a kinematic planar body, an engineered
 descending-neuron readout and the graded visual pathway of T4/T5 version 4, driven
-by a lateral dark sphere: whether the intact graph's change in yaw over the locked
-window lies outside the range of 39 degree-preserving shuffles, at every pathway
-configuration. A difference is synthetic, not a biological or connectome-derived
-mechanism. The run builds the loop once, then runs every job. Version 1 results
-stay with their source commit.
+by a moving dark bar and its mirror: whether the intact graph's mirrored contrast
+lies outside the range of 39 degree-preserving shuffles, at every pathway
+configuration of the full input set. The paired-column set is the same score,
+reported outside that claim. A difference is synthetic, not a biological or
+connectome-derived mechanism. Versions 1 and 2 stay with their source commits.
 """
 
 from __future__ import annotations
@@ -36,6 +36,7 @@ from flymsg import (
     sim,
     t4t5,
     visual_pathway,
+    wiring,
 )
 from flymsg.arena import Arena
 from flymsg.dn_decoder import SIDES, TYPES, Decoder
@@ -47,16 +48,20 @@ ROOT = repository_root()
 PATH = ROOT / "validation" / "dn_arena.yaml"
 INVENTORY = ROOT / "docs" / "dn-arena-inventory.md"
 
-# Version 1 names that source commit (docs/replication.md). The maintainer fills
-# version 2 with the lock's content_sha256; until then the placeholder is not a digest.
+# Versions 1 and 2 name their source commits (docs/replication.md). This module
+# implements version 3.
 VERSION_HASHES = {
     1: "9ba9a69c8397fae5c6aa9ee60cd48147d4898110c2dbb22a2d461254b4583aa3",
     2: "1426386c66041510812bdcd6b3bfebb91d05a0811c5bfe33f9c191f3cd9a3ac7",
+    3: "7ed0e04de84b9a584080021da2c5d4748d062e5af92327deab049b15ffbbea1c",
 }
 
 _PAIRS = tuple((kind, side) for kind in TYPES for side in SIDES)
 _SETUP = None
 _HEX = frozenset("0123456789abcdef")
+_SIDES = ("left", "mirror")
+
+content_hash = locks.content_hash
 
 
 class DNArenaError(ValueError):
@@ -74,8 +79,9 @@ def assert_locked(doc: dict | None = None) -> dict:
 
 def assert_matches_code(doc: dict | None = None) -> dict:
     doc = assert_locked() if doc is None else doc
-    if doc["version"] != 2:
-        raise DNArenaError("this module implements DN arena version 2")
+    if doc["version"] != 3:
+        raise DNArenaError("this module implements DN arena version 3")
+    _bind_lock(doc)
     model = doc["model"]
     for name in ("neural_us", "body_us", "control_us", "latency_us", "duration_us"):
         if type(model[name]) is not int:
@@ -98,27 +104,9 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         raise DNArenaError("duration must be a multiple of the control period")
     _window("score", doc["score"]["window_us"], model["duration_us"], clock.body_us)
     _window("decoder", doc["decoder"]["window_us"], model["duration_us"], clock.body_us)
-    _score_ok(doc)
+    _bar_consistent(doc["stimulus"], model["duration_us"])
     if doc["arms"] != list(closedloop.ARMS):
         raise DNArenaError("arms are not the closed-loop arms in order")
-    wn = doc["controls"]["wiring_null"]
-    if (wn["seed0"], wn["seeds"]) != (7300, 39):
-        raise DNArenaError("wiring-null seeds are not 7300-7338")
-    if wn["rule"] != (
-        "wiring.shuffle_targets on the MaleCNS edges, then the intact loop at "
-        "that configuration: the pathway is rebuilt on the shuffled graph by the "
-        "same builder (timing scale and lamina to medulla gain by type, graded "
-        "release by type) and dark-anchored on it; the photoreceptor release rate "
-        "and the drive gain are those of the intact graph, a calibration of the "
-        "stimulus, not of the network"
-    ):
-        raise DNArenaError("the wiring-null rule changed")
-    if doc["controls"]["script"]["rule"] != (
-        "yaw +100 deg/s toward the eye with the larger summed coverage "
-        "(left positive), 0 when equal; forward 10 mm/s; "
-        "from the previous control tick's sample"
-    ):
-        raise DNArenaError("the script rule changed")
     if neurons(doc) != _mapped_inventory(
         require_repository_path(INVENTORY).read_text(encoding="utf-8")
     ):
@@ -136,7 +124,7 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     if doc["silenced"] != "the six decoder neurons":
         raise DNArenaError("silenced is not the six decoder neurons")
     _pathway_ok(doc)
-    eye_doc, stim = doc["eye"], doc["stimulus"]
+    eye_doc = doc["eye"]
     if eye_doc["registration"] != (
         "test-only identity, eyemap frame = body frame; "
         "no sourced registration exists (#179)"
@@ -148,19 +136,10 @@ def assert_matches_code(doc: dict | None = None) -> dict:
         raise DNArenaError("the eye mounts are not FlyGym's")
     if eye_doc["acceptance_deg"] != 8.23:
         raise DNArenaError("acceptance is not 8.23 deg")
-    if stim["sphere"] != "lateral":
-        raise DNArenaError("the sphere is not the lateral one")
-    if stim["center_z"] != "the mean world height of the two eye mounts at reset":
-        raise DNArenaError("the sphere height is not the eye mounts at reset")
-    if stim["center_rule"] != (
-        "y +10 mm is the fly's left at heading 0; static in the world"
-    ):
-        raise DNArenaError("the sphere is not static at the fly's left")
-    _sphere_ok(stim)
     _body_ok(doc["body"])
     if (
         eye_doc["registration_evidence"] != "unmapped"
-        or stim["evidence"] != "engineered"
+        or doc["stimulus"]["evidence"] != "engineered"
         or doc["decoder"]["evidence"] != "engineered"
         or doc["body"]["evidence"] != "synthetic"
         or doc["controls"]["script"]["evidence"] != "synthetic"
@@ -179,12 +158,321 @@ def assert_matches_code(doc: dict | None = None) -> dict:
     return doc
 
 
+def _at(doc: dict, path: tuple[str, ...]):
+    got = doc
+    for key in path:
+        got = got[key]
+    return got
+
+
+def _bind(doc: dict, path: tuple[str, ...], expected) -> None:
+    if _at(doc, path) != expected:
+        raise DNArenaError(f"{'.'.join(path)} changed")
+
+
+def _bind_lock(doc: dict) -> None:
+    """Every version-3 field the loop implements, verbatim."""
+    _bind(doc, ("seed",), 7210)
+    _bind(
+        doc,
+        ("seed_note",),
+        "the drive is deterministic (no Poisson draw); the seed orders the "
+        "shuffled arm's ticks and is recorded",
+    )
+    _bind(
+        doc,
+        ("claim", "text"),
+        "On the full MaleCNS v1.0 connectome in a closed loop with a kinematic "
+        "planar body, an engineered descending-neuron readout and the graded "
+        "visual pathway of T4/T5 version 4 driven by the moving dark bar of "
+        "Collie et al.: does the intact graph's mirrored contrast, half the "
+        "change in yaw under a bar sweeping on the left minus the change under "
+        "its mirror image on the right, lie outside the range of the same "
+        "contrast on 39 degree-preserving shuffles of the same graph, at every "
+        "configuration of the pathway envelope? The contrast cancels turning "
+        "that does not depend on the bar's side. A contrast outside that range "
+        "is a synthetic difference, not a biological or connectome-derived "
+        "mechanism.",
+    )
+    _bind(
+        doc,
+        ("seen_before_lock",),
+        "Versions 1 and 2 of this lock ran (results/dn-arena/v1 uninformative, "
+        "results/dn-arena/v2 depends; docs/result/dn-arena.md) and were read, "
+        "with the version 2 post-verdict diagnostics (scripts/dn_arena_v2_*.py): "
+        "the intact readout is switched on by light but barely follows a static "
+        "sphere's side, the reconstruction has 2,251 right-eye and 1,652 "
+        "left-eye input photoreceptors, the wiring nulls fire decoder neurons in "
+        "darkness, and at lamina-to-medulla gain 1 the intact readout was "
+        "silent. This version's score, stimulus, configurations and "
+        "paired-column sensitivity set are chosen from that reading and from "
+        "docs/plan/dn-arena-v3.md (accepted by the owner, #293). No bar stimulus "
+        "has run on the full connectome before this lock except the timing smoke "
+        "runs named in smoke, whose spikes, commands and heading were not read "
+        "and whose records were deleted unread.",
+    )
+    _bind(doc, ("smoke",), "pending: timing only, filled in before owner approval")
+    _bind(doc, ("stimulus", "object"), "bar")
+    _bind(
+        doc,
+        ("stimulus", "source"),
+        "Collie et al. 2025, bioRxiv 10.1101/2025.04.23.650240 v1 (Neuron 2026), "
+        "STAR Methods: 'each pixel subtending ~1.5° of the animal's visual field "
+        "and covering 48° in height and 336° in azimuth'; 'For visual object "
+        "pursuit, the visual stimulus was a dark vertical bar (10.5°) on a "
+        "bright background.'; 'an object appearing randomly every 3 s, sweeping "
+        "22.5° at 25°/s or 75°/s, then disappearing (“motion pulses”), with "
+        "motion paths tiling the front 100° of the visual field (for AOTU019) "
+        "or the front 180° of the visual field (for AOTU025 and for behavior "
+        "experiments in intact flies)'. Male flies walking on a ball; DNa02 "
+        "right minus left responses (Fig. 2e, n = 11) predict rotational "
+        "velocity (Fig. 2f, Fig. S4)",
+    )
+    _bind(doc, ("stimulus", "width_deg"), 10.5)
+    _bind(doc, ("stimulus", "height_deg"), 48.0)
+    _bind(
+        doc,
+        ("stimulus", "height_from"),
+        "the panorama's 48° height; the bar's own height is not stated, so it "
+        "is taken to span the panorama (an inference)",
+    )
+    _bind(doc, ("stimulus", "sweep_deg"), 22.5)
+    _bind(doc, ("stimulus", "speed_deg_s"), 25.0)
+    _bind(
+        doc,
+        ("stimulus", "speed_from"),
+        "the slower of Collie et al.'s two speeds, the only one whose 22.5° "
+        "sweep (0.9 s) fits the 1 s loop",
+    )
+    _bind(doc, ("stimulus", "visible_us"), [100000, 1000000])
+    _bind(doc, ("stimulus", "left_sweep_body_azimuth_deg"), [-56.25, -33.75])
+    _bind(doc, ("stimulus", "sides"), ["left", "mirror"])
+    _bind(
+        doc,
+        ("stimulus", "side_rule"),
+        "left: the bar's centre sweeps rightward (toward the midline) from body "
+        "azimuth -56.25 to -33.75 degrees (left negative, as in optics) at the "
+        "reset heading; mirror: the same sweep reflected across the sagittal "
+        "plane, from +56.25 to +33.75 degrees moving leftward. Both are centred "
+        "45 degrees off the midline, away from the zone where Collie et al.'s "
+        "flies 'tended to follow the direction of motion' (Fig. 3a legend)",
+    )
+    _bind(
+        doc,
+        ("stimulus", "screen"),
+        "optics.Bar on a vertical cylinder whose axis passes through the body's "
+        "reset position; the bar moves in world coordinates, so the body's turns "
+        "change its retinal position",
+    )
+    _bind(doc, ("stimulus", "screen_radius_m"), 0.1)
+    _bind(
+        doc,
+        ("stimulus", "screen_radius_from"),
+        "engineered: Collie et al. give angles, not a distance; 0.1 m keeps the "
+        "eye mounts' parallax under 1 degree",
+    )
+    _bind(
+        doc,
+        ("stimulus", "vertical_centre"),
+        "the mean world height of the two eye mounts at reset; the bar spans "
+        "that height plus and minus screen_radius_m * tan(24 degrees)",
+    )
+    _bind(doc, ("stimulus", "quadrature"), [16, 24, 4.0])
+    _bind(
+        doc,
+        ("stimulus", "quadrature_from"),
+        "optics.bar_coverage: within the tested tolerance of a brute-force grid "
+        "(tests/test_optics.py)",
+    )
+    _bind(
+        doc,
+        ("stimulus", "evidence_note"),
+        "the bar's angles, speed and sweep are sourced (Collie et al.); its "
+        "screen distance, vertical centre and the side positions are engineered",
+    )
+    _bind(doc, ("pathway", "input_sets"), ["all", "paired"])
+    _bind(
+        doc,
+        ("pathway", "paired_rule"),
+        "sensitivity set, reported outside the verdict: only the inputs whose "
+        "column (side, hex1, hex2) has a mirror column (other side, same hex1 "
+        "and hex2) with a viewing direction and at least one input; the mirror "
+        "convention is eye.columns' (azimuth negated, elevation unchanged), a "
+        "symmetry assumption (docs/reference/eye.md). The release rate is "
+        "calibrated on that set",
+    )
+    _bind(
+        doc,
+        ("pathway", "imbalance"),
+        "kept, not compensated: MaleCNS v1.0 reconstructs 2,474 right-eye and "
+        "1,733 left-eye photoreceptors, a sample artefact per Berg et al. 2025 "
+        "(bioRxiv 10.1101/2025.10.09.680999); no per-eye or per-column gain is "
+        "applied",
+    )
+    _bind(
+        doc,
+        ("pathway", "inputs"),
+        "every photoreceptor (R1-R6, R7, R8) that eye.photoreceptors assigns to "
+        "a column with a viewing direction, both eyes; graded, non-spiking",
+    )
+    _bind(
+        doc,
+        ("pathway", "lit"),
+        "the same inputs: the photoreceptor release rate is calibrated on all of "
+        "them (visual_pathway.photoreceptor_rate), where T4/T5 version 4 "
+        "calibrates on its stimulus window",
+    )
+    _bind(doc, ("pathway", "lamina_medulla_gain"), [4.0, 16.0])
+    _bind(
+        doc,
+        ("pathway", "configurations_from"),
+        "two of version 2's three configurations: gain 1 is left out because "
+        "version 2's intact readout fired no spike there (results/dn-arena/v2); "
+        "in T4/T5 version 4, T4 fired 35586 and 350264 spikes at gains 4 and 16 "
+        "with LMC and medulla release 200 Hz (results/t4t5/v4 spikes.csv); "
+        "response and hyperpolarisation at version 4's midpoints",
+    )
+    _bind(doc, ("controls", "wiring_null", "seed0"), 7400)
+    _bind(doc, ("controls", "wiring_null", "seeds"), 39)
+    _bind(
+        doc,
+        ("controls", "wiring_null", "rule"),
+        "wiring.shuffle_targets on the MaleCNS edges, then the intact loop at "
+        "that configuration and input set, once per side: the pathway is rebuilt "
+        "on the shuffled graph by the same builder (timing scale and lamina to "
+        "medulla gain by type, graded release by type) and dark-anchored on it "
+        "once, shared by both sides; the photoreceptor release rate and the "
+        "drive gain are those of the intact graph with the same input set, a "
+        "calibration of the stimulus, not of the network",
+    )
+    _bind(
+        doc,
+        ("controls", "script", "rule"),
+        "yaw +100 deg/s toward the eye with the larger summed coverage "
+        "(left positive), 0 when equal; forward 10 mm/s; "
+        "from the previous control tick's sample; run for each side",
+    )
+    _bind(
+        doc,
+        ("score", "metric"),
+        "change in unwrapped heading (rad) from 200000 to 1000000 us",
+    )
+    _bind(
+        doc,
+        ("score", "contrast"),
+        "per graph, configuration and input set: (change under left - change "
+        "under mirror) / 2, both runs from fresh states on the same anchored "
+        "pathway",
+    )
+    _bind(
+        doc,
+        ("score", "expected_sign"),
+        "positive: toward the bar, a left turn for the left side ('flies turned "
+        "toward the object's position', Collie et al. Fig. 3a legend); a "
+        "difference with a negative contrast is reported as a difference of the "
+        "wrong sign",
+    )
+    _bind(
+        doc,
+        ("score", "per_configuration"),
+        "null if the intact contrast lies within the minimum and maximum of "
+        "the 39 wiring-null contrasts at that configuration and input set "
+        "(inclusive); difference otherwise",
+    )
+    _bind(
+        doc,
+        ("score", "envelope"),
+        "on the all input set: robust: <verdict> when every configuration has "
+        "the same verdict; depends otherwise. The paired set gets the same "
+        "verdicts, reported as a sensitivity analysis outside the claim",
+    )
+    _bind(
+        doc,
+        ("score", "reported"),
+        "per configuration, input set and side: intact, disconnected, shuffled, "
+        "replay, silenced and script changes, spikes of the six decoder neurons "
+        "per arm; per configuration and input set: the intact contrast, the "
+        "wiring-null contrasts' minimum, median and maximum, the pathway hash "
+        "of the intact graph; replay parity is required",
+    )
+    _bind(
+        doc,
+        ("no_go",),
+        "a configuration is uninformative for an input set when the six decoder "
+        "neurons fire no spike in its intact arm on either side. The envelope "
+        "verdict is uninformative when every configuration is",
+    )
+    _bind(
+        doc,
+        ("limits",),
+        [
+            (
+                "Synthetic: every component carries its status from the DN-arena ADR "
+                "and graded eye ADR evidence tables; a biological run still refuses."
+            ),
+            (
+                "The graded pathway is T4/T5 version 4's, whose own verdict is "
+                "robust neither: graded transport is not visual selectivity."
+            ),
+            (
+                "Eyemap to body registration is a test-only identity (#179); eye "
+                "mounts are NeuroMechFly's."
+            ),
+            "A planar kinematic body: no legs, no physics, no flight.",
+            (
+                "One bar sweep per side, one decoder cell and one duration; two "
+                "pathway configurations chosen from read results."
+            ),
+            (
+                "Collie et al.'s flies were aroused by optogenetic P1 activation; "
+                "the model has no arousal state."
+            ),
+            (
+                "The graded pathway has no direction selectivity (T4/T5 version 4): "
+                "the bar can act through position and luminance only."
+            ),
+            (
+                "Host only: kick_equivalent input does not run on the console "
+                "(graded eye ADR Decision 5)."
+            ),
+        ],
+    )
+
+
+def _bar_consistent(stim: dict, duration: int) -> None:
+    start, end = stim["visible_us"]
+    if (
+        type(start) is not int
+        or type(end) is not int
+        or not 0 <= start < end <= duration
+    ):
+        raise DNArenaError("the bar is not inside the duration")
+    lo, hi = stim["left_sweep_body_azimuth_deg"]
+    if not math.isclose(abs(hi - lo), float(stim["sweep_deg"])):
+        raise DNArenaError("the sweep does not match its endpoints")
+    seconds = (end - start) / 1_000_000
+    if not math.isclose(float(stim["sweep_deg"]), float(stim["speed_deg_s"]) * seconds):
+        raise DNArenaError("the sweep does not match the speed over the visible window")
+    quad = stim["quadrature"]
+    if (
+        type(quad) is not list
+        or len(quad) != 3
+        or type(quad[0]) is not int
+        or type(quad[1]) is not int
+        or type(quad[2]) is not float
+    ):
+        raise DNArenaError("quadrature is not (n_radial, n_angular, max_sigma)")
+
+
 def summary(doc: dict | None = None) -> str:
     doc = assert_matches_code() if doc is None else doc
     model, wn = doc["model"], doc["controls"]["wiring_null"]
     return (
         f"dn_arena v{doc['version']} (issue #{doc['issue']}): "
-        f"{len(configurations(doc))} configurations, {len(doc['arms'])} arms, "
+        f"{len(doc['pathway']['input_sets'])} input sets, "
+        f"{len(configurations(doc))} configurations, "
+        f"{len(doc['stimulus']['sides'])} sides, "
+        f"{len(doc['arms'])} arms, "
         f"{wn['seeds']} nulls, seeds {wn['seed0']}-{wn['seed0'] + wn['seeds'] - 1}, "
         f"duration {model['duration_us']} us, {model['input_encoding']}"
     )
@@ -223,31 +511,146 @@ def neurons(doc: dict) -> dict[int, tuple[str, str]]:
 
 
 def jobs(doc: dict) -> list[dict]:
-    """Arms job, then that configuration's wiring-null jobs; the script job is last."""
+    """Per input set and configuration: both sides' arms, then the nulls.
+
+    The script has no connectome, so it is one job per side, after every set.
+    `cfg` in a key is the configuration index.
+    """
     order = _arm_order()
     wn = doc["controls"]["wiring_null"]
     seeds = range(wn["seed0"], wn["seed0"] + wn["seeds"])
     out = []
-    for cfg in configurations(doc):
-        index = cfg["index"]
-        out.append(
-            {
-                "key": _key("arms", index),
-                "kind": "arms",
-                "configuration": cfg,
-                "arms": list(order),
-            }
+    for name in doc["pathway"]["input_sets"]:
+        for cfg in configurations(doc):
+            index = cfg["index"]
+            for side in doc["stimulus"]["sides"]:
+                out.append(
+                    {
+                        "key": f"arms/{name}/{index}/{side}",
+                        "kind": "arms",
+                        "input_set": name,
+                        "side": side,
+                        "configuration": cfg,
+                        "arms": list(order),
+                    }
+                )
+            for seed in seeds:
+                out.append(
+                    {
+                        "key": f"wiring-null/{name}/{index}/{seed}",
+                        "kind": "wiring-null",
+                        "input_set": name,
+                        "configuration": cfg,
+                        "seed": seed,
+                    }
+                )
+    for side in doc["stimulus"]["sides"]:
+        out.append({"key": f"script/{side}", "kind": "script", "side": side})
+    return out
+
+
+def directed_inputs(columns: pd.DataFrame, receptors: pd.DataFrame) -> pd.DataFrame:
+    """Photoreceptors on columns with a viewing direction, in neuron order.
+
+    `rank` indexes the stimulus vector: columns whose azimuth and elevation are
+    both present, in `columns` order, which is the order `optical_bars` returns.
+    """
+    has = (
+        columns["azimuth_deg"].notna().to_numpy()
+        & columns["elevation_deg"].notna().to_numpy()
+    )
+    rank = np.full(len(columns), -1, dtype=np.int64)
+    rank[has] = np.arange(int(has.sum()))
+    table = pd.DataFrame(
+        {
+            "side": columns["side"].to_numpy(),
+            "hex1": columns["hex1"].to_numpy(),
+            "hex2": columns["hex2"].to_numpy(),
+            "rank": rank,
+        }
+    )
+    joined = receptors.merge(table, on=["side", "hex1", "hex2"], how="inner")
+    joined = joined[joined["rank"] >= 0]
+    return joined.sort_values("neuron", kind="mergesort").reset_index(drop=True)
+
+
+def paired_inputs(frame: pd.DataFrame) -> pd.DataFrame:
+    """Rows whose column has a mirror column in `frame`.
+
+    `frame` is already the inputs on columns with a viewing direction. A mirror
+    is the other side and the same hex1 and hex2, so a row of `frame` is a
+    mirror column with a viewing direction and at least one input.
+    """
+    need = {"side", "hex1", "hex2"}
+    if not need <= set(frame.columns):
+        raise DNArenaError("paired inputs need side, hex1 and hex2")
+    keys = frame.loc[:, ["side", "hex1", "hex2"]].drop_duplicates()
+    flipped = keys.copy()
+    flipped["side"] = flipped["side"].map({"L": "R", "R": "L"})
+    if flipped["side"].isna().any():
+        raise DNArenaError("a column side is not L or R")
+    mirrored = keys.merge(flipped, on=["side", "hex1", "hex2"], how="inner")
+    marked = frame.merge(
+        mirrored.assign(_paired=True), on=["side", "hex1", "hex2"], how="left"
+    )
+    keep = marked["_paired"].fillna(False).astype(bool)
+    return marked.loc[keep].drop(columns="_paired").reset_index(drop=True)
+
+
+def _heading_deg(state: pose.BodyState) -> float:
+    """Heading of the body's +x, degrees, counterclockwise from world +x."""
+    x, y, _z = state.pose.orientation.rotate((1.0, 0.0, 0.0))
+    return math.degrees(math.atan2(y, x))
+
+
+def _body_sweep(stim: dict, side: str) -> tuple[float, float]:
+    """Body azimuth of the bar centre at the start and end of the sweep.
+
+    Left is negative, as in `optics`. Mirror negates that sweep.
+    """
+    lo, hi = stim["left_sweep_body_azimuth_deg"]
+    if side == "left":
+        return float(lo), float(hi)
+    if side == "mirror":
+        return -float(lo), -float(hi)
+    raise DNArenaError(f"unknown side {side}")
+
+
+def bars(doc: dict, state: pose.BodyState, mounts) -> dict[str, optics.Bar]:
+    """One `optics.Bar` per side, fixed in world coordinates at the reset pose.
+
+    Body azimuth is positive to the fly's right. World azimuth is
+    counterclockwise from world +x toward +y. At heading 0 those are opposites,
+    so body azimuth -45 degrees is world azimuth +45 degrees, and a rightward
+    sweep (body azimuth increasing) is a negative world angular velocity. The
+    cylinder axis is the reset position and does not follow the body; the
+    bar's later retinal position therefore moves when the body turns. The bar
+    spans the eye-mount mean height by `screen_radius_m * tan(height_deg / 2)`.
+    """
+    stim = doc["stimulus"]
+    radius = float(stim["screen_radius_m"])
+    heights = [float(pose.eye_pose(state, mount).position_m[2]) for mount in mounts]
+    centre = float(np.mean(heights))
+    half = radius * math.tan(math.radians(float(stim["height_deg"]) / 2.0))
+    axis = state.pose.position_m
+    heading = _heading_deg(state)
+    visible = (stim["visible_us"][0], stim["visible_us"][1])
+    speed = float(stim["speed_deg_s"])
+    out = {}
+    for side in stim["sides"]:
+        start, end = _body_sweep(stim, side)
+        body_rate = speed if end > start else -speed
+        out[side] = optics.Bar(
+            name=side,
+            axis_xy_m=(float(axis[0]), float(axis[1])),
+            screen_radius_m=radius,
+            z_bottom_m=centre - half,
+            z_top_m=centre + half,
+            width_deg=float(stim["width_deg"]),
+            azimuth0_deg=heading - start,
+            angular_velocity_deg_s=-body_rate,
+            visible_us=visible,
         )
-        for seed in seeds:
-            out.append(
-                {
-                    "key": _key("wiring-null", index, seed),
-                    "kind": "wiring-null",
-                    "configuration": cfg,
-                    "seed": seed,
-                }
-            )
-    out.append({"key": "script", "kind": "script"})
     return out
 
 
@@ -354,6 +757,11 @@ def yaw_change(heading, clock: Clock, window_us) -> float:
     return at(end) - at(start)
 
 
+def contrast(left: float, mirror: float) -> float:
+    """Half the left-minus-mirror heading change."""
+    return (float(left) - float(mirror)) / 2.0
+
+
 def record_names(row: dict) -> dict[str, str]:
     """The stored record name and canonical-JSON sha256 behind one job's result."""
     if row["kind"] == "arms":
@@ -361,6 +769,11 @@ def record_names(row: dict) -> dict[str, str]:
             f"{row['key']}__{arm}": summary["record_sha256"]
             for arm, summary in row["arms"].items()
         }
+    if row["kind"] == "wiring-null":
+        saved = row["record_sha256"]
+        if type(saved) is not dict:
+            raise DNArenaError("a wiring-null record names both sides")
+        return {f"{row['key']}__{side}": saved[side] for side in saved}
     return {row["key"]: row["record_sha256"]}
 
 
@@ -378,76 +791,134 @@ def verify_records(out, rows: list[dict]) -> None:
                 raise DNArenaError(f"the record of {name} does not match its sha256")
 
 
+def _observed_sign(value: float) -> str:
+    if value > 0.0:
+        return "positive"
+    if value < 0.0:
+        return "negative"
+    return "zero"
+
+
+def _verdict_label(value: float, lo: float, hi: float, silent: bool) -> str:
+    if silent:
+        return "uninformative"
+    if lo <= value <= hi:
+        return "null"
+    if value < 0.0:
+        return "difference (wrong sign)"
+    return "difference"
+
+
+def _envelope(labels: list[str]) -> str:
+    if set(labels) == {"uninformative"}:
+        return "uninformative"
+    if len(set(labels)) == 1:
+        return f"robust: {labels[0]}"
+    return "depends"
+
+
 def verdict(results: list[dict], doc: dict) -> dict:
-    """Per configuration: no-go, or the inclusive null range; then the envelope."""
+    """Per configuration and input set: no-go, or the inclusive null range.
+
+    The envelope reads the `all` set only. The `paired` set is `sensitivity`.
+    """
     by: dict[str, dict] = {}
     for row in results:
         if row["key"] in by:
             raise DNArenaError(f"duplicate job {row['key']}")
         by[row["key"]] = row
-    script = _take(by, "script")
-    script_yaw = float(script["yaw_change"])
+    sides = list(doc["stimulus"]["sides"])
+    scripts = {side: float(_take(by, f"script/{side}")["yaw_change"]) for side in sides}
     wn = doc["controls"]["wiring_null"]
     seeds = range(wn["seed0"], wn["seed0"] + wn["seeds"])
     ids = [str(body) for body in sorted(neurons(doc))]
-    reported = []
-    labels = []
-    for cfg in configurations(doc):
-        index = cfg["index"]
-        arms_row = _take(by, _key("arms", index))
-        if arms_row.get("replay_parity") is not True:
+    grouped: dict[str, list] = {name: [] for name in doc["pathway"]["input_sets"]}
+    for name in doc["pathway"]["input_sets"]:
+        for cfg in configurations(doc):
+            grouped[name].append(
+                _score_configuration(by, doc, cfg, name, sides, scripts, seeds, ids)
+            )
+    return {
+        "configurations": grouped["all"],
+        "sensitivity": grouped["paired"],
+        "envelope": _envelope([row["verdict"] for row in grouped["all"]]),
+    }
+
+
+def _score_configuration(by, doc, cfg, name, sides, scripts, seeds, ids) -> dict:
+    index = cfg["index"]
+    arms = {}
+    digests = []
+    for side in sides:
+        row = _take(by, f"arms/{name}/{index}/{side}")
+        if row.get("replay_parity") is not True:
             raise DNArenaError("replay parity is required")
-        digest = _sha256_hex(arms_row.get("pathway_sha256"))
-        nulls = np.array(
-            [
-                float(_take(by, _key("wiring-null", index, seed))["yaw_change"])
-                for seed in seeds
-            ]
-        )
-        per_arm = arms_row["arms"]
-        intact = float(per_arm["intact"]["yaw_change"])
+        digests.append(_sha256_hex(row.get("pathway_sha256")))
+        per_arm = row["arms"]
+        for arm in _arm_order():
+            if arm not in per_arm:
+                raise DNArenaError(f"missing arm {arm}")
         spikes = per_arm["intact"]["spikes"]
         if set(spikes) != set(ids):
             raise DNArenaError("intact spikes must name the six decoder neurons")
-        lo, hi = float(nulls.min()), float(nulls.max())
-        if sum(spikes.values()) == 0:
-            label = "uninformative"
-        elif lo <= intact <= hi:
-            label = "null"
-        else:
-            label = "difference"
-        labels.append(label)
-        reported.append(
-            {
-                "index": index,
-                "photoreceptor_mv": cfg["photoreceptor_mv"],
-                "lmc_mv": cfg["lmc_mv"],
-                "lmc_rate_hz": cfg["lmc_rate_hz"],
-                "medulla_rate_hz": cfg["medulla_rate_hz"],
-                "lamina_medulla_gain": cfg["lamina_medulla_gain"],
-                "verdict": label,
-                "intact": intact,
-                "disconnected": float(per_arm["disconnected"]["yaw_change"]),
-                "shuffled": float(per_arm["shuffled"]["yaw_change"]),
-                "replay": float(per_arm["replay"]["yaw_change"]),
-                "silenced": float(per_arm["silenced"]["yaw_change"]),
-                "script": script_yaw,
-                "intact_minus_script": intact - script_yaw,
-                "wiring_null_minimum": lo,
-                "wiring_null_median": float(np.median(nulls)),
-                "wiring_null_maximum": hi,
-                "spikes": {arm: per_arm[arm]["spikes"] for arm in _arm_order()},
-                "pathway_sha256": digest,
-                "replay_parity": True,
-            }
+        arms[side] = per_arm
+    if len(set(digests)) != 1:
+        raise DNArenaError("the two sides do not share a pathway")
+    intact = {
+        side: contrast_value
+        for side, contrast_value in (
+            (side, float(arms[side]["intact"]["yaw_change"])) for side in sides
         )
-    if set(labels) == {"uninformative"}:
-        envelope = "uninformative"
-    elif len(set(labels)) == 1:
-        envelope = f"robust: {labels[0]}"
-    else:
-        envelope = "depends"
-    return {"configurations": reported, "envelope": envelope}
+    }
+    value = contrast(intact["left"], intact["mirror"])
+    nulls = np.array(
+        [
+            contrast(*_null_yaw(_take(by, f"wiring-null/{name}/{index}/{seed}")))
+            for seed in seeds
+        ]
+    )
+    lo, hi = float(nulls.min()), float(nulls.max())
+    silent = all(sum(arms[side]["intact"]["spikes"].values()) == 0 for side in sides)
+    label = _verdict_label(value, lo, hi, silent)
+    sign = _observed_sign(value)
+    return {
+        "index": index,
+        "input_set": name,
+        "photoreceptor_mv": cfg["photoreceptor_mv"],
+        "lmc_mv": cfg["lmc_mv"],
+        "lmc_rate_hz": cfg["lmc_rate_hz"],
+        "medulla_rate_hz": cfg["medulla_rate_hz"],
+        "lamina_medulla_gain": cfg["lamina_medulla_gain"],
+        "verdict": label,
+        "expected_sign": "positive",
+        "contrast_sign": sign,
+        "expected_sign_met": sign == "positive",
+        "contrast": value,
+        "sides": {
+            side: {
+                "intact": float(arms[side]["intact"]["yaw_change"]),
+                "disconnected": float(arms[side]["disconnected"]["yaw_change"]),
+                "shuffled": float(arms[side]["shuffled"]["yaw_change"]),
+                "replay": float(arms[side]["replay"]["yaw_change"]),
+                "silenced": float(arms[side]["silenced"]["yaw_change"]),
+                "script": scripts[side],
+                "spikes": {arm: arms[side][arm]["spikes"] for arm in _arm_order()},
+            }
+            for side in sides
+        },
+        "wiring_null_minimum": lo,
+        "wiring_null_median": float(np.median(nulls)),
+        "wiring_null_maximum": hi,
+        "pathway_sha256": digests[0],
+        "replay_parity": True,
+    }
+
+
+def _null_yaw(row: dict) -> tuple[float, float]:
+    yaw = row["yaw_change"]
+    if type(yaw) is not dict or set(yaw) != set(_SIDES):
+        raise DNArenaError("a wiring-null yaw names both sides")
+    return float(yaw["left"]), float(yaw["mirror"])
 
 
 def run(data_dir, out, workers: int, checkpoint, execution_id: str) -> dict:
@@ -475,6 +946,14 @@ def run(data_dir, out, workers: int, checkpoint, execution_id: str) -> dict:
 
 
 @dataclass(frozen=True)
+class Inputs:
+    name: str
+    rows: np.ndarray
+    ids: tuple[int, ...]
+    column_of_input: np.ndarray
+
+
+@dataclass(frozen=True)
 class Setup:
     doc: dict
     clock: Clock
@@ -487,21 +966,19 @@ class Setup:
     edges: pd.DataFrame
     params: sim.Params
     W: object
-    input_rows: np.ndarray
-    input_ids: tuple[int, ...]
-    column_of_input: np.ndarray
+    inputs: dict[str, Inputs]
     traced_rows: np.ndarray
     traced_ids: tuple[int, ...]
-    stimulus: object
-    optics_hash: str
-    sides: tuple[str, ...]
+    stimuli: dict
+    optics: dict[str, str]
+    column_sides: tuple[str, ...]
     out: Path
     execution_id: str
     intact: dict
 
 
 def build(doc, neurons_df, edges, data_dir, out, execution_id: str) -> Setup:
-    """The loop shared by every job. The optical callable stays in this process."""
+    """The loop shared by every job. The optical callables stay in this process."""
     data_dir, out = Path(data_dir), Path(out)
     eye.fetch(data_dir)
     ann = pd.read_feather(
@@ -511,37 +988,17 @@ def build(doc, neurons_df, edges, data_dir, out, execution_id: str) -> Setup:
     cols = eye.columns(ann, eye.lenses(data_dir))
     receptors = eye.photoreceptors(neurons_df, edges, ann)
     columns = optics.Columns.from_frame(cols, _source_sha256(data_dir))
-    azimuth = cols["azimuth_deg"].notna().to_numpy()
-    elevation = cols["elevation_deg"].notna().to_numpy()
-    has = azimuth & elevation
+    joined = directed_inputs(cols, receptors)
+    has = (
+        cols["azimuth_deg"].notna().to_numpy()
+        & cols["elevation_deg"].notna().to_numpy()
+    )
     mask = np.isfinite(columns.direction).all(axis=1)
     if not np.array_equal(has, mask):
         raise DNArenaError("column directions do not match the lens table")
-    rank = np.full(len(cols), -1, dtype=np.int64)
-    rank[has] = np.arange(int(has.sum()))
-    joined = receptors.merge(
-        pd.DataFrame(
-            {
-                "side": cols["side"].to_numpy(),
-                "hex1": cols["hex1"].to_numpy(),
-                "hex2": cols["hex2"].to_numpy(),
-                "rank": rank,
-            }
-        ),
-        on=["side", "hex1", "hex2"],
-        how="inner",
-    )
-    joined = joined[joined["rank"] >= 0].sort_values("neuron", kind="mergesort")
-    rows = joined["neuron"].to_numpy(np.int64)
-    if rows.size == 0 or not np.array_equal(rows, np.unique(rows)):
-        raise DNArenaError("photoreceptor rows are not strictly increasing")
-    body_ids = tuple(int(v) for v in neurons_df["bodyId"].to_numpy()[rows])
-    if any(body_ids[i] >= body_ids[i + 1] for i in range(len(body_ids) - 1)):
-        raise DNArenaError("photoreceptor bodyIds are not aligned with row order")
-    column_of_input = joined["rank"].to_numpy(np.int64)
-    sides = tuple(side for side, keep in zip(columns.side, mask, strict=True) if keep)
-    if column_of_input.min() < 0 or column_of_input.max() >= len(sides):
-        raise DNArenaError("an input's column is outside the stimulus")
+    if joined.empty:
+        raise DNArenaError("no photoreceptor has a viewing direction")
+    made = _input_sets(doc, joined, neurons_df, int(has.sum()))
     mapping = neurons(doc)
     order = tuple(sorted(mapping))
     traced = []
@@ -564,30 +1021,27 @@ def build(doc, neurons_df, edges, data_dir, out, execution_id: str) -> Setup:
     arena = _body(doc)
     state = arena.reset()
     mounts = pose.flygym_eye_mounts()
-    z = float(np.mean([pose.eye_pose(state, mount).position_m[2] for mount in mounts]))
-    xy = doc["stimulus"]["center_xy_m"]
-    sphere = optics.Sphere(
-        doc["stimulus"]["sphere"],
-        (float(xy[0]), float(xy[1]), z),
-        float(doc["stimulus"]["radius_m"]),
-        (0.0, 0.0, 0.0),
-    )
     registration = pose.Registration(
         pose.Pose("body", "eyemap", (0.0, 0.0, 0.0), pose.IDENTITY),
         doc["eye"]["registration"],
     )
-    stimulus, optics_hash = closedloop.optical(
-        columns,
-        registration,
-        mounts,
-        (sphere,),
-        float(doc["eye"]["acceptance_deg"]),
-    )
+    quad = tuple(doc["stimulus"]["quadrature"])
+    acceptance = float(doc["eye"]["acceptance_deg"])
+    stimuli, optics_hashes = {}, {}
+    for side, bar in bars(doc, state, mounts).items():
+        stimulus, digest = closedloop.optical_bars(
+            columns, registration, mounts, (bar,), acceptance, quad
+        )
+        stimuli[side] = stimulus
+        optics_hashes[side] = digest
     p = sim.Params()
     files = {
         "neurons": manifest.sha256_file(data_dir / "neurons.parquet"),
         "edges": manifest.sha256_file(data_dir / "edges.parquet"),
     }
+    column_sides = tuple(
+        side for side, keep in zip(columns.side, mask, strict=True) if keep
+    )
     return Setup(
         doc,
         clock,
@@ -610,30 +1064,50 @@ def build(doc, neurons_df, edges, data_dir, out, execution_id: str) -> Setup:
         edges,
         p,
         sim.network(neurons_df, edges, p),
-        rows,
-        body_ids,
-        column_of_input,
+        made,
         traced_rows,
         order,
-        stimulus,
-        optics_hash,
-        sides,
+        stimuli,
+        optics_hashes,
+        column_sides,
         out,
         execution_id,
         {},
     )
 
 
+def _input_sets(doc, joined, neurons_df, n_columns: int) -> dict[str, Inputs]:
+    table = neurons_df["bodyId"].to_numpy()
+    made = {}
+    for name in doc["pathway"]["input_sets"]:
+        chosen = joined if name == "all" else paired_inputs(joined)
+        rows = chosen["neuron"].to_numpy(np.int64)
+        if rows.size == 0 or not np.array_equal(rows, np.unique(rows)):
+            raise DNArenaError(
+                f"input set {name} photoreceptor rows are not strictly increasing"
+            )
+        body_ids = tuple(int(v) for v in table[rows])
+        if any(body_ids[i] >= body_ids[i + 1] for i in range(len(body_ids) - 1)):
+            raise DNArenaError(
+                f"input set {name} photoreceptor bodyIds are not aligned with row order"
+            )
+        column_of_input = chosen["rank"].to_numpy(np.int64)
+        if column_of_input.min() < 0 or column_of_input.max() >= n_columns:
+            raise DNArenaError("an input's column is outside the stimulus")
+        made[name] = Inputs(name, rows, body_ids, column_of_input)
+    return made
+
+
 def _job(packed: tuple) -> list[dict]:
     setup = _resolve()
-    key, kind, index, seed = packed
+    key, kind, input_set, index, side, seed = packed
     if kind == "script":
-        return [_script_job(setup)]
+        return [_script_job(setup, side)]
     cfg = configurations(setup.doc)[index]
     if kind == "arms":
-        return [_arms_job(setup, key, cfg)]
+        return [_arms_job(setup, key, cfg, input_set, side)]
     if kind == "wiring-null":
-        return [_null_job(setup, key, cfg, seed)]
+        return [_null_job(setup, key, cfg, input_set, seed)]
     raise DNArenaError(f"unknown job {kind}")
 
 
@@ -648,26 +1122,38 @@ def _resolve() -> Setup:
     return _SETUP
 
 
-def _intact(setup: Setup, cfg: dict):
-    """The intact graph's anchored pathway, once per configuration in this process."""
-    index = cfg["index"]
-    cached = setup.intact.get(index)
+def _intact(setup: Setup, cfg: dict, name: str):
+    """The intact graph's anchored pathway, once per input set and configuration."""
+    key = (name, cfg["index"])
+    cached = setup.intact.get(key)
     if cached is None:
         static, built = pathway(
-            setup.W, setup.neurons, cfg, setup.input_rows, setup.proto, setup.params
+            setup.W,
+            setup.neurons,
+            cfg,
+            setup.inputs[name].rows,
+            setup.proto,
+            setup.params,
         )
         cached = (static, built, visual_pathway.config_hash(static, built))
-        setup.intact[index] = cached
+        setup.intact[key] = cached
     return cached
 
 
-def _arms_job(setup: Setup, key: str, cfg: dict) -> dict:
-    _static, built, digest = _intact(setup, cfg)
+def _arms_job(setup: Setup, key: str, cfg: dict, name: str, side: str) -> dict:
+    _static, built, digest = _intact(setup, cfg, name)
+    inputs = setup.inputs[name]
     intact = None
     per_arm = {}
     for arm in _arm_order():
         record = _run_arm(
-            setup, built, digest, arm, intact if arm == "replay" else None
+            setup,
+            built,
+            digest,
+            arm,
+            intact if arm == "replay" else None,
+            inputs,
+            side,
         )
         if arm == "replay":
             closedloop.replay_parity(intact, record)
@@ -680,6 +1166,8 @@ def _arms_job(setup: Setup, key: str, cfg: dict) -> dict:
     return _result(
         key=key,
         kind="arms",
+        input_set=name,
+        side=side,
         cfg=cfg,
         seed=None,
         yaw_change=None,
@@ -691,90 +1179,102 @@ def _arms_job(setup: Setup, key: str, cfg: dict) -> dict:
     )
 
 
-def _null_job(setup: Setup, key: str, cfg: dict, seed: int) -> dict:
-    """Intact loop on a shuffled graph. Rate and drive gain stay the intact graph's."""
-    _static, intact, _digest = _intact(setup, cfg)
-    arena = _body(setup.doc)
+def _null_job(setup: Setup, key: str, cfg: dict, name: str, seed: int) -> dict:
+    """Both sides on one shuffled pathway, dark-anchored once. Fresh state each side.
+
+    Rate and drive gain stay the intact graph's for this input set.
+    """
+    _static, intact, _digest = _intact(setup, cfg, name)
+    inputs = setup.inputs[name]
     rate = (intact.rate_hz, intact.receiving)
     gain = intact.gain
-
-    def runtime_from_edges(shuffled):
-        weights = sim.network(setup.neurons, shuffled, setup.params)
-        static, built = pathway(
-            weights,
-            setup.neurons,
-            cfg,
-            setup.input_rows,
-            setup.proto,
-            setup.params,
-            rate=rate,
-        )
-        digest = visual_pathway.config_hash(static, built)
-        runtime = cpu_runtime(
-            built,
-            setup.input_rows,
-            steps=setup.duration_us // setup.clock.neural_us,
-            p=setup.params,
-            per_bin=setup.clock.control_us // setup.clock.neural_us,
-            trace=setup.traced_rows,
-            silence=False,
-        )
-        return runtime, digest
-
-    control = arena_controls.wiring_null(
-        arena,
-        edges=setup.edges,
-        seed=seed,
-        runtime_from_edges=runtime_from_edges,
-        decoder=_decoder(setup, arena),
-        input_ids=setup.input_ids,
-        traced_ids=setup.traced_ids,
-        stimulus=setup.stimulus,
-        transducer=_transducer(setup, gain),
-        compiled=arena.compiled,
-        clock=setup.clock,
-        duration_us=setup.duration_us,
-        mode="synthetic",
-        evidence=setup.evidence,
-        provenance=setup.provenance,
-        optics_config_sha256=setup.optics_hash,
-        run_identity_sha256=setup.execution_id,
-        input_gap_steps=0,
-        input_encoding="kick_equivalent",
+    shuffled, stats = wiring.shuffle_targets(setup.edges, seed)
+    weights = sim.network(setup.neurons, shuffled, setup.params)
+    static, built = pathway(
+        weights,
+        setup.neurons,
+        cfg,
+        inputs.rows,
+        setup.proto,
+        setup.params,
+        rate=rate,
     )
-    summary_row = _closed_summary(setup, control.record, key, control)
-    digest = control.record.pathway_sha256
-    del control
+    digest = visual_pathway.config_hash(static, built)
+    per_side = {}
+    for side in setup.doc["stimulus"]["sides"]:
+        arena = _body(setup.doc)
+        record = closedloop.run(
+            cpu_runtime(
+                built,
+                inputs.rows,
+                steps=setup.duration_us // setup.clock.neural_us,
+                p=setup.params,
+                per_bin=setup.clock.control_us // setup.clock.neural_us,
+                trace=setup.traced_rows,
+                silence=False,
+            ),
+            arena,
+            input_ids=inputs.ids,
+            traced_ids=setup.traced_ids,
+            stimulus=setup.stimuli[side],
+            transducer=_transducer(setup, gain, inputs.column_of_input),
+            decoder=_decoder(setup, arena),
+            compiled=arena.compiled,
+            clock=setup.clock,
+            duration_us=setup.duration_us,
+            arm="intact",
+            mode="synthetic",
+            evidence=setup.evidence,
+            provenance=setup.provenance,
+            optics_config_sha256=setup.optics[side],
+            run_identity_sha256=setup.execution_id,
+            input_gap_steps=0,
+            input_encoding="kick_equivalent",
+            pathway_sha256=digest,
+        )
+        control = arena_controls.WiringNullControl(
+            arena_controls.WIRING_NULL,
+            seed,
+            record,
+            stats,
+            {"control": arena_controls.WIRING_NULL, "shuffle_seed": seed},
+        )
+        per_side[side] = _closed_summary(setup, record, f"{key}__{side}", control)
+        del record, control
     return _result(
         key=key,
         kind="wiring-null",
+        input_set=name,
+        side=None,
         cfg=cfg,
         seed=seed,
-        yaw_change=summary_row["yaw_change"],
-        spikes=summary_row["spikes"],
-        record_sha256=summary_row["record_sha256"],
+        yaw_change={side: per_side[side]["yaw_change"] for side in per_side},
+        spikes={side: per_side[side]["spikes"] for side in per_side},
+        record_sha256={side: per_side[side]["record_sha256"] for side in per_side},
         arms=None,
         replay_parity=None,
         pathway_sha256=digest,
     )
 
 
-def _script_job(setup: Setup) -> dict:
+def _script_job(setup: Setup, side: str) -> dict:
     arena = _body(setup.doc)
     record = arena_controls.script(
         arena,
         clock=setup.clock,
         duration_us=setup.duration_us,
-        rule=_script_rule(setup.sides, arena.actuators),
-        stimulus=setup.stimulus,
+        rule=_script_rule(setup.column_sides, arena.actuators),
+        stimulus=setup.stimuli[side],
     )
     heading = np.array([tick.yaw_rad for tick in record.ticks], dtype=float)
     change = yaw_change(heading, setup.clock, setup.score_window)
-    digest = _store(setup.out, "script", record)
+    digest = _store(setup.out, f"script/{side}", record)
     del record
     return _result(
-        key="script",
+        key=f"script/{side}",
         kind="script",
+        input_set=None,
+        side=side,
         cfg=None,
         seed=None,
         yaw_change=change,
@@ -786,12 +1286,14 @@ def _script_job(setup: Setup) -> dict:
     )
 
 
-def _run_arm(setup: Setup, built, digest: str, arm: str, replay):
+def _run_arm(
+    setup: Setup, built, digest: str, arm: str, replay, inputs: Inputs, side: str
+):
     arena = _body(setup.doc)
     return closedloop.run(
         cpu_runtime(
             built,
-            setup.input_rows,
+            inputs.rows,
             steps=setup.duration_us // setup.clock.neural_us,
             p=setup.params,
             per_bin=setup.clock.control_us // setup.clock.neural_us,
@@ -799,10 +1301,10 @@ def _run_arm(setup: Setup, built, digest: str, arm: str, replay):
             silence=(arm == "silenced"),
         ),
         arena,
-        input_ids=setup.input_ids,
+        input_ids=inputs.ids,
         traced_ids=setup.traced_ids,
-        stimulus=setup.stimulus,
-        transducer=_transducer(setup, built.gain),
+        stimulus=setup.stimuli[side],
+        transducer=_transducer(setup, built.gain, inputs.column_of_input),
         decoder=_decoder(setup, arena),
         compiled=arena.compiled,
         clock=setup.clock,
@@ -811,7 +1313,7 @@ def _run_arm(setup: Setup, built, digest: str, arm: str, replay):
         mode="synthetic",
         evidence=setup.evidence,
         provenance=setup.provenance,
-        optics_config_sha256=setup.optics_hash,
+        optics_config_sha256=setup.optics[side],
         run_identity_sha256=setup.execution_id,
         input_gap_steps=0,
         input_encoding="kick_equivalent",
@@ -834,9 +1336,9 @@ def _decoder(setup: Setup, arena: Arena) -> Decoder:
     )
 
 
-def _transducer(setup: Setup, gain: float):
+def _transducer(setup: Setup, gain: float, column_of_input):
     steps = setup.clock.body_us // setup.clock.neural_us
-    return lambda coverage: drive(coverage, setup.column_of_input, gain, steps)
+    return lambda coverage: drive(coverage, column_of_input, gain, steps)
 
 
 def _script_rule(sides, actuators):
@@ -905,6 +1407,8 @@ def _result(
     *,
     key,
     kind,
+    input_set,
+    side,
     cfg,
     seed,
     yaw_change,
@@ -917,6 +1421,8 @@ def _result(
     return {
         "key": key,
         "kind": kind,
+        "input_set": input_set,
+        "side": side,
         "index": None if cfg is None else cfg["index"],
         "photoreceptor_mv": None if cfg is None else cfg["photoreceptor_mv"],
         "lmc_mv": None if cfg is None else cfg["lmc_mv"],
@@ -948,19 +1454,11 @@ def _pack(job: dict) -> tuple:
     return (
         job["key"],
         job["kind"],
+        job.get("input_set"),
         None if cfg is None else cfg["index"],
+        job.get("side"),
         job.get("seed"),
     )
-
-
-def _key(kind: str, index: int | None = None, seed: int | None = None) -> str:
-    if kind == "script":
-        return "script"
-    if kind == "arms":
-        return f"arms/{index}"
-    if kind == "wiring-null":
-        return f"wiring-null/{index}/{seed}"
-    raise DNArenaError(f"unknown job {kind}")
 
 
 def _arm_order() -> tuple[str, ...]:
@@ -1000,39 +1498,6 @@ def _gains_ok(doc: dict) -> None:
             raise DNArenaError(f"{name} is not one finite scalar")
 
 
-def _score_ok(doc: dict) -> None:
-    score = doc["score"]
-    if score["metric"] != (
-        "change in unwrapped heading (rad) from 200000 to 1000000 us"
-    ):
-        raise DNArenaError("the heading metric changed")
-    if score["per_configuration"] != (
-        "null if the intact change lies within the minimum and maximum of "
-        "the 39 wiring-null changes at that configuration (inclusive); "
-        "difference otherwise"
-    ):
-        raise DNArenaError("the per-configuration rule changed")
-    if score["envelope"] != (
-        "robust: <verdict> when every configuration has the same verdict; "
-        "depends otherwise"
-    ):
-        raise DNArenaError("the envelope rule changed")
-    if score["reported"] != (
-        "per configuration: intact, disconnected, shuffled, replay, silenced "
-        "and script changes, intact minus script, the wiring-null minimum, "
-        "median and maximum, spikes of the six decoder neurons per arm, the "
-        "pathway hash of the intact graph; replay parity is required"
-    ):
-        raise DNArenaError("the reported fields changed")
-    if doc["no_go"] != (
-        "a configuration is uninformative when the six decoder neurons fire "
-        "no spike in its intact arm: the readout is then zero and the "
-        "comparison empty. The envelope verdict is uninformative when every "
-        "configuration is"
-    ):
-        raise DNArenaError("the no-go rule changed")
-
-
 def _pathway_ok(doc: dict) -> None:
     path = doc["pathway"]
     try:
@@ -1069,8 +1534,10 @@ def _pathway_ok(doc: dict) -> None:
         or path["medulla_rate_hz"] not in env["medulla_rate_hz"]
     ):
         raise DNArenaError("medulla_rate_hz is not in the T4/T5 envelope")
-    if path["lamina_medulla_gain"] != env["lamina_medulla_gain"]:
-        raise DNArenaError("lamina_medulla_gain is not the T4/T5 list")
+    if any(
+        gain not in env["lamina_medulla_gain"] for gain in path["lamina_medulla_gain"]
+    ):
+        raise DNArenaError("a lamina_medulla_gain is outside the T4/T5 envelope")
     if path["drive_rule"] != (
         "drive per input and neural step = float32(gain * (1 - coverage of "
         "its column)), gain = visual_pathway.photoreceptor_gain("
@@ -1113,18 +1580,6 @@ def _sha256_hex(value) -> str:
     if type(value) is not str or len(value) != 64 or any(c not in _HEX for c in value):
         raise DNArenaError("the pathway hash is not sha256")
     return value
-
-
-def _sphere_ok(stim: dict) -> None:
-    xy, radius = stim["center_xy_m"], stim["radius_m"]
-    if (
-        type(xy) is not list
-        or len(xy) != 2
-        or any(type(v) not in (int, float) or not math.isfinite(float(v)) for v in xy)
-    ):
-        raise DNArenaError("the sphere centre is not a finite pair")
-    if type(radius) not in (int, float) or not math.isfinite(radius) or radius <= 0:
-        raise DNArenaError("the sphere radius is not positive")
 
 
 def _body_ok(body: dict) -> None:
