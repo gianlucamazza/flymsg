@@ -441,11 +441,13 @@ def _posed_columns(columns, registration, mounts, state):
 
 
 def _check_bars(bars) -> None:
-    if not bars or len({b.name for b in bars}) != len(bars):
+    if not bars:
         raise ContractError("bars need unique names")
     for bar in bars:
         if not isinstance(bar, Bar):
             raise ContractError("bars must be Bar values")
+    if len({b.name for b in bars}) != len(bars):
+        raise ContractError("bars need unique names")
 
 
 def _eyes_inside(bars, eyes) -> None:
@@ -607,7 +609,7 @@ def bar_coverage(
     alpha. The covered weights are divided by the sum of the weights on the whole grid,
     so the tails past `max_sigma` sigma are left out of both the share and the total.
     At 4 sigma that omitted spherical-Gaussian mass is about exp(-8), 3e-4. The cap
-    must stay inside one hemisphere (alpha < pi), where sin alpha stays positive.
+    must stay inside one hemisphere (max_sigma * sigma <= pi/2).
 
     A column without a lens is NaN. Outside a bar's `visible_us` its coverage is 0.
     Coverages are per bar as if alone.
@@ -618,14 +620,19 @@ def bar_coverage(
         raise ContractError("acceptance must be positive")
     n_radial, n_angular, max_sigma = _quadrature(quadrature)
     sigma = math.radians(acceptance_deg) / FWHM
-    if max_sigma * sigma >= math.pi:
-        raise ContractError("the quadrature cap must stay inside one hemisphere")
+    if max_sigma * sigma > math.pi / 2:
+        raise ContractError(
+            "the quadrature cap must stay inside one hemisphere"
+            " (max_sigma * sigma <= pi/2)"
+        )
     _eyes_inside(bars, eyes)
     alpha = (np.arange(n_radial) + 0.5) * (max_sigma * sigma / n_radial)
     phi = (np.arange(n_angular) + 0.5) * (2.0 * math.pi / n_angular)
     # midpoint rule: the bin widths cancel once the same weights normalise the sum
     weight = np.exp(-(alpha**2) / (2.0 * sigma * sigma)) * np.sin(alpha)
     total = float(weight.sum()) * n_angular
+    if not (math.isfinite(total) and total > 0.0):
+        raise ContractError("the normalisation total must be a positive finite number")
     n_b, n_c = len(bars), len(has)
     coverage = np.full((n_b, n_c), np.nan)
     azimuth = np.full((n_b, n_c), np.nan)

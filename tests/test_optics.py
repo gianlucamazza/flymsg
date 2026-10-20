@@ -320,6 +320,66 @@ def cover(cols, bars, mounts=None, t=0, quadrature=COARSE):
     )
 
 
+def tangent_directions(axis, max_sigma, step):
+    """Unit directions on a symmetric grid in the plane tangent to `axis`.
+
+    The frame is the cross product of the least-aligned world axis, not the polar
+    frame inside `bar_coverage`. Weight is the circular Gaussian of the angle to
+    `axis` times sin(alpha)/alpha, the spherical area element in these coordinates.
+    """
+    sigma = math.radians(ACCEPTANCE) / (2 * math.sqrt(2 * math.log(2)))
+    alpha_max = float(max_sigma) * sigma
+    axis = np.asarray(axis, dtype=float)
+    axis = axis / np.linalg.norm(axis)
+    seed = np.eye(3)[int(np.argmin(np.abs(axis)))]
+    e1 = np.cross(seed, axis)
+    e1 /= np.linalg.norm(e1)
+    e2 = np.cross(axis, e1)
+    n = math.floor(alpha_max / step + 0.5)
+    half = (np.arange(n) + 0.5) * step
+    coord = np.concatenate((-half[::-1], half))
+    u, v = np.meshgrid(coord, coord, indexing="ij")
+    u, v = u.ravel(), v.ravel()
+    alpha = np.hypot(u, v)
+    keep = (alpha > 0.0) & (alpha <= alpha_max)
+    u, v, alpha = u[keep], v[keep], alpha[keep]
+    scale = np.sin(alpha) / alpha
+    direction = (
+        axis * np.cos(alpha)[:, None]
+        + e1 * (scale * u)[:, None]
+        + e2 * (scale * v)[:, None]
+    )
+    weight = np.exp(-(alpha * alpha) / (2.0 * sigma * sigma)) * scale
+    return direction, weight
+
+
+def cylinder_hits(origin, dirs, bar, time_us=0):
+    """Rays that meet `bar`, by the horizontal chord and a wrapped atan2."""
+    ox, oy, oz = (float(v) for v in origin)
+    dx, dy, dz = dirs[:, 0], dirs[:, 1], dirs[:, 2]
+    ax, ay = (float(v) for v in bar.axis_xy_m)
+    radius = float(bar.screen_radius_m)
+    qx, qy = ox - ax, oy - ay
+    horizontal = dx * dx + dy * dy
+    length = np.sqrt(horizontal)
+    forward = horizontal > 0.0
+    ux = np.divide(dx, length, out=np.zeros_like(dx), where=forward)
+    uy = np.divide(dy, length, out=np.zeros_like(dy), where=forward)
+    along = qx * ux + qy * uy
+    disc = along * along + radius * radius - (qx * qx + qy * qy)
+    forward &= disc > 0.0
+    chord = -along + np.sqrt(np.maximum(disc, 0.0))
+    t = np.divide(chord, length, out=np.zeros_like(dx), where=forward)
+    forward &= t > 0.0
+    z_hit = oz + t * dz
+    forward &= (z_hit >= bar.z_bottom_m) & (z_hit <= bar.z_top_m)
+    hit_az = np.arctan2(oy + t * dy - ay, ox + t * dx - ax)
+    centre = math.radians(bar.centre_azimuth_deg(time_us))
+    half = math.radians(float(bar.width_deg) * 0.5)
+    delta = (hit_az - centre + math.pi) % (2.0 * math.pi) - math.pi
+    return forward & (np.abs(delta) <= half)
+
+
 def test_bar_rejects_bad_fields():
     with pytest.raises(ContractError, match="name"):
         bar(name="")
@@ -353,6 +413,8 @@ def test_bar_rejects_bad_fields():
         cover(cols, ())
     with pytest.raises(ContractError, match="Bar"):
         cover(cols, (optics.Sphere("s", (0.0, 0.0, 0.0), 0.01),))
+    with pytest.raises(ContractError, match="Bar"):
+        cover(cols, (None,))
     with pytest.raises(ContractError, match="acceptance"):
         optics.bar_coverage(cols, REG, origin, still(), (bar(),), 0.0, COARSE)
     with pytest.raises(ContractError, match="outside"):
@@ -396,6 +458,46 @@ def test_bar_rejects_bad_fields():
         cols, REG, origin, (bar(name="other"),), ACCEPTANCE, COARSE
     )
     assert len(same) == 64
+
+
+def test_bar_coverage_rejects_a_vanishing_normalisation_total():
+    # 0.1° acceptance and a cap of 2000 sigma: the first ring is already ~60 sigma
+    # out, every Gaussian weight underflows to 0, and the normalising total is 0.
+    # 2000 sigma of 0.1° is still under a right angle, so this is not the hemisphere check.
+    cols = table([("L", 0.0, 0.0)])
+    sigma = math.radians(0.1) / (2 * math.sqrt(2 * math.log(2)))
+    assert 2000 * sigma < math.pi / 2
+    with pytest.raises(ContractError, match="normalisation"):
+        optics.bar_coverage(
+            cols,
+            REG,
+            mounts_at((0.0, 0.0, 0.0)),
+            still(),
+            (bar(),),
+            0.1,
+            (16, 24, 2000),
+        )
+
+
+def test_bar_quadrature_cap_stays_inside_one_hemisphere():
+    # One hemisphere is a right angle from the axis, pi/2, not a half turn.
+    # A cap between those two used to pass `max_sigma * sigma < pi`.
+    cols = table([("L", float("nan"), float("nan"))])
+    sigma = math.radians(ACCEPTANCE) / (2 * math.sqrt(2 * math.log(2)))
+    between = (0.75 * math.pi) / sigma
+    assert math.pi / 2 < between * sigma < math.pi
+    with pytest.raises(ContractError, match="hemisphere"):
+        cover(cols, (bar(),), quadrature=(8, 8, between))
+    on_bound = (math.pi / 2) / sigma
+    while on_bound * sigma > math.pi / 2:
+        on_bound = math.nextafter(on_bound, 0.0)
+    out = cover(cols, (bar(),), quadrature=(4, 8, on_bound))
+    assert math.isnan(out.coverage[0, 0])
+    over = on_bound
+    while not over * sigma > math.pi / 2:
+        over = math.nextafter(over, math.inf)
+    with pytest.raises(ContractError, match="pi/2"):
+        cover(cols, (bar(),), quadrature=(4, 8, over))
 
 
 def test_bar_coverage_is_zero_outside_its_window():
@@ -458,6 +560,58 @@ def test_bar_quadrature_matches_a_fine_grid():
         (bar(name="back", azimuth0_deg=180.0, width_deg=20.0),),
     )
     assert np.allclose(front.coverage, back.coverage, atol=1e-12)
+
+
+def test_bar_coverage_matches_an_independent_direction_grid():
+    # The fine grid above is the same ray test, so it cannot catch a shared geometry
+    # error. These directions are a symmetric grid in the plane tangent to the column
+    # axis, lifted to world unit vectors. Each is weighted by the circular Gaussian of
+    # its angle to the axis. A hit solves the positive horizontal chord from the eye
+    # to the cylinder, then keeps the point when its atan2 azimuth, wrapped into
+    # (-pi, pi], lies in the bar and its z lies between the bar's bottom and top.
+    #
+    # The spacing is 5e-4 rad. Across a straight edge the Gaussian's marginal peaks
+    # at 1/(sigma sqrt(2 pi)) ≈ 6.54/rad, so one cell holds at most about 3.3e-3 of
+    # the truncated mass and the midpoint rule is biased by at most half of that,
+    # 1.6e-3, when the edge cuts the peak. 2e-3 absolute is that bias. Using the ray's
+    # own azimuth, or dropping the z bounds, moves the offset eye and the top and
+    # bottom edges by much more.
+    cols = table(
+        [
+            ("L", 0.0, 0.0),  # on the bar at azimuth 0
+            ("L", 0.0, 12.0),  # above a low top edge
+            ("L", 180.0, 0.0),  # into the bar that crosses ±180°
+            ("L", -35.0, -8.0),
+        ]
+    )
+    bars = (
+        bar(name="centred", width_deg=12.0),
+        bar(name="edge", azimuth0_deg=50.0, width_deg=100.0),  # one edge on +x
+        bar(name="top", width_deg=80.0, z_top_m=0.0026),
+        bar(name="bottom", width_deg=80.0, z_bottom_m=-0.0017),
+        bar(name="far", azimuth0_deg=8.0, width_deg=4.0),
+        bar(name="wrap", azimuth0_deg=175.0, width_deg=30.0),
+    )
+    eyes = (
+        (0.0, 0.0, 0.0),
+        (0.018, -0.012, 0.003),
+    )
+    step = 5e-4
+    quadrature = (400, 720, 5)
+    grids = [tangent_directions(axis, quadrature[2], step) for axis in cols.direction]
+    worst = 0.0
+    for origin in eyes:
+        mounts = (
+            EyeMount("L", Pose("body", "eye/L", origin, LOOK_LEFT), "s"),
+            EyeMount("R", Pose("body", "eye/R", origin, LOOK_LEFT), "s"),
+        )
+        got = cover(cols, bars, mounts, quadrature=quadrature)
+        for c, (dirs, weight) in enumerate(grids):
+            total = float(weight.sum())
+            for i, b in enumerate(bars):
+                ref = float(weight[cylinder_hits(origin, dirs, b)].sum() / total)
+                worst = max(worst, abs(ref - float(got.coverage[i, c])))
+    assert worst < 2e-3
 
 
 def test_a_wide_tall_bar_covers_the_truncated_profile():
