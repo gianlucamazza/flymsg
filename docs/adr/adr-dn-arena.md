@@ -371,4 +371,8 @@ built site pages. Pages registration can follow in a later docs PR.
 inhibitory, so no spike passes the lamina. Version 2 of the lock (#284) moves to the
 graded input of the [graded eye ADR](adr-vee1-graded-eye.md); its counted run is
 `depends`: `uninformative` at lamina-to-medulla gain 1, `null` at gains 4 and 16, inside
-the range of 39 wiring-null shuffles.
+the range of 39 wiring-null shuffles. Post-verdict diagnostics ([DN arena](../result/dn-arena.md)) find
+the readout set by the reconstruction's eye imbalance (2,251 right against 1,652 left
+input photoreceptors) and the nulls' band by the shuffled graphs' tonic activity. With
+a static stimulus the `shuffled` arm equals `disconnected` by construction: it permutes
+identical open-loop inputs.
