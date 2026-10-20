@@ -34,8 +34,11 @@ What the numbers say, within the lock:
 - The intact readout is small: 23 and 44 decoder spikes in one second, against up to
   71 in single shuffles. The intact turn has opposite signs at gains 4 and 16.
 - Disconnected and intact differ by at most 0.07 rad. The body's feedback changes the
-  readout by a few spikes, so the turn comes from the drive, not from the loop.
-- Shuffled equals disconnected, as in version 1. It is reported and outside the
+  readout by a few spikes; this alone does not say what in the open-loop input drives
+  it (see the drive test below).
+- Shuffled equals disconnected, as in version 1. With a static sphere the disconnected
+  input is the same at every tick, so permuting its order changes nothing: the arm is
+  degenerate by construction for this stimulus. It is reported and outside the
   verdict.
 
 Archived tables:
@@ -59,6 +62,69 @@ activity belongs to the shuffled graph more than to the visual gain. The test as
 whether the intact turn falls outside that band, and the intact readout is weaker than
 the band's ends. With one stimulus, one decoder cell and 39 nulls, this fixture cannot
 separate a small connectome-dependent turn from the shuffled graphs' own activity.
+
+### Why the intact readout does not follow the sphere (exploratory, after the verdict)
+
+Four post-verdict diagnostics, written after the verdict and not scored. Each is one
+open-loop second with the body at its reset pose, on the lock's anchored pathway; the
+locked sphere reproduces the archived disconnected arm spike for spike, and on the
+null graphs the open loop reproduces the archived null counts within one spike.
+
+**Drive test** (`scripts/dn_arena_v2_exploratory.py`). Decoder spikes of the intact
+graph:
+
+| Gain | Sphere left (locked)        | Sphere right (mirrored) | No sphere        | Dark |
+| ---: | --------------------------- | ----------------------- | ---------------- | ---- |
+|    4 | DNa02 R 21, L 3             | DNa02 R 22, L 0         | DNa02 R 20, L 1  | none |
+|   16 | DNa02 R 18, L 21, DNa01 L 1 | DNa02 R 24, L 18        | DNa02 R 18, L 23 | none |
+
+Light switches the readout on, but where the sphere is barely matters: mirroring it
+changes the yaw readout (left minus right decoder spikes) by 4 at gain 4 and 10 at
+gain 16, against a side bias of −19 and +5 with no sphere at all.
+
+**Layer tally** (`scripts/dn_arena_v2_layers.py`). From the medulla to the DN types, the
+right hemisphere fires more under every drive, darkness included: at gain 4 under the
+locked sphere, Mi/Tm/TmY 28,172 against 15,181 spikes, T4/T5 16,464 against 5,783,
+LC/LPLC 3,332 against 1,024, DN types 1,229 against 507. The six decoder neurons follow
+it at gain 4 (21 right, 3 left) but not at gain 16 (18 right, 22 left). Mirroring the
+sphere moves the mean photoreceptor potential of each eye by less than 1 mV (−0.46 mV
+left, +0.73 mV right) and the spikes of each stage from the medulla to the DN types by at most
+4.2%.
+
+**Input balance** (same setup). The arena's input photoreceptors are those MaleCNS v1.0
+assigns to a column with a lens: 2,251 in the right eye (747 columns) and 1,652 in the
+left (651 columns), with 84,411 against 63,251 synapses onto L1–L3 (+33% on the right).
+The imbalance is in the reconstruction before our selection: 2,474 traced right-eye
+photoreceptors against 1,733 left, of which 201 and 70 receive no column; no side-dependent
+filter in `flymsg.eye` or `dn_arena` adds to it. Neuron counts per side are balanced downstream (L1–L5 4,466 and
+4,417; T4/T5 6,795 and 6,790). Under uniform light the right lamina therefore receives
+a third more drive. At gain 4 this matches the readout's rightward bias, which the
+mirror does not reverse; at gain 16 the mirror does reverse it (+4 to −6), so there the
+sphere's side acts, weakly. These diagnostics show the imbalance and its downstream
+asymmetry; they do not prove it is the only cause of the readout's side.
+
+**Null graphs in darkness** (`scripts/dn_arena_v2_nulls_dark.py`, gain 4). The six
+shuffles that set every null change above 0.5 rad fire 84 to 208 decoder spikes with
+zero drive, more than under the sphere (24 to 69). Six shuffles silent in the run (7300,
+7301, 7303, 7306, 7309, 7311) fire 22 to 145 in darkness and fall silent under light.
+The intact graph fires none in darkness. The shuffled graphs' decoder activity is
+therefore tonic, and light suppresses and reshapes it rather than creating it.
+
+**Signed paths** (`scripts/dn_arena_v2_paths.py`, no simulation). A linear signed walk
+from each eye reaches the decoder neurons in 2–3 synapses with similar weight from both
+eyes, and the sign of the yaw proxy for a left sphere alternates from hop to hop (hops 2
+to 6: minus, minus, plus, minus, plus). The anatomy gives no consistent lateral steering
+expectation at this level of description. A linear walk ignores thresholds, graded
+dynamics and delays.
+
+**Reading.** The v2 score compares one stimulus's heading change across graphs.
+Three things dominate it that have nothing to do with the sphere's side: the
+reconstruction's eye imbalance, the shuffled graphs' tonic activity, and a stimulus that
+moves each eye's input by under 1 mV. The verdict stands as locked. A test of steering
+by the connectome needs a score that cancels stimulus-independent bias, such as the
+contrast between the sphere and its mirror on the same graph with nulls scored the same
+way, and a stimulus strong enough to move the lamina. That would be a new lock version
+with owner approval; it is not a rerun of version 2.
 
 ## Version 1 result: uninformative
 
@@ -142,7 +208,10 @@ read) estimated about 3 h for the run with 4 workers; under load it took 5 h 23 
 - No further version of this lock is planned. A different stimulus, decoder or null
   count would be a new lock with its own approval, not a rerun of version 2.
 - Steering by the connectome needs a readout that the shuffled graphs do not match.
-  This fixture's six neurons and one second do not give one. A body that is not
+  This fixture's six neurons and one second do not give one. The diagnostics above name
+  what a further version would have to change: a mirrored-stimulus contrast scored on
+  every graph, a stimulus that moves the lamina, and the reconstruction's eye imbalance
+  stated as a limit or compensated by a named rule. A body that is not
   kinematic needs the motor and proprioceptive interfaces proposed in #288.
 - Nothing here is a claim about steering, the descending neurons or flight. The
   components keep the statuses of the ADR's evidence table; `validation/evidence.yaml`
