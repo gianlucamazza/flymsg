@@ -171,7 +171,7 @@ def _bind(doc: dict, path: tuple[str, ...], expected) -> None:
 
 
 def _bind_lock(doc: dict) -> None:
-    """Every version-3 field the loop implements, verbatim."""
+    """Every version-3 lock field, verbatim."""
     _bind(doc, ("seed",), 7210)
     _bind(
         doc,
@@ -436,6 +436,116 @@ def _bind_lock(doc: dict) -> None:
                 "(graded eye ADR Decision 5)."
             ),
         ],
+    )
+    _bind(
+        doc,
+        ("content_sha256",),
+        "7ed0e04de84b9a584080021da2c5d4748d062e5af92327deab049b15ffbbea1c",
+    )
+    _bind(doc, ("yaml_subset",), 2)
+    _bind(
+        doc,
+        ("evidence_none",),
+        "A synthetic milestone (DN-arena ADR, graded eye ADR): no recording is "
+        "scored and validation/evidence.yaml is not edited. The sources behind "
+        "the decoder's sign are cited under decoder and in docs/leads.md; the "
+        "graded pathway's sources are those of validation/t4t5.yaml version 4.",
+    )
+    _bind(doc, ("issue",), 263)
+    _bind(doc, ("model", "body_us"), 1000)
+    _bind(doc, ("model", "control_us"), 10000)
+    _bind(doc, ("model", "latency_us"), 0)
+    _bind(doc, ("model", "duration_us"), 1000000)
+    _bind(
+        doc,
+        ("model", "input_encoding_from"),
+        "graded eye ADR Decision 1: the photoreceptor drive is the real-valued "
+        "kick-equivalent of T4/T5 version 4, no Poisson draw; the input dead "
+        "time does not apply (input_gap_steps 0)",
+    )
+    _bind(
+        doc,
+        ("body", "source"),
+        "flymsg.arena kinematic planar body (DN-arena ADR)",
+    )
+    _bind(doc, ("body", "z_m"), 0.0)
+    _bind(doc, ("body", "roll_rad"), 0.0)
+    _bind(doc, ("body", "pitch_rad"), 0.0)
+    _bind(
+        doc,
+        ("eye", "acceptance_from"),
+        "Gonzalez-Bellido, Wardill & Juusola 2011, PNAS 108:4224, Fig 3A (as "
+        "in validation/t4t5.yaml)",
+    )
+    _bind(
+        doc,
+        ("pathway", "source"),
+        "validation/t4t5.yaml version 4: graded_lmc, graded_medulla, "
+        "medulla_mv, timing, dark_anchor_passes and settle_ms are taken from "
+        "that lock; the code refuses to run when it is not that version or its "
+        "hash differs",
+    )
+    _bind(
+        doc,
+        ("pathway", "builder"),
+        "flymsg.visual_pathway.prepare and build (vee1-1), bit-identical to "
+        "T4/T5 version 4 for its own configurations",
+    )
+    _bind(doc, ("pathway", "lmc_rate_hz"), 200.0)
+    _bind(doc, ("pathway", "medulla_rate_hz"), 200.0)
+    _bind(
+        doc,
+        ("decoder", "neurons"),
+        [
+            "10442 DNa01 L",
+            "10760 DNa01 R",
+            "523769 DNa02 L",
+            "10360 DNa02 R",
+            "13805 oDN1 L",
+            "230783 oDN1 R",
+        ],
+    )
+    _bind(
+        doc,
+        ("decoder", "neurons_from"),
+        "docs/dn-arena-inventory.md (MaleCNS v1.0 annotation table, sha256 "
+        "2177e246113e4cfbf1e7772ec37c6da1955ff22e8063d0b1f833101f99a9a3b2); "
+        "oDN1 is MaleCNS type DNg97",
+    )
+    _bind(
+        doc,
+        ("decoder", "sign_from"),
+        "ipsilateral steering: 'Both cells are depolarized just before the fly "
+        "steers in the ipsilateral direction' (Rayshubskiy et al., bioRxiv "
+        "10.1101/2020.04.04.024703 v4, Fig 1D legend); 'the cell with a soma in "
+        "the right hemisphere was more active during right turns, and vice "
+        "versa' (Yang et al., bioRxiv 10.1101/2023.10.15.562426 v1, Fig 2A)",
+    )
+    _bind(
+        doc,
+        ("decoder", "linear_from"),
+        "'rotational velocity was consistently related to the difference in "
+        "right-left firing rates' and 'This relationship was essentially "
+        "linear through its entire dynamic range' (Rayshubskiy et al. v4, "
+        "Fig 3B-C)",
+    )
+    _bind(doc, ("decoder", "yaw_gain_deg_s_per_hz"), 2.0)
+    _bind(doc, ("decoder", "forward_gain_mm_s_per_hz"), 0.2)
+    _bind(
+        doc,
+        ("decoder", "gains_from"),
+        "one cell of version 1's engineered envelope (its middle yaw gain and "
+        "its larger forward gain), chosen by the owner to bound cost; no "
+        "source states a numeric gain. Gains are not evidence and do not enter "
+        "validation/evidence.yaml",
+    )
+    _bind(doc, ("decoder", "window_us"), [0, 1000000])
+    _bind(doc, ("score", "window_us"), [200000, 1000000])
+    _bind(
+        doc,
+        ("data_rule",),
+        "a null, a difference or an uninformative outcome is archived as it is "
+        "and not rerun with new configurations, gains, geometry or seeds",
     )
 
 

@@ -47,6 +47,62 @@ def _edit(name: str) -> dict:
         doc["pathway"]["lmc_rate_hz"] = 100.0
     elif name == "smoke":
         doc["smoke"] = ""
+    elif name == "content_sha256":
+        doc["content_sha256"] = "0" * 64
+    elif name == "yaml_subset":
+        doc["yaml_subset"] = 1
+    elif name == "evidence_none":
+        doc["evidence_none"] += " x"
+    elif name == "issue":
+        doc["issue"] = 264
+    elif name == "body_us":
+        doc["model"]["body_us"] = 2000
+    elif name == "control_us":
+        doc["model"]["control_us"] = 20000
+    elif name == "latency_us":
+        doc["model"]["latency_us"] = 100
+    elif name == "duration_us":
+        doc["model"]["duration_us"] = 2000000
+    elif name == "input_encoding_from":
+        doc["model"]["input_encoding_from"] += " x"
+    elif name == "body_source":
+        doc["body"]["source"] = "other kinematic body"
+    elif name == "body_z":
+        doc["body"]["z_m"] = 1.0
+    elif name == "body_roll":
+        doc["body"]["roll_rad"] = 1.0
+    elif name == "body_pitch":
+        doc["body"]["pitch_rad"] = 1.0
+    elif name == "acceptance_from":
+        doc["eye"]["acceptance_from"] += " x"
+    elif name == "pathway_source":
+        doc["pathway"]["source"] += " x"
+    elif name == "pathway_builder":
+        doc["pathway"]["builder"] += " x"
+    elif name == "lmc_rate":
+        doc["pathway"]["lmc_rate_hz"] = 50.0
+    elif name == "medulla_rate":
+        doc["pathway"]["medulla_rate_hz"] = 50.0
+    elif name == "neuron_order":
+        doc["decoder"]["neurons"] = list(reversed(doc["decoder"]["neurons"]))
+    elif name == "neurons_from":
+        doc["decoder"]["neurons_from"] += " x"
+    elif name == "sign_from":
+        doc["decoder"]["sign_from"] += " x"
+    elif name == "linear_from":
+        doc["decoder"]["linear_from"] += " x"
+    elif name == "yaw_gain":
+        doc["decoder"]["yaw_gain_deg_s_per_hz"] = -2.0
+    elif name == "forward_gain":
+        doc["decoder"]["forward_gain_mm_s_per_hz"] = -0.2
+    elif name == "gains_from":
+        doc["decoder"]["gains_from"] += " x"
+    elif name == "decoder_window_value":
+        doc["decoder"]["window_us"] = [200000, 1000000]
+    elif name == "score_window":
+        doc["score"]["window_us"] = [0, 1000000]
+    elif name == "data_rule":
+        doc["data_rule"] += " x"
     return doc
 
 
@@ -209,6 +265,34 @@ def test_the_lock_matches_the_code():
         "encoding",
         "configuration",
         "smoke",
+        "content_sha256",
+        "yaml_subset",
+        "evidence_none",
+        "issue",
+        "body_us",
+        "control_us",
+        "latency_us",
+        "duration_us",
+        "input_encoding_from",
+        "body_source",
+        "body_z",
+        "body_roll",
+        "body_pitch",
+        "acceptance_from",
+        "pathway_source",
+        "pathway_builder",
+        "lmc_rate",
+        "medulla_rate",
+        "neuron_order",
+        "neurons_from",
+        "sign_from",
+        "linear_from",
+        "yaw_gain",
+        "forward_gain",
+        "gains_from",
+        "decoder_window_value",
+        "score_window",
+        "data_rule",
     ],
 )
 def test_a_drifted_lock_is_refused(name):
