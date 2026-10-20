@@ -562,6 +562,45 @@ def optical(
     return stimulus, config
 
 
+def optical_bars(
+    columns: optics.Columns,
+    registration: pose.Registration,
+    mounts: tuple[pose.EyeMount, pose.EyeMount],
+    bars: tuple[optics.Bar, ...],
+    acceptance_deg: float,
+    quadrature: tuple[int, int, float],
+) -> tuple[Callable[[int, pose.BodyState], tuple[float, ...]], str]:
+    """The stimulus step on `optics.bar_coverage`, and its configuration hash.
+
+    Per column with a lens, the largest single-bar coverage of its acceptance profile:
+    bars are measured as if alone, so where they overlap this is a lower bound on the
+    dark share. Columns without a lens are left out, the same ones at every tick. The
+    world is read at the time of the state given, so the stimulus is a pure function of
+    (time, state). The columns, bars and mounts must not be mutated during a run: the
+    hash names them, it does not watch them.
+    """
+    config = optics.bar_config_sha256(
+        columns, registration, mounts, bars, acceptance_deg, quadrature
+    )
+    has = np.isfinite(columns.direction).all(axis=1)
+
+    def stimulus(time_us: int, state: pose.BodyState) -> tuple[float, ...]:
+        if state.time_us != time_us:
+            raise ContractError("the stimulus is read at the state's own time")
+        sample = optics.bar_coverage(
+            columns,
+            registration,
+            mounts,
+            state,
+            bars,
+            acceptance_deg,
+            quadrature,
+        )
+        return tuple(float(v) for v in sample.coverage[:, has].max(axis=0))
+
+    return stimulus, config
+
+
 def run(
     runtime: CpuRuntime,
     body: Body,
