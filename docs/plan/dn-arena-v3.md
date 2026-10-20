@@ -57,9 +57,20 @@ on a ball. Verified verbatim in the Results and figure legends:
   stimuli on the right), with a notable exception near the midline, where flies instead
   tended to follow the direction of motion" (Fig. 3a).
 
-The object is "a dark vertical bar (10.5°) on a bright background" in a 48°-tall arena,
-sweeping at 25 or 75 °/s. These Methods numbers come from an extraction of the full text
-and must be checked verbatim in the PDF before a lock cites them.
+The Methods (STAR Methods, "Visual panorama" and "Visual stimuli (open-loop and
+closed-loop)", read verbatim in the v1 PDF) give the stimulus:
+
+- "each pixel subtending ~1.5° of the animal's visual field and covering 48° in height
+  and 336° in azimuth".
+- "For visual object pursuit, the visual stimulus was a dark vertical bar (10.5°) on a
+  bright background."
+- "an object appearing randomly every 3 s, sweeping 22.5° at 25°/s or 75°/s, then
+  disappearing ("motion pulses"), with motion paths tiling the front 100° of the visual
+  field (for AOTU019) or the front 180° of the visual field (for AOTU025 and for behavior
+  experiments in intact flies)".
+
+The bar's height and contrast are not stated. The height is taken as the panorama's 48°,
+an inference that the lock will name. Green 525 nm LEDs were used for electrophysiology.
 
 Proposed stimulus: one 10.5°-wide, 48°-tall dark bar, sweeping 22.5° of azimuth at
 25 °/s (0.9 s) away from the midline, centred at 45° on one side, and its mirror on the
