@@ -222,8 +222,10 @@ reads only the `all` input set (`robust: <verdict>`, `depends`, or `uninformativ
 The `paired` set — inputs whose column has a mirror column with a viewing direction
 and at least one input — gets the same verdicts, reported as sensitivity outside the
 claim. Configurations are lamina-to-medulla gains 4 and 16. One shuffled pathway is
-dark-anchored once and serves both sides. `smoke` is still pending a timing run and
-owner approval.
+dark-anchored once and serves both sides. A timing-only smoke (no spike, command or heading read) measured 222 s per
+anchored pathway, 185 s per 1 s arm and 79 s per record, 4.9 GB per process: about
+9 h with 4 workers on an idle host, up to about 16 h under load. The lock awaits owner
+approval.
 
 ## What follows
 

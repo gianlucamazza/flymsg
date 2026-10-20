@@ -241,7 +241,7 @@ def test_the_lock_matches_the_code():
     assert dn_arena.VERSION_HASHES == {
         1: "9ba9a69c8397fae5c6aa9ee60cd48147d4898110c2dbb22a2d461254b4583aa3",
         2: "1426386c66041510812bdcd6b3bfebb91d05a0811c5bfe33f9c191f3cd9a3ac7",
-        3: "7ed0e04de84b9a584080021da2c5d4748d062e5af92327deab049b15ffbbea1c",
+        3: "8e4cc30fd2f65b92d1720b38f0069027b5b571cda2f9fda34be6b14edb20ef2a",
     }
     assert doc["content_sha256"] == dn_arena.VERSION_HASHES[3]
     assert dn_arena.summary() == (

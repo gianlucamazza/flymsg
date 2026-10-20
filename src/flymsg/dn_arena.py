@@ -53,7 +53,7 @@ INVENTORY = ROOT / "docs" / "dn-arena-inventory.md"
 VERSION_HASHES = {
     1: "9ba9a69c8397fae5c6aa9ee60cd48147d4898110c2dbb22a2d461254b4583aa3",
     2: "1426386c66041510812bdcd6b3bfebb91d05a0811c5bfe33f9c191f3cd9a3ac7",
-    3: "7ed0e04de84b9a584080021da2c5d4748d062e5af92327deab049b15ffbbea1c",
+    3: "8e4cc30fd2f65b92d1720b38f0069027b5b571cda2f9fda34be6b14edb20ef2a",
 }
 
 _PAIRS = tuple((kind, side) for kind in TYPES for side in SIDES)
@@ -211,7 +211,21 @@ def _bind_lock(doc: dict) -> None:
         "runs named in smoke, whose spikes, commands and heading were not read "
         "and whose records were deleted unread.",
     )
-    _bind(doc, ("smoke",), "pending: timing only, filled in before owner approval")
+    _bind(
+        doc,
+        ("smoke",),
+        (
+            "Timing only, on the full connectome, with this lock's code at the gain 16 "
+            "configuration: setup 11 s; intact pathway on the all set with 6 dark passes "
+            "222 s; one intact 1 s arm with the left bar 185 s; record serialization 79 "
+            "s; a wiring-null pathway on a shuffle with seed 1, outside the locked seeds,"
+            " 200 s; intact pathway on the paired set 135 s; peak memory 4.9 GB per "
+            "process. No spike, command or heading was read and the record was deleted "
+            "unread. Estimated cost of the counted run: about 126,000 process-seconds, "
+            "about 9 h with 4 workers on an idle host and up to about 16 h under the load"
+            " version 2 met."
+        ),
+    )
     _bind(doc, ("stimulus", "object"), "bar")
     _bind(
         doc,
@@ -440,7 +454,7 @@ def _bind_lock(doc: dict) -> None:
     _bind(
         doc,
         ("content_sha256",),
-        "7ed0e04de84b9a584080021da2c5d4748d062e5af92327deab049b15ffbbea1c",
+        "8e4cc30fd2f65b92d1720b38f0069027b5b571cda2f9fda34be6b14edb20ef2a",
     )
     _bind(doc, ("yaml_subset",), 2)
     _bind(

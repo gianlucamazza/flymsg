@@ -1,5 +1,5 @@
 version: 3
-content_sha256: "7ed0e04de84b9a584080021da2c5d4748d062e5af92327deab049b15ffbbea1c"
+content_sha256: "8e4cc30fd2f65b92d1720b38f0069027b5b571cda2f9fda34be6b14edb20ef2a"
 yaml_subset: 2
 evidence: none
 evidence_none: "A synthetic milestone (DN-arena ADR, graded eye ADR): no recording is scored and validation/evidence.yaml is not edited. The sources behind the decoder's sign are cited under decoder and in docs/leads.md; the graded pathway's sources are those of validation/t4t5.yaml version 4."
@@ -8,7 +8,7 @@ claim:
   scored: false
   text: "On the full MaleCNS v1.0 connectome in a closed loop with a kinematic planar body, an engineered descending-neuron readout and the graded visual pathway of T4/T5 version 4 driven by the moving dark bar of Collie et al.: does the intact graph's mirrored contrast, half the change in yaw under a bar sweeping on the left minus the change under its mirror image on the right, lie outside the range of the same contrast on 39 degree-preserving shuffles of the same graph, at every configuration of the pathway envelope? The contrast cancels turning that does not depend on the bar's side. A contrast outside that range is a synthetic difference, not a biological or connectome-derived mechanism."
 seen_before_lock: "Versions 1 and 2 of this lock ran (results/dn-arena/v1 uninformative, results/dn-arena/v2 depends; docs/result/dn-arena.md) and were read, with the version 2 post-verdict diagnostics (scripts/dn_arena_v2_*.py): the intact readout is switched on by light but barely follows a static sphere's side, the reconstruction has 2,251 right-eye and 1,652 left-eye input photoreceptors, the wiring nulls fire decoder neurons in darkness, and at lamina-to-medulla gain 1 the intact readout was silent. This version's score, stimulus, configurations and paired-column sensitivity set are chosen from that reading and from docs/plan/dn-arena-v3.md (accepted by the owner, #293). No bar stimulus has run on the full connectome before this lock except the timing smoke runs named in smoke, whose spikes, commands and heading were not read and whose records were deleted unread."
-smoke: "pending: timing only, filled in before owner approval"
+smoke: "Timing only, on the full connectome, with this lock's code at the gain 16 configuration: setup 11 s; intact pathway on the all set with 6 dark passes 222 s; one intact 1 s arm with the left bar 185 s; record serialization 79 s; a wiring-null pathway on a shuffle with seed 1, outside the locked seeds, 200 s; intact pathway on the paired set 135 s; peak memory 4.9 GB per process. No spike, command or heading was read and the record was deleted unread. Estimated cost of the counted run: about 126,000 process-seconds, about 9 h with 4 workers on an idle host and up to about 16 h under the load version 2 met."
 model:
   dataset: malecns
   params: "sim.Params() defaults"
