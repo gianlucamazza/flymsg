@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="330" viewBox="0 0 960 330" font-family="system-ui, sans-serif" font-size="10">
+<rect width="960" height="330" fill="#ffffff"/>
+<text x="12" y="18" font-size="12">DN arena: intact heading change against 39 wiring nulls</text>
+<rect x="292" y="52" width="440" height="198" fill="none" stroke="#999"/>
+<line x1="321.3" x2="321.3" y1="250" y2="253" stroke="#999"/><text x="321.3" y="264" text-anchor="middle">-2</text>
+<line x1="524.4" x2="524.4" y1="250" y2="253" stroke="#999"/><text x="524.4" y="264" text-anchor="middle">0</text>
+<line x1="727.5" x2="727.5" y1="250" y2="253" stroke="#999"/><text x="727.5" y="264" text-anchor="middle">2</text>
+<text x="512.0" y="278" text-anchor="middle">heading change, 200–1,000 ms (rad)</text>
+<polyline points="524.4,250.0 524.4,52.0" fill="none" stroke="#888888" stroke-width="1.0" stroke-dasharray="4 3"/>
+<rect x="524.4" y="58.7" width="0.0" height="10.4" fill="#888888" fill-opacity="0.35"/>
+<polyline points="524.4,56.6 524.4,71.4" fill="none" stroke="#222" stroke-width="1.4"/>
+<circle cx="666.2" cy="64.0" r="3.2" fill="none" stroke="#888888" stroke-width="1.2"/>
+<circle cx="524.4" cy="64.0" r="2.5" fill="#2b6cb0"/>
+<text x="530.4" y="67.0" fill="#2b6cb0" text-anchor="start">0.000</text>
+<text x="284.0" y="67.0" fill="#222" text-anchor="end">v1 · yaw 0.5 °/s/Hz · fwd 0.05 mm/s/Hz</text>
+<text x="740.0" y="67.0" fill="#222" text-anchor="start">uninformative</text>
+<rect x="524.4" y="80.5" width="0.0" height="10.4" fill="#888888" fill-opacity="0.35"/>
+<polyline points="524.4,78.3 524.4,93.1" fill="none" stroke="#222" stroke-width="1.4"/>
+<circle cx="666.2" cy="85.7" r="3.2" fill="none" stroke="#888888" stroke-width="1.2"/>
+<circle cx="524.4" cy="85.7" r="2.5" fill="#2b6cb0"/>
+<text x="530.4" y="88.7" fill="#2b6cb0" text-anchor="start">0.000</text>
+<text x="284.0" y="88.7" fill="#222" text-anchor="end">v1 · yaw 0.5 °/s/Hz · fwd 0.2 mm/s/Hz</text>
+<text x="740.0" y="88.7" fill="#222" text-anchor="start">uninformative</text>
+<rect x="524.4" y="102.3" width="0.0" height="10.4" fill="#888888" fill-opacity="0.35"/>
+<polyline points="524.4,100.1 524.4,114.9" fill="none" stroke="#222" stroke-width="1.4"/>
+<circle cx="666.2" cy="107.5" r="3.2" fill="none" stroke="#888888" stroke-width="1.2"/>
+<circle cx="524.4" cy="107.5" r="2.5" fill="#2b6cb0"/>
+<text x="530.4" y="110.5" fill="#2b6cb0" text-anchor="start">0.000</text>
+<text x="284.0" y="110.5" fill="#222" text-anchor="end">v1 · yaw 2 °/s/Hz · fwd 0.05 mm/s/Hz</text>
+<text x="740.0" y="110.5" fill="#222" text-anchor="start">uninformative</text>
+<rect x="524.4" y="124.0" width="0.0" height="10.4" fill="#888888" fill-opacity="0.35"/>
+<polyline points="524.4,121.8 524.4,136.6" fill="none" stroke="#222" stroke-width="1.4"/>
+<circle cx="666.2" cy="129.2" r="3.2" fill="none" stroke="#888888" stroke-width="1.2"/>
+<circle cx="524.4" cy="129.2" r="2.5" fill="#2b6cb0"/>
+<text x="530.4" y="132.2" fill="#2b6cb0" text-anchor="start">0.000</text>
+<text x="284.0" y="132.2" fill="#222" text-anchor="end">v1 · yaw 2 °/s/Hz · fwd 0.2 mm/s/Hz</text>
+<text x="740.0" y="132.2" fill="#222" text-anchor="start">uninformative</text>
+<rect x="524.4" y="145.8" width="0.0" height="10.4" fill="#888888" fill-opacity="0.35"/>
+<polyline points="524.4,143.6 524.4,158.4" fill="none" stroke="#222" stroke-width="1.4"/>
+<circle cx="666.2" cy="151.0" r="3.2" fill="none" stroke="#888888" stroke-width="1.2"/>
+<circle cx="524.4" cy="151.0" r="2.5" fill="#2b6cb0"/>
+<text x="530.4" y="154.0" fill="#2b6cb0" text-anchor="start">0.000</text>
+<text x="284.0" y="154.0" fill="#222" text-anchor="end">v1 · yaw 8 °/s/Hz · fwd 0.05 mm/s/Hz</text>
+<text x="740.0" y="154.0" fill="#222" text-anchor="start">uninformative</text>
+<rect x="524.4" y="167.5" width="0.0" height="10.4" fill="#888888" fill-opacity="0.35"/>
+<polyline points="524.4,165.4 524.4,180.2" fill="none" stroke="#222" stroke-width="1.4"/>
+<circle cx="666.2" cy="172.8" r="3.2" fill="none" stroke="#888888" stroke-width="1.2"/>
+<circle cx="524.4" cy="172.8" r="2.5" fill="#2b6cb0"/>
+<text x="530.4" y="175.8" fill="#2b6cb0" text-anchor="start">0.000</text>
+<text x="284.0" y="175.8" fill="#222" text-anchor="end">v1 · yaw 8 °/s/Hz · fwd 0.2 mm/s/Hz</text>
+<text x="740.0" y="175.8" fill="#222" text-anchor="start">uninformative</text>
+<rect x="325.9" y="189.3" width="375.8" height="10.4" fill="#888888" fill-opacity="0.35"/>
+<polyline points="524.4,187.1 524.4,201.9" fill="none" stroke="#222" stroke-width="1.4"/>
+<circle cx="666.2" cy="194.5" r="3.2" fill="none" stroke="#888888" stroke-width="1.2"/>
+<circle cx="524.4" cy="194.5" r="2.5" fill="#2b6cb0"/>
+<text x="530.4" y="197.5" fill="#2b6cb0" text-anchor="start">0.000</text>
+<text x="284.0" y="197.5" fill="#222" text-anchor="end">v2 · gain 1</text>
+<text x="740.0" y="197.5" fill="#222" text-anchor="start">uninformative</text>
+<rect x="325.9" y="211.1" width="375.8" height="10.4" fill="#888888" fill-opacity="0.35"/>
+<polyline points="524.4,208.9 524.4,223.7" fill="none" stroke="#222" stroke-width="1.4"/>
+<circle cx="666.2" cy="216.3" r="3.2" fill="none" stroke="#888888" stroke-width="1.2"/>
+<circle cx="460.6" cy="216.3" r="2.5" fill="#2b6cb0"/>
+<text x="466.6" y="219.3" fill="#2b6cb0" text-anchor="start">-0.628</text>
+<text x="284.0" y="219.3" fill="#222" text-anchor="end">v2 · gain 4</text>
+<text x="740.0" y="219.3" fill="#222" text-anchor="start">null</text>
+<rect x="322.3" y="232.8" width="375.8" height="10.4" fill="#888888" fill-opacity="0.35"/>
+<polyline points="524.4,230.6 524.4,245.4" fill="none" stroke="#222" stroke-width="1.4"/>
+<circle cx="666.2" cy="238.0" r="3.2" fill="none" stroke="#888888" stroke-width="1.2"/>
+<circle cx="542.1" cy="238.0" r="2.5" fill="#2b6cb0"/>
+<text x="548.1" y="241.0" fill="#2b6cb0" text-anchor="start">0.175</text>
+<text x="284.0" y="241.0" fill="#222" text-anchor="end">v2 · gain 16</text>
+<text x="740.0" y="241.0" fill="#222" text-anchor="start">null</text>
+<text x="292.0" y="298.0" fill="#888888" text-anchor="start">Grey bar: 39 wiring-null shuffles (min to max, tick at median). Blue dot: intact. Hollow circle: script control (no connectome).</text>
+<text x="292.0" y="312.0" fill="#888888" text-anchor="start">v1: Poisson photoreceptor drive; v2: graded kick-equivalent drive of T4/T5 version 4.</text>
+</svg>

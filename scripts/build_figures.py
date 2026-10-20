@@ -10,6 +10,7 @@ Reads results/ (tracked; filled from runs/ by scripts/archive_results.py, manife
   results/kc-sparseness/v1/ … v5/  flymsg kc-sparseness --run
   results/jump3d/v1/          flymsg jump3d --run
   results/t4t5/v4.executions/  flymsg t4t5 --run (lock v4)
+  results/dn-arena/v{1,2}.executions/  flymsg dn-arena --run (locks v1, v2)
   validation/homology/        flymsg homology
 and reruns one exploratory simulation (the scored ORN_DM1 corner, seed 0) for the Kenyon
 cell persistence figure, which needs the MaleCNS tables. The sparseness and jump figures
@@ -190,6 +191,41 @@ def t4_spikes() -> str:
     return figures.t4_spikes(configs)
 
 
+def _dn_arena_rows(version: str, cells: list[dict]) -> list[dict]:
+    rows = []
+    for cell in cells:
+        row = {
+            "version": version,
+            "verdict": cell["verdict"],
+            "intact": float(cell["intact"]),
+            "script": float(cell["script"]),
+            "wiring_null_minimum": float(cell["wiring_null_minimum"]),
+            "wiring_null_median": float(cell["wiring_null_median"]),
+            "wiring_null_maximum": float(cell["wiring_null_maximum"]),
+        }
+        if version == "v1":
+            row["yaw_gain_deg_s_per_hz"] = float(cell["yaw_gain_deg_s_per_hz"])
+            row["forward_gain_mm_s_per_hz"] = float(cell["forward_gain_mm_s_per_hz"])
+        elif version == "v2":
+            row["lamina_medulla_gain"] = float(cell["lamina_medulla_gain"])
+        else:
+            raise ValueError(version)
+        rows.append(row)
+    return rows
+
+
+def dn_arena() -> str:
+    arena = RESULTS / "dn-arena"
+    (v1_path,) = arena.glob("v1.executions/*/output/verdict.json")
+    (v2_path,) = arena.glob("v2.executions/*/output/verdict.json")
+    v1 = json.loads(v1_path.read_text())
+    v2 = json.loads(v2_path.read_text())
+    rows = _dn_arena_rows("v1", v1["cells"]) + _dn_arena_rows(
+        "v2", v2["configurations"]
+    )
+    return figures.dn_arena(pd.DataFrame(rows))
+
+
 FIGURES = {
     "looming-jump.svg": looming_jump,
     "silence-scan-v2.svg": lambda: scan(2, "20–22"),
@@ -202,6 +238,7 @@ FIGURES = {
     "homology-pilot.svg": homology,
     "sensitivity-rate.svg": sens,
     "t4-spikes.svg": t4_spikes,
+    "dn-arena.svg": dn_arena,
 }
 
 

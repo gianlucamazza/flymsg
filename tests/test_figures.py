@@ -205,3 +205,36 @@ def test_t4_spikes_labels_archived_configurations():
     for row in configs.itertuples():
         assert f"{row.t4_spikes:,}" in texts
     assert "gain 16 · LMC 200 Hz · medulla 200 Hz" in texts
+
+
+def test_dn_arena_labels_archived_verdicts():
+    arena = ROOT / "results" / "dn-arena"
+    (v1_path,) = arena.glob("v1.executions/*/output/verdict.json")
+    (v2_path,) = arena.glob("v2.executions/*/output/verdict.json")
+    v1 = json.loads(v1_path.read_text())
+    v2 = json.loads(v2_path.read_text())
+    shared = (
+        "verdict",
+        "intact",
+        "script",
+        "wiring_null_minimum",
+        "wiring_null_median",
+        "wiring_null_maximum",
+    )
+    rows = []
+    for cell in v1["cells"]:
+        row = {"version": "v1", **{key: cell[key] for key in shared}}
+        row["yaw_gain_deg_s_per_hz"] = cell["yaw_gain_deg_s_per_hz"]
+        row["forward_gain_mm_s_per_hz"] = cell["forward_gain_mm_s_per_hz"]
+        rows.append(row)
+    for cell in v2["configurations"]:
+        row = {"version": "v2", **{key: cell[key] for key in shared}}
+        row["lamina_medulla_gain"] = cell["lamina_medulla_gain"]
+        rows.append(row)
+    texts = _texts(_parse(figures.dn_arena(pd.DataFrame(rows))))
+    for row in rows:
+        assert row["verdict"] in texts
+    for cell in v2["configurations"]:
+        assert f"{cell['intact']:.3f}" in texts
+    assert "v1 · yaw 0.5 °/s/Hz · fwd 0.05 mm/s/Hz" in texts
+    assert "v2 · gain 4" in texts

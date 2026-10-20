@@ -42,6 +42,7 @@ DIRS = (
     "baselines/v1.executions/f89ed1c350b97a63cb5bfa7c483f1837ad81d585bcea19742800f809674bb7f4/output",
     "apl-claws/v1.executions/b914035a1c1a364adec8e0a880373c104287b3e677f39521f76550e5dbadc0fd/output",
     "dn-arena/v1.executions/df21c26cfbf81240a6c1913f268dfbddabd6b212672efe1dae081b114d14f1a8/output",
+    "dn-arena/v2.executions/edd21a61d587947dd98ebef882219f74a335c6e6ed75d7f5dd980fc3a5bb8785/output",
 )
 # A guard: results/ holds tables, not raw activity. 250 kB since t4t5 v3, whose per-type
 # medulla table over 25 configurations brings its required artifacts to 202 kB; 450 kB since
