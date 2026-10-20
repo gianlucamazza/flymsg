@@ -1,17 +1,21 @@
 """The DN arena lock, its jobs and the yaw metric. No connectome and no FlyGym."""
 
 import copy
+import math
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 import test_closedloop
+import test_optics
 from test_dn_decoder import DNA01_L, GAINS, NEURONS
 
-from flymsg import closedloop, dn_arena, sim, visual_pathway
+from flymsg import closedloop, dn_arena, optics, pose, sim, visual_pathway
 from flymsg.arena import Arena
 from flymsg.dn_decoder import Decoder
 from flymsg.embodiment import ContractError
+from flymsg.pose import IDENTITY, EyeMount
 
 ARM_ORDER = ("intact", "disconnected", "shuffled", "silenced", "replay")
 OTHER_YAW = {"disconnected": 1.0, "shuffled": 2.0, "silenced": 3.0, "replay": 4.0}
@@ -43,6 +47,62 @@ def _edit(name: str) -> dict:
         doc["pathway"]["lmc_rate_hz"] = 100.0
     elif name == "smoke":
         doc["smoke"] = ""
+    elif name == "content_sha256":
+        doc["content_sha256"] = "0" * 64
+    elif name == "yaml_subset":
+        doc["yaml_subset"] = 1
+    elif name == "evidence_none":
+        doc["evidence_none"] += " x"
+    elif name == "issue":
+        doc["issue"] = 264
+    elif name == "body_us":
+        doc["model"]["body_us"] = 2000
+    elif name == "control_us":
+        doc["model"]["control_us"] = 20000
+    elif name == "latency_us":
+        doc["model"]["latency_us"] = 100
+    elif name == "duration_us":
+        doc["model"]["duration_us"] = 2000000
+    elif name == "input_encoding_from":
+        doc["model"]["input_encoding_from"] += " x"
+    elif name == "body_source":
+        doc["body"]["source"] = "other kinematic body"
+    elif name == "body_z":
+        doc["body"]["z_m"] = 1.0
+    elif name == "body_roll":
+        doc["body"]["roll_rad"] = 1.0
+    elif name == "body_pitch":
+        doc["body"]["pitch_rad"] = 1.0
+    elif name == "acceptance_from":
+        doc["eye"]["acceptance_from"] += " x"
+    elif name == "pathway_source":
+        doc["pathway"]["source"] += " x"
+    elif name == "pathway_builder":
+        doc["pathway"]["builder"] += " x"
+    elif name == "lmc_rate":
+        doc["pathway"]["lmc_rate_hz"] = 50.0
+    elif name == "medulla_rate":
+        doc["pathway"]["medulla_rate_hz"] = 50.0
+    elif name == "neuron_order":
+        doc["decoder"]["neurons"] = list(reversed(doc["decoder"]["neurons"]))
+    elif name == "neurons_from":
+        doc["decoder"]["neurons_from"] += " x"
+    elif name == "sign_from":
+        doc["decoder"]["sign_from"] += " x"
+    elif name == "linear_from":
+        doc["decoder"]["linear_from"] += " x"
+    elif name == "yaw_gain":
+        doc["decoder"]["yaw_gain_deg_s_per_hz"] = -2.0
+    elif name == "forward_gain":
+        doc["decoder"]["forward_gain_mm_s_per_hz"] = -0.2
+    elif name == "gains_from":
+        doc["decoder"]["gains_from"] += " x"
+    elif name == "decoder_window_value":
+        doc["decoder"]["window_us"] = [200000, 1000000]
+    elif name == "score_window":
+        doc["score"]["window_us"] = [0, 1000000]
+    elif name == "data_rule":
+        doc["data_rule"] += " x"
     return doc
 
 
@@ -83,42 +143,78 @@ def _at(value, index):
     return value[index] if isinstance(value, list) else value
 
 
-def _rows(intact, spikes, script_yaw=5.0):
+def _side_fired(spikes, index, side):
+    item = _at(spikes, index)
+    if isinstance(item, dict):
+        return bool(item[side])
+    return bool(item)
+
+
+def _rows(
+    intact,
+    spikes,
+    script_yaw=None,
+    paired_intact=None,
+    paired_spikes=None,
+    nulls=None,
+):
+    """Synthetic results. `intact` is the mirrored contrast, shared by a configuration.
+
+    Left yaw is twice that contrast and mirror yaw is 0, so the score reads it back.
+    `nulls`, when given, replaces the contrasts 0 .. 38. The paired set defaults to
+    the same contrasts and spikes as `all`.
+    """
     doc = dn_arena.load()
     ids = [str(body) for body in sorted(dn_arena.neurons(doc))]
     seed0 = doc["controls"]["wiring_null"]["seed0"]
+    if script_yaw is None:
+        script_yaw = {"left": 5.0, "mirror": 6.0}
+    chosen = {
+        "all": (intact, spikes),
+        "paired": (
+            intact if paired_intact is None else paired_intact,
+            spikes if paired_spikes is None else paired_spikes,
+        ),
+    }
     rows = []
     for job in dn_arena.jobs(doc):
         if job["kind"] == "script":
-            rows.append({"key": job["key"], "yaw_change": float(script_yaw)})
+            rows.append(
+                {"key": job["key"], "yaw_change": float(script_yaw[job["side"]])}
+            )
             continue
         index = job["configuration"]["index"]
         if job["kind"] == "wiring-null":
+            i = job["seed"] - seed0
+            contrast_i = float(i if nulls is None else nulls[i])
             rows.append(
                 {
                     "key": job["key"],
-                    "yaw_change": float(job["seed"] - seed0),
-                    "spikes": _spikes(ids, True),
+                    "yaw_change": {"left": 2.0 * contrast_i, "mirror": 0.0},
                 }
             )
             continue
-        fired = _at(spikes, index)
+        value = float(_at(chosen[job["input_set"]][0], index))
+        fired = _side_fired(chosen[job["input_set"]][1], index, job["side"])
         per_arm = {}
         for arm in job["arms"]:
             if arm == "intact":
-                yaw, counts = float(_at(intact, index)), _spikes(ids, fired)
+                yaw = 2.0 * value if job["side"] == "left" else 0.0
+                counts = _spikes(ids, fired)
             else:
-                yaw, counts = OTHER_YAW[arm], _spikes(ids, True)
+                yaw = OTHER_YAW[arm] + (10.0 if job["side"] == "mirror" else 0.0)
+                counts = _spikes(ids, True)
             per_arm[arm] = {
                 "yaw_change": yaw,
                 "spikes": counts,
                 "record_sha256": "a" * 64,
             }
+        digest = "b" * 64 if job["input_set"] == "all" else "c" * 64
         rows.append(
             {
                 "key": job["key"],
                 "replay_parity": True,
-                "pathway_sha256": "b" * 64,
+                "pathway_sha256": digest,
                 "arms": per_arm,
             }
         )
@@ -140,6 +236,18 @@ def test_the_lock_matches_the_code():
     doc = dn_arena.assert_locked()
     assert dn_arena.assert_matches_code() == doc
     assert dn_arena.assert_matches_code(doc) == doc
+    assert doc["version"] == 3
+    assert dn_arena.content_hash(doc) == dn_arena.VERSION_HASHES[3]
+    assert dn_arena.VERSION_HASHES == {
+        1: "9ba9a69c8397fae5c6aa9ee60cd48147d4898110c2dbb22a2d461254b4583aa3",
+        2: "1426386c66041510812bdcd6b3bfebb91d05a0811c5bfe33f9c191f3cd9a3ac7",
+        3: "8e4cc30fd2f65b92d1720b38f0069027b5b571cda2f9fda34be6b14edb20ef2a",
+    }
+    assert doc["content_sha256"] == dn_arena.VERSION_HASHES[3]
+    assert dn_arena.summary() == (
+        "dn_arena v3 (issue #263): 2 input sets, 2 configurations, 2 sides, "
+        "5 arms, 39 nulls, seeds 7400-7438, duration 1000000 us, kick_equivalent"
+    )
 
 
 @pytest.mark.parametrize(
@@ -157,6 +265,34 @@ def test_the_lock_matches_the_code():
         "encoding",
         "configuration",
         "smoke",
+        "content_sha256",
+        "yaml_subset",
+        "evidence_none",
+        "issue",
+        "body_us",
+        "control_us",
+        "latency_us",
+        "duration_us",
+        "input_encoding_from",
+        "body_source",
+        "body_z",
+        "body_roll",
+        "body_pitch",
+        "acceptance_from",
+        "pathway_source",
+        "pathway_builder",
+        "lmc_rate",
+        "medulla_rate",
+        "neuron_order",
+        "neurons_from",
+        "sign_from",
+        "linear_from",
+        "yaw_gain",
+        "forward_gain",
+        "gains_from",
+        "decoder_window_value",
+        "score_window",
+        "data_rule",
     ],
 )
 def test_a_drifted_lock_is_refused(name):
@@ -192,36 +328,180 @@ def test_configurations_and_jobs():
         }
         for i, gain in enumerate(path["lamina_medulla_gain"])
     ]
-    assert [cfg["lamina_medulla_gain"] for cfg in configs] == [1.0, 4.0, 16.0]
-    assert len(configs) == 3
+    assert [cfg["lamina_medulla_gain"] for cfg in configs] == [4.0, 16.0]
+    assert len(configs) == 2
     wn = doc["controls"]["wiring_null"]
-    assert (wn["seed0"], wn["seeds"]) == (7300, 39)
+    assert (wn["seed0"], wn["seeds"]) == (7400, 39)
     jobs = dn_arena.jobs(doc)
     assert jobs == dn_arena.jobs(doc)
-    assert len(jobs) == 121
-    assert len(jobs) == 3 + 3 * 39 + 1
+    sets = doc["pathway"]["input_sets"]
+    sides = doc["stimulus"]["sides"]
+    assert sets == ["all", "paired"]
+    assert sides == ["left", "mirror"]
+    # per input set and configuration: one arms job per side, then 39 nulls;
+    # the script is one job per side and does not depend on the set
+    assert len(jobs) == len(sets) * len(configs) * (len(sides) + wn["seeds"]) + len(
+        sides
+    )
+    assert len(jobs) == 166
     assert len({job["key"] for job in jobs}) == len(jobs)
     seeds = list(range(wn["seed0"], wn["seed0"] + wn["seeds"]))
     cursor = 0
-    for cfg in configs:
-        arms = jobs[cursor]
-        assert arms["kind"] == "arms" and arms["configuration"] == cfg
-        assert arms["key"] == f"arms/{cfg['index']}"
-        assert arms["arms"] == list(ARM_ORDER)
-        assert arms["arms"].index("replay") > arms["arms"].index("intact")
+    for name in sets:
+        for cfg in configs:
+            for side in sides:
+                arms = jobs[cursor]
+                assert arms["kind"] == "arms" and arms["configuration"] == cfg
+                assert arms["input_set"] == name and arms["side"] == side
+                assert arms["key"] == f"arms/{name}/{cfg['index']}/{side}"
+                assert arms["arms"] == list(ARM_ORDER)
+                assert arms["arms"].index("replay") > arms["arms"].index("intact")
+                cursor += 1
+            found = []
+            for _seed in seeds:
+                null = jobs[cursor]
+                assert null["kind"] == "wiring-null" and null["configuration"] == cfg
+                assert null["input_set"] == name and "side" not in null
+                assert (
+                    null["key"] == f"wiring-null/{name}/{cfg['index']}/{null['seed']}"
+                )
+                found.append(null["seed"])
+                cursor += 1
+            assert found == seeds
+    for side in sides:
+        assert jobs[cursor] == {"key": f"script/{side}", "kind": "script", "side": side}
         cursor += 1
-        found = []
-        for _seed in seeds:
-            null = jobs[cursor]
-            assert null["kind"] == "wiring-null" and null["configuration"] == cfg
-            assert null["key"] == f"wiring-null/{cfg['index']}/{null['seed']}"
-            found.append(null["seed"])
-            cursor += 1
-        assert found == seeds
-    assert jobs[cursor] == {"key": "script", "kind": "script"}
-    assert cursor == len(jobs) - 1
-    assert jobs[0]["key"] == "arms/0"
-    assert any(job["key"] == "wiring-null/0/7300" for job in jobs)
+    assert cursor == len(jobs)
+    assert jobs[0]["key"] == "arms/all/0/left"
+    assert any(job["key"] == "wiring-null/all/0/7400" for job in jobs)
+    assert [job["key"] for job in jobs[-2:]] == ["script/left", "script/mirror"]
+
+
+def test_paired_inputs_require_a_directed_mirror_column():
+    # (1, 1) is paired. (2, 2) loses its mirror to a missing azimuth. (3, 3) is
+    # directed on both sides but only the left has an input. (4, 4) has no mirror
+    # column. (5, 5) and (5, 6) are both directed and are not mirrors.
+    columns = pd.DataFrame(
+        {
+            "side": ["L", "R", "L", "R", "L", "R", "L", "R", "L"],
+            "hex1": [1, 1, 2, 2, 3, 3, 4, 5, 5],
+            "hex2": [1, 1, 2, 2, 3, 3, 4, 5, 6],
+            "azimuth_deg": [
+                -10.0,
+                10.0,
+                -20.0,
+                np.nan,
+                -30.0,
+                30.0,
+                -40.0,
+                50.0,
+                -55.0,
+            ],
+            "elevation_deg": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        }
+    )
+    receptors = pd.DataFrame(
+        {
+            "side": ["L", "R", "L", "L", "R", "L", "L", "R", "L"],
+            "hex1": [1, 1, 1, 2, 2, 3, 4, 5, 5],
+            "hex2": [1, 1, 1, 2, 2, 3, 4, 5, 6],
+            "neuron": [11, 12, 10, 20, 21, 30, 40, 50, 51],
+        }
+    )
+    directed = dn_arena.directed_inputs(columns, receptors)
+    assert directed["neuron"].tolist() == [10, 11, 12, 20, 30, 40, 50, 51]
+    assert directed["rank"].tolist() == [0, 0, 1, 2, 3, 5, 6, 7]
+    paired = dn_arena.paired_inputs(directed)
+    assert paired["neuron"].tolist() == [10, 11, 12]
+    assert paired["rank"].tolist() == [0, 0, 1]
+    assert list(zip(paired["side"], paired["hex1"], paired["hex2"], strict=True)) == [
+        ("L", 1, 1),
+        ("L", 1, 1),
+        ("R", 1, 1),
+    ]
+    assert dn_arena.paired_inputs(directed[directed["hex1"] == 4]).empty
+    bad = directed.copy()
+    bad.loc[bad.index[0], "side"] = "left"
+    with pytest.raises(dn_arena.DNArenaError, match="L or R"):
+        dn_arena.paired_inputs(bad)
+
+
+def _on_axis(time_us, body_pose):
+    return pose.BodyState(time_us, body_pose, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
+
+
+def test_the_bar_covers_the_aimed_eye_and_sweeps_toward_the_midline():
+    # Eyes on the cylinder axis, so a column's body azimuth of the bar centre is
+    # the centre itself. Left body azimuth -56.25 is world azimuth +56.25.
+    doc = dn_arena.load()
+    reset = dn_arena._body(doc).reset()
+    mounts = (
+        EyeMount("L", pose.Pose("body", "eye/L", (0.0, 0.0, 0.0), IDENTITY), "on axis"),
+        EyeMount("R", pose.Pose("body", "eye/R", (0.0, 0.0, 0.0), IDENTITY), "on axis"),
+    )
+    made = dn_arena.bars(doc, reset, mounts)
+    half = float(doc["stimulus"]["screen_radius_m"]) * math.tan(
+        math.radians(float(doc["stimulus"]["height_deg"]) / 2.0)
+    )
+    assert made["left"].angular_velocity_deg_s == -25.0
+    assert made["mirror"].angular_velocity_deg_s == 25.0
+    assert made["left"].azimuth0_deg == 56.25
+    assert made["mirror"].azimuth0_deg == -56.25
+    assert made["left"].screen_radius_m == 0.1
+    assert made["left"].axis_xy_m == (0.0, 0.0)
+    assert made["left"].visible_us == (100_000, 1_000_000)
+    assert made["left"].z_bottom_m == pytest.approx(-half)
+    assert made["left"].z_top_m == pytest.approx(half)
+    assert made["mirror"].z_bottom_m == made["left"].z_bottom_m
+    cols = test_optics.table(
+        [
+            ("L", -56.25, 0.0),
+            ("L", -54.0, 0.0),
+            ("R", 56.25, 0.0),
+            ("R", 54.0, 0.0),
+            ("L", -33.75, 0.0),
+            ("R", 33.75, 0.0),
+        ]
+    )
+    quad = tuple(doc["stimulus"]["quadrature"])
+    acceptance = float(doc["eye"]["acceptance_deg"])
+
+    def sample(side, time_us):
+        return optics.bar_coverage(
+            cols,
+            test_optics.REG,
+            mounts,
+            _on_axis(time_us, reset.pose),
+            (made[side],),
+            acceptance,
+            quad,
+        )
+
+    start, end = 100_000, 999_999
+    opened = sample("left", start)
+    assert np.allclose(opened.azimuth_deg[0], -56.25)
+    assert opened.coverage[0, 0] > 0.5 and opened.coverage[0, 1] > 0.5
+    assert np.all(opened.coverage[0, 2:] == 0.0)
+    mirrored = sample("mirror", start)
+    assert np.allclose(mirrored.azimuth_deg[0], 56.25)
+    assert mirrored.coverage[0, 2] > 0.5 and mirrored.coverage[0, 3] > 0.5
+    assert mirrored.coverage[0, 0] == 0.0 and mirrored.coverage[0, 1] == 0.0
+    assert mirrored.coverage[0, 4] == 0.0 and mirrored.coverage[0, 5] == 0.0
+    late = sample("left", end)
+    body = -made["left"].centre_azimuth_deg(end)
+    assert np.allclose(late.azimuth_deg[0], body)
+    assert abs(body - (-33.75)) < 1e-3 and body < -33.75
+    assert late.coverage[0, 4] > 0.5
+    assert late.coverage[0, 0] == 0.0 and np.all(late.coverage[0, [2, 3, 5]] == 0.0)
+    late_m = sample("mirror", end)
+    body_m = -made["mirror"].centre_azimuth_deg(end)
+    assert np.allclose(late_m.azimuth_deg[0], body_m)
+    assert abs(body_m - 33.75) < 1e-3 and body_m > 33.75
+    assert late_m.coverage[0, 5] > 0.5
+    assert np.all(late_m.coverage[0, :5] == 0.0)
+    # half-open window: the microsecond before the sweep and the end instant are dark
+    assert np.all(sample("left", start - 1).coverage == 0.0)
+    assert np.all(sample("left", 1_000_000).coverage == 0.0)
 
 
 def test_heading_matches_the_arena_after_every_tick():
@@ -400,72 +680,132 @@ def test_a_toy_graded_loop_records_the_pathway_hash():
         )
 
 
-def test_verdict_uses_the_inclusive_null_and_the_no_go():
+def test_verdict_scores_the_contrast_and_keeps_the_paired_set_outside():
     rows, doc, ids = _rows(0.0, True)
-    n = len(dn_arena.configurations(doc))
     found = dn_arena.verdict(rows, doc)
     assert found["envelope"] == "robust: null"
+    assert [item["verdict"] for item in found["configurations"]] == ["null", "null"]
+    assert [item["verdict"] for item in found["sensitivity"]] == ["null", "null"]
+    assert [item["index"] for item in found["configurations"]] == [0, 1]
+    assert [item["lamina_medulla_gain"] for item in found["configurations"]] == [
+        4.0,
+        16.0,
+    ]
+    assert [item["input_set"] for item in found["configurations"]] == ["all", "all"]
     row = found["configurations"][0]
     assert row["verdict"] == "null"
-    assert row["index"] == 0
-    assert row["lamina_medulla_gain"] == 1.0
-    assert row["intact"] == 0.0
-    assert row["disconnected"] == 1.0
-    assert row["shuffled"] == 2.0
-    assert row["replay"] == 4.0
-    assert row["silenced"] == 3.0
-    assert row["script"] == 5.0
-    assert row["intact_minus_script"] == -5.0
+    assert row["contrast"] == 0.0
+    assert row["expected_sign"] == "positive"
+    assert row["contrast_sign"] == "zero"
+    assert row["expected_sign_met"] is False
     assert row["wiring_null_minimum"] == 0.0
     assert row["wiring_null_median"] == 19.0
     assert row["wiring_null_maximum"] == 38.0
     assert row["replay_parity"] is True
     assert row["pathway_sha256"] == "b" * 64
-    assert set(row["spikes"]) == set(ARM_ORDER)
-    assert row["spikes"]["intact"] == _spikes(ids, True)
-    assert [item["verdict"] for item in found["configurations"]] == ["null"] * n
-    assert [item["index"] for item in found["configurations"]] == [0, 1, 2]
+    assert "intact_minus_script" not in row
+    left, mirror = row["sides"]["left"], row["sides"]["mirror"]
+    assert left["intact"] == 0.0
+    assert left["disconnected"] == 1.0
+    assert left["shuffled"] == 2.0
+    assert left["silenced"] == 3.0
+    assert left["replay"] == 4.0
+    assert left["script"] == 5.0
+    assert set(left["spikes"]) == set(ARM_ORDER)
+    assert left["spikes"]["intact"] == _spikes(ids, True)
+    assert mirror["intact"] == 0.0
+    assert mirror["disconnected"] == 11.0
+    assert mirror["script"] == 6.0
+    assert found["sensitivity"][0]["pathway_sha256"] == "c" * 64
+    assert found["sensitivity"][0]["input_set"] == "paired"
 
     at_max, doc, _ids = _rows(38.0, True)
     assert dn_arena.verdict(at_max, doc)["envelope"] == "robust: null"
 
-    below, doc, _ids = _rows(-1e-6, True)
     above, doc, _ids = _rows(38.0 + 1e-6, True)
-    assert dn_arena.verdict(below, doc)["envelope"] == "robust: difference"
-    assert dn_arena.verdict(above, doc)["envelope"] == "robust: difference"
+    high = dn_arena.verdict(above, doc)
+    assert high["envelope"] == "robust: difference"
+    assert high["configurations"][0]["verdict"] == "difference"
+    assert high["configurations"][0]["contrast_sign"] == "positive"
+    assert high["configurations"][0]["expected_sign_met"] is True
 
-    mixed_yaw = [0.0, -1e-6] + [0.0] * (n - 2)
-    mixed, doc, _ids = _rows(mixed_yaw, True)
+    below, doc, _ids = _rows(-1e-6, True)
+    low = dn_arena.verdict(below, doc)
+    assert low["envelope"] == "robust: difference (wrong sign)"
+    assert low["configurations"][0]["verdict"] == "difference (wrong sign)"
+    assert low["configurations"][0]["contrast_sign"] == "negative"
+    assert low["configurations"][0]["expected_sign_met"] is False
+
+    # a negative contrast inside the null range stays null
+    inside, doc, _ids = _rows(-0.5, True, nulls=[-1.0, *range(38)])
+    held = dn_arena.verdict(inside, doc)
+    assert held["configurations"][0]["verdict"] == "null"
+    assert held["configurations"][0]["contrast_sign"] == "negative"
+
+    # zero outside the null range is a difference, not a wrong sign
+    flat, doc, _ids = _rows(0.0, True, nulls=[1.0] * 39)
+    zero = dn_arena.verdict(flat, doc)
+    assert zero["envelope"] == "robust: difference"
+    assert zero["configurations"][0]["verdict"] == "difference"
+    assert zero["configurations"][0]["contrast_sign"] == "zero"
+
+    mixed, doc, _ids = _rows([0.0, 38.0 + 1e-6], True)
     judged = dn_arena.verdict(mixed, doc)
     assert judged["envelope"] == "depends"
     assert [item["verdict"] for item in judged["configurations"]] == [
         "null",
         "difference",
-        *["null"] * (n - 2),
     ]
 
     dark, doc, _ids = _rows(100.0, False)
     blind = dn_arena.verdict(dark, doc)
     assert blind["envelope"] == "uninformative"
     assert blind["configurations"][0]["verdict"] == "uninformative"
-    assert blind["configurations"][0]["intact"] == 100.0
+    assert blind["configurations"][0]["contrast"] == 100.0
     assert blind["configurations"][0]["wiring_null_maximum"] == 38.0
-    assert sum(blind["configurations"][0]["spikes"]["intact"].values()) == 0
+    assert (
+        sum(blind["configurations"][0]["sides"]["left"]["spikes"]["intact"].values())
+        == 0
+    )
+    assert (
+        sum(blind["configurations"][0]["sides"]["mirror"]["spikes"]["intact"].values())
+        == 0
+    )
 
-    partial_spikes = [False] + [True] * (n - 1)
-    partial_yaw = [100.0] + [0.0] * (n - 1)
-    partial, doc, _ids = _rows(partial_yaw, partial_spikes)
+    # silence on one side is not the no-go
+    one, doc, _ids = _rows(100.0, {"left": False, "mirror": True})
+    heard = dn_arena.verdict(one, doc)
+    assert heard["envelope"] == "robust: difference"
+    assert heard["configurations"][0]["verdict"] == "difference"
+
+    partial, doc, _ids = _rows([100.0, 0.0], [False, True])
     split = dn_arena.verdict(partial, doc)
     assert split["envelope"] == "depends"
     assert split["configurations"][0]["verdict"] == "uninformative"
     assert split["configurations"][1]["verdict"] == "null"
 
-    other, doc, _ids = _rows(0.0, True, script_yaw=9.0)
+    # the paired set is reported and does not enter the envelope
+    apart, doc, _ids = _rows(0.0, True, paired_intact=100.0, paired_spikes=False)
+    outside = dn_arena.verdict(apart, doc)
+    assert outside["envelope"] == "robust: null"
+    assert [item["verdict"] for item in outside["sensitivity"]] == [
+        "uninformative",
+        "uninformative",
+    ]
+    moved, doc, _ids = _rows(0.0, True, paired_intact=100.0)
+    sensitivity = dn_arena.verdict(moved, doc)
+    assert sensitivity["envelope"] == "robust: null"
+    assert [item["verdict"] for item in sensitivity["sensitivity"]] == [
+        "difference",
+        "difference",
+    ]
+
+    other, doc, _ids = _rows(0.0, True, script_yaw={"left": 9.0, "mirror": 8.0})
     shifted = dn_arena.verdict(other, doc)
     assert shifted["envelope"] == found["envelope"]
-    assert [item["verdict"] for item in shifted["configurations"]] == ["null"] * n
-    assert shifted["configurations"][0]["script"] == 9.0
-    assert shifted["configurations"][0]["intact_minus_script"] == -9.0
+    assert [item["verdict"] for item in shifted["configurations"]] == ["null", "null"]
+    assert shifted["configurations"][0]["sides"]["left"]["script"] == 9.0
+    assert shifted["configurations"][0]["contrast"] == 0.0
 
 
 class _Text:
@@ -488,11 +828,26 @@ def test_stored_records_are_verified_and_damage_refuses(tmp_path):
         }
         for arm in ("intact", "replay")
     }
-    null = dn_arena._store(tmp_path, "wiring-null/1/2/7100", _Text("null"))
+    left = dn_arena._store(tmp_path, "wiring-null/all/1/7400__left", _Text("left"))
+    mirror = dn_arena._store(
+        tmp_path, "wiring-null/all/1/7400__mirror", _Text("mirror")
+    )
     rows = [
         {"kind": "arms", "key": "arms/1/2", "arms": arms},
-        {"kind": "wiring-null", "key": "wiring-null/1/2/7100", "record_sha256": null},
+        {
+            "kind": "wiring-null",
+            "key": "wiring-null/all/1/7400",
+            "record_sha256": {"left": left, "mirror": mirror},
+        },
     ]
+    with pytest.raises(dn_arena.DNArenaError, match="both sides"):
+        dn_arena.record_names(
+            {
+                "kind": "wiring-null",
+                "key": "wiring-null/all/1/7400",
+                "record_sha256": left,
+            }
+        )
     dn_arena.verify_records(tmp_path, rows)
     stored = tmp_path / "records" / "arms__1__2__replay.json.gz"
     with gzip.open(stored, "wb") as stream:
