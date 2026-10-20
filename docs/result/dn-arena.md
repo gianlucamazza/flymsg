@@ -82,19 +82,24 @@ Light switches the readout on, but where the sphere is barely matters: mirroring
 changes the yaw readout (left minus right decoder spikes) by 4 at gain 4 and 10 at
 gain 16, against a side bias of −19 and +5 with no sphere at all.
 
-**Layer tally** (`scripts/dn_arena_v2_layers.py`). Per hemisphere, the right side
-fires more at every stage and under every drive, darkness included: at gain 4 under the
+**Layer tally** (`scripts/dn_arena_v2_layers.py`). From the medulla to the DN types, the
+right hemisphere fires more under every drive, darkness included: at gain 4 under the
 locked sphere, Mi/Tm/TmY 28,172 against 15,181 spikes, T4/T5 16,464 against 5,783,
-LC/LPLC 3,332 against 1,024, DN types 1,229 against 507. Mirroring the sphere moves the
-mean photoreceptor potential of each eye by less than 1 mV (−0.46 mV left, +0.73 mV
-right) and each stage's spikes by a few percent.
+LC/LPLC 3,332 against 1,024, DN types 1,229 against 507. The six decoder neurons follow
+it at gain 4 (21 right, 3 left) but not at gain 16 (18 right, 22 left). Mirroring the
+sphere moves the mean photoreceptor potential of each eye by less than 1 mV (−0.46 mV
+left, +0.73 mV right) and the spikes of each stage from the medulla to the DN types by at most
+4.2%.
 
 **Input balance** (same setup). The arena's input photoreceptors are those MaleCNS v1.0
 assigns to a column with a lens: 2,251 in the right eye (747 columns) and 1,652 in the
 left (651 columns), whose summed synaptic weight onto L1–L3 is 16,233 against 12,164
 (+33% on the right). Neuron counts per side are balanced downstream (L1–L5 4,466 and
 4,417; T4/T5 6,795 and 6,790). Under uniform light the right lamina therefore receives
-a third more drive, and that bias, not the sphere, sets the side of the readout.
+a third more drive. At gain 4 this matches the readout's rightward bias, which the
+mirror does not reverse; at gain 16 the mirror does reverse it (+4 to −6), so there the
+sphere's side acts, weakly. These diagnostics show the imbalance and its downstream
+asymmetry; they do not prove it is the only cause of the readout's side.
 
 **Null graphs in darkness** (`scripts/dn_arena_v2_nulls_dark.py`, gain 4). The six
 shuffles that set every null change above 0.5 rad fire 84 to 208 decoder spikes with
