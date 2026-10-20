@@ -1,6 +1,8 @@
 # Replication: rerun an archived result, and what a rerun shows
 
-Status on 2026-10-14 (SF5, [#151](https://github.com/gianlucamazza/flymsg/issues/151)). This
+Status on 2026-10-14 (SF5, [#151](https://github.com/gianlucamazza/flymsg/issues/151));
+the [local clean-clone](#local-clean-clone-result-2026-10-18) of 2026-10-18 reproduced
+three archived results on the same machine and operator. This
 page is for an operator outside the project. It says how to rerun any archived result, how
 to compare the rerun with the archive, and what a match does and does not establish.
 

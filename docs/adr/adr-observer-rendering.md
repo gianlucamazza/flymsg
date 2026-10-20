@@ -1,6 +1,6 @@
 # ADR: fidelity-constrained geometry scheduling for the observer
 
-Status: accepted by the owner, 2026-10-15. Implementation and hardware qualification pending.
+Status: accepted by the owner, 2026-10-15. Scheduling implementation merged (#205); Quest 2 hardware qualification remains open.
 Extends the accepted [observer ADR](adr-virtual-experimental-environment.md);
 does not change its scientific or lifecycle boundaries.
 
@@ -10,7 +10,7 @@ Quest 2 is currently unqualified. The initial immersive session failed timing.
 Correcting the adaptive controller's interval sampling fixes a real measurement
 defect, but has not established acceptable headset performance.
 
-The [component diagnostic](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-components-2026-10-15.json)
+The [component diagnostic](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-components-2026-10-15.json)
 used the real Quest Browser, a visible page, fixed resolution and antialiasing,
 and playing replay. Median callback intervals were approximately 234 ms with
 7.2 million triangles and 3.4 million line segments; 100 ms with 0.8 million

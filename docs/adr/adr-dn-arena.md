@@ -290,8 +290,11 @@ and does not rewrite v1.
 
 ## Planned follow-up (`arena-1` … `arena-6`)
 
-Acceptance authorizes this sequence. Each step is still its own reviewed PR
-and waits on the step before it. Each later PR also updates `CHANGELOG.md`.
+Acceptance authorizes this sequence. The sequence is complete: `arena-1`
+through `arena-6` are merged, and the counted runs are in
+[Implementation status](#implementation-status-2026-10-20). The table stays
+the authorized scope. Each step was its own reviewed PR and updated
+`CHANGELOG.md`.
 These names are not module-boundaries PRs 4–8. No step edits
 `validation/evidence.yaml`.
 
@@ -317,8 +320,8 @@ Milestone 2, only after 1: the same decoder toward FlyGym 2.1.0's
 ## Coordination
 
 The [module-boundaries ADR](adr-module-boundaries.md) is accepted (2026-10-18).
-Steps 2–3 of that sequence have landed (lock codec, stimulus primitive). Steps
-4–8 are still pending and are not a prerequisite of this fixture. Step 8
+Steps 2–3 of that sequence have landed (lock codec, stimulus primitive). PRs 4–7 are merged, and step 8's repository roots are done; leaf moves stay
+deferred. They are not a prerequisite of this fixture. Step 8
 optionally moves modules into leaf packages with flat facades; the target
 **body** layer already lists `embodiment`, `pose`, `closedloop`,
 `flygym_body`, `jump`, `loop` and `ttm`. `arena` belongs in that layer

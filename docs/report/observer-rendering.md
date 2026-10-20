@@ -63,7 +63,7 @@ serialized desktop work; it is not production integration or XR qualification.
 ## Independent references and commands
 
 The frozen reference renderer is commit `18224c3`, before page integration.
-The [Quest capture archive](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/render-reference-18224c3-t20.zip)
+The [Quest capture archive](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/render-reference-18224c3-t20.zip)
 contains raw colour, neuron-ID and packed-depth images, geometry hashes, camera
 matrices, fixed replay timestamp 20 ms, and the frozen site hash. It captures
 the old mixed view of 1,128 selected neurons, not a full-surface qualification.
@@ -153,7 +153,7 @@ an XR frame rate. An earlier `gl.finish`-only attempt was rejected because it di
 not independently establish completed rendering. Readback equality for colour,
 ID and depth verified restoration on the physical Quest.
 
-The [recorded evidence](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/observer-rendering-2026-10-15.json)
+The [recorded evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/observer-rendering-2026-10-15.json)
 includes the six-case raster pass and real Quest image comparisons. Culling on
 the same loaded scene preserves all three image buffers exactly and submits
 about 4.2% fewer line indices in that view. This does not establish sufficient
@@ -165,8 +165,8 @@ results justify neither a shader shortcut nor a successful XR timing claim.
 
 ## Resident catalog and compact-cache result
 
-The [resident evidence summary](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-resident-lines-2026-10-15.json)
-and [raw archive](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-resident-lines-2026-10-15.zip)
+The [resident evidence summary](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-resident-lines-2026-10-15.json)
+and [raw archive](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-resident-lines-2026-10-15.zip)
 record clean frozen source `d0c4610` on the physical Quest 2. Every selected
 original skeleton is present: 1,128 neurons and 8,258,589 source segments.
 

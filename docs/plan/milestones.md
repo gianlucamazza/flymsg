@@ -40,8 +40,8 @@ S1 and S2 can conduct independent source audits in parallel. Their **scientific 
 **JO progress (2026-10-17):** protocol 6 now has a [source/identity/input design](../jo-measured-input-design.md)
 and [accepted ADR](../adr-measured-jo-input.md). The 146 selected MaleCNS bodies
 are an anatomical population, not 146 measured transfer functions. Absolute
-source calibration and sex transfer remain blocked; runtime implementation awaits
-ADR acceptance. This advances S1 design, not its scientific exit.
+source calibration and sex transfer remain blocked; runtime implementation is
+blocked on a measured source. This advances S1 design, not its scientific exit.
 
 ### S2 — Evidenced body coupling and causal geometry (P0)
 
@@ -97,17 +97,18 @@ remain required. No response data were opened or benchmark scored.
 
 **Exit:** original-quality correctness plus strict visual/error budgets on real selected anatomy, physical phone cold/warm/memory baseline, repeatable eligible headset cadence and stereo/session/context-loss/ sustained thermal tests. Separately qualify any alternative renderer or bounded-error representation under its own ADR. A fast empty/incomplete scene, background tab or changed quality is not a pass.
 
-## Open-issue primary assignment (2026-10-16)
+## Open-issue primary assignment (2026-10-20)
 
-The following 20 issues are assigned **only in this plan**:
+The following 22 open issues are assigned **only in this plan**. [#265](https://github.com/gianlucamazza/flymsg/issues/265) is the agent-coordination board, not a delivery gate; the graded-eye lane it tracked is merged through vee1-4.
 
 - **S0:** #148.
 - **S1:** #34, #84, #85, #97, #140.
-- **S2:** #19, #31, #35, #176, #179, #180.
+- **S2:** #19, #31, #35, #176, #179, #180, #263.
 - **S3:** #36, #149, #150.
 - **S4:** #151.
 - **H1:** #39, #224.
 - **H2:** #24, #177.
+- **Coordination:** #265.
 
 Each issue retains its present open/closed state, historical result and evidence blockers. The set must be refreshed when issues change, rather than pretending this snapshot is a live GitHub query.
 
