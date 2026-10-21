@@ -57,7 +57,7 @@ requirements, independent correctness pages and all three repeats of all views:
 
 ```bash
 ANDROID_ADB_SERVER_PORT=5038 bg uv run python scripts/quest_compare.py \
-  --serial 192.168.1.146:5555 --out runs/quest-bounded-comparison \
+  --serial <quest-ip>:5555 --out runs/quest-bounded-comparison \
   --scene looming --representation skeleton-bounded --keep-awake \
   --unattended --stop-on-regression
 ```

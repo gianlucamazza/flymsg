@@ -4,7 +4,7 @@ Result: **16 MiB is not admitted** on frozen runtime
 `febbfc285969ac7d433ed21c59fc0a3bd8661fb6`. Static gain did not survive motion.
 This is a desktop diagnostic result, not physical XR qualification.
 
-Quest 2 `1WMHHA43LY1466`, Wi-Fi-only `192.168.1.146:5555`, isolated ADB server
+Quest 2 `<quest-serial>`, Wi-Fi-only `<quest-ip>:5555`, isolated ADB server
 5038; full looming source, 1,128 selected neurons / 8,258,589 original segments.
 Each block contains four fresh-document, 30-second original / bounded / bounded /
 original arms with the same source, camera, viewport, content and quality.

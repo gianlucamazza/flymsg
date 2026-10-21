@@ -126,7 +126,7 @@ Hardware collection explicitly selects the candidate:
 
 ```sh
 ADB_LIBUSB=1 ANDROID_ADB_SERVER_PORT=5038 .venv/bin/python scripts/quest_xr.py \
-  --serial 1WMHHA43LY1466 --scene looming --representation skeleton \
+  --serial <quest-serial> --scene looming --representation skeleton \
   --uploads --gpu-page-mib 4 --pages --check --seconds 1800
 ```
 

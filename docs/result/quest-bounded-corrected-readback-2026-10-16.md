@@ -2,7 +2,7 @@
 
 Clean frozen runtime and host verifier:
 `b4427daa400fbe3ea723b7ec0eb569265c7539c3`, Quest 2
-`1WMHHA43LY1466`, Wi-Fi transport `192.168.1.146:5555`, isolated ADB server 5038,
+`<quest-serial>`, Wi-Fi transport `<quest-ip>:5555`, isolated ADB server 5038,
 4 MiB pages, full looming source.
 
 The readback-only oracle passed on all 1,128 neurons / 8,258,589 original
