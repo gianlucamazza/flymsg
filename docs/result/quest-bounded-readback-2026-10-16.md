@@ -4,8 +4,8 @@ Status: sampled static correctness passed. No cadence or physical XR admission.
 
 ## Identity and reproduction
 
-Quest 2 hardware serial `1WMHHA43LY1466`, ADB over Wi-Fi at
-`192.168.1.146:5555` using isolated server 5038. The active full-scene runtime was
+Quest 2 hardware serial `<quest-serial>`, ADB over Wi-Fi at
+`<quest-ip>:5555` using isolated server 5038. The active full-scene runtime was
 clean frozen commit `febbfc285969ac7d433ed21c59fc0a3bd8661fb6`, 16 MiB pages,
 looming, explicit `skeleton-bounded&check`. The independent host verifier was
 `a81cd5b4c6bcf0ae2d9a873528dc362cfd2640b6`; production viewer files are identical

@@ -9,7 +9,7 @@ requires original geometry; no bounded-path candidate is used here.
 
 - Clean runtime `cf068d955b15af2b666f2718dbda002508704a3a`, subsequently merged
   without a tree change in #234 as `8dc67e8163a3660f250d21de23a7233c8bf96f16`.
-- Physical Quest 2 `1WMHHA43LY1466`, explicit Wi-Fi ADB `192.168.1.146:5555`.
+- Physical Quest 2 `<quest-serial>`, explicit Wi-Fi ADB `<quest-ip>:5555`.
 - Complete looming skeleton selection: **1,128 neurons and 8,258,589 original
   segments**, 4 MiB pages. This report does not cover the 16/64 MiB candidates or
   original surfaces.

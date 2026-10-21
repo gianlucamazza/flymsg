@@ -7,7 +7,7 @@ from the test transport; there is no USB recovery fallback.
 
 ```bash
 ANDROID_ADB_SERVER_PORT=5038 uv run python scripts/quest_compare.py \
-  --serial 192.168.1.146:5555 --out runs/quest-wifi-comparison \
+  --serial <quest-ip>:5555 --out runs/quest-wifi-comparison \
   --scene looming --representation skeleton --keep-awake
 ```
 

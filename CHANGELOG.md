@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Docs privacy: Quest trial identifiers.** Public Markdown replaced the 2026-10-16 Quest 2 LAN debug address and hardware serial with `<quest-ip>` / `<quest-serial>` in prose and command examples. Evidence JSON and archives are unchanged.
+
 - **DN arena v3-2/v3-3: code and lock draft.** Version 3 of `validation/dn_arena.yaml` and `flymsg.dn_arena` replaces the static sphere with the moving dark bar of Collie et al. (`optics.Bar`, sides `left` and `mirror`, width 10.5°, sweep 22.5° at 25°/s), scores the mirrored contrast against 39 wiring-null seeds 7400–7438, and keeps lamina-to-medulla gains 4 and 16. The `all` input set is the claim; the `paired` column set is a sensitivity reported outside it. One shuffled pathway is dark-anchored once and serves both sides. `content_sha256` `8e4cc30fd2f65b92d1720b38f0069027b5b571cda2f9fda34be6b14edb20ef2a`. Timing smoke: 222 s per pathway, 185 s per 1 s arm, 79 s per record, 4.9 GB per process; about 9 h with 4 workers idle, up to about 16 h under load. Approved by the owner on 2026-10-20 (#297); merging authorizes the run.
 
 - **DN arena v3-1: optics bar primitive.** `optics.Bar` is a dark vertical bar on a cylindrical screen. `bar_coverage` integrates each column's spherical-Gaussian acceptance on a polar midpoint grid and returns the share whose rays hit the bar; `bar_config_sha256` names that configuration (`flymsg.optics.bar/v1`). `closedloop.optical_bars` is the stimulus step: per column with a lens, the largest single-bar coverage. `Sphere`, `sample`, `config_sha256` and `closedloop.optical` are unchanged. No lock, no run.
