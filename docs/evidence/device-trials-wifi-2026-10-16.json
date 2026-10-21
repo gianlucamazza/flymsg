@@ -253,10 +253,11 @@
     "full four-view cadence and sustained memory/thermal matrix",
     "physical XR lifecycle and head motion after admission"
   ],
+  "provenance": "Archives redacted on 2026-10-21 for privacy (device serial and LAN IP replaced), so they differ from the originals, and the original hashes are in git history.",
   "archive": {
     "path": "device-trials-wifi-2026-10-16.zip",
-    "sha256": "eaef3da380f9e993b26e76959a66b06634984bc29dc0fd9c19f854d6013043d3",
-    "bytes": 41667202,
+    "sha256": "c7f06ae4e4decfa62c73d30f5b7a40dd632223ac35d6b49c5f36fd49de5ac86e",
+    "bytes": 41657235,
     "checksummed_files": 705,
     "verifier": "extract and run python verify.py; optional --cpu PATH_TO_CLEAN_CHECKOUT"
   },

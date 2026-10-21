@@ -3,12 +3,13 @@
   "at": "2026-10-16T00:39:15.930633+00:00",
   "source_commit": "754c65eb2e0abc4c72a144fce03611d98da70dda",
   "status": "software-correctness-pass; physical qualification open",
+  "provenance": "Archives redacted on 2026-10-21 for privacy (device serial and LAN IP replaced), so they differ from the originals, and the original hashes are in git history.",
   "artifact": {
     "file": "quest2-paged-2026-10-16.zip",
-    "bytes": 899888,
-    "sha256": "ef36307b0fd4739c67c0d88b97b34416f9af51b54ddd1f4328416d3b59c1c07a",
+    "bytes": 899900,
+    "sha256": "33a51c2ba263341fc5a9bc09a80053c2ec0c458b9e6374114672d8c517457592",
     "inventory_files": 78,
-    "uncompressed_bytes": 67075517,
+    "uncompressed_bytes": 67075524,
     "independent_verifier": "Extract and run python verify.py . OPTIONAL_REPOSITORY"
   },
   "checks": {

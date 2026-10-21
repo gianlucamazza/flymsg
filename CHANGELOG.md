@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Evidence privacy: Quest serial and LAN IP inside archives.** Seven 2026-10-16 Quest evidence zips replace the hardware serial with `REDACTED-QUEST-SERIAL` and the LAN debug address with `192.0.2.10`; inner sha256 maps were recomputed and archive pins re-pinned. The redacted archives differ from the originals; original hashes remain in git history.
+
 - **Docs privacy: Quest trial identifiers.** Public Markdown replaced the 2026-10-16 Quest 2 LAN debug address and hardware serial with `<quest-ip>` / `<quest-serial>` in prose and command examples. Evidence JSON and archives are unchanged.
 
 - **DN arena v3-2/v3-3: code and lock draft.** Version 3 of `validation/dn_arena.yaml` and `flymsg.dn_arena` replaces the static sphere with the moving dark bar of Collie et al. (`optics.Bar`, sides `left` and `mirror`, width 10.5°, sweep 22.5° at 25°/s), scores the mirrored contrast against 39 wiring-null seeds 7400–7438, and keeps lamina-to-medulla gains 4 and 16. The `all` input set is the claim; the `paired` column set is a sensitivity reported outside it. One shuffled pathway is dark-anchored once and serves both sides. `content_sha256` `8e4cc30fd2f65b92d1720b38f0069027b5b571cda2f9fda34be6b14edb20ef2a`. Timing smoke: 222 s per pathway, 185 s per 1 s arm, 79 s per record, 4.9 GB per process; about 9 h with 4 workers idle, up to about 16 h under load. Approved by the owner on 2026-10-20 (#297); merging authorizes the run.
