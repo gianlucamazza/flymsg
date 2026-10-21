@@ -10,7 +10,7 @@
   },
   "hardware": {
     "model": "Quest 2",
-    "hardware_serial": "1WMHHA43LY1466",
+    "hardware_serial": "REDACTED-QUEST-SERIAL",
     "transport": "explicit TCP ADB",
     "usb_transport_used": false
   },

@@ -171,7 +171,7 @@ def test_run_supplies_frozen_camera_before_later_correctness_captures(
         out=tmp_path,
         endpoint="endpoint",
         target="target",
-        serial="192.168.1.146:5555",
+        serial="192.0.2.10:5555",
         source={},
         device={"hardware_serial": "fake"},
         unattended=True,

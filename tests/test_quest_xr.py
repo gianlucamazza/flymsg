@@ -153,7 +153,7 @@ def test_preflight_removes_only_owned_forward_after_bad_target(monkeypatch):
     assert calls[-1] == ("forward", "--remove", "tcp:39261")
 
 
-@pytest.mark.parametrize("serial", ["192.168.1.146:5555", "[::1]:5555"])
+@pytest.mark.parametrize("serial", ["192.0.2.10:5555", "[::1]:5555"])
 def test_wifi_transport_is_explicit(serial):
     assert quest.wifi_serial(serial) == serial
 
@@ -176,7 +176,7 @@ def test_cleanup_attempts_remaining_resources_after_restore_failure(tmp_path):
         raise RuntimeError("disconnected")
 
     report = quest.cleanup_resources(
-        "192.168.1.146:5555",
+        "192.0.2.10:5555",
         tmp_path,
         [
             ("keep-awake", fail),
@@ -199,13 +199,13 @@ def test_identity_refuses_changed_hardware_without_other_actions(monkeypatch):
         ),
     )
     with pytest.raises(ValueError, match="identity changed"):
-        quest.identity("192.168.1.146:5555", "expected")
+        quest.identity("192.0.2.10:5555", "expected")
 
 
 def test_cleanup_recovers_a_created_target_after_foreground_handshake_failed(
     monkeypatch, tmp_path
 ):
-    session = quest.QuestSite("192.168.1.146:5555", tmp_path)
+    session = quest.QuestSite("192.0.2.10:5555", tmp_path)
     session.endpoint = "http://127.0.0.1:45541"
     session.url = "http://localhost:8892/live/looming/?check"
     calls = []
@@ -249,23 +249,21 @@ def test_proximity_restore_checks_identity_and_readback(monkeypatch):
         "proximity_state",
         lambda serial: {"state": "DISABLED", "locks": [0, 0, 0]},
     )
-    assert (
-        quest.restore_proximity("192.168.1.146:5555", "hardware")["state"] == "DISABLED"
-    )
-    assert calls[0] == ("192.168.1.146:5555", "hardware")
+    assert quest.restore_proximity("192.0.2.10:5555", "hardware")["state"] == "DISABLED"
+    assert calls[0] == ("192.0.2.10:5555", "hardware")
     assert calls[1][-1] == "com.oculus.vrpowermanager.automation_disable"
 
 
 def test_unknown_proximity_format_is_rejected(monkeypatch):
     monkeypatch.setattr(quest, "adb", lambda *args: "unknown firmware")
     with pytest.raises(RuntimeError, match="unrecognized"):
-        quest.proximity_state("192.168.1.146:5555")
+        quest.proximity_state("192.0.2.10:5555")
 
 
 def test_readback_readiness_cannot_authorize_xr_receipts(monkeypatch, tmp_path):
     from types import SimpleNamespace
 
-    session = quest.QuestSite("192.168.1.146:5555", tmp_path)
+    session = quest.QuestSite("192.0.2.10:5555", tmp_path)
     session.endpoint, session.target, session.url = "endpoint", "owned", "url"
     session.server = SimpleNamespace(ready_document_id="previous")
     monkeypatch.setattr(
@@ -314,7 +312,7 @@ def test_native_guardian_focus_cannot_be_confused_with_a_resumed_browser(monkeyp
         ("unknown firmware", False),
     ]:
         monkeypatch.setattr(quest, "adb", lambda *args, text=raw: text)
-        assert quest.native_focus("192.168.1.146:5555")["browser_focused"] is expected
+        assert quest.native_focus("192.0.2.10:5555")["browser_focused"] is expected
 
 
 def test_bounded_xr_final_receipt_recomputes_all_raw_frame_certificates():
@@ -379,7 +377,7 @@ def test_native_focus_exclusion_is_durable_before_document_admission(
 ):
     from types import SimpleNamespace
 
-    session = quest.QuestSite("192.168.1.146:5555", tmp_path)
+    session = quest.QuestSite("192.0.2.10:5555", tmp_path)
     session.endpoint, session.target, session.url = "endpoint", "owned", "url"
     session.server = SimpleNamespace(ready_document_id=None)
     monkeypatch.setattr(
