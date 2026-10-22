@@ -29,8 +29,10 @@ Diagnostic state restoration succeeded; the still-active campaign's final
 proximity cleanup is separate from this snapshot.
 
 [Readback archive](../evidence/quest-bounded-corrected-readback-2026-10-16.zip):
-6,658,327 bytes, 27 entries, SHA-256
-`2f3bd5c1c4a4a68f028b82a16d7d050f51934fbebab19adce1f0eff5df56c1bf`.
+6,658,002 bytes, 27 entries, SHA-256
+`692beaf59ae14c5c316c7d8c8bfff81c470d4432a449ed7d18240e282f906230`.
+The archive was redacted on 2026-10-21 for privacy (device serial and LAN IP
+replaced), so it differs from the original; the original hash is in git history.
 It contains exact source/runtime/verifier provenance and script hashes, native
 inventory and proof reports, original/candidate images, diagnostic cleanup,
 campaign protocol, portable Python raster replay and a per-file hash/size manifest.

@@ -175,7 +175,8 @@
     "GPU fault injection",
     "sustained/full-connectome v2 qualification"
   ],
+  "provenance": "Archives redacted on 2026-10-21 for privacy (device serial and LAN IP replaced), so they differ from the originals, and the original hashes are in git history.",
   "raw_archive": "device-trials-followup-2026-10-16.zip",
-  "raw_archive_sha256": "6443320546ed4eac967af20b7d682a911cb192e2f34f54bea23b6ba1d4005b01",
+  "raw_archive_sha256": "aa0ed122fe7dad53275d5ce8e327723ddb690354e45f16b17cc8e20faa59e74a",
   "verify": "Extract ZIP, run python verify.py; add --cpu PATH_TO_REPO to compare completed outputs with the CPU oracle again."
 }
