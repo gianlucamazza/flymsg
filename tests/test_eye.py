@@ -231,3 +231,48 @@ def test_duplicate_lens_keys_cannot_duplicate_anatomical_columns():
     )
     with pytest.raises(pd.errors.MergeError, match="not a many-to-one"):
         eye.columns(_annotations(), lens)
+
+
+def test_receptor_masks_keep_missing_anatomy_and_unknown_laterality():
+    neurons = pd.DataFrame(
+        {
+            "bodyId": [10, 11, 12, 13, 14],
+            "type": ["R7", "R8", "R1-R6", "R7d", "Mi1"],
+            "instance": ["R7_R", "R8_L", None, "R7d_L", "Mi1_R"],
+        }
+    )
+    cols = pd.DataFrame(
+        {
+            "side": ["R", "L"],
+            "hex1": [1, 2],
+            "hex2": [1, 2],
+            "azimuth_deg": [30.0, np.nan],
+            "elevation_deg": [10.0, np.nan],
+        }
+    )
+    receptors = pd.DataFrame(
+        {
+            "neuron": [0, 1, 3],
+            "side": ["R", "R", "L"],
+            "hex1": [1, 1, 2],
+            "hex2": [1, 1, 2],
+        }
+    )
+    masks = eye.receptor_masks(neurons, cols, receptors)
+    assert masks.neuron.tolist() == [0, 1, 2, 3]
+    assert masks.has_assignment.tolist() == [True, True, False, True]
+    assert masks.has_direction.tolist() == [True, True, False, False]
+    assert masks.laterality_matches.iloc[0]
+    assert not masks.laterality_matches.iloc[1]
+    assert pd.isna(masks.laterality_matches.iloc[2])
+    assert masks.direction_status.tolist() == [
+        "INFERRED",
+        "INFERRED",
+        "UNKNOWN",
+        "UNKNOWN",
+    ]
+    assert np.isnan(masks.azimuth_deg.iloc[2:]).all()
+    with pytest.raises(pd.errors.MergeError):
+        eye.receptor_masks(neurons, cols, pd.concat([receptors, receptors]))
+    with pytest.raises(ValueError, match="non-receptor"):
+        eye.receptor_masks(neurons, cols, receptors.assign(neuron=[0, 1, 4]))

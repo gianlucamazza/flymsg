@@ -200,6 +200,57 @@ def check(cols: pd.DataFrame, receptors: pd.DataFrame) -> dict:
     }
 
 
+def receptor_masks(
+    neurons: pd.DataFrame, cols: pd.DataFrame, receptors: pd.DataFrame
+) -> pd.DataFrame:
+    """Audit every simulated receptor, including cells omitted by the strongest-output
+    assignment. Masks describe data availability, not physiological competence or a
+    probability of anatomical correctness. No direction or missing cell is interpolated.
+    ``laterality_matches`` is nullable when either side is unknown. A mapped direction
+    is INFERRED in MaleCNS (cross-individual/sex transfer), never a measured male ray.
+    This diagnostic does not change historical receptor assignments or neural input.
+    """
+    pattern = "|".join(f"(?:{p})" for p in RECEPTORS.values())
+    idx = np.flatnonzero(neurons["type"].fillna("").str.contains(pattern).to_numpy())
+    cells = neurons.iloc[idx]
+    table = pd.DataFrame(
+        {
+            "neuron": idx,
+            "bodyId": cells["bodyId"].to_numpy(),
+            "type": cells["type"].to_numpy(),
+            "receptor_side": cells["instance"].map(side_of).to_numpy(),
+        }
+    )
+    assignments = receptors[["neuron", "side", "hex1", "hex2"]]
+    if not assignments["neuron"].isin(idx).all():
+        raise ValueError("assignment contains a non-receptor neuron")
+    table = table.merge(
+        assignments,
+        on="neuron",
+        how="left",
+        validate="one_to_one",
+        indicator="assignment",
+    )
+    table["has_assignment"] = table.pop("assignment").eq("both")
+    table = table.merge(
+        cols[["side", "hex1", "hex2", "azimuth_deg", "elevation_deg"]],
+        on=["side", "hex1", "hex2"],
+        how="left",
+        validate="many_to_one",
+        indicator="column",
+    )
+    table["has_column"] = table.pop("column").eq("both")
+    table["has_direction"] = np.isfinite(
+        table[["azimuth_deg", "elevation_deg"]].to_numpy(float)
+    ).all(axis=1)
+    known = table["receptor_side"].notna() & table["side"].notna()
+    table["laterality_matches"] = (
+        table["receptor_side"].eq(table["side"]).astype("boolean").where(known)
+    )
+    table["direction_status"] = np.where(table["has_direction"], "INFERRED", "UNKNOWN")
+    return table
+
+
 def angular_distance_deg(az1, el1, az2, el2) -> np.ndarray:
     """Great-circle angle between directions given as azimuth and elevation in degrees."""
     a1, e1, a2, e2 = (
