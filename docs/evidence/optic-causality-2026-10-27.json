@@ -1,0 +1,64 @@
+{
+  "code_commit": "178600ab98e4d22a83199556c05c25360a969a37",
+  "convergence_error_mv": {
+    "dark": [
+      0.0011444091796875,
+      0.00075531005859375
+    ],
+    "light": [
+      0.0030956268310546875,
+      0.0007445526123035506
+    ]
+  },
+  "engineering_verdict": "PASS",
+  "evidence_status": "SYNTHETIC",
+  "final_bin_mv": {
+    "0.025/dark": [
+      -52.0,
+      -52.0,
+      -51.50153350830078
+    ],
+    "0.025/light": [
+      -42.00094985961914,
+      -52.99711608886719,
+      -51.548301696777344
+    ],
+    "0.05/dark": [
+      -52.0,
+      -52.0,
+      -51.50077819824219
+    ],
+    "0.05/light": [
+      -42.00166702270508,
+      -52.996521072387694,
+      -51.54904624938965
+    ],
+    "0.1/dark": [
+      -52.0,
+      -52.0,
+      -51.500389099121094
+    ],
+    "0.1/light": [
+      -42.00099193572998,
+      -52.99402046203613,
+      -51.54930862426758
+    ]
+  },
+  "gates": {
+    "causality": true,
+    "convergence": true,
+    "missing": true,
+    "null": true,
+    "parity": true,
+    "replay": true,
+    "spikes": true
+  },
+  "light_minus_dark_final_bin_mv": [
+    9.999008064270022,
+    -0.9940204620361328,
+    -0.048919525146487786
+  ],
+  "lock_sha256": "5f209731d7eb184d5dd857b2d548e7a64faed8f62ed99dd097d54dd03bd9d25a",
+  "physiology_status": "UNKNOWN",
+  "schema": "flymsg.optic-causality/v1"
+}

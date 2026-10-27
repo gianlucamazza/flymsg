@@ -10,6 +10,11 @@ immutable executions, checkpoint compatibility and explicit electrical numerical
 [Approximations](reference/approximations.md) lists every simplification of the model with its status
 and what would remove it.
 
+The [optic-system audit of 2026-10-27](report/optic-system-audit-2026-10-27.md) adds
+retinal input validation, complete simulated-receptor masks, pinned eye-source hashes
+and a synthetic causal/convergence witness. S1/S2 physiology remains blocked; T4/T5
+v4 remains robust neither.
+
 ## Evidence-gated delivery milestones (planned 2026-10-16)
 
 The [milestone plan](plan/milestones.md) maps every currently open issue to one primary delivery gate: **S0** numerical reliability → **S1** sourced sensory physiology → **S2** evidenced body coupling → **S3** independent prospective prediction → **S4** external reproduction/claims audit. **H1** native/Series S qualification and **H2** full-fidelity viewer/WebXR qualification run in parallel; neither is a substitute for independent animal data.
