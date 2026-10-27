@@ -102,15 +102,15 @@ remain required. No response data were opened or benchmark scored.
 
 The 27 open delivery issues have one native milestone each. [#265](https://github.com/gianlucamazza/flymsg/issues/265) remains a coordination board without a delivery milestone. Closed milestone `Next` is preserved.
 
-| Native milestone | Primary open issues | Execution index |
-| --- | --- | --- |
-| [S0 — Numerical reliability](https://github.com/gianlucamazza/flymsg/milestone/2) | #148 | #148 |
-| [S1 — Sensory/circuit physiology](https://github.com/gianlucamazza/flymsg/milestone/3) | #34, #84, #85, #97, #140, #302, #303, #304 | #97; eye work in #84 |
-| [S2 — Body coupling/geometry](https://github.com/gianlucamazza/flymsg/milestone/4) | #19, #31, #35, #176, #179, #180, #263, #305, #306 | #176 |
-| [S3 — Independent validation](https://github.com/gianlucamazza/flymsg/milestone/5) | #36, #149, #150 | #149 neural; #150 behavioral |
-| [S4 — External replication](https://github.com/gianlucamazza/flymsg/milestone/6) | #151 | #151 |
-| [H1 — Native/console](https://github.com/gianlucamazza/flymsg/milestone/7) | #39, #224 | #39 software; #224 physical |
-| [H2 — Viewer/WebXR](https://github.com/gianlucamazza/flymsg/milestone/8) | #24, #177, #307 | #24 software; #177 physical |
+| Native milestone                                                                       | Primary open issues                               | Execution index              |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------- | ---------------------------- |
+| [S0 — Numerical reliability](https://github.com/gianlucamazza/flymsg/milestone/2)      | #148                                              | #148                         |
+| [S1 — Sensory/circuit physiology](https://github.com/gianlucamazza/flymsg/milestone/3) | #34, #84, #85, #97, #140, #302, #303, #304        | #97; eye work in #84         |
+| [S2 — Body coupling/geometry](https://github.com/gianlucamazza/flymsg/milestone/4)     | #19, #31, #35, #176, #179, #180, #263, #305, #306 | #176                         |
+| [S3 — Independent validation](https://github.com/gianlucamazza/flymsg/milestone/5)     | #36, #149, #150                                   | #149 neural; #150 behavioral |
+| [S4 — External replication](https://github.com/gianlucamazza/flymsg/milestone/6)       | #151                                              | #151                         |
+| [H1 — Native/console](https://github.com/gianlucamazza/flymsg/milestone/7)             | #39, #224                                         | #39 software; #224 physical  |
+| [H2 — Viewer/WebXR](https://github.com/gianlucamazza/flymsg/milestone/8)               | #24, #177, #307                                   | #24 software; #177 physical  |
 
 Each issue retains its present open/closed state, historical result and evidence blockers. The set must be refreshed when issues change, rather than pretending this snapshot is a live GitHub query.
 
@@ -118,29 +118,29 @@ Each issue retains its present open/closed state, historical result and evidence
 
 Only six new issues were needed; existing issues retain circuit, body, validation and hardware ownership. Each new issue contains a verifiable requirement, scope, dependencies, acceptance checks and evidence limits.
 
-| New issue | Work and priority | Dependencies / admission |
-| --- | --- | --- |
-| [#302](https://github.com/gianlucamazza/flymsg/issues/302) | P0: recover and verify physiological sources from a clean clone | Authoritative licensed sources; hashes, provenance and calibration/holdout partition. Unavailable inputs remain unavailable. |
-| [#303](https://github.com/gianlucamazza/flymsg/issues/303) | P0: assignment ambiguity and anatomical uncertainty | #84/#179 registration; #148 uncertainty semantics. Candidate vote support is not a measured probability. |
-| [#304](https://github.com/gianlucamazza/flymsg/issues/304) | P0: luminance, adaptation, recovery and noise | #302 source eligibility, #97 release contract, #148 identifiability/convergence. No data means physiological no-go, not invented parameters. |
-| [#305](https://github.com/gianlucamazza/flymsg/issues/305) | P1: multi-object optics and independent 6-DoF error bounds | Synthetic geometry can proceed now; real-anatomy claims require #303 and #84/#179 measured registration. |
-| [#306](https://github.com/gianlucamazza/flymsg/issues/306) | P1: synchronized retinal, voltage, release and circuit traces | Existing #180 scheduler and #97 graded semantics; bounded observer with renderer-on/off identity. |
-| [#307](https://github.com/gianlucamazza/flymsg/issues/307) | P1: bilateral visual field and stimulus-response replay | #306 recording contract; #24 performance and #177 physical XR acceptance. Synthetic fixtures permit UI work now. |
+| New issue                                                  | Work and priority                                               | Dependencies / admission                                                                                                                     |
+| ---------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#302](https://github.com/gianlucamazza/flymsg/issues/302) | P0: recover and verify physiological sources from a clean clone | Authoritative licensed sources; hashes, provenance and calibration/holdout partition. Unavailable inputs remain unavailable.                 |
+| [#303](https://github.com/gianlucamazza/flymsg/issues/303) | P0: assignment ambiguity and anatomical uncertainty             | #84/#179 registration; #148 uncertainty semantics. Candidate vote support is not a measured probability.                                     |
+| [#304](https://github.com/gianlucamazza/flymsg/issues/304) | P0: luminance, adaptation, recovery and noise                   | #302 source eligibility, #97 release contract, #148 identifiability/convergence. No data means physiological no-go, not invented parameters. |
+| [#305](https://github.com/gianlucamazza/flymsg/issues/305) | P1: multi-object optics and independent 6-DoF error bounds      | Synthetic geometry can proceed now; real-anatomy claims require #303 and #84/#179 measured registration.                                     |
+| [#306](https://github.com/gianlucamazza/flymsg/issues/306) | P1: synchronized retinal, voltage, release and circuit traces   | Existing #180 scheduler and #97 graded semantics; bounded observer with renderer-on/off identity.                                            |
+| [#307](https://github.com/gianlucamazza/flymsg/issues/307) | P1: bilateral visual field and stimulus-response replay         | #306 recording contract; #24 performance and #177 physical XR acceptance. Synthetic fixtures permit UI work now.                             |
 
 ### Requirement ownership and completion gates
 
 This routes the audit requirements; it does not upgrade any audit verdict.
 
-| Audit requirements | Canonical issues | Outstanding acceptance |
-| --- | --- | --- |
-| O01–O03: anatomy, missingness, sources | #84, #303, #302 | Quantified ambiguity, explicit missing masks, reproducible eligible sources |
-| O04–O05: frames and optics | #84, #179, #303, #305 | Independent measured registration or UNKNOWN; qualified geometric error bounds |
-| O06–O09: luminance, graded release, cell transfers and adaptation | #84, #97, #302, #304 | Evidence ledger for R1–R8, L1–L5, Mi1/Mi4/Mi9, Tm1/Tm2/Tm3/Tm9; identifiable kinetics, histamine sign and observation contract |
-| O10: T4/T5 and directional subtypes | #140, #97, #148, #149 | Prospective ON/OFF, direction, contrast, speed, latency and seed robustness; independent held-out comparison; preserve failed v4 |
-| O11: LC4/LPLC2, central and descending paths | #34, #97, #149, #263 | Eligible retinal-to-target transfer and independently specified readouts, including nulls; no forced spikes |
-| O12–O13: runtime causality and body feedback | #180, #176, #19, #31, #35, #36, #306 | Single scheduler, reproducible interventions and later retinal change; sourced motor coupling for biological claims |
-| O14: synchronized observer and XR | #306, #307, #24, #177 | Actual recorded voltage/release, eye-specific missingness, replay identity; physical device evidence |
-| O15: numerical and scientific qualification | #148, #149, #150, #151 | Per-observable convergence, ablations, identifiability, justified uncertainty, held-out data and independent replication |
+| Audit requirements                                                | Canonical issues                     | Outstanding acceptance                                                                                                           |
+| ----------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| O01–O03: anatomy, missingness, sources                            | #84, #303, #302                      | Quantified ambiguity, explicit missing masks, reproducible eligible sources                                                      |
+| O04–O05: frames and optics                                        | #84, #179, #303, #305                | Independent measured registration or UNKNOWN; qualified geometric error bounds                                                   |
+| O06–O09: luminance, graded release, cell transfers and adaptation | #84, #97, #302, #304                 | Evidence ledger for R1–R8, L1–L5, Mi1/Mi4/Mi9, Tm1/Tm2/Tm3/Tm9; identifiable kinetics, histamine sign and observation contract   |
+| O10: T4/T5 and directional subtypes                               | #140, #97, #148, #149                | Prospective ON/OFF, direction, contrast, speed, latency and seed robustness; independent held-out comparison; preserve failed v4 |
+| O11: LC4/LPLC2, central and descending paths                      | #34, #97, #149, #263                 | Eligible retinal-to-target transfer and independently specified readouts, including nulls; no forced spikes                      |
+| O12–O13: runtime causality and body feedback                      | #180, #176, #19, #31, #35, #36, #306 | Single scheduler, reproducible interventions and later retinal change; sourced motor coupling for biological claims              |
+| O14: synchronized observer and XR                                 | #306, #307, #24, #177                | Actual recorded voltage/release, eye-specific missingness, replay identity; physical device evidence                             |
+| O15: numerical and scientific qualification                       | #148, #149, #150, #151               | Per-observable convergence, ablations, identifiability, justified uncertainty, held-out data and independent replication         |
 
 ### Execution order and blocked work
 
