@@ -14,6 +14,7 @@ mirror image, a named assumption (Zhao et al. assume left-right symmetry too).
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import numpy as np
@@ -31,6 +32,11 @@ EYEMAP_FILES = {
     "eyemap.RData": f"{EYEMAP_BASE}/eyemap.RData",
     "20240701.RData": f"{EYEMAP_BASE}/microCT/20240701.RData",
 }
+# Bytes fetched from EYEMAP_COMMIT; provenance integrity, not anatomical validation.
+EYEMAP_SHA256 = {
+    "eyemap.RData": "c3f63c69afdc3f381cdafabb1d376b8e25ec5a71bce67550ae42fcdd79cf618e",
+    "20240701.RData": "8408447f8c5798fbc6d751de79ef4983d08c342a500c9a55b2a3b4b38d92deec",
+}
 HEX_ORIGIN = (18, 19)  # hex1, hex2 of the column p = q = 0 (Nern et al. 2025)
 COLUMN_TYPE = "L1"  # one per column, every column assigned
 RECEPTORS = {"R1-R6": r"^R1-R6$", "R7": r"^R7", "R8": r"^R8"}
@@ -47,10 +53,17 @@ def fetch(data_dir: Path) -> None:
     for name, url in EYEMAP_FILES.items():
         dest = out / name
         if dest.exists():
+            _verify_source(dest)
             print(f"ok      eyemap/{name}")
             continue
         print(f"fetch   eyemap/{name}")
         data.download(url, dest)
+        _verify_source(dest)
+
+
+def _verify_source(path: Path) -> None:
+    if hashlib.sha256(path.read_bytes()).hexdigest() != EYEMAP_SHA256[path.name]:
+        raise ValueError(f"{path} does not match the pinned eyemap SHA-256")
 
 
 def pq(hex1, hex2) -> tuple[np.ndarray, np.ndarray]:
@@ -96,6 +109,8 @@ CONSTRUCTORS = {
 
 def lenses(data_dir: Path) -> pd.DataFrame:
     raw = raw_dir(data_dir)
+    for name in EYEMAP_FILES:
+        _verify_source(raw / name)
     eyemap = rdata.read_rda(raw / "eyemap.RData", constructor_dict=CONSTRUCTORS)
     uct = rdata.read_rda(raw / "20240701.RData", constructor_dict=CONSTRUCTORS)
     return lens_table(
@@ -198,6 +213,57 @@ def check(cols: pd.DataFrame, receptors: pd.DataFrame) -> dict:
         "dorsal_rim_elevation_deg": float(m.loc[rim, "elevation_deg"].median()),
         "other_r7_r8_elevation_deg": float(m.loc[rest, "elevation_deg"].median()),
     }
+
+
+def receptor_masks(
+    neurons: pd.DataFrame, cols: pd.DataFrame, receptors: pd.DataFrame
+) -> pd.DataFrame:
+    """Audit every simulated receptor, including cells omitted by the strongest-output
+    assignment. Masks describe data availability, not physiological competence or a
+    probability of anatomical correctness. No direction or missing cell is interpolated.
+    ``laterality_matches`` is nullable when either side is unknown. A mapped direction
+    is INFERRED in MaleCNS (cross-individual/sex transfer), never a measured male ray.
+    This diagnostic does not change historical receptor assignments or neural input.
+    """
+    pattern = "|".join(f"(?:{p})" for p in RECEPTORS.values())
+    idx = np.flatnonzero(neurons["type"].fillna("").str.contains(pattern).to_numpy())
+    cells = neurons.iloc[idx]
+    table = pd.DataFrame(
+        {
+            "neuron": idx,
+            "bodyId": cells["bodyId"].to_numpy(),
+            "type": cells["type"].to_numpy(),
+            "receptor_side": cells["instance"].map(side_of).to_numpy(),
+        }
+    )
+    assignments = receptors[["neuron", "side", "hex1", "hex2"]]
+    if not assignments["neuron"].isin(idx).all():
+        raise ValueError("assignment contains a non-receptor neuron")
+    table = table.merge(
+        assignments,
+        on="neuron",
+        how="left",
+        validate="one_to_one",
+        indicator="assignment",
+    )
+    table["has_assignment"] = table.pop("assignment").eq("both")
+    table = table.merge(
+        cols[["side", "hex1", "hex2", "azimuth_deg", "elevation_deg"]],
+        on=["side", "hex1", "hex2"],
+        how="left",
+        validate="many_to_one",
+        indicator="column",
+    )
+    table["has_column"] = table.pop("column").eq("both")
+    table["has_direction"] = np.isfinite(
+        table[["azimuth_deg", "elevation_deg"]].to_numpy(float)
+    ).all(axis=1)
+    known = table["receptor_side"].notna() & table["side"].notna()
+    table["laterality_matches"] = (
+        table["receptor_side"].eq(table["side"]).astype("boolean").where(known)
+    )
+    table["direction_status"] = np.where(table["has_direction"], "INFERRED", "UNKNOWN")
+    return table
 
 
 def angular_distance_deg(az1, el1, az2, el2) -> np.ndarray:

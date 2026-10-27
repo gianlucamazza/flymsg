@@ -1,0 +1,107 @@
+{
+  "angular_uncertainty_status": "UNKNOWN",
+  "code_commit": "178600ab98e4d22a83199556c05c25360a969a37",
+  "coverage": {
+    "columns": {
+      "L": 875,
+      "R": 892
+    },
+    "dorsal_rim_elevation_deg": 67.68453973329244,
+    "other_r7_r8_elevation_deg": 3.7203366829669426,
+    "receptors": {
+      "R1-R6 L": 498,
+      "R1-R6 R": 888,
+      "R7 L": 541,
+      "R7 R": 687,
+      "R8 L": 624,
+      "R8 R": 698
+    },
+    "with_direction": {
+      "L": 835,
+      "R": 843
+    }
+  },
+  "direction_transfer_status": "INFERRED",
+  "historical_sha256": {
+    "results/t4t5/v1/manifest.json": "181739d4f543bfa8394abbb4e6bcd70c5b2af15fafe10336b4d74c3200100094",
+    "results/t4t5/v1/metrics.csv": "765e90d79f09bb056d0c8bd6bfcf956c69493c106f176ac14dfdefd41d79ebdb",
+    "results/t4t5/v1/report.txt": "75dfd6bb144ce8788117acfeebddc877dba8ae291f05ddb797388a090b47a701",
+    "results/t4t5/v1/spikes.csv": "2f8174eb1ab734f10d57c2ab08eb21f94fb18d10c879da5d9a52fc4b5b165406",
+    "results/t4t5/v2/configurations.csv": "027e234ecfc6077839798348176667df6f0068896c03eeb01ceccc2b9a38b185",
+    "results/t4t5/v2/lmc.csv": "ee864196a393139fb2b2e9ac58e502bd6f72324524f85cd4707844cb84682f08",
+    "results/t4t5/v2/manifest.json": "c7d52f0e3fc4358b58d0ca2227fe022731338a88445511a6f5db58942b6a76d1",
+    "results/t4t5/v2/metrics.csv": "74cff552676d7403a712b84910eb2a42c117aac5835d18c0ac32adadcb9fcb2b",
+    "results/t4t5/v2/pathway.csv": "cc38feb773af833e9044d65c3d995e26d4d0c85ff87822268c7fc609fe5098cb",
+    "results/t4t5/v2/report.txt": "e099e4567ed21d4944a96c3d48c7ef778e7fbe2585a3e89b7fada850f3a4ce54",
+    "results/t4t5/v2/spikes.csv": "0115ce61cc6d7f0993583f955ecfb6325d283fddd9deb6b9e3ccff9ffdd6d19f",
+    "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output/configurations.csv": "38b4c0d04b7b9aa31929c5a2d0c112ebeb03ab24413ce5728eb6de56d94d92b3",
+    "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output/lmc.csv": "445ff13bd7ed8f50fc5d4df64411613b90dca54b5748b416e0420a705fcfc5bd",
+    "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output/manifest.json": "f4fe1ad2401c0a98e53372fc084d3257fac679bd3088a67c68e86313247e4551",
+    "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output/medulla.csv": "70c28f38d467bda853089c55f7b322e78389878a440efb446fecd743ae1c67df",
+    "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output/metrics.csv": "31ffec245dd3c8bd393fd4eecdb6d33470ce4e3b97ad1df9290b23dee57a39ab",
+    "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output/pathway.csv": "afc3aef579a4fbe2e5385c48899ca0f4056b43d17c67ba9da126ca516d372523",
+    "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output/report.txt": "f43ae20b82163552c9bb3d8fe6902d42388bf334d5cbc1ee9a68f710897e8ff2",
+    "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output/spikes.csv": "f60131d57c00c4807441bce2edcf15fa09bbd0cec95503a1196208bb19c8ed14",
+    "results/t4t5/v3.executions/d85c3913d5894b5c1f6ffedcfd5b77cc7357cffd81f1e79b8d6bef1db6f04644/output/t5.csv": "8f8cb66d4e9e3ffe3df822bc4e032682757ee45c1398014084ab8354a8801f50",
+    "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output/configurations.csv": "1f057063cbb2a59023546f56df9384d91fee7ddba2489c931b1e0e8896de55d6",
+    "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output/lmc.csv": "4abf22e588a60cdb8128bb88fee1dbc3bf69b89cc90b24eb13b6b5e5090feede",
+    "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output/manifest.json": "49b89ab733fabb738707a20b9ff0719973f70def23ca3e02c632af4b6c9546fa",
+    "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output/medulla.csv": "7e0c9197eab99176cb39d6d6f14df2f82a37075118232a4b95265703aa627da4",
+    "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output/metrics.csv": "2e0ee151eb3cb9dcf13b1576ecbe36e31c2d75b0643eefb5d237619f14338c7a",
+    "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output/pathway.csv": "109ec7a4103c6fcc2a2148fd3e4a422a451c2c2c1973ae2314de4a901f40079b",
+    "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output/report.txt": "c911bb4b00c116daddda58c70a79170401989b228163ecf3c757d5953be2efa2",
+    "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output/spikes.csv": "b13d9b3e5c4f4ac5cc65047efb61384f0154955a350036f8af4e8e5af6cb946f",
+    "results/t4t5/v4.executions/7a550844a1d00d7d1ace0ddad24055859d9aae944e8048e273adfd0c99dc952d/output/t5.csv": "5816533cb00f335454677dedb5316f91520275efba97c7d8aab0e0d08ba0a2de",
+    "validation/t4t5.yaml": "5aa28e95a08e90693ef6919798648fba0092a1e23be5f27139852c006200b03c"
+  },
+  "inputs_sha256": {
+    "edges.parquet": "2da9fe967204ad330d0576a25723e8c74fdc8b77e7806ccf7297a4f5189ee67a",
+    "eye/columns.parquet": "c9daa64051a2a166df0480eaebf648ba6bf1a158a75def097ca02512f81a4a42",
+    "eye/photoreceptors.parquet": "45a518eab504c59a96b8ebba3a2b324c946ee2f5746cac8261bd30b52c339bc5",
+    "neurons.parquet": "7ec0020f08495c35398deafa3183292dfb489ce6717d889b80cfcc11cb757c7c",
+    "raw/body-annotations-male-cns-v1.0-minconf-0.5.feather": "2177e246113e4cfbf1e7772ec37c6da1955ff22e8063d0b1f833101f99a9a3b2",
+    "raw/body-neurotransmitters-male-cns-v1.0.feather": "95c9289220663abeb3409f3ad9e5a7f8a53f8093f5139d15502cd08da8879621",
+    "raw/connectome-weights-male-cns-v1.0-minconf-0.5.feather": "e35da783d1c686b2b58b3b87cd6a403ae43bfcfba8bff28e08ef752c1a56afc1",
+    "raw/eyemap/20240701.RData": "8408447f8c5798fbc6d751de79ef4983d08c342a500c9a55b2a3b4b38d92deec",
+    "raw/eyemap/eyemap.RData": "c3f63c69afdc3f381cdafabb1d376b8e25ec5a71bce67550ae42fcdd79cf618e"
+  },
+  "limitations": [
+    "Masks cover simulated receptors only; untraced cells are not reconstructed.",
+    "Source integrity and coverage do not validate physiology.",
+    "Derived tables are hashed, not silently rebuilt; run flymsg eye first.",
+    "No measured angular covariance or eye/body transform is supplied."
+  ],
+  "physiology_local_sources": {
+    "C3": {
+      "expected_sha256": "b9118e32cfb0d22acd4da41aee6931923ea33e4dda258df2abd26fd252e21be6",
+      "local_sha256": null
+    },
+    "Mi1": {
+      "expected_sha256": "351e9e791a30d1c5bac329165934fbc05dbcfbb038b4b6e940e2531de1d61cce",
+      "local_sha256": null
+    },
+    "Mi4": {
+      "expected_sha256": "9309bb6deadcb8bf5c9a52267ef6564c314a04212af81c129b0754cf4de1f791",
+      "local_sha256": null
+    },
+    "Mi9": {
+      "expected_sha256": "3d5909c9b6c42776ff5e56d7219eacd002758a24b3cf5b7cecf30a07b8bf5c83",
+      "local_sha256": null
+    },
+    "Tm3": {
+      "expected_sha256": "07797ccd2ce72d3ea89c9ca01ba641c7c92d3d6dd198d6324596f2cf16b0fb82",
+      "local_sha256": null
+    }
+  },
+  "physiology_status": "UNKNOWN",
+  "receptor_masks": {
+    "assigned": 3936,
+    "laterality_conflicts": 0,
+    "simulated": 4107,
+    "unknown_laterality": 171,
+    "with_column": 3934,
+    "with_direction": 3903
+  },
+  "registration_status": "UNKNOWN",
+  "schema": "flymsg.optic-source-audit/v1"
+}

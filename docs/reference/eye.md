@@ -1,6 +1,7 @@
 # Eye
 
-MaleCNS optic-lobe columns, their measured viewing directions, and the T4/T5 locks that
+MaleCNS optic-lobe columns, viewing directions transferred from measured female-eye
+anatomy, and the T4/T5 locks that
 use them. The fetch, the licence and the files are in
 [data](data.md#eye-map-flymsg-eye). The body and the jump are in
 [embodiment](../adr/embodiment.md).
@@ -283,3 +284,13 @@ column table with only unassigned receptors produces zero drive. Missing coverag
 also produces zero drive; this is an engineering mask, not measured darkness.
 Valid inputs retain the historical conversion bit for bit. The lens join requires
 unique (p, q) keys so ambiguous input cannot duplicate anatomical columns.
+
+## Source integrity and availability audit
+
+Both pinned RData files are SHA-256-verified on fetch and before parsing.
+`flymsg eye` also writes `receptor_masks.parquet`: one row per simulated receptor,
+including unassigned cells, with separate assignment/column/direction masks and
+nullable laterality agreement. Transferred MaleCNS directions are INFERRED; missing
+directions are UNKNOWN. This table changes no historical input mapping. See the
+[optic-system audit](../report/optic-system-audit-2026-10-27.md) for source hashes,
+software evidence and the remaining physiological no-go.

@@ -1,0 +1,20 @@
+{
+  "schema": "flymsg.optic-causality/v1",
+  "scope": "SYNTHETIC engineering qualification; not physiological validation",
+  "status": "preregistered before first execution",
+  "network": {"neurons": 3, "edges_post_pre_weight": [[1, 0, -2.0], [2, 1, 2.0]]},
+  "graded": {"v_lo_mv": [-52.0, -62.0, -62.0], "span_mv": [10.0, 20.0, 20.0], "rate_hz": [100.0, 100.0, 100.0]},
+  "stimulus": {"coverage": [0.0, 1.0], "photoreceptor_response_mv": 10.0, "duration_ms": 200.0, "bin_ms": 10.0},
+  "dt_ms": [0.1, 0.05, 0.025],
+  "gates": {
+    "causality": "light raises receptor voltage and lowers both downstream voltages relative to darkness",
+    "null": "disconnecting the first edge or silencing receptor release removes downstream light-dark difference exactly",
+    "missing": "unassigned receptor input equals darkness exactly; no anatomical interpretation",
+    "parity": "sim.run and chunked CpuRuntime graded potentials and counts are bit identical",
+    "replay": "deterministic repetition and checkpoint/restore are bit identical",
+    "convergence": "maximum final-bin voltage error at dt=0.05 relative to dt=0.025 is less than at dt=0.1 and below 0.1 mV for light and dark",
+    "spikes": "all three graded neurons emit zero spikes"
+  },
+  "failure_rule": "preserve every failed gate; do not tune this fixture after execution",
+  "physiology": "UNKNOWN: no measured release curve, adaptation, noise or independent physiological comparator; do not score T4/T5 or behavior"
+}
