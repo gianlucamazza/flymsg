@@ -1,6 +1,6 @@
 # Roadmap: what the model covers, and what waits on outside evidence
 
-Status on 2026-10-20. This page is the index. Each verdict is recorded on the linked page,
+Planning refreshed on 2026-10-27; historical result entries retain their own dates. This page is the index. Each verdict is recorded on the linked page,
 and the table adds none. What remains open needs a measurement from an animal, a published
 map, hardware, or a lock that is written and not yet run.
 
@@ -15,11 +15,11 @@ retinal input validation, complete simulated-receptor masks, pinned eye-source h
 and a synthetic causal/convergence witness. S1/S2 physiology remains blocked; T4/T5
 v4 remains robust neither.
 
-## Evidence-gated delivery milestones (planned 2026-10-16)
+## Evidence-gated delivery milestones (provisioned 2026-10-27)
 
-The [milestone plan](plan/milestones.md) maps every currently open issue to one primary delivery gate: **S0** numerical reliability → **S1** sourced sensory physiology → **S2** evidenced body coupling → **S3** independent prospective prediction → **S4** external reproduction/claims audit. **H1** native/Series S qualification and **H2** full-fidelity viewer/WebXR qualification run in parallel; neither is a substitute for independent animal data.
+The [milestone plan](plan/milestones.md) maps every currently open delivery issue to one primary delivery gate: **S0** numerical reliability → **S1** sourced sensory physiology → **S2** evidenced body coupling → **S3** independent prospective prediction → **S4** external reproduction/claims audit. **H1** native/Series S qualification and **H2** full-fidelity viewer/WebXR qualification run in parallel; neither is a substitute for independent animal data.
 
-These are evidence-based planning identifiers, **not yet native GitHub Milestone objects or fixed delivery dates**. `blocked`/negative results remain visible and do not count as passes. The merged [#221](https://github.com/gianlucamazza/flymsg/pull/221) adds diagnostic Quest evidence, not a qualified XR release; closed [#40](https://github.com/gianlucamazza/flymsg/issues/40) records its delivered Series S baseline, with remaining physical fault gates on [#224](https://github.com/gianlucamazza/flymsg/issues/224).
+All seven are now [native GitHub milestones](https://github.com/gianlucamazza/flymsg/milestones), with 27 open delivery issues assigned and no invented due dates. Six new optic packages (#302–#307) cover source recovery, anatomical ambiguity, phototransduction, optics qualification, synchronized traces and viewer replay; the [plan](plan/milestones.md#optic-completion-work-packages) maps every O01–O15 audit requirement to its owner and dependencies. `blocked`/negative results remain visible and do not count as passes. The merged [#221](https://github.com/gianlucamazza/flymsg/pull/221) adds diagnostic Quest evidence, not a qualified XR release; closed [#40](https://github.com/gianlucamazza/flymsg/issues/40) records its delivered Series S baseline, with remaining physical fault gates on [#224](https://github.com/gianlucamazza/flymsg/issues/224).
 
 ## Results
 
