@@ -84,7 +84,7 @@ reconstruct those source paths from summary fields.
 
 ```bash
 ANDROID_ADB_SERVER_PORT=5038 uv run python scripts/quest_bounded.py \
-  --serial 192.168.1.146:5555 --out /new/immutable/evidence/directory \
+  --serial <quest-ip>:5555 --out /new/immutable/evidence/directory \
   --unattended
 ```
 

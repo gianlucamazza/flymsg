@@ -9,7 +9,7 @@ requires original geometry; no bounded-path candidate is used here.
 
 - Clean runtime `cf068d955b15af2b666f2718dbda002508704a3a`, subsequently merged
   without a tree change in #234 as `8dc67e8163a3660f250d21de23a7233c8bf96f16`.
-- Physical Quest 2 `1WMHHA43LY1466`, explicit Wi-Fi ADB `192.168.1.146:5555`.
+- Physical Quest 2 `<quest-serial>`, explicit Wi-Fi ADB `<quest-ip>:5555`.
 - Complete looming skeleton selection: **1,128 neurons and 8,258,589 original
   segments**, 4 MiB pages. This report does not cover the 16/64 MiB candidates or
   original surfaces.
@@ -44,11 +44,14 @@ then run from its extracted root:
 python independent/audit.py readbacks
 ```
 
-Archive: **5,515,670 bytes; 43 entries**. SHA-256:
+Archive: **5,515,666 bytes; 43 entries**. SHA-256:
 
 ```text
-a6748965d8a042c0d1bb8a85b30a569d1d7f7701876beb5ec4eb827006415ffc
+2f6cf11c17666e824927ba289c164344fa8e58ac03a44a13b90f267a1f76b318
 ```
+
+The archive was redacted on 2026-10-21 for privacy (device serial and LAN IP
+replaced), so it differs from the original; the original hash is in git history.
 
 `manifest.json` inventories member hashes. ZIP CRC and every inventoried member
 hash were checked after creation. Source modules matching the loaded attestations,

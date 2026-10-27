@@ -4,7 +4,7 @@ Result: **16 MiB is not admitted** on frozen runtime
 `febbfc285969ac7d433ed21c59fc0a3bd8661fb6`. Static gain did not survive motion.
 This is a desktop diagnostic result, not physical XR qualification.
 
-Quest 2 `1WMHHA43LY1466`, Wi-Fi-only `192.168.1.146:5555`, isolated ADB server
+Quest 2 `<quest-serial>`, Wi-Fi-only `<quest-ip>:5555`, isolated ADB server
 5038; full looming source, 1,128 selected neurons / 8,258,589 original segments.
 Each block contains four fresh-document, 30-second original / bounded / bounded /
 original arms with the same source, camera, viewport, content and quality.
@@ -52,9 +52,11 @@ resolve Guardian and establish native Browser focus before ordinary timing.
 
 ## Reproducible artifact
 
-[Campaign archive](../evidence/quest-bounded-motion-veto-2026-10-16.zip): 8,004,865 bytes,
+[Campaign archive](../evidence/quest-bounded-motion-veto-2026-10-16.zip): 8,004,002 bytes,
 288 entries, SHA-256
-`fb9b607675364d98a8a0ee79734646f0058155099468791ee8b111f34aa33c7b`.
+`a188437a7fffaab282fecc0fdea5f3a251204e06e1eef222744a207697460417`.
+The archive was redacted on 2026-10-21 for privacy (device serial and LAN IP
+replaced), so it differs from the original; the original hash is in git history.
 
 The ZIP contains raw trials, every captured certificate, preparation exclusions,
 correctness readbacks, the pre-stop decision and cleanup, measured source scripts,

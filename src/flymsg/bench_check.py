@@ -18,7 +18,9 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+from flymsg.paths import repository_root, require_repository_path
+
+ROOT = repository_root()
 BASELINE = sorted(
     (ROOT / "docs" / "evidence" / "viewer-bench-2026-10-13").glob("*.jsonl")
 )
@@ -88,6 +90,8 @@ def main() -> None:
     ap.add_argument("run", type=Path)
     ap.add_argument("--baseline", nargs="+", type=Path, default=BASELINE)
     a = ap.parse_args()
+    if a.baseline is BASELINE:
+        require_repository_path(ROOT)
     candidate = passes([a.run])
     if not candidate:
         sys.exit(f"{a.run}: no eligible warm pass")

@@ -168,3 +168,141 @@ def test_edge_crosses_columns_in_order_and_mirrors_between_eyes():
     assert c[0] > 0.99 and c[1] < 0.01 and c[2] > 0.99 and c[3] < 0.01
     back = eye.edge_coverage(cols, "back_to_front", 15.0, 5.0)
     assert back[1] > 0.99 and back[0] < 0.01
+
+
+@pytest.mark.parametrize(
+    "coverage, indices",
+    [
+        (np.empty((3, 0)), np.array([-1, -1])),
+        (np.empty((3, 0)), np.array([], dtype=int)),
+        (np.empty((0, 2)), np.array([0, 1, -1])),
+    ],
+)
+def test_missing_or_empty_retina_has_zero_drive(coverage, indices):
+    drive = eye.photoreceptor_kicks(coverage, indices, 0.2)
+    assert drive.shape == (coverage.shape[0], len(indices))
+    assert not drive.any()
+
+
+@pytest.mark.parametrize(
+    "coverage",
+    [
+        [0.5],
+        [[-0.01]],
+        [[1.01]],
+        [[np.inf]],
+        [[-np.inf]],
+    ],
+)
+def test_invalid_coverage_refuses_instead_of_becoming_neural_drive(coverage):
+    with pytest.raises(ValueError, match="coverage"):
+        eye.photoreceptor_kicks(coverage, np.array([0]), 0.2)
+
+
+@pytest.mark.parametrize("indices", [[0.5], [-2], [1], [[0]], [True], [np.nan]])
+def test_invalid_receptor_mapping_refuses(indices):
+    with pytest.raises(ValueError, match="receptor columns"):
+        eye.photoreceptor_kicks([[0.5]], np.asarray(indices), 0.2)
+
+
+@pytest.mark.parametrize("gain", [-1, np.inf, np.nan, True, [0.2]])
+def test_invalid_retinal_gain_refuses(gain):
+    with pytest.raises(ValueError, match="gain"):
+        eye.photoreceptor_kicks([[0.5]], np.array([0]), gain)
+
+
+def test_valid_retinal_drive_is_bit_identical_to_historical_conversion():
+    rng = np.random.default_rng(84)
+    coverage = rng.random((50, 17))
+    coverage[3, 2] = np.nan
+    indices = np.array([2, -1, 0, 16, 2])
+    before = 0.17 * np.nan_to_num(
+        np.where(indices >= 0, 1.0 - coverage[:, np.clip(indices, 0, None)], 0.0),
+        nan=0.0,
+    )
+    np.testing.assert_array_equal(
+        eye.photoreceptor_kicks(coverage, indices, 0.17), before
+    )
+
+
+def test_duplicate_lens_keys_cannot_duplicate_anatomical_columns():
+    lens = pd.DataFrame(
+        {"p": [0, 0], "q": [0, 0], "x": [1.0, 1.0], "y": [0.0, 0.0], "z": [0.0, 0.0]}
+    )
+    with pytest.raises(pd.errors.MergeError, match="not a many-to-one"):
+        eye.columns(_annotations(), lens)
+
+
+def test_receptor_masks_keep_missing_anatomy_and_unknown_laterality():
+    neurons = pd.DataFrame(
+        {
+            "bodyId": [10, 11, 12, 13, 14],
+            "type": ["R7", "R8", "R1-R6", "R7d", "Mi1"],
+            "instance": ["R7_R", "R8_L", None, "R7d_L", "Mi1_R"],
+        }
+    )
+    cols = pd.DataFrame(
+        {
+            "side": ["R", "L"],
+            "hex1": [1, 2],
+            "hex2": [1, 2],
+            "azimuth_deg": [30.0, np.nan],
+            "elevation_deg": [10.0, np.nan],
+        }
+    )
+    receptors = pd.DataFrame(
+        {
+            "neuron": [0, 1, 3],
+            "side": ["R", "R", "L"],
+            "hex1": [1, 1, 2],
+            "hex2": [1, 1, 2],
+        }
+    )
+    masks = eye.receptor_masks(neurons, cols, receptors)
+    assert masks.neuron.tolist() == [0, 1, 2, 3]
+    assert masks.has_assignment.tolist() == [True, True, False, True]
+    assert masks.has_direction.tolist() == [True, True, False, False]
+    assert masks.laterality_matches.iloc[0]
+    assert not masks.laterality_matches.iloc[1]
+    assert pd.isna(masks.laterality_matches.iloc[2])
+    assert masks.direction_status.tolist() == [
+        "INFERRED",
+        "INFERRED",
+        "UNKNOWN",
+        "UNKNOWN",
+    ]
+    assert np.isnan(masks.azimuth_deg.iloc[2:]).all()
+    with pytest.raises(pd.errors.MergeError):
+        eye.receptor_masks(neurons, cols, pd.concat([receptors, receptors]))
+    with pytest.raises(ValueError, match="non-receptor"):
+        eye.receptor_masks(neurons, cols, receptors.assign(neuron=[0, 1, 4]))
+
+
+def test_eyemap_checks_cached_and_downloaded_bytes_without_deleting_them(
+    tmp_path, monkeypatch
+):
+    import hashlib
+
+    payload = b"synthetic pinned source"
+    monkeypatch.setattr(eye, "EYEMAP_FILES", {"test.RData": "unused"})
+    monkeypatch.setattr(
+        eye, "EYEMAP_SHA256", {"test.RData": hashlib.sha256(payload).hexdigest()}
+    )
+    monkeypatch.setattr(
+        eye.data, "download", lambda url, dest: dest.write_bytes(payload)
+    )
+    eye.fetch(tmp_path)
+    eye.fetch(tmp_path)
+    path = eye.raw_dir(tmp_path) / "test.RData"
+    path.write_bytes(b"corrupt")
+    with pytest.raises(ValueError, match="SHA-256"):
+        eye.fetch(tmp_path)
+    assert path.read_bytes() == b"corrupt"
+    with pytest.raises(ValueError, match="SHA-256"):
+        eye.lenses(tmp_path)
+    path.unlink()
+    monkeypatch.setattr(
+        eye.data, "download", lambda url, dest: dest.write_bytes(b"bad download")
+    )
+    with pytest.raises(ValueError, match="SHA-256"):
+        eye.fetch(tmp_path)

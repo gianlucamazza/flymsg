@@ -1,6 +1,6 @@
 # Roadmap: what the model covers, and what waits on outside evidence
 
-Status on 2026-10-16. This page is the index. Each verdict is recorded on the linked page,
+Status on 2026-10-20. This page is the index. Each verdict is recorded on the linked page,
 and the table adds none. What remains open needs a measurement from an animal, a published
 map, hardware, or a lock that is written and not yet run.
 
@@ -9,6 +9,11 @@ baseline and the accepted corrections. [Run integrity](reference/run-integrity.m
 immutable executions, checkpoint compatibility and explicit electrical numerical modes.
 [Approximations](reference/approximations.md) lists every simplification of the model with its status
 and what would remove it.
+
+The [optic-system audit of 2026-10-27](report/optic-system-audit-2026-10-27.md) adds
+retinal input validation, complete simulated-receptor masks, pinned eye-source hashes
+and a synthetic causal/convergence witness. S1/S2 physiology remains blocked; T4/T5
+v4 remains robust neither.
 
 ## Evidence-gated delivery milestones (planned 2026-10-16)
 
@@ -51,6 +56,8 @@ These are evidence-based planning identifiers, **not yet native GitHub Milestone
 | Published sugar set, FAFB LB3 split        | 14 sugar-like and 6 LB3d-like neurons                                               | [comparison](result/comparison.md)                                                                     |
 | Motor map                                  | every row `unmapped`                                                                | [`validation/motor_map.yaml`](../validation/motor_map.yaml)                                            |
 | Held-out behavior milestone                | no eligible case left in the frozen partition                                       | [validation](validation.md)                                                                            |
+| DN arena v1 (#263)                         | uninformative: no decoder spike; photoreceptor outputs are inhibitory               | [DN arena](result/dn-arena.md#version-1-result-uninformative)                                          |
+| DN arena v2 (#263)                         | depends: uninformative at gain 1, null at gains 4 and 16                            | [DN arena](result/dn-arena.md#version-2-result-depends)                                                |
 
 ## Scientific fidelity programme (2026-10-13; SF1 done 2026-10-14)
 
@@ -147,11 +154,11 @@ three stay off unless a lock names them.
 
 ## Blocked on hardware
 
-| Issue                                                            | Blocked by                                                          | Ready                                                                                                                                           |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Dynamic continuous clamp, refused on every native lane              | Series S GPU parity bit for bit, 12 version-1 fixtures (2026-10-15) and 60 version-2 fixtures (2026-10-16), including the 12 gap-all-free cases |
-| [#40](https://github.com/gianlucamazza/flymsg/issues/40) R2      | GPU fault and hard termination on the console                       | Launch, cancel, stop to suspension with checkpoint and bit-for-bit resume; full connectome bit for bit at about 2,320 steps/s                   |
-| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss | `?xr=1` in the viewer, session-state tests ([ADR](adr/adr-virtual-experimental-environment.md))                                                 |
+| Issue                                                            | Blocked by                                                                                                                        | Ready                                                                                                                                           |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| [#39](https://github.com/gianlucamazza/flymsg/issues/39) R1      | Dynamic continuous clamp, refused on every native lane                                                                            | Series S GPU parity bit for bit, 12 version-1 fixtures (2026-10-15) and 60 version-2 fixtures (2026-10-16), including the 12 gap-all-free cases |
+| [#224](https://github.com/gianlucamazza/flymsg/issues/224)       | A hardware GPU fault and gamepad input. Closed [#40](https://github.com/gianlucamazza/flymsg/issues/40) keeps the worker baseline | Process kill and API `RemoveDevice` passed 2026-10-18 and recovered bit for bit                                                                 |
+| [#177](https://github.com/gianlucamazza/flymsg/issues/177) WebXR | A headset: stereo, scale, frame times, session end and context loss                                                               | `?xr=1` in the viewer, session-state tests ([ADR](adr/adr-virtual-experimental-environment.md))                                                 |
 
 ## What an animal test could check
 
@@ -251,7 +258,7 @@ that does not grow its temporary file is recorded as `failed` and is not
 replaced; one that grows is replaced and recorded as `completed`. The
 interrupted trial was not rerun. The lifecycle
 collector (#222) names the worker's last state and step when a throughput wait
-expires. A GPU fault with hard termination is unmeasured. The full-content Quest 2 partial WebXR trial (#177) failed its frame-time gate; the complete qualification matrix remains open, so the observer stays experimental, and the native
+expires. An API `RemoveDevice` and a noncooperative process kill passed on 2026-10-18 and recovered bit for bit. A hardware GPU fault and gamepad input stay open on [#224](https://github.com/gianlucamazza/flymsg/issues/224). The full-content Quest 2 partial WebXR trial (#177) failed its frame-time gate; the complete qualification matrix remains open, so the observer stays experimental, and the native
 executor refuses a fixture group it has not qualified.
 
 A Quest 2 is available and USB debugging is verified (2026-10-15); #177 stays open until

@@ -2,21 +2,26 @@
 
 Execution of the owner's accepted issue-resolution plan. Baseline: clean `main`
 `b5c6d3b`, 20 open issues, no open PRs, tests/native/pages CI successful.
+On 2026-10-20, 22 issues are open, including
+[#263](https://github.com/gianlucamazza/flymsg/issues/263) and
+[#265](https://github.com/gianlucamazza/flymsg/issues/265).
+[#40](https://github.com/gianlucamazza/flymsg/issues/40) is closed; unfinished
+hardware gates are on [#224](https://github.com/gianlucamazza/flymsg/issues/224).
 PRs #205 and #215 are merged; their prior draft descriptions are historical.
 Merge, local tests, physical qualification and biological evidence are separate gates.
 
 ## Engineering work and exit criteria
 
-| Issues    | Delivered or already present                                                                                                                                            | Remaining acceptance                                                                                                                                       |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| #39       | GPU v2 implementation #215; both native and console collectors now require the explicit full matrix, not just a passing count; downloaded GPU output hashes are checked | Physical 12 v1 + 60 v2 parity, adversarial numeric cases, exact worker/shader identity; preserve 12 explicit clamp refusals                                |
-| #40       | Existing v1 lifecycle; selectable `--extension none/graded/gap/spikelets/both/gap-all-free` for separate v2 lifecycle trials                                            | Physical long-run/cancel/suspend/restart per selected mode, gamepad B, hard termination/device fault, memory/thermal trials and old/new-worker negotiation |
-| #177      | Experimental observer and immutable uploads #205, independent software geometry/image checks                                                                            | Complete surfaces and skeletons separately on Quest; stereo, head motion, immersive recovery, repeated entry/exit, memory and thermal evidence             |
-| #24       | Desktop baseline already archived                                                                                                                                       | Physical phone cold/warm timing and memory; no new mobile default before measurement                                                                       |
-| #179      | Independent Sobol ray and six rendered-camera cases; pure frame/unit and geometric boundary tests                                                                       | Real eye→body registration with provenance and uncertainty; synthetic identity cannot close this gate                                                      |
-| #180      | Five arms, causal pose→later optics, exact replay, body-fault interruption/resume and immutable CLI outputs tested                                                      | Real-renderer on/off comparison, representative full-connectome resource/timing measurement and qualified physiological chain                              |
-| #31, #176 | Existing M0/G1 contracts and single runtime/body/clock/runstore reused                                                                                                  | Keep engineering E0, evidenced sensory/motor E1 and held-out behavior E2 distinct; only close umbrellas after their children                               |
-| #151      | Replication index fixed for GF/song locks; source-bound protocol/output audit and machine-readable exceptions                                                           | Independent operator/machine reproduces positive, negative and stopped-before-holdout results; input eligibility/licences and independent sign-off         |
+| Issues    | Delivered or already present                                                                                                                                                                                                                                                                                                                                                                                                                                               | Remaining acceptance                                                                                                                                  |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #39       | GPU v2 implementation #215; both native and console collectors now require the explicit full matrix, not just a passing count; downloaded GPU output hashes are checked. Series S parity is 120 of 120, with 12 dynamic-clamp refusals ([final parity](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-final-parity-2026-10-18.json))                                                                                                             | Adversarial numeric cases stay open. The dynamic continuous clamp stays refused                                                                       |
+| #40       | Existing v1 lifecycle; selectable `--extension none/graded/gap/spikelets/both/gap-all-free` for separate v2 lifecycle trials. #40 is closed after the worker baseline. A process kill and an API `RemoveDevice` passed on 2026-10-18 ([hard stop](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-hardstop-2026-10-18.json), [device removal](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-gpufault-2026-10-18.json)) | Gamepad input on [#224](https://github.com/gianlucamazza/flymsg/issues/224). A hardware GPU fault is unqualified. Memory and thermal trials stay open |
+| #177      | Experimental observer and immutable uploads #205, independent software geometry/image checks                                                                                                                                                                                                                                                                                                                                                                               | Complete surfaces and skeletons separately on Quest; stereo, head motion, immersive recovery, repeated entry/exit, memory and thermal evidence        |
+| #24       | Desktop baseline already archived                                                                                                                                                                                                                                                                                                                                                                                                                                          | Physical phone cold/warm timing and memory; no new mobile default before measurement                                                                  |
+| #179      | Independent Sobol ray and six rendered-camera cases; pure frame/unit and geometric boundary tests                                                                                                                                                                                                                                                                                                                                                                          | Real eye→body registration with provenance and uncertainty; synthetic identity cannot close this gate                                                 |
+| #180      | Five arms, causal pose→later optics, exact replay, body-fault interruption/resume and immutable CLI outputs tested                                                                                                                                                                                                                                                                                                                                                         | Real-renderer on/off comparison, representative full-connectome resource/timing measurement and qualified physiological chain                         |
+| #31, #176 | Existing M0/G1 contracts and single runtime/body/clock/runstore reused                                                                                                                                                                                                                                                                                                                                                                                                     | Keep engineering E0, evidenced sensory/motor E1 and held-out behavior E2 distinct; only close umbrellas after their children                          |
+| #151      | Replication index fixed for GF/song locks; source-bound protocol/output audit and machine-readable exceptions                                                                                                                                                                                                                                                                                                                                                              | Independent operator/machine reproduces positive, negative and stopped-before-holdout results; input eligibility/licences and independent sign-off    |
 
 ## Scientific evidence requests
 
@@ -280,7 +285,12 @@ Device Portal error as the job's final state.
 This is one console and about 23 minutes of sustained load. Host load averages
 of 2–25 affect upload, export and oracle times, not console advance timing.
 [#224](https://github.com/gianlucamazza/flymsg/issues/224) stays open:
-noncooperative termination, GPU/device fault and gamepad input remain unmeasured.
+noncooperative termination, GPU/device fault and gamepad input remain unmeasured
+in this section. The [2026-10-18 process kill](#noncooperative-termination-result-2026-10-18)
+and [API device removal](#gpu-device-removal-result-2026-10-18) measure the first two;
+gamepad input stays open, and a hardware GPU fault is still unqualified.
+[Sparse and membrane parity](#sparse-kicks-and-per-neuron-membranes-on-series-s-2026-10-18)
+is the later full-connectome measurement.
 Full-connectome v2 is not measurable through this exporter because
 `flymsg.native` refuses per-neuron membranes; synthetic v2 lifecycle evidence
 remains separate. There is no full-CNS real-time claim beyond the measured
@@ -351,8 +361,8 @@ GPU/device faults, full-connectome throughput or biological behavior.
 
 Run under the protocol above (committed in `6ccde6c` before measurement), worker
 source `22bef37`, shader SHA256 `957a1202…`. [Evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-hardstop-2026-10-18.json): report, trial
-epochs, status histories, folder listings and checkpoint snapshots; the zip
-holds SHA256SUMS of every file including the binaries left out of it.
+epochs, status histories, folder listings and checkpoint snapshots; the
+[zip](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-hardstop-2026-10-18.zip) holds SHA256SUMS of every file including the binaries left out of it.
 
 | Case | Kill (WDP process DELETE) | After kill                                 | Recovery                                                                 | Verdict  |
 | ---- | ------------------------- | ------------------------------------------ | ------------------------------------------------------------------------ | -------- |
@@ -458,7 +468,7 @@ Worker `98fe27f` (PR #244 merge build, CI run 39110356086, signed MSIX
 `be417752…`, shader `957a1202…`), requalified before any fault: 72 of 72
 parity cases bit for bit (12 v1, 60 v2) and 12 declared refusals. Attempt 2
 under revision 2; attempt 1 (F1 pass, F2 stopped by the revision-1 error) is
-archived in the same [evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-gpufault-2026-10-18.json) zip with the requalification report.
+archived in the same [evidence zip](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/series-s-gpufault-2026-10-18.zip) with the requalification report.
 
 | Case | Fault                              | Device result                          | Worker                                                        | Recovery (fresh job)             | Verdict  |
 | ---- | ---------------------------------- | -------------------------------------- | ------------------------------------------------------------- | -------------------------------- | -------- |

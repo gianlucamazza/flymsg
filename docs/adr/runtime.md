@@ -142,7 +142,7 @@ The full MaleCNS default model (165,122 neurons, 24.5 million synapses; looming 
   - Since #211 a batch asks for `"output": "counts"` and each run returns only its nonzero counts and first spikes. On 2026-10-16 the same battery matched in all 30 runs and took 180 s end to end, with 69 s of advance (`docs/evidence/series-s-battery-sparse-2026-10-16.json`). One host core ran the 30 runs in 29 s that day, so the console is still one slow lane.
   - Since #213 the battery reports where the time goes (`docs/evidence/series-s-battery-phases-2026-10-16.json`, 164 s): 28 s building the 30 runtimes and 33 s exporting the batch on the host, 10 s hashing and uploading, 77 s waiting for the console (69.6 s advance, 5.4 s rebuilding runs, 0.3 s writing outputs), 12 s downloading. The host's own preparation, 61 s, is now the largest cost outside the advance. Since #214 the runtimes are built one at a time as the export asks and each fixture stays in memory: preparing the battery went from 97.6 s to 25.2 s, and its memory peak from 11.3 GB to 2.6 GB, with the same bytes (`docs/evidence/batch-prep-2026-10-16.json`). What remains is per run: each runtime copies and hashes the network, and the export rebuilds every run's whole fixture to check its patch word for word.
 
-A GPU fault and a termination that bypasses suspension remain unmeasured. R3–R4 need implementation beyond this batching. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
+An API `RemoveDevice` and a noncooperative process kill passed on 2026-10-18 and recovered bit for bit (`docs/evidence/series-s-gpufault-2026-10-18.json`, `docs/evidence/series-s-hardstop-2026-10-18.json`). A hardware GPU fault and gamepad input stay open. R3–R4 need implementation beyond this batching. The existing M1–M4 embodiment roadmap remains authoritative for physics and biology; this execution lane does not mark those issues complete.
 
 Run `uv run pytest tests/test_runtime.py tests/test_core.py tests/test_embodiment.py`. Existing CI also checks all synthetic regressions, documentation links, formatting and browser modules.
 
@@ -167,6 +167,9 @@ Worker jobs bind the exact semantics returned by the exporter.
 
 See [the binary contract and limits](https://github.com/gianlucamazza/flymsg/blob/main/native/README.md#sparse-inputs-and-per-neuron-membranes-2026-10-18).
 Acceptance adds 48 cases to the original 72, preserving the original fixture
-bytes and 12 clamp refusals. CPU parity and block planning are checked locally;
-new-format physical GPU parity and sustained full-connectome measurements
-remain pending. Historical console results above are unchanged.
+bytes and 12 clamp refusals. CPU parity and block planning are checked locally.
+The Series S matrix is 120 of 120 with the 12 clamp refusals
+(`docs/evidence/series-s-final-parity-2026-10-18.json`). A sparse
+1,500,000-step full-connectome looming job completed bit for bit
+(`docs/evidence/series-s-sparse-long-2026-10-18.json`). A hardware GPU fault
+and gamepad input stay open. Historical console results above are unchanged.

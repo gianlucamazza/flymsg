@@ -126,7 +126,7 @@ Hardware collection explicitly selects the candidate:
 
 ```sh
 ADB_LIBUSB=1 ANDROID_ADB_SERVER_PORT=5038 .venv/bin/python scripts/quest_xr.py \
-  --serial 1WMHHA43LY1466 --scene looming --representation skeleton \
+  --serial <quest-serial> --scene looming --representation skeleton \
   --uploads --gpu-page-mib 4 --pages --check --seconds 1800
 ```
 
@@ -136,8 +136,8 @@ presence, clocks, refresh, resolution, foveation or a browser backend.
 
 ## Recorded software evidence
 
-The [summary](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-paged-2026-10-16.json) and
-[raw archive](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-paged-2026-10-16.zip) freeze source revision
+The [summary](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-paged-2026-10-16.json) and
+[raw archive](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-paged-2026-10-16.zip) freeze source revision
 `754c65e`, exact source hashes, both raw images in all 42 comparisons, camera
 matrices, actual native buffer hashes, worker/lifecycle checks and the reproduced
 depth-tie regression. Extract the archive and run `python verify.py .` to check

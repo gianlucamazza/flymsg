@@ -29,8 +29,8 @@ response neurons made the page faster but changed the observation. That is not
 an admissible resolution. Conservative page culling removed only about 4.2% of
 line indices in the recorded anatomical view and cannot alone establish a fix.
 
-The new [evidence summary](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-rendering-diagnosis-2026-10-15.json)
-and [raw archive](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-rendering-diagnosis-2026-10-15.zip) distinguish
+The new [evidence summary](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-rendering-diagnosis-2026-10-15.json)
+and [raw archive](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-rendering-diagnosis-2026-10-15.zip) distinguish
 the old mixed scene from the complete, unsimplified skeleton representation:
 
 - Frozen source `8a76f6a40ef5cb7527d66e54039216335657ce01`, clean at site build.
@@ -101,8 +101,8 @@ diagnosis does not authorize a rewrite, a new host purchase, or weakened fidelit
 
 ## Browser follow-up, 2026-10-16
 
-The [machine-readable summary](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-browser-2026-10-16.json) and
-[raw archive with independent verifier](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-browser-2026-10-16.zip)
+The [machine-readable summary](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-browser-2026-10-16.json) and
+[raw archive with independent verifier](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-browser-2026-10-16.zip)
 record clean application `635c20a` and the later headless-only oracle option
 `0d4c854`. Loaded application modules were read with CDP `Debugger.getScriptSource`
 and matched the served source hashes. The archive verifier also checks the
@@ -219,7 +219,7 @@ make Quest 2 qualified.
 
 The [paged pipeline implementation](quest-paged-pipeline.md) now implements the
 CPU worker preparation, explicit readiness and owned bounded upload scheduling
-identified above. Its [software evidence](https://github.com/gianlucamazza/flymsg/blob/feat/vee-quest-qualification/docs/evidence/quest2-paged-2026-10-16.json)
+identified above. Its [software evidence](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/quest2-paged-2026-10-16.json)
 retains exact original/candidate primitive and pixel comparisons, including the
 unchanged desktop MSAA/bloom path. The preceding measurements remain historical;
 they do not qualify this candidate. Both complete original representations still

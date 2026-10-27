@@ -19,6 +19,7 @@ potentials. Without either, every array and every rounding step is the spiking m
 
 from dataclasses import dataclass
 from itertools import pairwise
+from typing import NamedTuple
 
 import numba
 import numpy as np
@@ -484,10 +485,30 @@ def run(
     )
     gap_gen, gap_keys, gap_clock = electrical.generators(gap, gap_nodes, gap_off, p)
     check_membrane_gap(membrane, gap_nodes)
+    constants = kernel_constants(membrane, n, p)
+    indptr = W.indptr.astype(np.int64)
+    indices = W.indices.astype(np.int64)
+    data = W.data.astype(np.float32)
+    prepared = prepare_kernel(
+        constants[0],
+        constants[1],
+        constants[2],
+        constants[4],
+        constants[5],
+        gap_nodes,
+        gap_off,
+        gap_moff,
+        gap_gen,
+        gap_clock,
+        indptr,
+        indices,
+        data,
+        g_idx,
+    )
     counts, first, g_vsum = _kernel(
-        W.indptr.astype(np.int64),
-        W.indices.astype(np.int64),
-        W.data.astype(np.float32),
+        indptr,
+        indices,
+        data,
         n,
         steps,
         per_bin,
@@ -498,7 +519,7 @@ def run(
         is_stim,
         silent,
         jump,
-        *kernel_constants(membrane, n, p),
+        *constants,
         trace_col,
         traced,
         g_idx,
@@ -516,6 +537,7 @@ def run(
         gap_gen,
         gap_keys,
         gap_clock,
+        *prepared,
     )
     return Result(
         counts=counts,
@@ -558,6 +580,172 @@ def _constants(p: Params) -> tuple:
     )
 
 
+class KernelPrep(NamedTuple):
+    """What `_advance` takes after the gap mask.
+
+    Built once from the kernel constants, the gap generators and the graded
+    columns of `W`. Scratch is written before it is read on every step, so
+    it has no state at a step boundary and is not part of a checkpoint. The
+    graded slices are a packed copy of those CSC columns, not extra state.
+    """
+
+    special: np.ndarray
+    is_special: np.ndarray
+    n_special: int
+    few: bool
+    per_neuron: bool
+    scalars: np.ndarray
+    saved_v: np.ndarray
+    saved_g: np.ndarray
+    t_ptr: np.ndarray
+    t_col: np.ndarray
+    t_a: np.ndarray
+    t_c: np.ndarray
+    t_x: np.ndarray
+    t_g: np.ndarray
+    t_nx: np.ndarray
+    t_ng: np.ndarray
+    t_sum: np.ndarray
+    t_free: np.ndarray
+    g_ptr: np.ndarray
+    g_post: np.ndarray
+    g_w: np.ndarray
+
+
+def _graded_edges(indptr, indices, data, g_idx):
+    """Contiguous CSC columns of the graded sources, in `g_idx` order.
+
+    Source `k` keeps `indices[indptr[j]:indptr[j + 1]]` and the matching
+    weights, including explicit zeros and repeated targets. Delivery then adds
+    the same products, to the same accumulators, in that order.
+    """
+    n_g = int(g_idx.size)
+    g_ptr = np.zeros(n_g + 1, dtype=np.int64)
+    if n_g:
+        g_ptr[1:] = np.cumsum(indptr[g_idx + 1] - indptr[g_idx], dtype=np.int64)
+    total = int(g_ptr[n_g])
+    g_post = np.empty(total, dtype=np.int64)
+    g_w = np.empty(total, dtype=np.float32)
+    for k in range(n_g):
+        j = int(g_idx[k])
+        a, b = int(indptr[j]), int(indptr[j + 1])
+        lo, hi = int(g_ptr[k]), int(g_ptr[k + 1])
+        np.copyto(g_post[lo:hi], indices[a:b], casting="no")
+        np.copyto(g_w[lo:hi], data[a:b], casting="no")
+    return g_ptr, g_post, g_w
+
+
+def prepare_kernel(
+    em,
+    es,
+    gv,
+    v_rest,
+    v_th,
+    gap_nodes,
+    gap_off,
+    gap_moff,
+    gap_gen,
+    gap_clock,
+    indptr,
+    indices,
+    data,
+    g_idx,
+) -> KernelPrep:
+    """Classify membranes, pack graded edges, and build the Taylor sparsity, once.
+
+    Neuron 0 is the scalar class: a neuron is special when any of its five
+    float32 constants differs from neuron 0's. Without a `Membrane` every
+    neuron shares `Params`, so the hot loops read those scalars, as they did
+    before per-neuron membranes. A minority keeps that loop and is recomputed
+    with its own constants (the same operations, so the same values); most of
+    the network reads every neuron's constants. The Taylor nonzeros are each
+    component generator's rows, read from the dense generators once. Graded
+    delivery walks every graded source whose delayed release is not exactly 0;
+    those CSC columns are copied here so that walk reads contiguous memory.
+    `run` and `CpuRuntime` both call this; `_advance` does not.
+    """
+    n = em.shape[0]
+    special_buf = np.empty(n, dtype=np.int64)
+    is_special = np.zeros(n, dtype=np.bool_)
+    n_special = 0
+    for i in range(n):
+        if (
+            em[i] != em[0]
+            or es[i] != es[0]
+            or gv[i] != gv[0]
+            or v_rest[i] != v_rest[0]
+            or v_th[i] != v_th[0]
+        ):
+            special_buf[n_special] = i
+            is_special[i] = True
+            n_special += 1
+    few = 0 < 2 * n_special < n
+    per_neuron = n_special > 0 and not few
+    # copies of neuron 0, same float32 bits the scalar loops used to load
+    scalars = np.empty(5, dtype=np.float32)
+    scalars[0] = em[0]
+    scalars[1] = es[0]
+    scalars[2] = gv[0]
+    scalars[3] = v_rest[0]
+    scalars[4] = v_th[0]
+    saved_v = np.empty(n_special, dtype=np.float32)
+    saved_g = np.empty(n_special, dtype=np.float32)
+    # Taylor solver: each component's generator [A | C] as rows of nonzeros
+    # (A's pattern is C's plus the diagonal). The term count is the expression
+    # `_advance` uses.
+    terms = int(gap_clock[4]) if gap_clock.size > 4 else 0
+    n_gap = gap_nodes.size
+    t_ptr = np.zeros(n_gap + 1, dtype=np.int64)
+    if terms > 0:
+        for comp in range(gap_off.size - 1):
+            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
+            start = gap_moff[comp] // 3 * 2
+            for r in range(m):
+                nnz = 0
+                for q in range(m):
+                    if gap_gen[start + r * 2 * m + q] != 0.0:
+                        nnz += 1
+                t_ptr[a + r + 1] = nnz
+        for k in range(n_gap):
+            t_ptr[k + 1] += t_ptr[k]
+    t_col = np.empty(t_ptr[n_gap], dtype=np.int64)
+    t_a = np.empty(t_ptr[n_gap], dtype=np.float64)
+    t_c = np.empty(t_ptr[n_gap], dtype=np.float64)
+    if terms > 0:
+        for comp in range(gap_off.size - 1):
+            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
+            start = gap_moff[comp] // 3 * 2
+            for r in range(m):
+                e = t_ptr[a + r]
+                for q in range(m):
+                    if gap_gen[start + r * 2 * m + q] != 0.0:
+                        t_col[e] = q
+                        t_a[e] = gap_gen[start + r * 2 * m + q]
+                        t_c[e] = gap_gen[start + r * 2 * m + m + q]
+                        e += 1
+    return KernelPrep(
+        special_buf[:n_special].copy(),
+        is_special,
+        n_special,
+        few,
+        per_neuron,
+        scalars,
+        saved_v,
+        saved_g,
+        t_ptr,
+        t_col,
+        t_a,
+        t_c,
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.float64),
+        np.zeros(n_gap, dtype=np.bool_),
+        *_graded_edges(indptr, indices, data, g_idx),
+    )
+
+
 @numba.njit(cache=True)
 def _kernel(
     indptr,
@@ -597,6 +785,27 @@ def _kernel(
     gap_gen,
     gap_keys,
     gap_clock,
+    special,
+    is_special,
+    n_special,
+    few,
+    per_neuron,
+    scalars,
+    saved_v,
+    saved_g,
+    t_ptr,
+    t_col,
+    t_a,
+    t_c,
+    t_x,
+    t_g,
+    t_nx,
+    t_ng,
+    t_sum,
+    t_free,
+    g_ptr,
+    g_post,
+    g_w,
 ):
     """One simulation. Same operations, order and float32/float64 rounding as the NumPy
     reference (tests/reference_sim.py), so the spikes are identical:
@@ -607,12 +816,12 @@ def _kernel(
        column (as scipy's CSC product), lost on refractory targets; Poisson input into v;
     4. reset of v and g, threshold jump.
     Graded neurons skip 2 and 4; their release, computed at 2 from v, is delivered d steps
-    later at 3, after the spikes, summed per target column by column (as scipy's CSC
-    matrix-vector product). Electrically coupled neurons replace the update of 1 by their
-    component's exact step [P | Q | S] applied to the state before it (potentials relative
-    to rest, conductances of non-refractory neurons, then the spike term of members whose
-    spike is still crossing), summed in float64 in that order; a member's spike at 4 makes
-    its spike term its `gap_amp` for the next `gap_width` steps."""
+    later at 3, after the spikes, summed per target in CSC column order from the graded
+    edge slices packed once by prepare_kernel. Electrically coupled neurons replace the
+    update of 1 by their component's exact step [P | Q | S] applied to the state before it
+    (potentials relative to rest, conductances of non-refractory neurons, then the spike
+    term of members whose spike is still crossing), summed in float64 in that order; a
+    member's spike at 4 makes its spike term its `gap_amp` for the next `gap_width` steps."""
     v = v_rest.copy()
     g = np.zeros(n, dtype=np.float32)
     th = np.zeros(n, dtype=np.float32)
@@ -690,6 +899,27 @@ def _kernel(
         gap_clock,
         gap_current,
         gap_mask,
+        special,
+        is_special,
+        n_special,
+        few,
+        per_neuron,
+        scalars,
+        saved_v,
+        saved_g,
+        t_ptr,
+        t_col,
+        t_a,
+        t_c,
+        t_x,
+        t_g,
+        t_nx,
+        t_ng,
+        t_sum,
+        t_free,
+        g_ptr,
+        g_post,
+        g_w,
     )
     return counts, first, g_vsum
 
@@ -753,71 +983,38 @@ def _advance(
     gap_clock,
     gap_current,
     gap_mask,
+    special,
+    is_special,
+    n_special,
+    few,
+    per_neuron,
+    scalars,
+    saved_v,
+    saved_g,
+    t_ptr,
+    t_col,
+    t_a,
+    t_c,
+    t_x,
+    t_g,
+    t_nx,
+    t_ng,
+    t_sum,
+    t_free,
+    g_ptr,
+    g_post,
+    g_w,
 ):
     stim_steps = kicks.shape[0]
-    # without a Membrane every neuron has the Params constants: the hot loops then read
-    # scalars, as before per-neuron membranes existed, with the same float32 values. A
-    # Membrane on a minority of neurons keeps the scalar loops and recomputes only those
-    # neurons with their own constants (same operations, so the same values); one on most
-    # neurons reads every neuron's constants
-    special = np.empty(n, dtype=np.int64)
-    is_special = np.zeros(n, dtype=np.bool_)
-    n_special = 0
-    for i in range(n):
-        if (
-            em[i] != em[0]
-            or es[i] != es[0]
-            or gv[i] != gv[0]
-            or v_rest[i] != v_rest[0]
-            or v_th[i] != v_th[0]
-        ):
-            special[n_special] = i
-            is_special[i] = True
-            n_special += 1
-    few = 0 < 2 * n_special < n
-    per_neuron = n_special > 0 and not few
-    saved_v = np.empty(n_special, dtype=v.dtype)
-    saved_g = np.empty(n_special, dtype=g.dtype)
-    em0, es0, gv0, rest0, th0 = em[0], es[0], gv[0], v_rest[0], v_th[0]
+    # Neuron 0's float32 constants, copied once by prepare_kernel.
+    em0 = scalars[0]
+    es0 = scalars[1]
+    gv0 = scalars[2]
+    rest0 = scalars[3]
+    th0 = scalars[4]
     zero, one = np.float32(0.0), np.float32(1.0)
-    # Taylor solver: each component's generator [A | C] as rows of nonzeros (A's pattern is
-    # C's plus the diagonal), read from the dense generators once per chunk
+    # prepare_kernel counted Taylor terms with this same expression.
     terms = int(gap_clock[4]) if gap_clock.size > 4 else 0
-    n_gap = gap_nodes.size
-    t_ptr = np.zeros(n_gap + 1, dtype=np.int64)
-    if terms > 0:
-        for comp in range(gap_off.size - 1):
-            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
-            start = gap_moff[comp] // 3 * 2
-            for r in range(m):
-                nnz = 0
-                for q in range(m):
-                    if gap_gen[start + r * 2 * m + q] != 0.0:
-                        nnz += 1
-                t_ptr[a + r + 1] = nnz
-        for k in range(n_gap):
-            t_ptr[k + 1] += t_ptr[k]
-    t_col = np.empty(t_ptr[n_gap], dtype=np.int64)
-    t_a = np.empty(t_ptr[n_gap], dtype=np.float64)
-    t_c = np.empty(t_ptr[n_gap], dtype=np.float64)
-    if terms > 0:
-        for comp in range(gap_off.size - 1):
-            a, m = gap_off[comp], gap_off[comp + 1] - gap_off[comp]
-            start = gap_moff[comp] // 3 * 2
-            for r in range(m):
-                e = t_ptr[a + r]
-                for q in range(m):
-                    if gap_gen[start + r * 2 * m + q] != 0.0:
-                        t_col[e] = q
-                        t_a[e] = gap_gen[start + r * 2 * m + q]
-                        t_c[e] = gap_gen[start + r * 2 * m + m + q]
-                        e += 1
-    t_x = np.zeros(n_gap, dtype=np.float64)
-    t_g = np.zeros(n_gap, dtype=np.float64)
-    t_nx = np.zeros(n_gap, dtype=np.float64)
-    t_ng = np.zeros(n_gap, dtype=np.float64)
-    t_sum = np.zeros(n_gap, dtype=np.float64)
-    t_free = np.zeros(n_gap, dtype=np.bool_)
     for t in range(start_step, stop_step):
         # The refractory mask is constant for the full neural step.
         for comp in range(gap_off.size - 1):
@@ -968,15 +1165,17 @@ def _advance(
                 g[r] = g[r] + c[r]
             c[r] = 0.0
             hit[r] = False
+        # g_post/g_w are those CSC columns in g_idx order. Exact 0 release stays
+        # unapplied: decay of a negative g can underflow to -0, and g + 0 would
+        # turn that into +0.
         nt = 0
         for k in range(g_idx.size):
             a = g_ring[slot, k]
             if a == zero:
                 continue
-            j = g_idx[k]
-            for q in range(indptr[j], indptr[j + 1]):
-                r = indices[q]
-                c[r] += data[q] * a
+            for q in range(g_ptr[k], g_ptr[k + 1]):
+                r = g_post[q]
+                c[r] += g_w[q] * a
                 if not hit[r]:
                     hit[r] = True
                     touched[nt] = r

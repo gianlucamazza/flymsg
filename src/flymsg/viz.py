@@ -7,6 +7,7 @@ MaleCNS volumes on Google Cloud Storage, choosing the level of detail on screen.
 
 import json
 import shutil
+from importlib.resources import as_file, files
 from pathlib import Path
 
 import numpy as np
@@ -14,7 +15,7 @@ import pandas as pd
 
 from flymsg import graph, sim
 
-STATIC = Path(__file__).parent / "viz_static"
+STATIC = files("flymsg").joinpath("viz_static")
 # The bundle the page reads (scene.json, activity.bin, graded.bin, partners.json); the page
 # checks it.
 SCENE_SCHEMA = "flymsg.scene/v1"
@@ -25,7 +26,13 @@ GRADED_STEPS = 127
 def page_files() -> list[Path]:
     """The page and every module beside it (vendor/ is copied as a tree). Collected rather
     than listed, so that a new module cannot be left out of an export."""
-    return [STATIC / "index.html", *sorted(STATIC.glob("*.js"))]
+    return [
+        STATIC / "index.html",
+        *sorted(
+            (p for p in STATIC.iterdir() if p.name.endswith(".js")),
+            key=lambda p: p.name,
+        ),
+    ]
 
 
 def select_from_result(
@@ -144,8 +151,9 @@ def copy_page(out: Path) -> None:
     """Copy the page, its modules and vendor/ into `out`, next to a scene."""
     out.mkdir(parents=True, exist_ok=True)
     for f in page_files():
-        shutil.copy(f, out / f.name)
-    shutil.copytree(STATIC / "vendor", out / "vendor", dirs_exist_ok=True)
+        (out / f.name).write_bytes(f.read_bytes())
+    with as_file(STATIC / "vendor") as vendor:
+        shutil.copytree(vendor, out / "vendor", dirs_exist_ok=True)
 
 
 COMPARE_STATUSES = ("validated", "exploratory", "failed")

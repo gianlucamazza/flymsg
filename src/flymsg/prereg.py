@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from flymsg import lock_codec, sim, validate, wiring
+from flymsg.paths import repository_root, require_repository_path
 
 # The parser and hash live in lock_codec; these names stay importable from here.
 SKIP_HASH_KEYS = lock_codec.SKIP_HASH_KEYS
@@ -18,7 +19,7 @@ canonical = lock_codec.canonical
 content_payload = lock_codec.content_payload
 content_hash = lock_codec.content_hash
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PREREG_PATH = ROOT / "validation" / "preregistration.yaml"
 
 # sha256 of the canonical JSON of every field except version and content_sha256.
@@ -29,7 +30,7 @@ VERSION_HASHES = {
 
 
 def load(path: Path = PREREG_PATH) -> dict:
-    return load_yaml(path.read_text(encoding="utf-8"))
+    return load_yaml(require_repository_path(path).read_text(encoding="utf-8"))
 
 
 def live_fields() -> dict:

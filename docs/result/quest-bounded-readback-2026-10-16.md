@@ -4,8 +4,8 @@ Status: sampled static correctness passed. No cadence or physical XR admission.
 
 ## Identity and reproduction
 
-Quest 2 hardware serial `1WMHHA43LY1466`, ADB over Wi-Fi at
-`192.168.1.146:5555` using isolated server 5038. The active full-scene runtime was
+Quest 2 hardware serial `<quest-serial>`, ADB over Wi-Fi at
+`<quest-ip>:5555` using isolated server 5038. The active full-scene runtime was
 clean frozen commit `febbfc285969ac7d433ed21c59fc0a3bd8661fb6`, 16 MiB pages,
 looming, explicit `skeleton-bounded&check`. The independent host verifier was
 `a81cd5b4c6bcf0ae2d9a873528dc362cfd2640b6`; production viewer files are identical
@@ -42,9 +42,11 @@ head motion, lifecycle or sustained XR acceptance follows from these checks.
 
 ## Artifact
 
-[Readback archive](../evidence/quest-bounded-readback-2026-10-16.zip): 6,596,572 bytes,
+[Readback archive](../evidence/quest-bounded-readback-2026-10-16.zip): 6,596,568 bytes,
 27 entries, SHA-256
-`d4d4fee3e2c6e271a087c56330563cb8bb1d8b80c5335b451db2f90dc170aa43`.
+`a43afb7589252040df9501f9948b122c96d4f8369c435a698324007d4b91e71c`.
+The archive was redacted on 2026-10-21 for privacy (device serial and LAN IP
+replaced), so it differs from the original; the original hash is in git history.
 The archive includes image receipts, native geometry audit reports, source
 primitive inventory, verifier provenance, cleanup, offline replay and a per-file
 hash/size manifest. ZIP CRC and every manifested member hash were rechecked after

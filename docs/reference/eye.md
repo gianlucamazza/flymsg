@@ -1,6 +1,7 @@
 # Eye
 
-MaleCNS optic-lobe columns, their measured viewing directions, and the T4/T5 locks that
+MaleCNS optic-lobe columns, viewing directions transferred from measured female-eye
+anatomy, and the T4/T5 locks that
 use them. The fetch, the licence and the files are in
 [data](data.md#eye-map-flymsg-eye). The body and the jump are in
 [embodiment](../adr/embodiment.md).
@@ -81,6 +82,33 @@ silhouette erosion/dilation interval plus the existing planar error allowance. T
 [rendered-camera record](https://github.com/gianlucamazza/flymsg/blob/main/docs/evidence/optics-camera-2026-10-15.json)
 retains the absolute errors (up to 0.0122) and pixel bounds. It qualifies these synthetic
 camera cases, not the missing MaleCNS-head registration or a physiological transfer.
+
+## Cylindrical bar (DN arena v3)
+
+`optics.Bar` is a dark vertical bar on a cylinder whose axis is vertical in the world.
+`bar_coverage` integrates the same circular Gaussian as `coverage_exact` (full width at
+half maximum `acceptance_deg`, on the sphere) on a deterministic polar grid around each
+column axis. `quadrature` is `(n_radial, n_angular, max_sigma)`: midpoint rings out to
+`max_sigma` standard deviations, and that many azimuths at the cell centres. A sample
+weighs `exp(-α²/(2σ²)) sin α`. The covered weights are divided by the sum over the whole
+grid, so the tails beyond `max_sigma` σ are omitted from both the share and the total
+(about 3×10⁻⁴ of a spherical Gaussian at 4σ). The cap stays inside one hemisphere.
+
+A ray from the eye meets the cylinder once; the eye has to sit strictly inside. The hit
+lies on the bar when its azimuth about the axis, measured from world +x toward +y, is
+within half the bar's width of the centre and its height is between the bar's bottom and
+top. The centre moves at a constant angular velocity. The test is wrap-safe. Outside the
+visibility window the coverage is 0. Columns without a lens stay NaN. Bars are scored as
+if alone.
+
+The grid `(16, 24, 4)` stays within 1.5×10⁻² of a `(400, 720, 6)` reference on the cases
+in `tests/test_optics.py`: a bar centred on a column with its edges in the core of the
+profile, an edge through the column axis, a bar far from the axis, a bar across the ±180°
+cut, and a top edge at eye height, from an eye on the axis and from one offset inside the
+cylinder. An edge through the axis is a great circle, and that grid is symmetric across
+it, so the share there is 1/2. A bar wide and tall enough to contain the whole 4σ cap
+scores the truncated total, 1. The allowance is the midpoint rule's error where a step
+cuts the Gaussian, not a physiological uncertainty.
 
 ## T4/T5 direction selectivity through the eye (lock, 2026-10-13)
 
@@ -245,3 +273,24 @@ for the 12 version 4 configurations (72 dark passes and the first stimulus run o
 are identical before and after the extraction (`scripts/vee1_parity.py`). The version 4
 lock and its archived results are unchanged. The closed loop uses the same builder for
 the graded input of the [graded eye ADR](../adr/adr-vee1-graded-eye.md).
+
+## Retinal input contract
+
+`photoreceptor_kicks` accepts a two-dimensional coverage array: finite fractions in
+[0, 1], or NaN for a missing direction. Receptor column indices are an integer
+vector; only -1 means unassigned. Invalid indices, infinities, fractions outside
+[0, 1], and nonfinite or negative gains refuse before producing input. An empty
+column table with only unassigned receptors produces zero drive. Missing coverage
+also produces zero drive; this is an engineering mask, not measured darkness.
+Valid inputs retain the historical conversion bit for bit. The lens join requires
+unique (p, q) keys so ambiguous input cannot duplicate anatomical columns.
+
+## Source integrity and availability audit
+
+Both pinned RData files are SHA-256-verified on fetch and before parsing.
+`flymsg eye` also writes `receptor_masks.parquet`: one row per simulated receptor,
+including unassigned cells, with separate assignment/column/direction masks and
+nullable laterality agreement. Transferred MaleCNS directions are INFERRED; missing
+directions are UNKNOWN. This table changes no historical input mapping. See the
+[optic-system audit](../report/optic-system-audit-2026-10-27.md) for source hashes,
+software evidence and the remaining physiological no-go.

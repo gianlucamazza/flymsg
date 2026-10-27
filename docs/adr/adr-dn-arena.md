@@ -290,8 +290,11 @@ and does not rewrite v1.
 
 ## Planned follow-up (`arena-1` … `arena-6`)
 
-Acceptance authorizes this sequence. Each step is still its own reviewed PR
-and waits on the step before it. Each later PR also updates `CHANGELOG.md`.
+Acceptance authorizes this sequence. The sequence is complete: `arena-1`
+through `arena-6` are merged, and the counted runs are in
+[Implementation status](#implementation-status-2026-10-20). The table stays
+the authorized scope. Each step was its own reviewed PR and updated
+`CHANGELOG.md`.
 These names are not module-boundaries PRs 4–8. No step edits
 `validation/evidence.yaml`.
 
@@ -317,8 +320,8 @@ Milestone 2, only after 1: the same decoder toward FlyGym 2.1.0's
 ## Coordination
 
 The [module-boundaries ADR](adr-module-boundaries.md) is accepted (2026-10-18).
-Steps 2–3 of that sequence have landed (lock codec, stimulus primitive). Steps
-4–8 are still pending and are not a prerequisite of this fixture. Step 8
+Steps 2–3 of that sequence have landed (lock codec, stimulus primitive). PRs 4–7 are merged, and step 8's repository roots are done; leaf moves stay
+deferred. They are not a prerequisite of this fixture. Step 8
 optionally moves modules into leaf packages with flat facades; the target
 **body** layer already lists `embodiment`, `pose`, `closedloop`,
 `flygym_body`, `jump`, `loop` and `ttm`. `arena` belongs in that layer
@@ -361,12 +364,18 @@ built site pages. Pages registration can follow in a later docs PR.
 - Full CI green on this docs-only change (`tests.yml`: ruff, prettier 3.8.1
   on all `.md`, non-slow pytest).
 
-## Implementation status (2026-10-19)
+## Implementation status (2026-10-20)
 
 `arena-1` through `arena-6` are merged: inventory #253, body #255 and #256, decoder
 #258, controls #259, review fixes #257, #261 and #264, the lock and `flymsg dn-arena`
 #270 (with the closed loop's input dead time), the run and its archive #276. The counted run of
 `validation/dn_arena.yaml` version 1 is `uninformative` (#276,
 [DN arena](../result/dn-arena.md)): every input photoreceptor's output synapse is
-inhibitory, so no spike passes the lamina. Version 2 of the lock moves to the graded
-input of the [graded eye ADR](adr-vee1-graded-eye.md).
+inhibitory, so no spike passes the lamina. Version 2 of the lock (#284) moves to the
+graded input of the [graded eye ADR](adr-vee1-graded-eye.md); its counted run is
+`depends`: `uninformative` at lamina-to-medulla gain 1, `null` at gains 4 and 16, inside
+the range of 39 wiring-null shuffles. Post-verdict diagnostics ([DN arena](../result/dn-arena.md)) find
+the readout set by the reconstruction's eye imbalance (2,251 right against 1,652 left
+input photoreceptors) and the nulls' band by the shuffled graphs' tonic activity. With
+a static stimulus the `shuffled` arm equals `disconnected` by construction: it permutes
+identical open-loop inputs.

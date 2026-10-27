@@ -162,6 +162,13 @@ class Panel:
         )
         return self
 
+    def ring(self, x, y, colour, r=3.2) -> Panel:
+        self.out.append(
+            f'<circle cx="{self.X(x):.1f}" cy="{self.Y(y):.1f}" r="{r}" fill="none" '
+            f'stroke="{colour}" stroke-width="1.2"/>'
+        )
+        return self
+
     def text(self, x, y, s, colour="#222", anchor="start") -> Panel:
         """Text at pixel position (x, y)."""
         self.out.append(
@@ -812,5 +819,94 @@ def t4_spikes(rows: pd.DataFrame) -> str:
         780,
         a.y0 + a.h + 80,
         "T4/T5 version 4: T4 fires only with medulla release at 200 Hz",
+        [a],
+    )
+
+
+def dn_arena(rows: pd.DataFrame) -> str:
+    """Intact heading change against each row's wiring-null range.
+
+    `rows` draws version 1 cells first, then version 2 configurations. Every row
+    has version ("v1" or "v2"), verdict ("uninformative", "null" or "difference"),
+    intact, script, wiring_null_minimum, wiring_null_median and wiring_null_maximum
+    (radians, 200–1,000 ms). A v1 row also has yaw_gain_deg_s_per_hz and
+    forward_gain_mm_s_per_hz; a v2 row has lamina_medulla_gain. The grey bar runs
+    from the wiring-null minimum to its maximum, with a tick at the median. The
+    blue dot is intact, labelled to three decimal places; the hollow mark is the
+    script control.
+    """
+    v1 = rows[rows["version"] == "v1"]
+    v2 = rows[rows["version"] == "v2"]
+    if len(v1) + len(v2) != len(rows):
+        raise ValueError("version must be v1 or v2")
+    rows = pd.concat([v1, v2], ignore_index=True)
+    n = len(rows)
+    cols = (
+        "wiring_null_minimum",
+        "wiring_null_median",
+        "wiring_null_maximum",
+        "intact",
+        "script",
+    )
+    values = rows[list(cols)].to_numpy(dtype=float)
+    lo, hi = float(values.min()), float(values.max())
+    pad = (hi - lo) * 0.08
+    if pad == 0.0:
+        pad = 0.05
+    x_lo, x_hi = lo - pad, hi + pad
+    a = Panel(
+        292,
+        52,
+        440,
+        22 * n,
+        (x_lo, x_hi),
+        (n - 0.45, -0.55),
+        xlabel="heading change, 200–1,000 ms (rad)",
+    )
+    a.frame(yticks=())
+    if x_lo <= 0.0 <= x_hi:
+        a.line([0.0, 0.0], [a.ylim[0], a.ylim[1]], GREY, 1.0, "4 3")
+    for i, r in rows.iterrows():
+        if r["version"] == "v1":
+            label = (
+                f"v1 · yaw {float(r['yaw_gain_deg_s_per_hz']):g} °/s/Hz · "
+                f"fwd {float(r['forward_gain_mm_s_per_hz']):g} mm/s/Hz"
+            )
+        else:
+            label = f"v2 · gain {float(r['lamina_medulla_gain']):g}"
+        intact = float(r["intact"])
+        a.hbar(
+            i,
+            0.48,
+            float(r["wiring_null_minimum"]),
+            float(r["wiring_null_maximum"]),
+            GREY,
+            0.35,
+        )
+        median = float(r["wiring_null_median"])
+        a.line([median, median], [i - 0.34, i + 0.34], "#222", 1.4)
+        a.ring(float(r["script"]), i, GREY)
+        a.dot(intact, i, BLUE)
+        a.text(a.X(intact) + 6, a.Y(i) + 3, f"{intact:.3f}", BLUE)
+        a.text(a.x0 - 8, a.Y(i) + 3, label, "#222", "end")
+        a.text(a.x0 + a.w + 8, a.Y(i) + 3, str(r["verdict"]), "#222")
+    a.text(
+        a.x0,
+        a.y0 + a.h + 48,
+        "Grey bar: 39 wiring-null shuffles (min to max, tick at median). "
+        "Blue dot: intact. Hollow circle: script control (no connectome).",
+        GREY,
+    )
+    a.text(
+        a.x0,
+        a.y0 + a.h + 62,
+        "v1: Poisson photoreceptor drive; v2: graded kick-equivalent drive of "
+        "T4/T5 version 4.",
+        GREY,
+    )
+    return document(
+        960,
+        a.y0 + a.h + 80,
+        "DN arena: intact heading change against 39 wiring nulls",
         [a],
     )

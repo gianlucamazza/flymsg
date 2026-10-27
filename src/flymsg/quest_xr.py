@@ -26,8 +26,9 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 from flymsg import manifest, pages, runstore
+from flymsg.paths import repository_root, require_repository_path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 
 
 def adb(serial, *args):
@@ -175,7 +176,11 @@ def browser_endpoint(serial):
 
 def node_json(script, *args, timeout=45):
     result = subprocess.run(
-        ["node", str(ROOT / "scripts" / script), *map(str, args)],
+        [
+            "node",
+            str(require_repository_path(ROOT) / "scripts" / script),
+            *map(str, args),
+        ],
         capture_output=True,
         text=True,
         timeout=timeout,

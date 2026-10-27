@@ -33,6 +33,8 @@ def cmd_eye(a, neurons, edges):
     out.mkdir(exist_ok=True)
     cols.to_parquet(out / "columns.parquet")
     receptors.to_parquet(out / "photoreceptors.parquet")
+    masks = eye.receptor_masks(neurons, cols, receptors)
+    masks.to_parquet(out / "receptor_masks.parquet")
     c = eye.check(cols, receptors)
     for s in "LR":
         print(
@@ -44,6 +46,12 @@ def cmd_eye(a, neurons, edges):
         f"other R7/R8: {c['other_r7_r8_elevation_deg']:.1f} deg"
     )
     print(f"-> {out / 'columns.parquet'}, {out / 'photoreceptors.parquet'}")
+    print(
+        f"receptor masks: {len(masks)} simulated, "
+        f"{int(masks.has_assignment.sum())} assigned, "
+        f"{int(masks.has_direction.sum())} with direction; "
+        f"{out / 'receptor_masks.parquet'}"
+    )
 
 
 def cmd_odor(a, neurons, edges):

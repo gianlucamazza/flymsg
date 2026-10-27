@@ -57,6 +57,10 @@ class CpuRuntime:
     copies a nonnegative finite float32 drive and widens it to float64, the value
     `sim.run` applies. RNG is owned by the caller: checkpoint identity includes
     the encoding and the complete input schedule. All arrays are private.
+    Membrane classes, the scalar-class constants, Taylor sparsity, the graded
+    edge slices and scratch are computed once from these inputs. They are
+    derived, not state: a checkpoint does not carry them, and restore leaves
+    them in place.
     """
 
     def __init__(
@@ -252,6 +256,27 @@ class CpuRuntime:
         digest.update(str(self._stim_steps).encode())
         self._identity = digest.hexdigest()
         self._state[self._input_key] = self._kicks
+        # em, es, gv, v_rest, v_th and the gap generators. Not hashed: restore
+        # replaces state only, and these construction arrays stay as built.
+        constants = self._kernel_constants
+        gap = self._gap
+        generators, _, clock = self._gap_system
+        self._prepared = sim.prepare_kernel(
+            constants[0],
+            constants[1],
+            constants[2],
+            constants[4],
+            constants[5],
+            gap[0],
+            gap[1],
+            gap[3],
+            generators,
+            clock,
+            self._indptr,
+            self._indices,
+            self._data,
+            self._graded[0],
+        )
         self._scratch = (
             np.zeros(n, dtype=np.float32),
             np.empty(n, dtype=np.int32),
@@ -332,6 +357,7 @@ class CpuRuntime:
             *self._gap_system,
             self._gap_current,
             self._gap_mask,
+            *self._prepared,
         )
         self._step = step
 
@@ -495,6 +521,10 @@ class CpuRuntime:
                 state, self._identity, step, input_end
             ):
                 raise ValueError("checkpoint integrity mismatch")
+            # `_prepared` was built from the membrane constants, the gap
+            # generators and the graded columns of W. Those construction
+            # arrays are not in the checkpoint, so the same preparation stays
+            # valid.
             self._state, self._step = state, step
             self._kicks = state[self._input_key]
             self._stim_steps = input_end

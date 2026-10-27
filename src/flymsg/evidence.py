@@ -15,8 +15,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from flymsg import locks, prereg
+from flymsg.paths import repository_root
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = repository_root()
 PATH = ROOT / "validation" / "evidence.yaml"
 UNKNOWN = "unknown"
 STATUSES = ("measured", "inferred", "calibrated", "scanned", "compensatory", "unknown")

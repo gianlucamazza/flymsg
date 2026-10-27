@@ -47,7 +47,7 @@ skeleton comparison uses:
 
 ```bash
 ANDROID_ADB_SERVER_PORT=5038 bg uv run python scripts/quest_compare.py \
-  --serial 192.168.1.146:5555 --out /new/exact-skeleton-evidence \
+  --serial <quest-ip>:5555 --out /new/exact-skeleton-evidence \
   --scene looming --representation skeleton --keep-awake \
   --unattended --stop-on-regression
 ```
