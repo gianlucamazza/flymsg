@@ -3,9 +3,9 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import subprocess
 import tempfile
+from pathlib import Path
 
 import numpy as np
 from scipy import sparse
@@ -16,9 +16,12 @@ from flymsg.runtime import CpuRuntime
 
 ROOT = repository_root()
 LOCK = ROOT / "validation/optic-causality-v1.json"
+LOCK_SHA256 = "5f209731d7eb184d5dd857b2d548e7a64faed8f62ed99dd097d54dd03bd9d25a"
 
 
 def run(checkpoint_dir: Path) -> dict:
+    if hashlib.sha256(LOCK.read_bytes()).hexdigest() != LOCK_SHA256:
+        raise ValueError("optic causal protocol changed; use a new version")
     doc = json.loads(LOCK.read_text())
     rows = doc["network"]["edges_post_pre_weight"]
     W = sparse.csc_matrix(
@@ -47,7 +50,7 @@ def run(checkpoint_dir: Path) -> dict:
         if disconnected:
             weights[1, 0] = 0
         silence = np.array([0]) if silenced else None
-        args = dict(p=p, graded=graded, silence=silence, kicks=kicks)
+        args = {"p": p, "graded": graded, "silence": silence, "kicks": kicks}
         result = sim.run(
             weights,
             np.array([0]),

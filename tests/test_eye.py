@@ -276,3 +276,33 @@ def test_receptor_masks_keep_missing_anatomy_and_unknown_laterality():
         eye.receptor_masks(neurons, cols, pd.concat([receptors, receptors]))
     with pytest.raises(ValueError, match="non-receptor"):
         eye.receptor_masks(neurons, cols, receptors.assign(neuron=[0, 1, 4]))
+
+
+def test_eyemap_checks_cached_and_downloaded_bytes_without_deleting_them(
+    tmp_path, monkeypatch
+):
+    import hashlib
+
+    payload = b"synthetic pinned source"
+    monkeypatch.setattr(eye, "EYEMAP_FILES", {"test.RData": "unused"})
+    monkeypatch.setattr(
+        eye, "EYEMAP_SHA256", {"test.RData": hashlib.sha256(payload).hexdigest()}
+    )
+    monkeypatch.setattr(
+        eye.data, "download", lambda url, dest: dest.write_bytes(payload)
+    )
+    eye.fetch(tmp_path)
+    eye.fetch(tmp_path)
+    path = eye.raw_dir(tmp_path) / "test.RData"
+    path.write_bytes(b"corrupt")
+    with pytest.raises(ValueError, match="SHA-256"):
+        eye.fetch(tmp_path)
+    assert path.read_bytes() == b"corrupt"
+    with pytest.raises(ValueError, match="SHA-256"):
+        eye.lenses(tmp_path)
+    path.unlink()
+    monkeypatch.setattr(
+        eye.data, "download", lambda url, dest: dest.write_bytes(b"bad download")
+    )
+    with pytest.raises(ValueError, match="SHA-256"):
+        eye.fetch(tmp_path)
