@@ -1,7 +1,9 @@
 # ADR: motor output and proprioceptive return for NeuroMechFly
 
-Status: **proposed**, 2026-10-20. Awaiting owner acceptance. It changes no code in
-this commit and authorizes no lock or run.
+Status: **accepted** by the owner, 2026-10-27 (proposed 2026-10-20). Acceptance
+authorizes the inventory, schemas, observation record and tested refusals in
+`mp-1` through `mp-4`. It authorizes no measured motor row, lock or run; `mp-5`
+requires sourced evidence and separate owner approval.
 
 Scope: the two interfaces a closed loop needs between the MaleCNS connectome and the
 NeuroMechFly body: motor-neuron spikes to actuator commands, and body state back to
