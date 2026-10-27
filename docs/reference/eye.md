@@ -272,3 +272,14 @@ for the 12 version 4 configurations (72 dark passes and the first stimulus run o
 are identical before and after the extraction (`scripts/vee1_parity.py`). The version 4
 lock and its archived results are unchanged. The closed loop uses the same builder for
 the graded input of the [graded eye ADR](../adr/adr-vee1-graded-eye.md).
+
+## Retinal input contract
+
+`photoreceptor_kicks` accepts a two-dimensional coverage array: finite fractions in
+[0, 1], or NaN for a missing direction. Receptor column indices are an integer
+vector; only -1 means unassigned. Invalid indices, infinities, fractions outside
+[0, 1], and nonfinite or negative gains refuse before producing input. An empty
+column table with only unassigned receptors produces zero drive. Missing coverage
+also produces zero drive; this is an engineering mask, not measured darkness.
+Valid inputs retain the historical conversion bit for bit. The lens join requires
+unique (p, q) keys so ambiguous input cannot duplicate anatomical columns.

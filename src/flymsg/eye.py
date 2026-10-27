@@ -131,7 +131,8 @@ def columns(annotations: pd.DataFrame, lens: pd.DataFrame) -> pd.DataFrame:
         .reset_index(drop=True)
     )
     cols["p"], cols["q"] = pq(cols["hex1"], cols["hex2"])
-    merged = cols.merge(lens, on=["p", "q"], how="left")
+    # A duplicated lens key would silently duplicate a MaleCNS column and its drive.
+    merged = cols.merge(lens, on=["p", "q"], how="left", validate="many_to_one")
     # the map's +y is the fly's left, so azimuth toward the right is -atan2(y, x); the left
     # eye mirrors y
     y = np.where(merged["side"] == "L", -merged["y"], merged["y"])
@@ -249,8 +250,25 @@ def photoreceptor_kicks(
     receives nothing). The drive is `gain` times the light left, 1 - coverage: a dark disk
     lowers it. `gain` has no measured value; a lock states it."""
     cov = np.asarray(coverage, dtype=float)
-    idx = np.asarray(receptor_columns, dtype=int)
-    light = np.where(idx >= 0, 1.0 - cov[:, np.clip(idx, 0, None)], 0.0)
+    idx = np.asarray(receptor_columns)
+    if cov.ndim != 2:
+        raise ValueError("coverage must be (steps, columns)")
+    if np.isinf(cov).any() or np.any((cov < 0) | (cov > 1)):
+        raise ValueError("coverage must be in [0, 1] or NaN for missing directions")
+    if idx.ndim != 1 or (idx.size and idx.dtype.kind not in "iu"):
+        raise ValueError("receptor columns must be an integer vector")
+    if np.any(idx < -1) or np.any(idx >= cov.shape[1]):
+        raise ValueError("receptor columns must be -1 or inside the column table")
+    if isinstance(gain, (bool, np.bool_)) or np.ndim(gain) != 0:
+        raise ValueError("gain must be a finite nonnegative scalar")
+    gain = float(gain)
+    if not np.isfinite(gain) or gain < 0:
+        raise ValueError("gain must be a finite nonnegative scalar")
+    # Index only assigned receptors: even a table with zero columns is valid when
+    # all receptors are unassigned. NaN is missing coverage, never full illumination.
+    assigned = idx >= 0
+    light = np.zeros((cov.shape[0], idx.size), dtype=float)
+    light[:, assigned] = 1.0 - cov[:, idx[assigned].astype(np.intp)]
     return gain * np.nan_to_num(light, nan=0.0)
 
 
