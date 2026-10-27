@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Accepted ADR: motor output and proprioceptive return.** `docs/adr/adr-motor-proprioception.md` proposes a NeuroMechFly control inventory separate from FlyBody's, motor rows that keep anatomy (MANC) apart from dynamics, every dynamic parameter required from a lock, torque only through a versioned implementation, articulated observations as a new record beside B6, and receptor inputs that need identity and a sourced transfer. Steps `mp-1` to `mp-5`; the data each link needs is ranked. Docs only; accepted by the owner on 2026-10-27 for `mp-1` through `mp-4`; measured rows, locks and runs require separate evidence and approval.
+
 - **Evidence privacy: Quest serial and LAN IP inside archives.** Seven 2026-10-16 Quest evidence zips replace the hardware serial with `REDACTED-QUEST-SERIAL` and the LAN debug address with `192.0.2.10`; inner sha256 maps were recomputed and archive pins re-pinned. The redacted archives differ from the originals; original hashes remain in git history.
 
 - **Docs privacy: Quest trial identifiers.** Public Markdown replaced the 2026-10-16 Quest 2 LAN debug address and hardware serial with `<quest-ip>` / `<quest-serial>` in prose and command examples. Evidence JSON and archives are unchanged.
