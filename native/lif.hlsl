@@ -41,6 +41,7 @@ cbuffer Tick : register(b0) {
   uint membrane;
   uint sparse_input;
   uint event_count;
+  uint input_start;
 }
 uint h(uint slot) { return input.Load(slot * 4); }
 uint inp(uint slot, uint i) { return input.Load((h(slot) + i) * 4); }
@@ -240,7 +241,7 @@ uint fdiv_unit(uint a, uint b) {
     }
     int col = asint(inp(23, i));
     if (col >= 0) {
-      uint at = h(24) + (tick * h(7) + (uint)col) * 2;
+      uint at = h(24) + ((tick - input_start) * h(7) + (uint)col) * 2;
       uint2 raw = uint2(0, 0);
       if (sparse_input != 0) {
         uint lo = 0, hi = event_count;

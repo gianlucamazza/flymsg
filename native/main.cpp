@@ -6,7 +6,7 @@
 int main(int argc, char **argv) {
   try {
     std::string fixture, output, resume, checkpoint, shader, batch, counts,
-        publish;
+        publish, input_block;
     uint32_t run = 0;
     uint32_t target = 0;
     bool target_set = false;
@@ -16,7 +16,8 @@ int main(int argc, char **argv) {
       const std::string key = argv[i];
       if (key == "--help") {
         std::cout << "--fixture FILE --output FILE [--advance STEP] [--resume "
-                     "FILE] [--checkpoint FILE] [--gpu SHADER] [--batch FILE "
+                     "FILE] [--input-block FILE] [--checkpoint FILE] [--gpu "
+                     "SHADER] [--batch FILE "
                      "--run K] [--counts FILE] [--publish FILE --publish-bytes "
                      "N]\n";
         return 0;
@@ -29,6 +30,8 @@ int main(int argc, char **argv) {
         output = value;
       else if (key == "--resume")
         resume = value;
+      else if (key == "--input-block")
+        input_block = value;
       else if (key == "--checkpoint")
         checkpoint = value;
       else if (key == "--gpu")
@@ -84,6 +87,8 @@ int main(int argc, char **argv) {
                                               flymsg::read_words(batch), run));
     if (!resume.empty())
       runtime.restore(resume);
+    if (!input_block.empty())
+      runtime.schedule_inputs(flymsg::read_words(input_block));
     if (!target_set)
       target = runtime.input[3];
     if (!shader.empty()) {

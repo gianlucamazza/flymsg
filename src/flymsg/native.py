@@ -41,12 +41,15 @@ def export_fixture(
     edges: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
     *,
     input_encoding: str = "dense",
+    window_steps: int | None = None,
 ) -> dict:
     """Export a fresh initialized CPU runtime; scientific authority stays Python.
     `input_encoding="sparse"` opts into ordered nonzero kicks; dense is the
-    byte-compatible default. See `fixture_bytes`. A `kick_equivalent` runtime
-    is refused."""
-    raw, meta = fixture_bytes(runtime, edges, input_encoding=input_encoding)
+    byte-compatible default. Version 5 adds float32 drive and bounded input windows.
+    """
+    raw, meta = fixture_bytes(
+        runtime, edges, input_encoding=input_encoding, window_steps=window_steps
+    )
     Path(path).write_bytes(raw)
     return meta
 
@@ -56,19 +59,17 @@ def fixture_bytes(
     edges: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None,
     *,
     input_encoding: str = "dense",
+    window_steps: int | None = None,
 ) -> tuple[bytes, dict]:
     """A fresh initialized CPU runtime's fixture, in memory, and its description.
 
     This qualification format is intentionally separate from the run manifest.
     Kicks are converted to double counts, matching the kernel's kick arithmetic.
     `edges` is `edge_chunks(runtime)` when the caller already has it.
-    `kick_equivalent` inputs are host only and are refused.
+    Version 5 explicitly distinguishes integer counts from float32 drive widened
+    to float64. An optional input window requires an empty initial schedule.
     """
-    if runtime.input_encoding != "counts":
-        raise NativeCapabilityError(
-            "kick_equivalent inputs are host only; the native and console lanes "
-            "accept counts"
-        )
+    drive = runtime.input_encoding == "kick_equivalent"
     if runtime.step != 0:
         raise ValueError("native fixtures require fresh state")
     coupled = runtime._gap[0]
@@ -87,11 +88,24 @@ def fixture_bytes(
     if input_encoding not in {"dense", "sparse"}:
         raise ValueError("input_encoding must be dense or sparse")
     sparse_input = input_encoding == "sparse"
+    streamed = window_steps is not None
+    if streamed and (
+        type(window_steps) is not int
+        or not 1 <= window_steps <= runtime._steps
+        or runtime._stim_steps != 0
+        or sparse_input
+    ):
+        raise ValueError(
+            "input windows require an empty dense schedule and a valid size"
+        )
+    stored_steps = window_steps if streamed else runtime._steps
     arrays = tuple(runtime._kernel_constants[k] for k in (0, 1, 2, 4, 5))
     uniform = all(np.all(a == a[0]) for a in arrays)
     membrane = not uniform
     version = 4 if membrane else 3 if sparse_input else 1
-    if any(
+    if drive or streamed:
+        version = 5
+    if not drive and any(
         np.any(runtime._kicks[start : start + 4096] > 2**53)
         for start in range(0, runtime._steps, 4096)
     ):
@@ -141,7 +155,9 @@ def fixture_bytes(
     stimulus_col = np.full(n, -1, dtype=np.int32)
     stimulus_col[runtime._stim] = np.arange(runtime._stim.size)
     add(23, stimulus_col, "<i4")
-    if not sparse_input and (cursor * 4 + steps * runtime._stim.size * 8 > MAX_BYTES):
+    if not sparse_input and (
+        cursor * 4 + stored_steps * runtime._stim.size * 8 > MAX_BYTES
+    ):
         raise ValueError("fixture exceeds native qualification memory cap")
     if not modern:
         add(24, runtime._kicks, "<f8")
@@ -192,14 +208,18 @@ def fixture_bytes(
         state_cursor += d * ng + ng + 2 * bins * ng + nc + nc
     if modern:
         header[39] = cursor
-        # descriptor: sparse flag, event count, optional membrane block offset.
+        # v5 adds encoding/stream flags and the bounded dense window length.
         nnz = int(np.count_nonzero(runtime._kicks)) if sparse_input else 0
-        chunks.append(
-            np.array(
-                [int(sparse_input), nnz, cursor + 3 if membrane else 0], dtype="<u4"
-            ).tobytes()
-        )
-        cursor += 3
+        descriptor_size = 5 if version == 5 else 3
+        descriptor = [
+            int(sparse_input),
+            nnz,
+            cursor + descriptor_size if membrane else 0,
+        ]
+        if version == 5:
+            descriptor += [int(drive) | (int(streamed) << 1), stored_steps]
+        chunks.append(np.array(descriptor, dtype="<u4").tobytes())
+        cursor += descriptor_size
         if membrane:
             for array in arrays:
                 raw = np.asarray(array, dtype="<f4").tobytes()
@@ -221,7 +241,7 @@ def fixture_bytes(
                 chunks.append(events.tobytes())
                 cursor += events.size
         else:
-            add(24, runtime._kicks, "<f8")
+            add(24, runtime._kicks[:stored_steps], "<f8")
     header[34:37] = [cursor, state_cursor, len(sources)]
     resident = int(header[24]) if sparse_input else cursor
     if (resident + state_cursor) * 4 > MAX_BYTES or cursor > 0x3FFFFFFF:
@@ -232,9 +252,53 @@ def fixture_bytes(
         "state_bytes": state_cursor * 4,
         "precision": "ordered-f32-double-kicks",
         "steps": steps,
-        "semantics": f"flymsg.lif/ordered-f32-v{3 if version == 4 else 2 if modern else 1}",
+        "semantics": f"flymsg.lif/ordered-f32-v{4 if version == 5 else 3 if version == 4 else 2 if modern else 1}",
         "input_encoding": input_encoding,
+        **(
+            {
+                "drive_encoding": runtime.input_encoding,
+                "window_steps": stored_steps,
+                "streamed": streamed,
+            }
+            if version == 5
+            else {}
+        ),
     }
+
+
+def input_block(values: np.ndarray, *, step: int, input_encoding: str) -> bytes:
+    """Atomic FMI1 block. Values are widened exactly; counts never accept fractions."""
+    values = np.asarray(values)
+    if type(step) is not int or not 0 <= step <= 0xFFFFFFFF or values.ndim != 2:
+        raise ValueError("invalid input block boundary or shape")
+    if input_encoding == "kick_equivalent":
+        if (
+            values.dtype != np.float32
+            or not np.isfinite(values).all()
+            or np.any(values < 0)
+        ):
+            raise ValueError("input drive must be nonnegative finite float32")
+        flag = 1
+    elif input_encoding == "counts":
+        if (
+            values.dtype.kind not in "iu"
+            or np.any(values < 0)
+            or np.any(values > 2**53)
+        ):
+            raise ValueError("input counts must be nonnegative integers <= 2**53")
+        flag = 0
+    else:
+        raise ValueError("unknown input encoding")
+    if (
+        not values.shape[0]
+        or max(values.shape) > 0xFFFFFFFF
+        or values.size * 8 + 28 > MAX_BYTES
+    ):
+        raise ValueError("input block exceeds format bounds")
+    return (
+        struct.pack("<7I", 0x31494D46, 1, flag, step, *values.shape, values.size * 2)
+        + values.astype("<f8").tobytes()
+    )
 
 
 BATCH = 0x314E4246  # FBN1: several runs of one network
