@@ -513,9 +513,11 @@ def test_input_encoding_refusals(tmp_path):
     assert counts.step == 0
     from flymsg.native import NativeCapabilityError, export_batch, export_fixture
 
-    with pytest.raises(NativeCapabilityError, match="kick_equivalent"):
-        export_fixture(drive, tmp_path / "fixture.bin")
-    with pytest.raises(NativeCapabilityError, match="kick_equivalent"):
+    assert (
+        export_fixture(drive, tmp_path / "fixture.bin")["schema"]
+        == "flymsg.native_fixture/v5"
+    )
+    with pytest.raises(NativeCapabilityError, match="version-1"):
         export_batch([drive], tmp_path / "base.bin", tmp_path / "batch.bin")
 
 

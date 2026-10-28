@@ -171,3 +171,20 @@ before writing a completed result/output for that advance. Earlier batch outputs
 remain evidence. Restart the process to restore; no persistent device setting is
 changed. Use the prospective [GPU fault protocol](../docs/report/issue-resolution.md#gpu-device-removal--protocol-2026-10-18)
 and `scripts/console_gpufault.py`; hardware results remain unmeasured.
+
+## Bounded feedback inputs (proposed)
+
+Fixture v5 adds explicit float32 `kick_equivalent` drive and a bounded dense input
+window. `--input-block FILE` installs an FMI1 block at the current cursor, including
+after `--resume FILE`. Legacy fixtures and count-only batches retain their contract.
+The Python `ConsoleRuntime` uses ordered Device Portal commands and returns compact
+traces between feedback boundaries; it never falls back to Python advancement.
+See [the proposed contract](../docs/adr/adr-console-stream-input.md) for qualification
+gates and current performance limitations. Run the physical matrix with:
+
+```sh
+uv run python scripts/console_stream_parity.py --source-commit FULL_WORKER_SHA --out runs/console-stream-parity
+```
+
+Set the usual Device Portal and worker package/shader environment first, and launch
+the matching worker. This command does not install or replace an application.
