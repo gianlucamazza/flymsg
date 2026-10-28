@@ -1061,6 +1061,22 @@ def test_console_stream_feedback_checkpoint(native_exe, tmp_path):
     resumed = ConsoleRuntime(
         fresh(), device, tmp_path / "host", window_steps=7, source_commit="a" * 40
     )
+    with np.load(saved, allow_pickle=False) as document:
+        arrays = {key: document[key].copy() for key in document.files}
+    metadata = json.loads(str(arrays["metadata"]))
+    for key, value in (
+        ("step", 50.0),
+        ("input_end", True),
+        ("input_encoding", "counts"),
+    ):
+        bad = tmp_path / "invalid-checkpoint.npz"
+        np.savez(
+            bad,
+            **(arrays | {"metadata": np.array(json.dumps(metadata | {key: value}))}),
+        )
+        with pytest.raises(ValueError, match="identity/integrity"):
+            resumed.restore(bad)
+        assert resumed.step == resumed._seq == 0
     resumed.restore(saved)
     values = np.full((50, 1), 1.625, np.float32)
     oracle.schedule_inputs(values)

@@ -248,6 +248,8 @@ class ConsoleRuntime:
             or inputs.shape != self._template._kicks.shape
             or traces.dtype != self._trace.dtype
             or traces.shape != self._trace.shape
+            or type(meta.get("step")) is not int
+            or type(meta.get("input_end")) is not int
             or not 0 <= meta["step"] <= self._template._steps
             or not 0 <= meta["input_end"] <= self._template._steps
             or remote.dtype != np.uint8
