@@ -334,7 +334,7 @@ def test_a_lazy_batch_holds_the_first_run_and_the_current_one():
             yield rt
             del rt
 
-    native.export_batch(lazy(), Path("/dev/null"), Path("/dev/null"))
+    native.export_batch(lazy(), Path(os.devnull), Path(os.devnull))
     assert seen == [0, 1, 1, 1]
 
 
