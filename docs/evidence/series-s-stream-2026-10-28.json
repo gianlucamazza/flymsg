@@ -11,10 +11,10 @@
     "uninstall_performed": false
   },
   "archive": {
-    "bytes": 1659557,
+    "bytes": 1719491,
     "file": "series-s-stream-2026-10-28.zip",
-    "files": 3311,
-    "sha256": "5e7bdc26d5c6014519a5c8a9b488af72e435cd00b9f8443bbe022930ed8aac98"
+    "files": 3393,
+    "sha256": "f42ae225765f1012d70017525128f37285f8f1c3e5da66ddec6af62804af7469"
   },
   "contexts": [
     {
@@ -2324,6 +2324,178 @@
     "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
     "worker_exe_sha256": "c6ad05edcc6fabaa8b5edf1af585fe354d17f8c881a752db187b238816de7a6a"
   },
+  "preloaded_drive": {
+    "cases": [
+      {
+        "extension": "none",
+        "fixture_sha256": "f43e9b07be861f230915ba92f8a3f59b71dbb450445c3d828b944f3e9d7d69b5",
+        "job_id": "c7b9cf77-21f1-45ae-b74a-bac87dda0957",
+        "passed": true,
+        "seed": 91,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "dense"
+      },
+      {
+        "extension": "graded-input",
+        "fixture_sha256": "27f540dbacf7a3575edea95c7d2116434feab6fedf9d4160b73caf87bc311c42",
+        "job_id": "fd6f762b-ef55-4a37-97b2-8a60014d3831",
+        "passed": true,
+        "seed": 91,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "dense"
+      },
+      {
+        "extension": "membrane",
+        "fixture_sha256": "6bf766d4acd6f60b51cf94a43288ac403b19d62cea5516947014301ce797c6fd",
+        "job_id": "15490030-5165-4ce0-9efc-bb1050913e46",
+        "passed": true,
+        "seed": 91,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "dense"
+      },
+      {
+        "extension": "graded-input-membrane",
+        "fixture_sha256": "437cc152279346c26db813c0cd4995c6ca0359b1af486ed74cc8aed79b5197e4",
+        "job_id": "9eb5870c-2e5f-48b0-9281-2672925c7331",
+        "passed": true,
+        "seed": 91,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "dense"
+      },
+      {
+        "extension": "none",
+        "fixture_sha256": "53f1c2bfb3fc3520f65fc7369eaa8a418ff343ac0523752522f2ac03909ff0d5",
+        "job_id": "6a541fea-64b9-4e77-a131-b658018cc90e",
+        "passed": true,
+        "seed": 91,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "sparse"
+      },
+      {
+        "extension": "graded-input",
+        "fixture_sha256": "ab50214ea0e993e924956cfc9bba791f7b1e3dbe8b0d6d9ff0159c9c7de16667",
+        "job_id": "c6285134-a5bf-4a81-a274-53bca929a552",
+        "passed": true,
+        "seed": 91,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "sparse"
+      },
+      {
+        "extension": "membrane",
+        "fixture_sha256": "8f098cfab61a8df7bbf9ffaa98d00cc193bd3f31e2f541a07991da76bc7a1425",
+        "job_id": "f5a3b231-002a-4397-859e-15a331fe50e4",
+        "passed": true,
+        "seed": 91,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "sparse"
+      },
+      {
+        "extension": "graded-input-membrane",
+        "fixture_sha256": "19870c3ab26acc12151b28c880bb6a6888806ad567f2e9907fc01014414733f6",
+        "job_id": "f0df8b20-c496-46b6-9cde-d921c1f60baa",
+        "passed": true,
+        "seed": 91,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "sparse"
+      },
+      {
+        "extension": "none",
+        "fixture_sha256": "5ca5cdee93c65ca7d5204b420547d54795577683b3b994ee14535c7e891b1589",
+        "job_id": "addac552-4bbd-482c-9117-7805a72263bf",
+        "passed": true,
+        "seed": 127,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "dense"
+      },
+      {
+        "extension": "graded-input",
+        "fixture_sha256": "01c07377edd217ae97c13e185666e9498194240fe0d5becccd269e5897452cd6",
+        "job_id": "5a0f95b9-c0b7-49ca-8313-80b60029fca0",
+        "passed": true,
+        "seed": 127,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "dense"
+      },
+      {
+        "extension": "membrane",
+        "fixture_sha256": "fc78f86bf78de7ce4cb116600fc8394b99a675f6b91b0c84f88e38a071eee58a",
+        "job_id": "de2dd448-5040-4cd4-a08a-b9fc0ef1011b",
+        "passed": true,
+        "seed": 127,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "dense"
+      },
+      {
+        "extension": "graded-input-membrane",
+        "fixture_sha256": "4245c1b4599a56d74e9856e1dac5e7f9f63941eee34462b3491f7c84788d1045",
+        "job_id": "913253d8-9aea-429c-b805-8d40bac06a1d",
+        "passed": true,
+        "seed": 127,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "dense"
+      },
+      {
+        "extension": "none",
+        "fixture_sha256": "7158311789f1be6c4876dfd17fd235ab8bd97b23918fdd50808a9ab6350a673f",
+        "job_id": "bd764e27-e5db-45a2-9924-8e5a846a6fac",
+        "passed": true,
+        "seed": 127,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "sparse"
+      },
+      {
+        "extension": "graded-input",
+        "fixture_sha256": "1060706fc01e5bf12d724b42d98e2e94342237383d450f5761777d305eadaaf2",
+        "job_id": "59c70e30-f75e-47cc-be7b-9189533518e3",
+        "passed": true,
+        "seed": 127,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "sparse"
+      },
+      {
+        "extension": "membrane",
+        "fixture_sha256": "9b4d5f4dd761d47f80560f4f0733966518b289c045eec423314afa8080b8cc4c",
+        "job_id": "c65b5ff9-7fa1-4d3b-8d5c-4de535ae3da5",
+        "passed": true,
+        "seed": 127,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "sparse"
+      },
+      {
+        "extension": "graded-input-membrane",
+        "fixture_sha256": "3e42afc2d71a8f2bce24f9df0443a63a4ebe0a730e3209975ab84f2582bf7223",
+        "job_id": "1efecc94-fefb-445d-8fbf-2748aef45475",
+        "passed": true,
+        "seed": 127,
+        "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
+        "state": "completed",
+        "storage": "sparse"
+      }
+    ],
+    "cleanup_worker_processes": 0,
+    "expected_cases": 16,
+    "package": "GianlucaMazza.FlymsgWorker_0.1.0.1_x64__g0p5dcfz4t9z4",
+    "qualified": true,
+    "schema": "flymsg.console_preloaded_drive/v1",
+    "scope": "synthetic preloaded float32 drive, dense/sparse; not biological validation or throughput",
+    "shader_sha256": "8166489965009dc8ae0a5270ca06d0b5e79965c5e2b40e5ef680f2e633dfc93d",
+    "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817"
+  },
   "qualification_case_wall_s": {
     "max": 12.074966286003473,
     "median": 9.443286759498733,
@@ -2331,7 +2503,7 @@
   },
   "qualification_scope": "synthetic numerical and neural-stream lifecycle parity on physical Series S",
   "qualified": true,
-  "recorded_at": "2026-10-28T10:15:03.935649+00:00",
+  "recorded_at": "2026-10-28T10:26:23.403467+00:00",
   "schema": "flymsg.console_stream_evidence/v1",
   "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817",
   "stream": {
@@ -2598,5 +2770,6 @@
     "shader_sha256": "8166489965009dc8ae0a5270ca06d0b5e79965c5e2b40e5ef680f2e633dfc93d",
     "source_commit": "3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817"
   },
+  "supplemental_host_commit": "a0591596f07de7efd3a00e72fe1d6594ed01a973",
   "timing_scope": "includes setup, portal I/O, state comparisons and checkpoint restoration; not a throughput benchmark"
 }
