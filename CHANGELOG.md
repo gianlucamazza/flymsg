@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Console continuous input and feedback, proposed ADR.** Native fixture v5 distinguishes float32 `kick_equivalent` drive from integer counts and adds bounded dense input windows. `ConsoleRuntime` advances an ordered DX12 stream with compact traces, pinned worker identity and explicit checkpoint recovery; it never falls back to host computation. Physical Series S qualification passes 120 legacy fixtures, 36 streaming cases and suspension/restore/cancellation. Raw commands, receipts and outputs are retained in `docs/evidence/series-s-stream-2026-10-28.zip`. Owner acceptance and independent review remain pending; no full-connectome continuous-drive speedup or real-time claim, and the active DN arena campaign is unchanged.
+
 - **Accepted ADR: motor output and proprioceptive return.** `docs/adr/adr-motor-proprioception.md` proposes a NeuroMechFly control inventory separate from FlyBody's, motor rows that keep anatomy (MANC) apart from dynamics, every dynamic parameter required from a lock, torque only through a versioned implementation, articulated observations as a new record beside B6, and receptor inputs that need identity and a sourced transfer. Steps `mp-1` to `mp-5`; the data each link needs is ranked. Docs only; accepted by the owner on 2026-10-27 for `mp-1` through `mp-4`; measured rows, locks and runs require separate evidence and approval.
 
 - **Evidence privacy: Quest serial and LAN IP inside archives.** Seven 2026-10-16 Quest evidence zips replace the hardware serial with `REDACTED-QUEST-SERIAL` and the LAN debug address with `192.0.2.10`; inner sha256 maps were recomputed and archive pins re-pinned. The redacted archives differ from the originals; original hashes remain in git history.

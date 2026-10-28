@@ -188,3 +188,9 @@ uv run python scripts/console_stream_parity.py --source-commit FULL_WORKER_SHA -
 
 Set the usual Device Portal and worker package/shader environment first, and launch
 the matching worker. This command does not install or replace an application.
+
+The [2026-10-28 Series S evidence](../docs/evidence/series-s-stream-2026-10-28.json)
+passes 120 legacy fixtures, 36 feedback/checkpoint cases and neural-stream
+suspension, explicit recovery and cancellation. Scientific use still requires
+acceptance of the proposed ADR; whole-connectome continuous-drive throughput is
+unmeasured.
