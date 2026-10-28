@@ -31,7 +31,21 @@ def run(device, out, source_commit):
         "both",
         "gap-all-free",
         "membrane",
+        "graded-input",
+        "graded-input-membrane",
     )
+    input_graded = sim.Graded(
+        idx=np.array([0, 1, 5, 6]),
+        v_lo=-62.0,
+        span=20.0,
+        rate_hz=np.array([200.0, 300.0, 150.0, 300.0]),
+    )
+    features = {name: EXTENSIONS[name] for name in extensions if name in EXTENSIONS}
+    features["graded-input"] = {"graded": input_graded}
+    features["graded-input-membrane"] = {
+        "graded": input_graded,
+        **EXTENSIONS["membrane"],
+    }
     expected = list(
         itertools.product((3, 19), ("counts", "kick_equivalent"), extensions)
     )
@@ -64,7 +78,7 @@ def run(device, out, source_commit):
                     input_encoding=encoding,
                     trace=np.arange(8),
                     p=sim.Params(th_jump=2, delay=0.3),
-                    **EXTENSIONS[extension],
+                    **features[extension],
                 )
 
             oracle = fresh()

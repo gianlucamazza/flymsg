@@ -1209,4 +1209,4 @@ def test_stream_qualification_matrix_with_native_engine(native_exe, tmp_path):
     )
     report = collector["run"](device, tmp_path / "host", "a" * 40)
     assert report["qualified"]
-    assert len(report["cases"]) == report["expected_cases"] == 28
+    assert len(report["cases"]) == report["expected_cases"] == 36
