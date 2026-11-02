@@ -21,6 +21,7 @@ dependencies = [
     "numba>=0.67",
     "numpy>=2.5.3",
     "pandas>=3.0.6",
+    "pillow>=13.0.0",
     "pyarrow>=25.0.1",
     "rdata>=1.1",
     "scipy>=1.18.1",
@@ -41,6 +42,12 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.8",
+]
+
+[tool.uv]
+# flygym==2.1.0 (and 2.1.1) still declare pillow<13; override so the lock can take 13.0.0.
+override-dependencies = [
+    "pillow>=13.0.0",
 ]
 
 [tool.pytest.ini_options]
