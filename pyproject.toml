@@ -45,7 +45,10 @@ dev = [
 ]
 
 [tool.uv]
-# flygym==2.1.0 (and 2.1.1) still declare pillow<13; override so the lock can take 13.0.0.
+# flygym==2.1.0 (and 2.1.1) still declare pillow<13; override so the lock can take 13.0.0,
+# the first release patched for the Pillow Dependabot alerts (#310). Remove the override once
+# flygym allows 13. tests/test_pillow_compat.py exercises flygym, imageio, mediapy and
+# matplotlib under 13 and fails if the resolver falls back below it.
 override-dependencies = [
     "pillow>=13.0.0",
 ]
