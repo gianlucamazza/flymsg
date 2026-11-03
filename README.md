@@ -330,8 +330,11 @@ If you use flymsg, cite the data and the model it builds on (see also
 
 ## License
 
-Code: [MIT](LICENSE). The connectome data are not part of this repository; they are
-downloaded from their public sources under their own licences. Vendored three.js and lil-gui
-are MIT (`src/flymsg/viz_static/vendor/`). See [NOTICE](NOTICE) for what the licence does not cover.
+Code: [MIT](LICENSE). The raw connectome data are not part of this repository; they are
+downloaded from their public sources under their own licences. The repository does commit
+viewer exports derived from MaleCNS v1.0 (Janelia FlyEM + Google) under `docs/live`; they
+remain under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) and need the
+attribution given in the [Citation](#citation) section above and in [NOTICE](NOTICE). Vendored three.js and lil-gui are MIT
+(`src/flymsg/viz_static/vendor/`). See [NOTICE](NOTICE) for what the licence does not cover.
 
 Exact Quest and desktop performance work follows the [exact observer decision](docs/adr/adr-exact-observer-performance.md). Approximate diagnostics do not qualify original geometry or physical XR.
