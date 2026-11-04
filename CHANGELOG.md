@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Console continuous input and feedback, proposed ADR.** Native fixture v5 distinguishes float32 `kick_equivalent` drive from integer counts and adds bounded dense input windows. `ConsoleRuntime` advances an ordered DX12 stream with compact traces, pinned worker identity and explicit checkpoint recovery; it never falls back to host computation. Physical Series S qualification passes 120 legacy fixtures, 36 streaming cases, 16 preloaded dense/sparse drive cases and suspension/restore/cancellation. Raw commands, receipts and outputs are retained in `docs/evidence/series-s-stream-2026-10-28.zip`. Owner acceptance and independent review remain pending; no full-connectome continuous-drive speedup or real-time claim, and the active DN arena campaign is unchanged.
+
 ## 0.8.49 — 2026-11-03
 
 - **Licence and data attribution: partial.** Plan item 5 is partly done: `NOTICE` and the README licence section are updated (#318). The SBOM root package licence still reads `NOASSERTION`; that is left to a separate follow-up PR.

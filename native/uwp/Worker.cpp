@@ -269,7 +269,8 @@ struct Worker {
   void request_cancel() noexcept {
     try {
       const auto t = snapshot();
-      if (t.state != "running" || t.folder.empty())
+      if ((t.state != "running" && t.state != "stream_ready") ||
+          t.folder.empty())
         return;
       JsonObject doc;
       doc.Insert(L"schema",
@@ -307,6 +308,124 @@ struct Worker {
     write_json(folder / L"fault-observation.json", ignored);
     return {};
   }
+  // One immutable graph, ordered host commands, no replay after transport
+  // failure.
+  void execute_stream(const fs::path &folder, const JsonObject &job,
+                      const std::string &id, flymsg::Runtime &runtime,
+                      const fs::path &shader) {
+    flymsg::require(field(job, L"expected_source_commit") == FLYMSG_COMMIT,
+                    "unqualified stream worker source");
+    flymsg::require(runtime.stream_input && field(job, L"backend") == "dx12" &&
+                        field(job, L"stream") == "flymsg.neural_stream/v1",
+                    "incompatible stream contract");
+    const auto adapter = field(job, L"expected_adapter");
+    flymsg::require(!adapter.empty(), "GPU stream requires adapter identity");
+    std::string receipt = field(job, L"fixture_sha256");
+    auto number = [](const JsonObject &doc, const wchar_t *name) {
+      const double v = doc.GetNamedNumber(name);
+      flymsg::require(std::isfinite(v) && v >= 0 && v <= UINT32_MAX &&
+                          v == uint32_t(v),
+                      "invalid stream number");
+      return uint32_t(v);
+    };
+    for (uint32_t seq = 1; seq != 0; ++seq) {
+      status(folder, id, "stream_ready", runtime.step);
+      const auto stem = "command_" + std::to_string(seq);
+      const auto command_path = folder / (stem + ".json");
+      const auto deadline =
+          std::chrono::steady_clock::now() + std::chrono::minutes(10);
+      while (!fs::exists(command_path) || arriving(command_path)) {
+        if (shutdown || suspended || cancelled(folder, id)) {
+          runtime.checkpoint(folder / L"interrupted.bin");
+          status(folder, id, suspended ? "suspended" : "cancelled",
+                 runtime.step);
+          return;
+        }
+        flymsg::require(std::chrono::steady_clock::now() < deadline,
+                        "stream command timeout");
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      }
+      const auto command_hash = sha256(command_path);
+      const auto cmd = read_json(command_path);
+      flymsg::require(field(cmd, L"schema") == "flymsg.stream_command/v1" &&
+                          field(cmd, L"job_id") == id &&
+                          number(cmd, L"sequence") == seq &&
+                          number(cmd, L"expected_step") == runtime.step &&
+                          field(cmd, L"previous_receipt_sha256") == receipt,
+                      "stream command identity/order mismatch");
+      const auto op = field(cmd, L"operation");
+      const auto start = runtime.step;
+      const auto payload = folder / (stem + ".bin");
+      const auto result = folder / ("result_" + std::to_string(seq) + ".bin");
+      if (op == "advance" || op == "restore") {
+        flymsg::require(sha256(payload) == field(cmd, L"payload_sha256"),
+                        "stream payload hash mismatch");
+        if (op == "restore") {
+          flymsg::require(runtime.step == 0 && seq == 1,
+                          "restore requires fresh stream");
+          runtime.restore(payload);
+          runtime.snapshot(result);
+        } else {
+          const auto target = number(cmd, L"target");
+          flymsg::require(target > runtime.step && target <= runtime.input[3],
+                          "invalid stream target");
+          runtime.schedule_inputs(flymsg::read_words(payload));
+          flymsg::require(target == runtime.input_end,
+                          "stream target/input mismatch");
+          status(folder, id, "running", runtime.step);
+          const auto stop = [&](uint32_t) {
+            return shutdown || suspended || cancelled(folder, id);
+          };
+          flymsg::advance_gpu(runtime, target, shader.string(), stop, {},
+                              adapter);
+          if (runtime.step != target) {
+            runtime.checkpoint(folder / L"interrupted.bin");
+            status(folder, id, suspended ? "suspended" : "cancelled",
+                   runtime.step);
+            return;
+          }
+          runtime.trace(result, start);
+        }
+      } else if (op == "snapshot") {
+        runtime.snapshot(result);
+      } else if (op == "checkpoint") {
+        flymsg::require(runtime.checkpoint(result) == "completed",
+                        "stream checkpoint publication failed");
+      } else
+        flymsg::require(op == "finish", "unknown stream operation");
+      JsonObject ack;
+      ack.Insert(L"schema",
+                 JsonValue::CreateStringValue(L"flymsg.stream_receipt/v1"));
+      ack.Insert(L"job_id", JsonValue::CreateStringValue(to_hstring(id)));
+      ack.Insert(L"sequence", JsonValue::CreateNumberValue(seq));
+      ack.Insert(L"step", JsonValue::CreateNumberValue(runtime.step));
+      ack.Insert(L"source_commit",
+                 JsonValue::CreateStringValue(to_hstring(FLYMSG_COMMIT)));
+      ack.Insert(L"command_sha256",
+                 JsonValue::CreateStringValue(to_hstring(command_hash)));
+      ack.Insert(L"result_sha256", JsonValue::CreateStringValue(to_hstring(
+                                       op == "finish" ? "" : sha256(result))));
+      const auto ack_path =
+          folder / ("receipt_" + std::to_string(seq) + ".json");
+      write_json(ack_path, ack);
+      receipt = sha256(ack_path);
+      // Retain only the latest result/receipt; host has verified the previous
+      // one before submitting this command. The graph and live state remain
+      // resident.
+      if (seq > 1) {
+        const auto old = std::to_string(seq - 1);
+        for (const auto &name :
+             {"command_" + old + ".json", "command_" + old + ".bin",
+              "result_" + old + ".bin", "receipt_" + old + ".json"})
+          fs::remove(folder / name);
+      }
+      if (op == "finish") {
+        status(folder, id, "completed", runtime.step);
+        return;
+      }
+    }
+    throw std::runtime_error("stream sequence exhausted");
+  }
   void execute(const fs::path &folder) {
     const auto doc = read_json(folder / L"job.json");
     const auto id = field(doc, L"job_id");
@@ -317,7 +436,8 @@ struct Worker {
     flymsg::require(field(doc, L"schema") == "flymsg.neural_job/v1" &&
                         (semantics == "flymsg.lif/ordered-f32-v1" ||
                          semantics == "flymsg.lif/ordered-f32-v2" ||
-                         semantics == "flymsg.lif/ordered-f32-v3"),
+                         semantics == "flymsg.lif/ordered-f32-v3" ||
+                         semantics == "flymsg.lif/ordered-f32-v4"),
                     "incompatible job contract");
     const auto fixture = folder / L"fixture.bin";
     const auto backend = field(doc, L"backend");
@@ -352,7 +472,8 @@ struct Worker {
     }
     flymsg::Runtime runtime(flymsg::read_words(fixture));
     const auto expected_semantics =
-        runtime.input[1] == 4   ? "flymsg.lif/ordered-f32-v3"
+        runtime.input[1] == 5   ? "flymsg.lif/ordered-f32-v4"
+        : runtime.input[1] == 4 ? "flymsg.lif/ordered-f32-v3"
         : runtime.input[1] == 3 ? "flymsg.lif/ordered-f32-v2"
                                 : "flymsg.lif/ordered-f32-v1";
     flymsg::require(semantics == expected_semantics,
@@ -367,6 +488,12 @@ struct Worker {
     const auto usage = Windows::System::MemoryManager::AppMemoryUsage();
     flymsg::require(limit > usage && estimated < limit - usage,
                     "job exceeds available app memory budget");
+    if (doc.HasKey(L"stream")) {
+      execute_stream(folder, doc, id, runtime, shader);
+      return;
+    }
+    flymsg::require(!runtime.stream_input,
+                    "stream fixture requires stream job");
     if (fs::exists(folder / L"checkpoint.bin")) {
       const auto saved = read_json(folder / L"checkpoint.json");
       flymsg::require(field(saved, L"fixture_sha256") == hash &&
@@ -630,6 +757,17 @@ struct Worker {
             if (prior == "completed" || prior == "failed" ||
                 prior == "cancelled")
               continue;
+            if ((prior == "stream_ready" || prior == "running" ||
+                 prior == "checkpointing" || prior == "awaiting_recovery" ||
+                 prior == "suspended") &&
+                read_json(folder / L"job.json").HasKey(L"stream")) {
+              if (prior != "awaiting_recovery")
+                status(folder, folder.filename().string(), "awaiting_recovery",
+                       0,
+                       "restore stream checkpoint in a fresh job; never replay "
+                       "commands");
+              continue;
+            }
             if ((prior == "suspended" || prior == "awaiting_recovery") &&
                 !fs::exists(folder / L"resume.json"))
               continue;

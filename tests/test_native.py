@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import struct
 import subprocess
@@ -17,6 +18,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.fixture(scope="module")
 def native_exe(tmp_path_factory):
+    if installed := os.environ.get("FLYMSG_NATIVE_EXE"):
+        exe = Path(installed).resolve(strict=True)
+        return exe
     compiler = shutil.which("g++")
     if compiler is None:
         pytest.skip(
@@ -330,7 +334,7 @@ def test_a_lazy_batch_holds_the_first_run_and_the_current_one():
             yield rt
             del rt
 
-    native.export_batch(lazy(), Path("/dev/null"), Path("/dev/null"))
+    native.export_batch(lazy(), Path(os.devnull), Path(os.devnull))
     assert seen == [0, 1, 1, 1]
 
 
@@ -861,3 +865,348 @@ int main(int argc, char **argv) {
         capture_output=True,
     )
     assert actual.read_bytes() == expected.read_bytes()
+
+
+@pytest.mark.parametrize("encoding", ["counts", "kick_equivalent"])
+@pytest.mark.parametrize("window", [1, 7, 100])
+def test_native_streamed_input_resume_parity(native_exe, tmp_path, encoding, window):
+    from flymsg.native import input_block
+    from flymsg.native_acceptance import check
+
+    dtype = np.float32 if encoding == "kick_equivalent" else np.int64
+    rng = np.random.default_rng(41)
+    values = rng.integers(0, 5, (100, 2)).astype(dtype)
+    if encoding == "kick_equivalent":
+        values *= np.float32(0.375)
+        values[0, 0] = np.nextafter(np.float32(0), np.float32(1))
+    W = sparse.csc_matrix(np.array([[0, 2, 0], [-1, 0, 3], [1, 0, 0]], np.float32))
+    oracle = CpuRuntime(
+        W,
+        np.array([0, 1]),
+        steps=100,
+        kicks=np.zeros((0, 2), dtype),
+        input_encoding=encoding,
+        per_bin=10,
+        trace=np.arange(3),
+    )
+    fixture, output, checkpoint, block = [
+        tmp_path / name
+        for name in ("fixture.bin", "output.bin", "checkpoint.bin", "input.bin")
+    ]
+    export_fixture(oracle, fixture, window_steps=window)
+    for start in range(0, 100, window):
+        stop = min(100, start + window)
+        block.write_bytes(
+            input_block(values[start:stop], step=start, input_encoding=encoding)
+        )
+        args = [
+            str(native_exe),
+            "--fixture",
+            str(fixture),
+            "--output",
+            str(output),
+            "--input-block",
+            str(block),
+            "--advance",
+            str(stop),
+            "--checkpoint",
+            str(checkpoint),
+        ]
+        if start:
+            args += ["--resume", str(checkpoint)]
+        subprocess.run(args, check=True, capture_output=True)
+        oracle.schedule_inputs(values[start:stop])
+        oracle.advance_to(stop)
+        check(oracle, read_output(output, fixture))
+
+
+@pytest.mark.parametrize("storage", ["dense", "sparse"])
+def test_native_fractional_drive_parity(native_exe, tmp_path, storage):
+    from flymsg.native_acceptance import check
+
+    values = np.random.default_rng(62).uniform(0, 4, (100, 1)).astype(np.float32)
+    oracle = CpuRuntime(
+        sparse.eye(2, format="csc"),
+        np.array([0]),
+        steps=100,
+        kicks=values,
+        input_encoding="kick_equivalent",
+        per_bin=10,
+        trace=np.arange(2),
+    )
+    fixture, output = tmp_path / "fixture.bin", tmp_path / "output.bin"
+    export_fixture(oracle, fixture, input_encoding=storage)
+    subprocess.run(
+        [str(native_exe), "--fixture", str(fixture), "--output", str(output)],
+        check=True,
+        capture_output=True,
+    )
+    oracle.advance_to(100)
+    check(oracle, read_output(output, fixture))
+
+
+class _NativeStreamPortal:
+    """Transport double executing the real C++ engine, never Python LIF math."""
+
+    def __init__(self, root, exe):
+        self.root, self.exe = root, exe
+        self.root.mkdir()
+        self.receipts = {}
+
+    def mkdir(self, package, rel):
+        (self.root / rel.replace("\\", "/")).mkdir(parents=True)
+
+    def put(self, package, rel, local):
+        import hashlib
+
+        folder = self.root / rel.replace("\\", "/")
+        shutil.copyfile(local, folder / local.name)
+        if not local.name.startswith("command_") or local.suffix != ".json":
+            return
+        cmd = json.loads(local.read_text())
+        job = json.loads((folder / "job.json").read_text())
+        previous = self.receipts.get(rel, job["fixture_sha256"])
+        assert cmd["previous_receipt_sha256"] == previous
+        seq, op = cmd["sequence"], cmd["operation"]
+        result = folder / f"result_{seq}.bin"
+        checkpoint = folder / "live.bin"
+        fixture = folder / "fixture.bin"
+        step = cmd.get("target", cmd["expected_step"])
+        if op != "finish":
+            args = [
+                str(self.exe),
+                "--fixture",
+                str(fixture),
+                "--output",
+                str(result),
+                "--advance",
+                str(step),
+                "--checkpoint",
+                str(checkpoint),
+            ]
+            if op == "restore":
+                shutil.copyfile(folder / f"command_{seq}.bin", checkpoint)
+            if checkpoint.exists():
+                args += ["--resume", str(checkpoint)]
+            if op == "advance":
+                args += ["--input-block", str(folder / f"command_{seq}.bin")]
+            subprocess.run(args, check=True, capture_output=True)
+            if op == "advance":
+                actual = read_output(result, fixture)
+                trace = actual["traced"][cmd["expected_step"] : step]
+                result.write_bytes(
+                    struct.pack(
+                        "<4I", 0x31544D46, cmd["expected_step"], step, trace.shape[1]
+                    )
+                    + trace.astype("<u4").tobytes()
+                )
+            if op == "checkpoint":
+                shutil.copyfile(checkpoint, result)
+        ack = {
+            "schema": "flymsg.stream_receipt/v1",
+            "job_id": cmd["job_id"],
+            "sequence": seq,
+            "step": step,
+            "source_commit": "a" * 40,
+            "command_sha256": hashlib.sha256(local.read_bytes()).hexdigest(),
+            "result_sha256": hashlib.sha256(result.read_bytes()).hexdigest()
+            if op != "finish"
+            else "",
+        }
+        path = folder / f"receipt_{seq}.json"
+        path.write_text(json.dumps(ack))
+        self.receipts[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def get(self, package, rel, name, local):
+        shutil.copyfile(self.root / rel.replace("\\", "/") / name, local)
+
+
+def test_console_stream_feedback_checkpoint(native_exe, tmp_path):
+    from types import SimpleNamespace
+
+    from flymsg.console_runtime import ConsoleRuntime
+    from flymsg.native_acceptance import check
+
+    def fresh():
+        return CpuRuntime(
+            sparse.eye(3, format="csc"),
+            np.array([0]),
+            steps=100,
+            kicks=np.zeros((0, 1), np.float32),
+            input_encoding="kick_equivalent",
+            per_bin=10,
+            trace=np.arange(3),
+        )
+
+    portal = _NativeStreamPortal(tmp_path / "remote", native_exe)
+    device = SimpleNamespace(
+        portal=portal, package="qualified", shader_sha="s" * 64, adapter="test"
+    )
+    oracle = fresh()
+    stream = ConsoleRuntime(
+        fresh(), device, tmp_path / "host", window_steps=7, source_commit="a" * 40
+    )
+    for stop in (10, 20, 30, 40, 50):
+        # Delayed neural feedback changes the next input block.
+        feedback = oracle.traced_spikes(max(0, oracle.step - 10), oracle.step).sum()
+        values = np.full((10, 1), 0.375 + float(feedback) * 0.125, np.float32)
+        oracle.schedule_inputs(values)
+        stream.schedule_inputs(values)
+        oracle.advance_to(stop)
+        stream.advance_to(stop)
+        check(oracle, stream.snapshot())
+    saved = tmp_path / "checkpoint.npz"
+    stream.checkpoint(saved)
+    stream.close()
+    resumed = ConsoleRuntime(
+        fresh(), device, tmp_path / "host", window_steps=7, source_commit="a" * 40
+    )
+    with np.load(saved, allow_pickle=False) as document:
+        arrays = {key: document[key].copy() for key in document.files}
+    metadata = json.loads(str(arrays["metadata"]))
+    for key, value in (
+        ("step", 50.0),
+        ("input_end", True),
+        ("input_encoding", "counts"),
+    ):
+        bad = tmp_path / "invalid-checkpoint.npz"
+        np.savez(
+            bad,
+            **(arrays | {"metadata": np.array(json.dumps(metadata | {key: value}))}),
+        )
+        with pytest.raises(ValueError, match="identity/integrity"):
+            resumed.restore(bad)
+        assert resumed.step == resumed._seq == 0
+    resumed.restore(saved)
+    values = np.full((50, 1), 1.625, np.float32)
+    oracle.schedule_inputs(values)
+    resumed.schedule_inputs(values)
+    oracle.advance_to(100)
+    resumed.advance_to(100)
+    check(oracle, resumed.snapshot())
+    np.testing.assert_array_equal(
+        resumed.traced_spikes(0, 100), oracle.traced_spikes(0, 100)
+    )
+    resumed.close()
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "fractional-count",
+        "non-float32-drive",
+        "nan",
+        "negative",
+        "start",
+        "width",
+        "length",
+        "encoding",
+        "truncated",
+    ],
+)
+def test_native_stream_rejects_invalid_block(native_exe, tmp_path, fault):
+    from flymsg.native import input_block
+
+    encoding = "counts" if fault == "fractional-count" else "kick_equivalent"
+    dtype = np.int64 if encoding == "counts" else np.float32
+    runtime = CpuRuntime(
+        sparse.eye(2, format="csc"),
+        np.array([0]),
+        steps=10,
+        kicks=np.zeros((0, 1), dtype),
+        input_encoding=encoding,
+        per_bin=10,
+    )
+    fixture, output, block = [
+        tmp_path / name for name in ("fixture.bin", "output.bin", "block.bin")
+    ]
+    export_fixture(runtime, fixture, window_steps=3)
+    raw = bytearray(
+        input_block(np.ones((3, 1), dtype), step=0, input_encoding=encoding)
+    )
+    if fault in {"fractional-count", "non-float32-drive", "nan", "negative"}:
+        value = {
+            "fractional-count": 0.5,
+            "non-float32-drive": 0.1,
+            "nan": np.nan,
+            "negative": -1,
+        }[fault]
+        struct.pack_into("<d", raw, 28, value)
+    elif fault == "truncated":
+        raw.pop()
+    else:
+        slot, value = {
+            "start": (3, 1),
+            "width": (5, 2),
+            "length": (4, 4),
+            "encoding": (2, 0),
+        }[fault]
+        struct.pack_into("<I", raw, slot * 4, value)
+    block.write_bytes(raw)
+    result = subprocess.run(
+        [
+            str(native_exe),
+            "--fixture",
+            str(fixture),
+            "--input-block",
+            str(block),
+            "--output",
+            str(output),
+            "--advance",
+            "3",
+        ],
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert not output.exists()
+
+
+def test_console_rejects_receipt_before_committing_step(native_exe, tmp_path):
+    from types import SimpleNamespace
+
+    from flymsg.console_runtime import ConsoleRuntime
+
+    class CorruptReceipt(_NativeStreamPortal):
+        def get(self, package, rel, name, local):
+            super().get(package, rel, name, local)
+            if name.startswith("receipt_"):
+                ack = json.loads(local.read_text())
+                ack["source_commit"] = "b" * 40
+                local.write_text(json.dumps(ack))
+
+    portal = CorruptReceipt(tmp_path / "remote", native_exe)
+    device = SimpleNamespace(
+        portal=portal, package="qualified", shader_sha="s" * 64, adapter="test"
+    )
+    runtime = CpuRuntime(
+        sparse.eye(2, format="csc"),
+        np.array([0]),
+        steps=10,
+        kicks=np.zeros((0, 1), np.float32),
+        input_encoding="kick_equivalent",
+        per_bin=10,
+    )
+    stream = ConsoleRuntime(
+        runtime, device, tmp_path / "host", window_steps=3, source_commit="a" * 40
+    )
+    stream.schedule_inputs(np.ones((3, 1), np.float32))
+    with pytest.raises(RuntimeError, match="identity/order"):
+        stream.advance_to(3)
+    assert stream.step == 0
+    with pytest.raises(RuntimeError, match="explicit recovery"):
+        stream.advance_to(3)
+
+
+def test_stream_qualification_matrix_with_native_engine(native_exe, tmp_path):
+    from runpy import run_path
+    from types import SimpleNamespace
+
+    collector = run_path(str(ROOT / "scripts/console_stream_parity.py"))
+    portal = _NativeStreamPortal(tmp_path / "remote", native_exe)
+    device = SimpleNamespace(
+        portal=portal, package="qualified", shader_sha="s" * 64, adapter="test"
+    )
+    report = collector["run"](device, tmp_path / "host", "a" * 40)
+    assert report["qualified"]
+    assert len(report["cases"]) == report["expected_cases"] == 36

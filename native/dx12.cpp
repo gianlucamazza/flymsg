@@ -135,7 +135,8 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
                  const std::function<bool(uint32_t)> &stop,
                  const std::function<bool(uint32_t)> &inject,
                  const std::string &expected_adapter) {
-  require(target >= runtime.step && target <= runtime.input[3],
+  require(target >= runtime.step && target <= runtime.input[3] &&
+              target <= runtime.input_end,
           "invalid GPU target");
   // Version 2: the shader divides by a graded neuron's span through a float32
   // reciprocal, which must be normal: span within [2^-126, 2^126]
@@ -185,7 +186,7 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
   Event event;
   D3D12_ROOT_PARAMETER parameters[5]{};
   parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-  constexpr UINT constant_words = 26;
+  constexpr UINT constant_words = 27;
   parameters[0].Constants = {0, 0, constant_words};
   parameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
   parameters[1].Descriptor = {0, 0};
@@ -380,7 +381,8 @@ void advance_gpu(Runtime &runtime, uint32_t target, const std::string &shader,
               uint32_t(runtime.s_pulse),
               uint32_t(runtime.membrane),
               uint32_t(runtime.sparse_input),
-              uint32_t(block_count)};
+              uint32_t(block_count),
+              runtime.input_start};
           list->SetComputeRoot32BitConstants(0, constant_words, constants, 0);
           list->Dispatch(UINT(phase == 4 ? coupled_groups : groups), 1, 1);
           D3D12_RESOURCE_BARRIER barrier{};

@@ -145,11 +145,13 @@ public:
   uint64_t s_ring = 0, s_new = 0, s_vsum = 0, s_buf = 0, s_pulse = 0;
   uint64_t membrane = 0, events = 0;
   bool sparse_input = false;
+  bool kick_equivalent = false, stream_input = false;
+  uint32_t window_steps = 0, input_start = 0, input_end = 0;
   explicit Runtime(std::vector<uint32_t> fixture) : input(std::move(fixture)) {
     require(std::endian::native == std::endian::little,
             "little endian host required");
     require(input.size() >= 40 && input[0] == fixture_magic &&
-                (input[1] >= 1 && input[1] <= 4),
+                (input[1] >= 1 && input[1] <= 5),
             "incompatible fixture");
     require(input[1] >= 3 || (input[1] == 2) == (input[37] != 0),
             "invalid legacy extension version");
@@ -195,15 +197,26 @@ public:
     } else
       require(input[37] == 0 && input[38] == 0, "unexpected extension");
     if (input[1] >= 3) {
-      require(input[39] == cursor && cursor + 3 <= input.size(),
+      const uint64_t descriptor = input[1] == 5 ? 5 : 3;
+      require(input[39] == cursor && cursor + descriptor <= input.size(),
               "invalid input descriptor");
       sparse_input = input[cursor] == 1;
       events = input[cursor + 1];
       membrane = input[cursor + 2];
       require(input[cursor] <= 1 && (input[1] != 3 || sparse_input) &&
-                  (input[1] == 4) == (membrane != 0),
+                  (input[1] == 5 || (input[1] == 4) == (membrane != 0)),
               "invalid feature flags");
-      cursor += 3;
+      if (input[1] == 5) {
+        require(input[cursor + 3] <= 3, "invalid drive encoding flags");
+        kick_equivalent = (input[cursor + 3] & 1) != 0;
+        stream_input = (input[cursor + 3] & 2) != 0;
+        window_steps = input[cursor + 4];
+        require(window_steps > 0 && window_steps <= steps &&
+                    (!stream_input || !sparse_input) &&
+                    (stream_input || window_steps == steps),
+                "invalid input window");
+      }
+      cursor += descriptor;
       if (membrane) {
         require(membrane == cursor && cursor + 5 * n <= input.size(),
                 "invalid membrane block");
@@ -214,7 +227,9 @@ public:
       }
       require(input[24] == cursor && (sparse_input || events == 0),
               "invalid kick offset");
-      cursor += sparse_input ? events * 4 : steps * ns * 2;
+      cursor += sparse_input
+                    ? events * 4
+                    : uint64_t(window_steps ? window_steps : steps) * ns * 2;
     } else
       require(input[39] == 0, "unexpected input descriptor");
     require(cursor == input.size(), "unexpected fixture tail");
@@ -283,7 +298,11 @@ public:
                             [](bool v) { return v; }),
             "incomplete column map");
     uint64_t previous_step = 0, previous_col = 0;
-    for (uint64_t i = 0; i < (sparse_input ? events : steps * ns); ++i) {
+    if (!window_steps)
+      window_steps = uint32_t(steps);
+    input_end = stream_input ? 0 : uint32_t(steps);
+    for (uint64_t i = 0;
+         i < (sparse_input ? events : uint64_t(window_steps) * ns); ++i) {
       auto at = input[24] + i * (sparse_input ? 4 : 2);
       if (sparse_input) {
         const uint64_t tick = input[at], col = input[at + 1];
@@ -297,9 +316,8 @@ public:
       }
       double count = std::bit_cast<double>(uint64_t(input[at]) |
                                            uint64_t(input[at + 1]) << 32);
-      require(std::isfinite(count) && count >= 0 &&
-                  count <= 9007199254740992.0 && std::floor(count) == count &&
-                  (!sparse_input || count > 0),
+      require(valid_input(count) && (!sparse_input || count > 0) &&
+                  (!stream_input || count == 0),
               "invalid kick count");
     }
     if (input[37])
@@ -404,15 +422,39 @@ public:
   }
   double kick(uint32_t tick, uint32_t col) const {
     if (!sparse_input)
-      return word_double(input,
-                         input[24] + (uint64_t(tick) * input[7] + col) * 2);
+      return word_double(
+          input,
+          input[24] + (uint64_t(tick - input_start) * input[7] + col) * 2);
     const auto event = event_lower_bound(tick, col), at = input[24] + 4 * event;
     return event < events && input[at] == tick && input[at + 1] == col
                ? word_double(input, at + 2)
                : 0.0;
   }
+  bool valid_input(double value) const {
+    return std::isfinite(value) && value >= 0 &&
+           (kick_equivalent
+                ? (std::isfinite(float(value)) && double(float(value)) == value)
+                : (value <= 9007199254740992.0 && std::floor(value) == value));
+  }
+  void schedule_inputs(const std::vector<uint32_t> &block) {
+    require(stream_input && block.size() >= 7 && block[0] == 0x31494d46 &&
+                block[1] == 1 && block[2] == uint32_t(kick_equivalent) &&
+                block[3] == step && block[4] > 0 && block[4] <= window_steps &&
+                uint64_t(step) + block[4] <= input[3] && block[5] == input[7] &&
+                uint64_t(block[6]) == uint64_t(block[4]) * block[5] * 2 &&
+                block.size() == uint64_t(block[6]) + 7,
+            "invalid scheduled input block");
+    for (uint64_t i = 7; i < block.size(); i += 2)
+      require(valid_input(word_double(block, i)),
+              "invalid scheduled input value");
+    std::fill(input.begin() + input[24], input.end(), 0);
+    std::copy(block.begin() + 7, block.end(), input.begin() + input[24]);
+    input_start = step;
+    input_end = step + block[4];
+  }
   void advance_to(uint32_t target) {
-    require(target >= step && target <= input[3], "invalid advance boundary");
+    require(target >= step && target <= input[3] && target <= input_end,
+            "invalid advance boundary");
     const uint32_t n = input[2], d = input[5];
     const double rest = double(constant(13));
     for (; step < target; ++step) {
@@ -565,10 +607,27 @@ public:
       }
     write_words(path, words);
   }
+  void trace(const std::filesystem::path &path, uint32_t start) const {
+    require(start <= step, "invalid trace boundary");
+    std::vector<uint32_t> words{0x31544d46, start, step, input[8]};
+    const auto begin = uint64_t(input[32]) + uint64_t(start) * input[8];
+    const auto end = uint64_t(input[32]) + uint64_t(step) * input[8];
+    words.insert(words.end(), state.begin() + begin, state.begin() + end);
+    write_words(path, words);
+  }
   std::string checkpoint(const std::filesystem::path &path) const {
-    const auto identity = digest(input), checksum = digest(state);
+    std::vector<uint32_t> payload = state;
+    auto identity = digest(input);
+    if (stream_input) {
+      identity = digest(
+          std::vector<uint32_t>(input.begin(), input.begin() + input[24]));
+      payload = {input_start, input_end, uint32_t(input.size() - input[24])};
+      payload.insert(payload.end(), input.begin() + input[24], input.end());
+      payload.insert(payload.end(), state.begin(), state.end());
+    }
+    const auto checksum = digest(payload);
     std::vector<uint32_t> words{0x31434d46,
-                                1,
+                                stream_input ? 2u : 1u,
                                 step,
                                 uint32_t(state.size()),
                                 uint32_t(identity),
@@ -577,15 +636,20 @@ public:
                                 uint32_t(checksum >> 32)};
     // Bind cursor in the checksum too.
     words[6] ^= step;
-    words.insert(words.end(), state.begin(), state.end());
+    words.insert(words.end(), payload.begin(), payload.end());
     return publish_bytes(path, words.data(), words.size() * sizeof(uint32_t));
   }
   void restore(const std::filesystem::path &path) {
     auto words = read_words(path);
     require(words.size() >= 8, "truncated checkpoint");
-    const auto identity = digest(input);
-    require(words[0] == 0x31434d46 && words[1] == 1 && words[2] <= input[3] &&
-                words[3] == state.size() && words.size() == state.size() + 8,
+    const auto identity =
+        stream_input ? digest(std::vector<uint32_t>(input.begin(),
+                                                    input.begin() + input[24]))
+                     : digest(input);
+    const uint64_t extra = stream_input ? 3 + input.size() - input[24] : 0;
+    require(words[0] == 0x31434d46 && words[1] == (stream_input ? 2u : 1u) &&
+                words[2] <= input[3] && words[3] == state.size() &&
+                words.size() == state.size() + 8 + extra,
             "incompatible checkpoint");
     require(words[4] == uint32_t(identity) &&
                 words[5] == uint32_t(identity >> 32),
@@ -595,6 +659,24 @@ public:
     require((words[6] ^ words[2]) == uint32_t(checksum) &&
                 words[7] == uint32_t(checksum >> 32),
             "checkpoint integrity mismatch");
+    if (stream_input) {
+      require(candidate[0] <= words[2] && words[2] <= candidate[1] &&
+                  candidate[1] <= input[3] &&
+                  candidate[1] - candidate[0] <= window_steps &&
+                  candidate[2] == input.size() - input[24],
+              "invalid checkpoint input boundary");
+      for (uint64_t i = 3; i < extra; i += 2)
+        require(
+            valid_input(word_double(candidate, i)) &&
+                (i < 3 + uint64_t(candidate[1] - candidate[0]) * input[7] * 2 ||
+                 word_double(candidate, i) == 0),
+            "invalid checkpoint input value");
+      input_start = candidate[0];
+      input_end = candidate[1];
+      std::copy(candidate.begin() + 3, candidate.begin() + extra,
+                input.begin() + input[24]);
+      candidate.erase(candidate.begin(), candidate.begin() + extra);
+    }
     state = std::move(candidate);
     step = words[2];
   }
