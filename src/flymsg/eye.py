@@ -419,17 +419,21 @@ def assignment_candidates(neurons, edges, annotations):
                         "synapses": int(support),
                     }
                 )
-    return pd.DataFrame(
-        rows,
-        columns=[
-            "bodyId",
-            "side",
-            "hex1",
-            "hex2",
-            "synapses",
-            "candidate_count",
-            "top_ties",
-            "margin_synapses",
-            "uncertainty_status",
-        ],
+    return (
+        pd.DataFrame(
+            rows,
+            columns=[
+                "bodyId",
+                "side",
+                "hex1",
+                "hex2",
+                "synapses",
+                "candidate_count",
+                "top_ties",
+                "margin_synapses",
+                "uncertainty_status",
+            ],
+        )
+        .sort_values(["bodyId", "side", "hex1", "hex2"], na_position="last")
+        .reset_index(drop=True)
     )
