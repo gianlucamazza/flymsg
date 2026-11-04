@@ -367,3 +367,69 @@ def edge_coverage(
         if m.any():
             start[m] = np.nanmin(pos[m])
     return stats.norm.cdf((start + travelled_deg - pos) / sigma)
+
+
+def assignment_candidates(neurons, edges, annotations):
+    """Descriptive synapse support; never a probability or a replacement mapping.
+
+    One row per receptor/candidate, including a null candidate for unmapped cells.
+    Body IDs and column keys make the diagnostic independent of input row order.
+    """
+    ann = annotations.set_index("bodyId").reindex(neurons.bodyId)
+    targets = pd.DataFrame(
+        {
+            "post": np.arange(len(neurons)),
+            "side": neurons.instance.map(side_of).to_numpy(),
+            "hex1": ann.assignedOlHex1.to_numpy(),
+            "hex2": ann.assignedOlHex2.to_numpy(),
+        }
+    ).dropna(subset=["side", "hex1", "hex2"])
+    types = neurons.type.fillna("")
+    selected = types.str.contains("|".join(RECEPTORS.values()))
+    rows = []
+    joined = edges[edges.pre.isin(np.flatnonzero(selected))].merge(targets, on="post")
+    votes = joined.groupby(["pre", "side", "hex1", "hex2"]).weight.sum()
+    voted = set(votes.index.get_level_values(0))
+    for idx in np.flatnonzero(selected):
+        candidates = votes.loc[idx] if idx in voted else None
+        weights = (
+            sorted(candidates.tolist(), reverse=True) if candidates is not None else []
+        )
+        top = weights[0] if weights else None
+        margin = top - weights[1] if len(weights) > 1 else None
+        common = {
+            "bodyId": int(neurons.bodyId.iloc[idx]),
+            "candidate_count": len(weights),
+            "top_ties": weights.count(top) if weights else 0,
+            "margin_synapses": margin,
+            "uncertainty_status": "UNKNOWN",
+        }
+        if candidates is None:
+            rows.append(
+                {**common, "side": None, "hex1": None, "hex2": None, "synapses": None}
+            )
+        else:
+            for (side, h1, h2), support in candidates.items():
+                rows.append(
+                    {
+                        **common,
+                        "side": side,
+                        "hex1": int(h1),
+                        "hex2": int(h2),
+                        "synapses": int(support),
+                    }
+                )
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "bodyId",
+            "side",
+            "hex1",
+            "hex2",
+            "synapses",
+            "candidate_count",
+            "top_ties",
+            "margin_synapses",
+            "uncertainty_status",
+        ],
+    )

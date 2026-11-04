@@ -339,3 +339,40 @@ uv run python scripts/bench_check.py runs/viewer-bench/<time>.jsonl
 it. With three or four passes per scene that is a reason to look, not proof of a
 regression: an interrupted run from the same day already fell outside the ranges, on the
 better side. A physical phone has not been measured yet.
+
+## Deep links and scripted screenshots
+
+These ordinary viewer query parameters are supported by the current implementation.
+They configure observation only and do not change a simulation:
+
+| Parameter | Default        | Meaning                                                                                                    |
+| --------- | -------------- | ---------------------------------------------------------------------------------------------------------- |
+| `t`       | `0`            | Initial replay time in milliseconds; use a time within the exported replay.                                |
+| `paused`  | absent         | Presence opens paused. Reduced-motion preferences also pause autoplay.                                     |
+| `select`  | absent         | Select a bodyId, instance or type present in this scene.                                                   |
+| `color`   | viewer default | Initial colour mode: `group`, `transmitter`, `type`, `dimorphism`, `fru/dsx`. Selection overrides colours. |
+| `run`     | `a`            | Comparison scenes only: `a`, `b`, or `difference`.                                                         |
+| `chrome`  | visible        | `0` hides the ordinary controls.                                                                           |
+
+Examples using identifiers present in the published bundles:
+
+- [Looming at 60 ms, LC4 selected](https://gianlucamazza.github.io/flymsg/live/looming/?t=60&paused&select=16128).
+- [Song at 60 ms, pIP10 selected](https://gianlucamazza.github.io/flymsg/live/song/?t=60&paused&select=11116).
+- [DNp01/DNp02 comparison at 60 ms](https://gianlucamazza.github.io/flymsg/live/dnp01-vs-dnp02/?run=difference&t=60&paused&select=16128).
+
+Performance and experimental flags (`check`, `bench`, `representation`, `pages`,
+`uploads`, `gpuPageMiB`, `xr`) are diagnostic interfaces, not stable tour controls.
+
+With Chromium on PATH and Node providing built-in WebSocket support:
+
+```bash
+node scripts/shoot.mjs "https://gianlucamazza.github.io/flymsg/live/looming/?t=60&paused&select=16128" /tmp/looming.png 30 1400 900
+```
+
+Arguments are URL, output PNG, wait seconds (default 30), width (1400), height
+(900). The script prints browser console messages and exceptions. The default
+`GL=swiftshader` uses software rendering; `GL=gl` or `GL=vulkan` selects hardware
+backends. Fixed URL, paused time, viewport and backend improve repeatability;
+network completion, browser versions and GPUs prevent a cross-machine pixel identity
+promise. Inspect the image and console for missing geometry; a screenshot alone
+is not a performance or biological validation result.
