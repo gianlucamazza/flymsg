@@ -328,3 +328,24 @@ def test_assignment_candidates_preserve_ties_missing_and_edge_order():
     assert tied.margin_synapses.tolist() == [0, 0]
     assert a[a.bodyId == 4].candidate_count.tolist() == [0]
     assert a.uncertainty_status.eq("UNKNOWN").all()
+
+
+def test_assignment_candidates_follow_body_ids_after_neuron_reordering():
+    neurons = pd.DataFrame(
+        {
+            "bodyId": [10, 20, 30],
+            "type": ["L1", "R7d", "R8d"],
+            "instance": ["L1_R", "R7d_R", "R8d_L"],
+        }
+    )
+    annotations = pd.DataFrame(
+        {"bodyId": [10], "assignedOlHex1": [18], "assignedOlHex2": [19]}
+    )
+    edges = pd.DataFrame({"pre": [1], "post": [0], "weight": [7]})
+    expected = eye.assignment_candidates(neurons, edges, annotations)
+    reordered = neurons.iloc[::-1].reset_index(drop=True)
+    remapped = edges.assign(pre=2 - edges.pre, post=2 - edges.post)
+    pd.testing.assert_frame_equal(
+        expected, eye.assignment_candidates(reordered, remapped, annotations)
+    )
+    assert eye.photoreceptors(neurons, edges, annotations).synapses.tolist() == [7]

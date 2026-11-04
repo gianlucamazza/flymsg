@@ -60,3 +60,17 @@ def test_export_failure_does_not_publish_or_leave_staging(
         publisher(tmp_path, out)
     assert not out.exists()
     assert not list(tmp_path.glob(".audit-*"))
+
+
+def test_source_change_refuses_publication(publisher, tmp_path, monkeypatch):
+    source = tmp_path / "neurons.parquet"
+    source.write_bytes(b"before")
+
+    def mutate(root):
+        source.write_bytes(b"after")
+        return {}, pd.DataFrame(), pd.DataFrame()
+
+    monkeypatch.setitem(publisher.__globals__, "audit", mutate)
+    with pytest.raises(ValueError, match="changed during audit"):
+        publisher(tmp_path, tmp_path / "output")
+    assert not (tmp_path / "output").exists()
