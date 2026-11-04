@@ -54,5 +54,6 @@ override-dependencies = [
 ]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 markers = ["slow: runs the full-connectome validation battery (minutes)"]
 addopts = "-m 'not slow'"
