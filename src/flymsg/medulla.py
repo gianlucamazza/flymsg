@@ -9,6 +9,7 @@ between 3.5 and 4.5 s, and the mean traces start to move from about 1.5 s.
 from __future__ import annotations
 
 import hashlib
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -41,12 +42,23 @@ def fetch(data_dir: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
     for name, (file_id, digest) in FILES.items():
         dest = out / f"fig3_{name}.npy"
-        if not dest.exists():
-            print(f"fetch   groschner2022/{dest.name}")
-            data.download(f"{EDMOND}/{file_id}", dest)
-        if sha256(dest) != digest:
-            dest.unlink()  # the next fetch downloads it again
-            raise ValueError(f"{dest} is not the deposited file (sha256)")
+        if dest.exists():
+            if sha256(dest) != digest:
+                raise ValueError(
+                    f"{dest} is not the deposited file (sha256); "
+                    "preserved for inspection; move it aside before retrying"
+                )
+            continue
+        print(f"fetch   groschner2022/{dest.name}")
+        with tempfile.TemporaryDirectory(prefix=".fetch-", dir=out) as staging:
+            candidate = Path(staging) / dest.name
+            data.download(f"{EDMOND}/{file_id}", candidate)
+            if sha256(candidate) != digest:
+                # Preserve suspect bytes without publishing them as a valid source.
+                suspect = out / (Path(staging).name + "-" + dest.name + ".corrupt")
+                candidate.rename(suspect)
+                raise ValueError(f"{suspect} is not the deposited file (sha256)")
+            candidate.replace(dest)
 
 
 def ranges_of(traces: np.ndarray) -> dict:

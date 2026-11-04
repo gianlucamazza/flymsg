@@ -301,7 +301,7 @@ def test_medulla_ranges_of_a_trace():
     assert got == {"n": 2, "dark_mv": -65.0, "lowest_mv": -70.0, "highest_mv": -50.0}
 
 
-def test_a_file_that_is_not_the_deposited_one_is_removed(monkeypatch, tmp_path):
+def test_a_file_that_is_not_the_deposited_one_is_preserved(monkeypatch, tmp_path):
     from flymsg import medulla
 
     monkeypatch.setattr(medulla, "FILES", {"Mi1": (1, "0" * 64)})
@@ -310,4 +310,56 @@ def test_a_file_that_is_not_the_deposited_one_is_removed(monkeypatch, tmp_path):
     bad.write_bytes(b"truncated")
     with pytest.raises(ValueError, match="sha256"):
         medulla.fetch(tmp_path)
-    assert not bad.exists()
+    assert bad.read_bytes() == b"truncated"
+
+
+def test_medulla_publishes_verified_bytes_and_reuses_cache(monkeypatch, tmp_path):
+    import hashlib
+
+    from flymsg import medulla
+
+    payload = b"verified source"
+    monkeypatch.setattr(
+        medulla, "FILES", {"Mi1": (1, hashlib.sha256(payload).hexdigest())}
+    )
+    calls = []
+
+    def download(url, dest):
+        calls.append(url)
+        assert not (medulla.raw_dir(tmp_path) / "fig3_Mi1.npy").exists()
+        dest.write_bytes(payload)
+
+    monkeypatch.setattr(medulla.data, "download", download)
+    medulla.fetch(tmp_path)
+    medulla.fetch(tmp_path)
+    assert len(calls) == 1
+    assert (medulla.raw_dir(tmp_path) / "fig3_Mi1.npy").read_bytes() == payload
+
+
+def test_medulla_rejects_and_preserves_bad_download(monkeypatch, tmp_path):
+    from flymsg import medulla
+
+    monkeypatch.setattr(medulla, "FILES", {"Mi1": (1, "0" * 64)})
+    monkeypatch.setattr(
+        medulla.data, "download", lambda url, dest: dest.write_bytes(b"bad")
+    )
+    with pytest.raises(ValueError, match="sha256"):
+        medulla.fetch(tmp_path)
+    root = medulla.raw_dir(tmp_path)
+    assert not (root / "fig3_Mi1.npy").exists()
+    assert [p.read_bytes() for p in root.glob("*.corrupt")] == [b"bad"]
+
+
+def test_medulla_failed_download_leaves_no_published_file(monkeypatch, tmp_path):
+    from flymsg import medulla
+
+    monkeypatch.setattr(medulla, "FILES", {"Mi1": (1, "0" * 64)})
+
+    def download(url, dest):
+        dest.write_bytes(b"partial")
+        raise OSError("503")
+
+    monkeypatch.setattr(medulla.data, "download", download)
+    with pytest.raises(OSError, match="503"):
+        medulla.fetch(tmp_path)
+    assert list(medulla.raw_dir(tmp_path).iterdir()) == []
