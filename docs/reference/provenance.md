@@ -134,3 +134,13 @@ dataset; flymsg cites the paper and does not copy that code.
 FAFB connectivity used with `--dataset fafb` comes from the Shiu et al. 2024
 repository (MIT) and the public FlyWire annotation table (citations above).
 flymsg does not redistribute those files.
+
+## Pillow override
+
+`pyproject.toml` pins `pillow>=13.0.0` and adds it to `[tool.uv] override-dependencies`,
+because flygym 2.1.0 (and 2.1.1) declare `pillow<13` and 13.0.0 is the first release
+patched for the Pillow Dependabot alerts (#310). The override is a risk we accept: flygym
+was released against Pillow 11 and 12. `tests/test_pillow_compat.py` runs the
+Pillow-touching paths of flygym (`flygym.utils.video`), imageio, mediapy and matplotlib
+under Pillow 13 and fails if a lower version resolves. Drop the override once flygym
+declares support for Pillow 13.

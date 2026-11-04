@@ -306,3 +306,46 @@ def test_eyemap_checks_cached_and_downloaded_bytes_without_deleting_them(
     )
     with pytest.raises(ValueError, match="SHA-256"):
         eye.fetch(tmp_path)
+
+
+def test_assignment_candidates_preserve_ties_missing_and_edge_order():
+    neurons = pd.DataFrame(
+        {
+            "bodyId": [1, 2, 3, 4],
+            "type": ["L1", "L1", "R7d", "R8d"],
+            "instance": ["L1_R", "L1_L", "R7d_R", "R8d_L"],
+        }
+    )
+    annotations = pd.DataFrame(
+        {"bodyId": [1, 2], "assignedOlHex1": [18, 19], "assignedOlHex2": [19, 20]}
+    )
+    edges = pd.DataFrame({"pre": [2, 2], "post": [0, 1], "weight": [5, 5]})
+    a = eye.assignment_candidates(neurons, edges, annotations)
+    b = eye.assignment_candidates(neurons, edges.iloc[::-1], annotations.iloc[::-1])
+    pd.testing.assert_frame_equal(a, b)
+    tied = a[a.bodyId == 3]
+    assert tied.top_ties.tolist() == [2, 2]
+    assert tied.margin_synapses.tolist() == [0, 0]
+    assert a[a.bodyId == 4].candidate_count.tolist() == [0]
+    assert a.uncertainty_status.eq("UNKNOWN").all()
+
+
+def test_assignment_candidates_follow_body_ids_after_neuron_reordering():
+    neurons = pd.DataFrame(
+        {
+            "bodyId": [10, 20, 30],
+            "type": ["L1", "R7d", "R8d"],
+            "instance": ["L1_R", "R7d_R", "R8d_L"],
+        }
+    )
+    annotations = pd.DataFrame(
+        {"bodyId": [10], "assignedOlHex1": [18], "assignedOlHex2": [19]}
+    )
+    edges = pd.DataFrame({"pre": [1], "post": [0], "weight": [7]})
+    expected = eye.assignment_candidates(neurons, edges, annotations)
+    reordered = neurons.iloc[::-1].reset_index(drop=True)
+    remapped = edges.assign(pre=2 - edges.pre, post=2 - edges.post)
+    pd.testing.assert_frame_equal(
+        expected, eye.assignment_candidates(reordered, remapped, annotations)
+    )
+    assert eye.photoreceptors(neurons, edges, annotations).synapses.tolist() == [7]
