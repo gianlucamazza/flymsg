@@ -1,0 +1,79 @@
+{
+  "schema": "flymsg.medulla-acquisition/v1",
+  "source_commit": "b69f911993743584fe97e1a2b628a0d9cb4122e2",
+  "acquisition": "authoritative Edmond deposit into initially empty /tmp directory",
+  "doi": "10.17617/3.8G",
+  "version": "1.0",
+  "licence": "CC BY 4.0",
+  "measurement": "whole-cell voltage",
+  "units": "mV",
+  "sample_rate_hz": 1000,
+  "holding_current_pa": -1,
+  "sex": "UNKNOWN",
+  "genotype": "UNKNOWN",
+  "role": "historical calibration source; not held-out scoring",
+  "files": {
+    "Mi1": {
+      "url": "https://edmond.mpg.de/api/access/datafile/104811",
+      "sha256": "351e9e791a30d1c5bac329165934fbc05dbcfbb038b4b6e940e2531de1d61cce",
+      "expected_sha256": "351e9e791a30d1c5bac329165934fbc05dbcfbb038b4b6e940e2531de1d61cce"
+    },
+    "Tm3": {
+      "url": "https://edmond.mpg.de/api/access/datafile/104816",
+      "sha256": "07797ccd2ce72d3ea89c9ca01ba641c7c92d3d6dd198d6324596f2cf16b0fb82",
+      "expected_sha256": "07797ccd2ce72d3ea89c9ca01ba641c7c92d3d6dd198d6324596f2cf16b0fb82"
+    },
+    "Mi4": {
+      "url": "https://edmond.mpg.de/api/access/datafile/104812",
+      "sha256": "9309bb6deadcb8bf5c9a52267ef6564c314a04212af81c129b0754cf4de1f791",
+      "expected_sha256": "9309bb6deadcb8bf5c9a52267ef6564c314a04212af81c129b0754cf4de1f791"
+    },
+    "Mi9": {
+      "url": "https://edmond.mpg.de/api/access/datafile/104813",
+      "sha256": "3d5909c9b6c42776ff5e56d7219eacd002758a24b3cf5b7cecf30a07b8bf5c83",
+      "expected_sha256": "3d5909c9b6c42776ff5e56d7219eacd002758a24b3cf5b7cecf30a07b8bf5c83"
+    },
+    "C3": {
+      "url": "https://edmond.mpg.de/api/access/datafile/104809",
+      "sha256": "b9118e32cfb0d22acd4da41aee6931923ea33e4dda258df2abd26fd252e21be6",
+      "expected_sha256": "b9118e32cfb0d22acd4da41aee6931923ea33e4dda258df2abd26fd252e21be6"
+    }
+  },
+  "ranges": [
+    {
+      "type": "Mi1",
+      "n": 24,
+      "dark_mv": -65.2,
+      "lowest_mv": -69.2,
+      "highest_mv": -41.3
+    },
+    {
+      "type": "Tm3",
+      "n": 12,
+      "dark_mv": -64.4,
+      "lowest_mv": -69.4,
+      "highest_mv": -42.5
+    },
+    {
+      "type": "Mi4",
+      "n": 19,
+      "dark_mv": -65.1,
+      "lowest_mv": -66.7,
+      "highest_mv": -52.3
+    },
+    {
+      "type": "Mi9",
+      "n": 29,
+      "dark_mv": -58.0,
+      "lowest_mv": -62.5,
+      "highest_mv": -50.4
+    },
+    {
+      "type": "C3",
+      "n": 16,
+      "dark_mv": -66.8,
+      "lowest_mv": -74.0,
+      "highest_mv": -46.9
+    }
+  ]
+}
