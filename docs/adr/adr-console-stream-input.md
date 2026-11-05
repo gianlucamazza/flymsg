@@ -1,6 +1,6 @@
 # ADR: bounded console input and continuous drive
 
-Status: proposed, 2026-10-28. Implementation and engineering qualification are separate gates. This decision requires owner acceptance before scientific console use.
+Status: accepted through the owner’s explicit merge instruction, 2026-11-05 (proposed 2026-10-28). Implementation and engineering qualification are separate gates. Merge #309 records implementation acceptance; scientific console use still requires an approved experiment lock and applicable qualification.
 
 ## Context
 
@@ -34,4 +34,4 @@ The physical Series S passes all 120 legacy fixtures and all 36 streaming cases,
 
 The [evidence report](../evidence/series-s-stream-2026-10-28.json) pins worker source `3cfa17f5c2d2247bef7ab7d5ae9dc212c2801817`, host collector `58136dc4baa1392e664baad2c74abc5cac679087`, supplemental host `a0591596f07de7efd3a00e72fe1d6594ed01a973`, package `0.1.0.1`, shader, executable and package hashes. The worker and streaming collector native source trees are identical. The [raw archive](../evidence/series-s-stream-2026-10-28.zip) retains 3,393 files with SHA256 inventory, commands, receipt chains, outputs and lifecycle/preloaded-drive reproduction recipes.
 
-Observed worker memory ranges from 20.2 to 36.9 MB on these small fixtures. Each 100-step qualification case takes 8.46–12.07 seconds including setup, Device Portal transfers, comparisons and checkpoint restoration. This is not a throughput benchmark. Full-connectome continuous-drive throughput and real-time body control remain unmeasured; this evidence does not justify moving the active DN campaign to the console. Owner acceptance and independent review remain pending.
+Observed worker memory ranges from 20.2 to 36.9 MB on these small fixtures. Each 100-step qualification case takes 8.46–12.07 seconds including setup, Device Portal transfers, comparisons and checkpoint restoration. This is not a throughput benchmark. Full-connectome continuous-drive throughput and real-time body control remain unmeasured; this evidence does not justify moving the active DN campaign to the console. Owner merge acceptance is recorded on 2026-11-05; independent review remains outstanding.

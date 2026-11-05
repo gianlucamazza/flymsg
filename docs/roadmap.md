@@ -1,6 +1,6 @@
 # Roadmap: what the model covers, and what waits on outside evidence
 
-Planning refreshed on 2026-10-27; historical result entries retain their own dates. This page is the index. Each verdict is recorded on the linked page,
+Planning refreshed on 2026-11-05; historical result entries retain their own dates. This page is the index. Each verdict is recorded on the linked page,
 and the table adds none. What remains open needs a measurement from an animal, a published
 map, hardware, or a lock that is written and not yet run.
 
@@ -19,7 +19,33 @@ v4 remains robust neither.
 
 The [milestone plan](plan/milestones.md) maps every currently open delivery issue to one primary delivery gate: **S0** numerical reliability → **S1** sourced sensory physiology → **S2** evidenced body coupling → **S3** independent prospective prediction → **S4** external reproduction/claims audit. **H1** native/Series S qualification and **H2** full-fidelity viewer/WebXR qualification run in parallel; neither is a substitute for independent animal data.
 
-All seven are now [native GitHub milestones](https://github.com/gianlucamazza/flymsg/milestones), with 27 open delivery issues assigned and no invented due dates. Six new optic packages (#302–#307) cover source recovery, anatomical ambiguity, phototransduction, optics qualification, synchronized traces and viewer replay; the [plan](plan/milestones.md#optic-completion-work-packages) maps every O01–O15 audit requirement to its owner and dependencies. `blocked`/negative results remain visible and do not count as passes. The merged [#221](https://github.com/gianlucamazza/flymsg/pull/221) adds diagnostic Quest evidence, not a qualified XR release; closed [#40](https://github.com/gianlucamazza/flymsg/issues/40) records its delivered Series S baseline, with remaining physical fault gates on [#224](https://github.com/gianlucamazza/flymsg/issues/224).
+All seven are now [native GitHub milestones](https://github.com/gianlucamazza/flymsg/milestones), with the historical 2026-10-27 set of 27 delivery issues assigned and no invented due dates. Six new optic packages (#302–#307) cover source recovery, anatomical ambiguity, phototransduction, optics qualification, synchronized traces and viewer replay; the [plan](plan/milestones.md#optic-completion-work-packages) maps every O01–O15 audit requirement to its owner and dependencies. `blocked`/negative results remain visible and do not count as passes. The merged [#221](https://github.com/gianlucamazza/flymsg/pull/221) adds diagnostic Quest evidence, not a qualified XR release; closed [#40](https://github.com/gianlucamazza/flymsg/issues/40) records its delivered Series S baseline, with remaining physical fault gates on [#224](https://github.com/gianlucamazza/flymsg/issues/224).
+
+## Delivery update — 2026-11-05
+
+Implementation baseline: `ff6d075`, after merged #320 (optic audits and viewer
+reference), #319 (0.8.49 metadata) and #309 (console continuous drive).
+All four main workflows passed: tests, native-runtime, CodeQL and Pages.
+The integrated PR suite passed 1,239 tests with three slow tests deselected.
+
+- **Delivered:** five authoritative medulla files recovered with pinned hashes,
+  staged source publication, atomic reproducible audits, assignment candidate/tie
+  diagnostics, viewer deep links and screenshot instructions. See the
+  [consolidation report](report/science-inputs-consolidation-2026-11-05.md).
+- **Delivered engineering:** fixture v5, continuous drive and ordered console
+  feedback, plus archived physical parity evidence. Merge does not establish
+  real-time/full-connectome throughput or independent review.
+- **Next science:** #302 source preparation/sex eligibility; #303 independent
+  landmarks and measured registration/covariance; #148/#149 review the
+  [observable proposal](plan/optic-observable-qualification.md) before a lock.
+  No new T4/T5 run, tuning or held-out access is authorized by this update.
+- **DN arena v3:** cancelled at 159/166 jobs; historical status records exit -15.
+  No final verdict and no automatic resumption. #263 remains open.
+- **Separate decisions:** #313 public Hugging Face presence; hardware gates #224
+  and #177; independent review follow-up for merged #309/#320.
+
+Source recovery is no longer blocked by the earlier HTTP 503. Physiological
+transfer remains unqualified. The historical result table below is unchanged.
 
 ## Results
 
