@@ -4,7 +4,7 @@ The synthetic steering fixture of the [DN-arena ADR](../adr/adr-dn-arena.md): th
 MaleCNS v1.0 connectome in a closed loop with the kinematic planar body `flymsg.arena`,
 an engineered descending-neuron readout (`flymsg.dn_decoder`) and a lateral dark
 sphere. Version 1 drives the photoreceptors with Poisson rates; version 2 drives the
-graded visual pathway of T4/T5 version 4. Version 3 is a draft lock and has not run;
+graded visual pathway of T4/T5 version 4. Version 3 is a lock approved by the owner on 2026-10-20 (#297) and has not run;
 it is described below. Lock:
 [`validation/dn_arena.yaml`](https://github.com/gianlucamazza/flymsg/blob/main/validation/dn_arena.yaml)
 (issue #263). Neuron identities: [DN inventory](../dn-arena-inventory.md).
@@ -204,9 +204,9 @@ wiring null (seeds 7300–7338) keeps the intact photoreceptor release rate and 
 and anchors on its own shuffled graph. A timing-only smoke (no spike, command or heading
 read) estimated about 3 h for the run with 4 workers; under load it took 5 h 23 min.
 
-## Version 3 (draft lock, not run)
+## Version 3 (approved lock, not run)
 
-`validation/dn_arena.yaml` version 3 is a draft (`content_sha256` `8e4cc30f…`). It has
+`validation/dn_arena.yaml` version 3 (`content_sha256` `8e4cc30f…`) was approved by the owner on 2026-10-20 (#297). It has
 no counted run and no results. The stimulus replaces version 2's static sphere with a
 moving dark bar (`optics.Bar` through `closedloop.optical_bars`): width 10.5°, height
 48°, a 22.5° sweep at 25°/s, visible from 100000 to 1000000 µs, on a cylinder of
