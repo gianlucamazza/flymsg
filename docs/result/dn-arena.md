@@ -206,7 +206,7 @@ read) estimated about 3 h for the run with 4 workers; under load it took 5 h 23 
 
 ## Version 3 (draft lock, not run)
 
-`validation/dn_arena.yaml` version 3 is a draft (`content_sha256` `7ed0e04d…`). It has
+`validation/dn_arena.yaml` version 3 is a draft (`content_sha256` `8e4cc30f…`). It has
 no counted run and no results. The stimulus replaces version 2's static sphere with a
 moving dark bar (`optics.Bar` through `closedloop.optical_bars`): width 10.5°, height
 48°, a 22.5° sweep at 25°/s, visible from 100000 to 1000000 µs, on a cylinder of

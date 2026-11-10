@@ -6,13 +6,13 @@
 
 ## 0.8.49 — 2026-11-03
 
-- **Licence and data attribution: partial.** Plan item 5 is partly done: `NOTICE` and the README licence section are updated (#318). The SBOM root package licence still reads `NOASSERTION`; that is left to a separate follow-up PR.
+- **Licence and data attribution.** `NOTICE` and the README licence section are updated (#318). The GitHub dependency-graph SBOM was recorded in #318 as showing `NOASSERTION` on the root package licence; that was left to a follow-up PR.
 
 - **Accepted ADR: motor output and proprioceptive return.** `docs/adr/adr-motor-proprioception.md` proposes a NeuroMechFly control inventory separate from FlyBody's, motor rows that keep anatomy (MANC) apart from dynamics, every dynamic parameter required from a lock, torque only through a versioned implementation, articulated observations as a new record beside B6, and receptor inputs that need identity and a sourced transfer. Steps `mp-1` to `mp-5`; the data each link needs is ranked. Docs only; accepted by the owner on 2026-10-27 for `mp-1` through `mp-4`; measured rows, locks and runs require separate evidence and approval.
 
 - **Evidence privacy: Quest serial and LAN IP inside archives.** Seven 2026-10-16 Quest evidence zips replace the hardware serial with `REDACTED-QUEST-SERIAL` and the LAN debug address with `192.0.2.10`; inner sha256 maps were recomputed and archive pins re-pinned. The redacted archives differ from the originals; original hashes remain in git history.
 
-- **Docs privacy: Quest trial identifiers.** Public Markdown replaced the 2026-10-16 Quest 2 LAN debug address and hardware serial with `<quest-ip>` / `<quest-serial>` in prose and command examples. Evidence JSON and archives are unchanged.
+- **Docs privacy: Quest trial identifiers.** Public Markdown replaced the 2026-10-16 Quest 2 LAN debug address and hardware serial with `<quest-ip>` / `<quest-serial>` in prose and command examples.
 
 - **DN arena v3-2/v3-3: code and lock draft.** Version 3 of `validation/dn_arena.yaml` and `flymsg.dn_arena` replaces the static sphere with the moving dark bar of Collie et al. (`optics.Bar`, sides `left` and `mirror`, width 10.5°, sweep 22.5° at 25°/s), scores the mirrored contrast against 39 wiring-null seeds 7400–7438, and keeps lamina-to-medulla gains 4 and 16. The `all` input set is the claim; the `paired` column set is a sensitivity reported outside it. One shuffled pathway is dark-anchored once and serves both sides. `content_sha256` `8e4cc30fd2f65b92d1720b38f0069027b5b571cda2f9fda34be6b14edb20ef2a`. Timing smoke: 222 s per pathway, 185 s per 1 s arm, 79 s per record, 4.9 GB per process; about 9 h with 4 workers idle, up to about 16 h under load. Approved by the owner on 2026-10-20 (#297); merging authorizes the run.
 
@@ -32,7 +32,7 @@
 
 - **Closed-loop record serialization.** `Record.to_json` and `RecordV2.to_json` project the record to plain dicts and lists instead of recursive `dataclasses.asdict`. The kick-equivalent drive check still requires an exact Python `float`, then checks finiteness, sign and float32 representability on one array per tick. `dn_arena._store` encodes that canonical text once and reuses the bytes for the sha256 and the gzip (mtime 0). The bytes match `json.dumps(dataclasses.asdict(record), sort_keys=True, separators=(",", ":"))`, the test oracle. No format change.
 
-- **T4/T5 version 4 figure.** `docs/img/t4-spikes.svg` (`figures.t4_spikes`, drawn by `scripts/build_figures.py` from the archived version 4 tables): T4 spikes per configuration on a log axis, 0 at every medulla release of 50 Hz, 93, 35,586 and 350,264 at the three 200/200 Hz configurations DN arena version 2 uses. Linked from the eye and DN arena pages; the DN arena v2 lock is recorded as approved (#284) with its run in progress.
+- **T4/T5 version 4 figure.** `docs/img/t4-spikes.svg` (`figures.t4_spikes`, drawn by `scripts/build_figures.py` from the archived version 4 tables): T4 spikes per configuration on a log axis, 0 at every medulla release of 50 Hz, 93, 35,586 and 350,264 at the three 200/200 Hz configurations DN arena version 2 uses. Linked from the eye and DN arena pages; the DN arena v2 lock is recorded as approved (#284); its counted run is the `depends` result above.
 
 - **vee1-4 DN arena v2 lock (draft for owner approval).** Version 2 of `validation/dn_arena.yaml` locks the DN arena on the graded visual pathway of T4/T5 version 4: `kick_equivalent` drive `float32(gain * (1 - coverage))`, three lamina-to-medulla configurations, one decoder cell, a dark anchor on each graph, and wiring-null seeds 7300–7338 that keep the intact photoreceptor rate and drive gain. It replaces version 1's Poisson photoreceptor rates, input dead time and six-cell gain envelope. `content_sha256` and `smoke` remain for the maintainer. No counted run exists.
 
@@ -48,7 +48,7 @@
 
 - **Module boundaries step 7d: reference documents.** Nine `reference` catalog documents move to `docs/reference/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. `docs/model.md`, `docs/leads.md`, `docs/dn-arena-inventory.md` and `docs/replication.md` stay: a lock or archived evidence names those paths.
 
-- **arena-6 DN arena v1: uninformative.** The counted run of `validation/dn_arena.yaml` v1 (issue #263), from clean `main` at `1043368`: at all six gain cells the six decoder neurons fired no spike in the intact arm, so the lock's no-go gives `uninformative` (heading change 0 in every arm and in all 234 wiring-null runs; replay parity holds; the script control turns 1.396 rad). Archived as it is in `results/dn-arena/v1.executions/df21c26c…/output` (tables; the 265 records stay in the run directory, their sha256 in `results.csv`); replication index regenerated. `archive_results` now archives a managed run's top-level tables and checks them against the completion inventory, after verifying the whole source inventory, records included. A post-verdict exploratory count (`docs/dn-arena.md`) finds only the 3,903 input photoreceptors active at full light: all 64,171 of their output synapses are inhibitory (histamine), so the silence is structural, the T4/T5 v1 blocker that the graded eye ADR addresses. No rerun.
+- **arena-6 DN arena v1: uninformative.** The counted run of `validation/dn_arena.yaml` v1 (issue #263), from clean `main` at `1043368`: at all six gain cells the six decoder neurons fired no spike in the intact arm, so the lock's no-go gives `uninformative` (heading change 0 in every arm and in all 234 wiring-null runs; replay parity holds; the script control turns 1.396 rad). Archived as it is in `results/dn-arena/v1.executions/df21c26c…/output` (tables; the 265 records stay in the run directory, their sha256 in `results.csv`); replication index regenerated. `archive_results` now archives a managed run's top-level tables and checks them against the completion inventory, after verifying the whole source inventory, records included. A post-verdict exploratory count (`docs/result/dn-arena.md`) finds only the 3,903 input photoreceptors active at full light: all 64,171 of their output synapses are inhibitory (histamine), so the silence is structural, the T4/T5 v1 blocker that the graded eye ADR addresses. No rerun.
 
 - **Module boundaries step 7c: report documents.** The eight `report` catalog documents move to `docs/report/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. No locks or archived evidence referenced these paths.
 
@@ -58,7 +58,7 @@
 
 - **Module boundaries step 7b: plan documents.** The six `plan` catalog documents move to `docs/plan/`; Pages stems stay the same and old `docs/<name>.md` landing paths still rewrite to those stems. No locks or archived evidence referenced these paths.
 
-- **Graded eye ADR (VEE-1, accepted).** Gianluca Mazza accepted `docs/adr-vee1-graded-eye.md` on 2026-10-19. It decides a real-valued `kick_equivalent` input encoding in `CpuRuntime`, record `flymsg.closedloop/v2` carrying the drive, a visual-pathway builder extracted bit for bit from `t4t5`, dark anchors computed before the loop, host only. It states T4/T5 version 4's `neither` as the main risk. Acceptance authorizes `vee1-1` to `vee1-3`; the `vee1-4` lock needs separate approval. Docs only.
+- **Graded eye ADR (VEE-1, accepted).** Gianluca Mazza accepted `docs/adr/adr-vee1-graded-eye.md` on 2026-10-19. It decides a real-valued `kick_equivalent` input encoding in `CpuRuntime`, record `flymsg.closedloop/v2` carrying the drive, a visual-pathway builder extracted bit for bit from `t4t5`, dark anchors computed before the loop, host only. It states T4/T5 version 4's `neither` as the main risk. Acceptance authorizes `vee1-1` to `vee1-3`; the `vee1-4` lock needs separate approval. Docs only.
 
 - **Module boundaries step 5: grid-check publication.** `flymsg convergence --run` and `flymsg path-metrics --run` publish through one private helper in `cli/validation.py` (`_publish_grid`: cells, judgement, report, manifest stamp); each command keeps its lock check, summary and run. Net 8 lines fewer; no registry, no new lifecycle. Outputs at the base and the new commit (both commands, workers 1 and 2, a non-converged grid) are byte-identical for `cells.csv`, `judged.csv` and `report.txt`, and the manifests differ only in timestamps, temporary paths and the attempt id, with the same execution hash. A test covers publication and no recompute on replay.
 
@@ -76,7 +76,7 @@
 
 - **arena-3/4 review fixes.** `dn_decoder.Decoder` takes the loop's `clock`: `closedloop.run` hands it one control period of spikes per call, and it divided that count by the whole declared window (one oDN1 spike in a 1 ms period read as 10 spikes/s instead of 1,000 with a 100 ms window); the window now only gates which spikes count. `arena_controls.script` followed the stimulus sample of the same control tick (zero latency, against the intact loop's command → sample order); its command now comes from the previous control tick's sample, the first period holds none, and each tick records `yaw_rad`. No lock or counted run.
 
-- **arena-2 heading and arc.** `Arena.yaw_rad` is the integrated, unwrapped heading for the yaw-change metric (the `BodyState` quaternion shows heading modulo a full turn). The arc chord is in half-angle form, so a yaw rate near zero still translates the body (the difference-of-sines form moved it by 0 m at 1e-14 rad/s). `Arena.step` refuses an actuator commanded twice. `docs/claims.md` lists DN identity as mapped by `arena-1`.
+- **arena-2 heading and arc.** `Arena.yaw_rad` is the integrated, unwrapped heading for the yaw-change metric (the `BodyState` quaternion shows heading modulo a full turn). The arc chord is in half-angle form, so a yaw rate near zero still translates the body (the difference-of-sines form moved it by 0 m at 1e-14 rad/s). `Arena.step` refuses an actuator commanded twice. `docs/reference/claims.md` lists DN identity as mapped by `arena-1`.
 
 - **arena-4 fixture controls.** `flymsg.arena_controls` runs the script control (the same `arena` integrator, stimulus geometry and command units, driven by a caller-supplied rule; `arena.step` on the given clock; no connectome and no `CpuRuntime`) and the wiring-null control (the intact loop on a degree-preserving shuffle of the traced graph via `wiring.shuffle_targets`, through `closedloop.run` with the arena body and the decoder; seeds are caller-supplied) as separate fixture runs. Each control names itself in its return value and notes, never in `closedloop.Record.arm`. No lock or counted run.
 
@@ -88,9 +88,9 @@
 
 - **arena-1 DN inventory.** `docs/dn-arena-inventory.md` names MaleCNS v1.0 bodyIds and sides for the accepted DN-arena ADR: DNa01 and DNa02 by exact `type`; oDN1 as traced `DNg97` via the official synonym `Sapkal 2024: oDN1`; MDN and DNp01 listed only. No gain is chosen. Required types are mapped, so the milestone does not stop on identity. Docs only.
 
-- **DN arena ADR (accepted).** Gianluca Mazza accepted `docs/adr-dn-arena.md` on 2026-10-19. It is a synthetic steering fixture behind `closedloop.Body`, not the sensorimotor plan's VEE-0 take-off. Commands are `yaw` in `rad/s` and `forward` in `m/s`: `arena-2` extends the `ActuatorRef` allow-list and leaves schema `flymsg.embodiment/v2` unchanged. Synthetic `closedloop._commands` already checks the compiled table and does not call `pose.command`. Gains stay in the experiment lock, not in `validation/evidence.yaml`. The null is intact yaw inside the wiring-null seed range; the script control is reported and does not decide. Follow-ups are `arena-1` through `arena-6`, one PR at a time. This commit changes no code. Docs only.
+- **DN arena ADR (accepted).** Gianluca Mazza accepted `docs/adr/adr-dn-arena.md` on 2026-10-19. It is a synthetic steering fixture behind `closedloop.Body`, not the sensorimotor plan's VEE-0 take-off. Commands are `yaw` in `rad/s` and `forward` in `m/s`: `arena-2` extends the `ActuatorRef` allow-list and leaves schema `flymsg.embodiment/v2` unchanged. Synthetic `closedloop._commands` already checks the compiled table and does not call `pose.command`. Gains stay in the experiment lock, not in `validation/evidence.yaml`. The null is intact yaw inside the wiring-null seed range; the script control is reported and does not decide. Follow-ups are `arena-1` through `arena-6`, one PR at a time. This commit changes no code. Docs only.
 
-- **CLAIMS (measured, engineered, not claimed).** `docs/claims.md` states, for each part of the closed loop, what is measured from published data already cited here, what is engineered, what stays unmapped and what is not claimed. It restates the body-wiring and DN-arena ADRs, the existing synthetic fixture and the documented bit-identical replay commands. Docs only.
+- **CLAIMS (measured, engineered, not claimed).** `docs/reference/claims.md` states, for each part of the closed loop, what is measured from published data already cited here, what is engineered, what stays unmapped and what is not claimed. It restates the body-wiring and DN-arena ADRs, the existing synthetic fixture and the documented bit-identical replay commands. Docs only.
 
 - **G2 landmark placement decided.** The eyemap → head-capsule landmarks will be placed by an algorithm committed with synthetic-volume tests before any volume is processed, with a ±1 voxel / ±10 % threshold sensitivity check against the same 25 µm gate instead of two raters. The measurement is deferred until a head-to-thorax angle source exists. Docs only.
 
@@ -115,9 +115,9 @@
 
 - **Baker anatomical correspondence.** A coordinate-anchored CAVE v783 audit extends complete named MaleCNS type coverage from 2 to 12 of 28 Baker classes, including the still-excluded dimorphic AVLP_pr36. Fourteen remain partial and two absent. All 404 anchors agree with both historical ID lineages and independent annotation supervoxels; 332 have named MaleCNS routes. No response data opened, no benchmark scored, no scientific eligibility claimed. See `docs/baker-crossmatch.md` and the captured evidence.
 
-- **M4 v2 proposal (docs only).** `docs/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
+- **M4 v2 proposal (docs only).** `docs/plan/m4-v2-proposal.md` records prospective eligibility, candidate cross-matches and blockers for #36/S3. No manifest is locked and nothing is scored.
 
-- **Entry protocols.** `docs/issue-resolution.md` states, per blocked front (eye, junctions and modulation, looming, head, muscles, completion), the stimulus, readout, only admissible input and control. No new version is written before its input exists. Docs only.
+- **Entry protocols.** `docs/report/issue-resolution.md` states, per blocked front (eye, junctions and modulation, looming, head, muscles, completion), the stimulus, readout, only admissible input and control. No new version is written before its input exists. Docs only.
 
 - **Entry protocol checks.** The frozen v1 benchmark partition has no unused confirmatory case, so M4 needs a new manifest version. The v4 medulla reaches the order of the measured amplitudes, not their shape (roadmap, eye and ledger wording corrected). A post-hoc audit of the archived v4 counts finds a direction bias shared by all four T4 subtypes and no T5 spike; timing is not in the archive. Looming v3 and the APL readout get written prerequisites; both TTMn agree at neuron level; Whitehead et al. 2015 is listed as excluded for G2. Docs only. No lock, seed, or model default changed.
 
@@ -127,17 +127,17 @@
 
 - **Exact observer qualification.** Original skeleton/surface preflights and raw ABBA scoring reject missing source-geometry evidence or a changed representation. Desktop and XR frame identities retain source fidelity; transient changes invalidate the observation. Approximate experiments remain diagnostic. No performance gain or headset qualification is claimed.
 
-- **Checkpoint publish record.** `docs/runtime.md`, `docs/milestones.md`, `docs/issue-resolution.md` and `native/README.md` record that a non-growing checkpoint publish is `failed` and is not replaced. The interrupted million-step trial was not rerun and does not meet the exit of #224. Docs only.
+- **Checkpoint publish record.** `docs/adr/runtime.md`, `docs/plan/milestones.md`, `docs/report/issue-resolution.md` and `native/README.md` record that a non-growing checkpoint publish is `failed` and is not replaced. The interrupted million-step trial was not rerun and does not meet the exit of #224. Docs only.
 
 - **Checkpoint publish.** A native checkpoint whose temporary file does not grow is recorded as `failed` and is not replaced. A temporary file that grows is replaced and recorded as `completed`. A status that stays `checkpointing` still times out with its last state. The interrupted million-step trial on worker `90249e45` was not rerun. No lock, seed, or model default changed.
 
-- **Milestone baseline.** `docs/milestones.md` records `main` at `f5e3709`. Merged #227 and #230 keep the bounded skeleton renderer diagnostic. The 16 MiB motion campaign is a veto and does not meet the exit of #177 or #24. The unit check still does not meet the #148 exit. Docs only.
+- **Milestone baseline.** `docs/plan/milestones.md` records `main` at `f5e3709`. Merged #227 and #230 keep the bounded skeleton renderer diagnostic. The 16 MiB motion campaign is a veto and does not meet the exit of #177 or #24. The unit check still does not meet the #148 exit. Docs only.
 
-- **Milestone baseline.** `docs/milestones.md` records `main` at `1123a63`. Draft #227 is not an accepted result. The unit check in #226 and #228 does not meet the #148 exit. Docs only.
+- **Milestone baseline.** `docs/plan/milestones.md` records `main` at `1123a63`. Draft #227 is not an accepted result. The unit check in #226 and #228 does not meet the #148 exit. Docs only.
 
 - **SF2 unit check** (#148). `flymsg.units` parses every evidence-registry unit and reads `sim._constants` and `sim.graded_arrays`: time-ratio decays are dimensionless, `gv` keeps `g*gv` a voltage, and the kick `poisson_scale*w_syn` is a voltage. Graded release per step is the count `graded_arrays` returns. No record carries a distribution, so uncertainty is not propagated. No lock, seed, or model default changed.
 
-- **Evidence-gated planning (docs only).** Added `docs/milestones.md` with
+- **Evidence-gated planning (docs only).** Added `docs/plan/milestones.md` with
   S0–S4 scientific and H1/H2 engineering gates, issue ownership, dependencies,
   entry/exit and blocked/no-go semantics; indexed from the roadmap, the README
   and the Pages nav.
@@ -159,9 +159,9 @@
 
 - **Lighter batch preparation** (#40, #214). A console batch builds its runtimes one at a time and exports each fixture in memory: the whole-connectome battery prepares in 25.2 s instead of 97.6 s, peaking at 2.6 GB instead of 11.3 GB, with byte-identical files.
 
-- **Worker capabilities and batch timing** (#40, #213). The worker lists the batch outputs it writes and refuses others; the console backend stops a job at once on a worker that does not list the output it asked for. The battery's 164 s now break down by phase: 61 s preparing the batch on the host, 10 s uploading, 70 s of advance, 5 s rebuilding runs on the console, 12 s downloading.
+- **Worker capabilities and batch timing** (#40, #213). The worker lists the batch outputs it writes and refuses others; the console backend stops a job at once on a worker that does not list the output it asked for. The battery's 164 s end to end break down by phase: 61 s preparing the batch on the host (28 s building runtimes, 33 s exporting), 10 s hashing and uploading, 77 s waiting for the console (69.6 s of advance, 5.4 s rebuilding runs, the rest writing and polling), 12 s downloading.
 
-- **Sparse counts from the console** (#40, #211). A batch can ask each run for only its nonzero counts and first spikes (`FMS1`, `native.read_counts`), and the console backend does. The whole-connectome battery matched in all 30 runs and took 180 s end to end instead of 243 s; the advance is 69 s, and one host core ran the same battery in 29 s that day (46–62 s on 2026-10-15).
+- **Sparse counts from the console** (#40, #211). A batch can ask each run for only its nonzero counts and first spikes (`FMS1`, `native.read_counts`), and the console backend does. The whole-connectome battery matched in all 30 runs and took 180 s end to end instead of 243 s; the advance is 69 s, and one host core ran the same battery in 29 s that day (46 s in docs/evidence/series-s-battery-2026-10-15.json; docs/adr/runtime.md states a 46–62 s range).
 
 ## 0.8.48 — 2026-10-16
 
